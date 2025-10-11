@@ -1,0 +1,34 @@
+{{ $site := .Site }}
+{{ $title := cond .IsHome $site.Title (printf "%s · %s" .Title $site.Title) }}
+{{ $description := or .Params.description $site.Params.description }}
+{{ $description = or $description $site.Title }}
+{{ $imagePath := "" }}
+{{ with .Params.hero.image }}
+  {{ $imagePath = . }}
+{{ else }}
+  {{ $imagePath = $site.Params.heroImage }}
+{{ end }}
+{{ $ogImage := $imagePath | absURL }}
+{{ $currentLangCode := or $site.Language.LanguageCode $site.Language.Lang }}
+<meta name="description" content="{{ $description }}" />
+<link rel="canonical" href="{{ .Permalink }}" />
+<meta property="og:site_name" content="{{ $site.Title }}" />
+<meta property="og:title" content="{{ $title }}" />
+<meta property="og:description" content="{{ $description }}" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="{{ .Permalink }}" />
+<meta property="og:image" content="{{ $ogImage }}" />
+<meta property="og:locale" content="{{ $currentLangCode }}" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="{{ $title }}" />
+<meta name="twitter:description" content="{{ $description }}" />
+<meta name="twitter:image" content="{{ $ogImage }}" />
+<link rel="icon" href="{{ "favicon/favicon.svg" | absURL }}" type="image/svg+xml" />
+<link rel="shortcut icon" href="{{ "favicon/favicon.svg" | absURL }}" />
+<link rel="manifest" href="{{ "favicon/site.webmanifest" | absURL }}" />
+{{ range $translation := .AllTranslations }}
+  {{ $langCode := or $translation.Language.LanguageCode $translation.Language.Lang }}
+  <link rel="alternate" hreflang="{{ $langCode }}" href="{{ $translation.Permalink }}" />
+{{ end }}
+<link rel="alternate" hreflang="{{ $currentLangCode }}" href="{{ .Permalink }}" />
+<link rel="alternate" hreflang="x-default" href="{{ $site.Home.Permalink }}" />

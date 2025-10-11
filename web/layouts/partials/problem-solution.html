@@ -1,0 +1,22 @@
+{{ $pairs := site.Data.problem_solution.pairs }}
+{{ if $pairs }}
+<section class="section section--problem" id="problem">
+  <div class="section__header">
+    <h2>{{ i18n "section.problem.title" }}</h2>
+  </div>
+  <div class="problem-grid">
+    {{ range $pairs }}
+      <div class="problem-pair">
+        <article class="problem-card problem-card--before">
+          <h3>{{ i18n "problem.label.before" }}</h3>
+          <p>{{ i18n .beforeKey }}</p>
+        </article>
+        <article class="problem-card problem-card--after">
+          <h3>{{ i18n "problem.label.after" }}</h3>
+          <p>{{ i18n .afterKey }}</p>
+        </article>
+      </div>
+    {{ end }}
+  </div>
+</section>
+{{ end }}

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="{{ .Site.Language.Lang }}">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>
+      {{- if .IsHome -}}
+        {{ .Site.Title }}
+      {{- else -}}
+        {{ with .Title }}{{ . }} · {{ end }}{{ .Site.Title }}
+      {{- end -}}
+    </title>
+    {{ partial "head/meta.html" . }}
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700;900&display=swap"
+    />
+    {{ $styles :=
+      resources.Get "sass/main.scss"
+      | toCSS (dict "targetPath" "css/main.css" "transpiler" "dartsass" "omitSourceMap" true)
+      | minify
+      | fingerprint
+    }}
+    <link rel="preload" href="{{ $styles.RelPermalink }}" as="style" />
+    <link rel="stylesheet" href="{{ $styles.RelPermalink }}" integrity="{{ $styles.Data.Integrity }}" />
+  </head>
+  <body class="page page--{{ .Kind }} lang-{{ .Site.Language.Lang }}">
+    {{ block "header" . }}{{ end }}
+    <main id="main" class="main" role="main">
+      {{ block "main" . }}{{ end }}
+    </main>
+    {{ partial "footer.html" . }}
+  </body>
+</html>

@@ -1,0 +1,15 @@
+# Hugo build output
+public/
+resources/_gen/
+
+# Hugo cache
+.hugo_build.lock
+
+# Node/JS tooling artifacts
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# macOS metadata
+.DS_Store

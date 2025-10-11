@@ -1,0 +1,174 @@
+[hero.heading]
+other = "タスク相互レフェリー<wbr>プラットフォーム"
+
+[hero.subcopy.primary]
+other = "他者からタスクをレビューされることで生まれる責任感が、日々のタスクを着実に前進させます。"
+
+[hero.subcopy.secondary]
+other = "個人タスクを気軽にレビューしてもらえる仕組みで、コミットメントに伴走するレフェリー体験を。"
+
+[cta.androidPrimary]
+other = "Android ベータテスト登録"
+
+[cta.iosWaitlist]
+other = "iOS Waitlist に登録"
+
+[cta.watchDemo]
+other = "デモを見る"
+
+[cta.comingSoon]
+other = "近日公開"
+
+[section.problem.title]
+other = "課題と解決"
+
+[problem.before.commitment]
+other = "自分との約束はつい後回しにしてしまう"
+
+[problem.after.commitment]
+other = "レフェリーからのレビューが適度なプレッシャーとなり、タスクが前進します"
+
+[problem.before.motivation]
+other = "長期タスクはモチベーションが維持できない"
+
+[problem.after.motivation]
+other = "第三者と共有する達成基準と締切が継続的な進捗を生みます"
+
+[problem.before.access]
+other = "信頼できるレビュー相手が見つからない"
+
+[problem.after.access]
+other = "コミットメント代でマッチングしたレフェリーに気軽に依頼できます"
+
+[section.features.title]
+other = "Peppercheck の特徴"
+
+[features.refereeMatching.title]
+other = "レフェリーマッチング"
+
+[features.refereeMatching.description]
+other = "タスクの達成基準と締切を設定すると、対応可能なレフェリーが自動で提案されます。"
+
+[features.evidenceSubmission.title]
+other = "エビデンス提出と判定"
+
+[features.evidenceSubmission.description]
+other = "文章や画像で証明を提出し、レフェリーが基準に沿って判定します。"
+
+[features.refereeReward.title]
+other = "レフェリー報酬"
+
+[features.refereeReward.description]
+other = "コミットメント代を設定すると、レビュー完了時にレフェリーへ報酬が支払われます。"
+
+[section.demo.title]
+other = "デモ動画"
+
+[demo.placeholder]
+other = "現在デモ動画を準備中です。公開までしばらくお待ちください。"
+
+[socialProof.title]
+other = "社会的証明"
+
+[socialProof.placeholder]
+other = "ベータユーザーの声を順次掲載予定です。"
+
+[participation.android.title]
+other = "Android ベータテストに参加"
+
+[participation.android.description]
+other = "メールアドレスだけで参加登録が完了し、最新版のアプリを配信します。"
+
+[participation.ios.title]
+other = "iOS Waitlist に登録"
+
+[participation.ios.description]
+other = "リリース時に優先的に招待を受け取れるようメールアドレスを登録してください。"
+
+[faq.title]
+other = "よくある質問"
+
+[faq.items.auth.question]
+other = "認証方法は？"
+
+[faq.items.auth.answer]
+other = "現在は Google アカウントによる認証に対応しています。"
+
+[faq.items.payment.question]
+other = "支払いは安全ですか？"
+
+[faq.items.payment.answer]
+other = "Stripe を利用しており、Peppercheck が資金を預かることはありません。"
+
+[faq.items.refereeSelection.question]
+other = "レフェリーはどう選ばれますか？"
+
+[faq.items.refereeSelection.answer]
+other = "設定した締切に対応できるユーザーを自動マッチングし、アルゴリズムを順次改善予定です。"
+
+[faq.items.pricing.question]
+other = "無料で使えますか？"
+
+[faq.items.pricing.answer]
+other = "初回は無料で利用でき、その後はタスクごとにコミットメント代が必要です。"
+
+[faq.items.ios.question]
+other = "iOS 版はありますか？"
+
+[faq.items.ios.answer]
+other = "現在開発中で、Waitlist に登録いただくとリリース時にご案内します。"
+
+[footer.company]
+other = "Peppercheck"
+
+[footer.tagline]
+other = "タスクの継続を、相互の信頼で後押しする。"
+
+[footer.links.terms]
+other = "利用規約"
+
+[footer.links.privacy]
+other = "プライバシー"
+
+[footer.links.contact]
+other = "お問い合わせ"
+
+[footer.social.x]
+other = "X"
+
+[footer.social.youtube]
+other = "YouTube"
+
+[language.switcher.label]
+other = "言語"
+
+[language.switcher.ja]
+other = "日本語"
+
+[language.switcher.en]
+other = "English"
+
+[forms.waitlist.emailLabel]
+other = "メールアドレス"
+
+[forms.waitlist.emailPlaceholder]
+other = "you@example.com"
+
+[forms.waitlist.submit]
+other = "登録する"
+
+[forms.waitlist.note]
+other = "※ Waitlist フォームは準備中です。"
+[accessibility.skipToContent]
+other = "本文へスキップ"
+[hero.image.alt]
+other = "Peppercheck アプリの画面イメージ"
+[problem.label.before]
+other = "Before"
+
+[problem.label.after]
+other = "After"
+[section.participation.title]
+other = "参加方法"
+[footer.legalNav]
+other = "フッターナビゲーション"

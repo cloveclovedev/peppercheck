@@ -1,0 +1,16 @@
+{{ $items := site.Data.faq }}
+{{ if $items }}
+<section class="section section--faq" id="faq">
+  <div class="section__header">
+    <h2>{{ i18n "faq.title" }}</h2>
+  </div>
+  <div class="faq">
+    {{ range $items }}
+      <details class="faq__item">
+        <summary>{{ i18n .questionKey }}</summary>
+        <p>{{ i18n .answerKey }}</p>
+      </details>
+    {{ end }}
+  </div>
+</section>
+{{ end }}

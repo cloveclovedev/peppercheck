@@ -1,0 +1,10 @@
+{{ $cfg := .config }}
+{{ $formId := printf "waitlist-email-%s" (.context.Site.Language.Lang) }}
+<form class="waitlist-form" action="#" method="post" data-state="placeholder">
+  <label class="waitlist-form__label" for="{{ $formId }}">{{ i18n "forms.waitlist.emailLabel" }}</label>
+  <div class="waitlist-form__controls">
+    <input class="waitlist-form__input" id="{{ $formId }}" type="email" name="email" placeholder="{{ i18n "forms.waitlist.emailPlaceholder" }}" disabled />
+    <button class="button button--primary" type="submit" disabled title="{{ i18n "forms.waitlist.note" }}">{{ i18n (or $cfg.ctaLabelKey "cta.iosWaitlist") }}</button>
+  </div>
+  <p class="waitlist-form__note">{{ i18n "forms.waitlist.note" }}</p>
+</form>

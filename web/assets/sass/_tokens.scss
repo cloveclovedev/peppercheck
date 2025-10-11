@@ -1,0 +1,22 @@
+$color-background-white: #fefefa;
+$color-background-light: #f8f1e5;
+$color-background: #efe3ca;
+$color-background-dark: #ccba96;
+$color-text: #1f1f1f;
+$color-accent-yellow: #ecae1e;
+$color-accent-yellow-light: #ffe474;
+$color-accent-red: #dd6c20;
+$color-accent-red-light: #ffc439;
+$color-accent-blue: #176478;
+$color-accent-blue-light: #84d4db;
+$color-accent-green: #067f82;
+$color-accent-green-light: #93d2bd;
+
+$font-family-sans: 'Noto Sans JP', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+$font-family-heading: 'Noto Sans JP', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+$max-content-width: 1120px;
+$grid-gap: clamp(1.5rem, 4vw, 3rem);
+$radius-md: 12px;
+$radius-lg: 24px;
+$shadow-soft: 0 24px 60px rgba(23, 100, 120, 0.12);

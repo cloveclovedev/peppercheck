@@ -1,0 +1,19 @@
+{{ $features := site.Data.features }}
+{{ if $features }}
+<section class="section section--features" id="features">
+  <div class="section__header">
+    <h2>{{ i18n "section.features.title" }}</h2>
+  </div>
+  <div class="feature-grid">
+    {{ range $features }}
+      <article class="feature-card" id="feature-{{ .id }}">
+        <div class="feature-card__visual" aria-hidden="true">
+          <img src="{{ .illustration | relURL }}" alt="" loading="lazy" decoding="async" width="320" height="240" />
+        </div>
+        <h3>{{ i18n .titleKey }}</h3>
+        <p>{{ i18n .descriptionKey }}</p>
+      </article>
+    {{ end }}
+  </div>
+</section>
+{{ end }}

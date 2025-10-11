@@ -1,0 +1,90 @@
+@use "tokens";
+@use "mixins";
+
+.hero {
+  padding-inline: clamp(1.25rem, 4vw, 3rem);
+  padding-block: clamp(1.1rem, 3vw, 2rem);
+  margin-bottom: clamp(3.25rem, 8vw, 5.5rem);
+}
+
+.hero__inner {
+  max-width: tokens.$max-content-width;
+  margin: 0 auto;
+  display: grid;
+  gap: clamp(2rem, 6vw, 3.5rem);
+  text-align: center;
+  justify-items: center;
+}
+
+.hero__content {
+  display: grid;
+  gap: clamp(0.9rem, 2.4vw, 1.5rem);
+}
+
+.hero__title {
+  font-size: clamp(2.5rem, 5vw, 3.75rem);
+}
+
+.hero__subtitle {
+  display: grid;
+  gap: 0.05rem;
+  color: rgba(59, 47, 47, 0.75);
+  font-size: clamp(0.9rem, 1.55vw, 1.15rem);
+  margin-top: clamp(0.6rem, 1.8vw, 1rem);
+  margin-bottom: clamp(0.9rem, 2.4vw, 1.5rem);
+}
+
+body.lang-ja .hero__title {
+  font-size: clamp(2.3rem, 4.4vw, 3.4rem);
+  letter-spacing: -0.02em;
+  font-weight: 800;
+}
+
+.hero__title wbr {
+  display: inline;
+}
+
+@include mixins.respond("md") {
+  .hero__title wbr {
+    display: contents;
+  }
+}
+
+@media (max-width: 640px) {
+  .hero__title {
+    font-size: clamp(1.9rem, 5vw, 2.6rem);
+  }
+}
+
+@media (max-width: 420px) {
+  .hero__title {
+    font-size: clamp(1.6rem, 7vw, 2.2rem);
+  }
+}
+
+body.lang-ja .hero__subtitle {
+  font-size: clamp(0.8rem, 1.35vw, 1rem);
+  letter-spacing: -0.01em;
+  gap: 0.05rem;
+}
+
+.hero__ctas {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.85rem;
+}
+
+.hero__visual {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.hero__visual img {
+  width: clamp(320px, 60vw, 520px);
+  height: auto;
+  border-radius: tokens.$radius-lg;
+  box-shadow: 0 20px 60px rgba(23, 100, 120, 0.12);
+  background-color: #fff;
+}

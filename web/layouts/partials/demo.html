@@ -1,0 +1,20 @@
+{{ $demo := .Params.demo }}
+<section class="section section--demo" id="demo">
+  <div class="section__header">
+    <h2>{{ i18n "section.demo.title" }}</h2>
+  </div>
+  <div class="demo">
+    {{ with $demo.video }}
+      <figure class="demo__media">
+        <video controls preload="metadata" {{ with $demo.poster }}poster="{{ . | relURL }}"{{ end }}>
+          <source src="{{ . | relURL }}" type="video/mp4" />
+          {{ i18n "demo.placeholder" }}
+        </video>
+      </figure>
+    {{ else }}
+      <div class="demo__placeholder">
+        <p>{{ i18n "demo.placeholder" }}</p>
+      </div>
+    {{ end }}
+  </div>
+</section>

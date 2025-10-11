@@ -1,0 +1,11 @@
+legal:
+  - id: 'terms'
+    labelKey: 'footer.links.terms'
+    url: '#'
+  - id: 'privacy'
+    labelKey: 'footer.links.privacy'
+    url: '#'
+social:
+  - id: 'x'
+    labelKey: 'footer.social.x'
+    url: '#'

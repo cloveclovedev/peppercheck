@@ -1,0 +1,2 @@
+-- Custom types (ENUM/DOMAIN)
+-- None

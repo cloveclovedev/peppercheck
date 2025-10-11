@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="240" viewBox="0 0 320 240" role="img" aria-label="Feature placeholder">
+  <rect width="320" height="240" rx="24" fill="#F8F1E5" />
+  <rect x="72" y="64" width="176" height="112" rx="12" fill="#EFE3CA" stroke="#176478" stroke-width="4" stroke-dasharray="10 12" />
+  <polyline points="96,132 136,164 216,104" fill="none" stroke="#067F82" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+  <text x="50%" y="80%" text-anchor="middle" font-family="Inter, 'Noto Sans JP', sans-serif" font-size="18" fill="#3B2F2F">Evidence</text>
+</svg>

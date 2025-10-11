@@ -1,0 +1,1 @@
+-- No grants managed via declarative schema

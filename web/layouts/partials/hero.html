@@ -1,0 +1,29 @@
+{{ $hero := .Params.hero }}
+{{ $image := or $hero.image site.Params.heroImage }}
+<section class="hero" id="hero">
+  <div class="hero__inner">
+    <div class="hero__content">
+      {{ with $hero.headingKey }}
+        <h1 class="hero__title">{{ i18n . | safeHTML }}</h1>
+      {{ end }}
+      {{ with $hero.subheadingKeys }}
+        <div class="hero__subtitle">
+          {{ range . }}
+            <p>{{ i18n . }}</p>
+          {{ end }}
+        </div>
+      {{ end }}
+      <div class="hero__ctas">
+        {{ with $hero.primaryCta }}
+          <a class="button button--primary" href="{{ .url }}">{{ i18n .labelKey }}</a>
+        {{ end }}
+        {{ range $hero.secondaryCtas }}
+          <a class="button button--ghost" href="{{ .url }}">{{ i18n .labelKey }}</a>
+        {{ end }}
+      </div>
+    </div>
+    <div class="hero__visual">
+      <img src="{{ $image | relURL }}" alt="{{ i18n "hero.image.alt" }}" width="640" height="480" loading="eager" fetchpriority="high" decoding="async" />
+    </div>
+  </div>
+</section>

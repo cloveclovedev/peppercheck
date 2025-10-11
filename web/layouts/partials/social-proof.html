@@ -1,0 +1,17 @@
+{{ with site.Data.social_proof }}
+  {{ if gt (len .) 0 }}
+    <section class="section section--social-proof" id="social-proof">
+      <div class="section__header">
+        <h2>{{ i18n "socialProof.title" }}</h2>
+      </div>
+      <div class="social-proof__list">
+        {{ range . }}
+          <article class="social-proof__item">
+            {{ with .quote }}<blockquote>“{{ . }}”</blockquote>{{ end }}
+            {{ with .attribution }}<p class="social-proof__name">{{ . }}</p>{{ end }}
+          </article>
+        {{ end }}
+      </div>
+    </section>
+  {{ end }}
+{{ end }}

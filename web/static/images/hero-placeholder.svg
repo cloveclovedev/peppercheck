@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480" viewBox="0 0 640 480" role="img" aria-label="Hero placeholder">
+  <rect width="640" height="480" fill="#EFE3CA" />
+  <rect x="40" y="40" width="560" height="400" rx="24" fill="#F8F1E5" stroke="#DD6C20" stroke-width="4" stroke-dasharray="12 16" />
+  <text x="50%" y="50%" text-anchor="middle" font-family="Inter, 'Noto Sans JP', sans-serif" font-size="32" fill="#3B2F2F">Hero Mock Coming Soon</text>
+</svg>

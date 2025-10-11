@@ -1,0 +1,18 @@
+-- Table: referee_available_time_slots
+CREATE TABLE IF NOT EXISTS "public"."referee_available_time_slots" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "dow" smallint NOT NULL,
+    "start_min" smallint NOT NULL,
+    "end_min" smallint NOT NULL,
+    "is_active" boolean DEFAULT true,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "referee_available_time_slots_dow_check" CHECK ((("dow" >= 0) AND ("dow" <= 6))),
+    CONSTRAINT "referee_available_time_slots_end_min_check" CHECK ((("end_min" >= 1) AND ("end_min" <= 1440))),
+    CONSTRAINT "referee_available_time_slots_start_min_check" CHECK ((("start_min" >= 0) AND ("start_min" <= 1439))),
+    CONSTRAINT "valid_time_range" CHECK (("start_min" < "end_min"))
+);
+
+ALTER TABLE "public"."referee_available_time_slots" OWNER TO "postgres";
+

@@ -1,0 +1,15 @@
+- id: auth
+  questionKey: 'faq.items.auth.question'
+  answerKey: 'faq.items.auth.answer'
+- id: payment
+  questionKey: 'faq.items.payment.question'
+  answerKey: 'faq.items.payment.answer'
+- id: referee-selection
+  questionKey: 'faq.items.refereeSelection.question'
+  answerKey: 'faq.items.refereeSelection.answer'
+- id: pricing
+  questionKey: 'faq.items.pricing.question'
+  answerKey: 'faq.items.pricing.answer'
+- id: ios
+  questionKey: 'faq.items.ios.question'
+  answerKey: 'faq.items.ios.answer'

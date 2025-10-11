@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="240" viewBox="0 0 320 240" role="img" aria-label="Feature placeholder">
+  <rect width="320" height="240" rx="24" fill="#F8F1E5" />
+  <path d="M64 120h192" stroke="#176478" stroke-width="8" stroke-dasharray="16 18" stroke-linecap="round" />
+  <circle cx="96" cy="120" r="28" fill="#ECAE1E" opacity="0.35" />
+  <circle cx="224" cy="120" r="28" fill="#DD6C20" opacity="0.35" />
+  <text x="50%" y="80%" text-anchor="middle" font-family="Inter, 'Noto Sans JP', sans-serif" font-size="18" fill="#3B2F2F">Matching</text>
+</svg>

@@ -1,0 +1,12 @@
+- id: referee-matching
+  illustration: 'images/feature-matching-placeholder.svg'
+  titleKey: 'features.refereeMatching.title'
+  descriptionKey: 'features.refereeMatching.description'
+- id: evidence-submission
+  illustration: 'images/feature-evidence-placeholder.svg'
+  titleKey: 'features.evidenceSubmission.title'
+  descriptionKey: 'features.evidenceSubmission.description'
+- id: referee-reward
+  illustration: 'images/feature-reward-placeholder.svg'
+  titleKey: 'features.refereeReward.title'
+  descriptionKey: 'features.refereeReward.description'

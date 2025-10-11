@@ -1,0 +1,10 @@
+pairs:
+  - id: 'commitment'
+    beforeKey: 'problem.before.commitment'
+    afterKey: 'problem.after.commitment'
+  - id: 'motivation'
+    beforeKey: 'problem.before.motivation'
+    afterKey: 'problem.after.motivation'
+  - id: 'access'
+    beforeKey: 'problem.before.access'
+    afterKey: 'problem.after.access'

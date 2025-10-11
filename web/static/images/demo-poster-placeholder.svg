@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450" role="img" aria-label="Demo video placeholder">
+  <rect width="800" height="450" rx="32" fill="#F8F1E5" />
+  <polygon points="360,210 360,270 420,240" fill="#176478" />
+  <rect x="64" y="64" width="672" height="322" rx="24" fill="none" stroke="#176478" stroke-width="6" stroke-dasharray="18 18" />
+  <text x="50%" y="82%" text-anchor="middle" font-family="Inter, 'Noto Sans JP', sans-serif" font-size="24" fill="#3B2F2F">Demo Video Coming Soon</text>
+</svg>

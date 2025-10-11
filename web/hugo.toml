@@ -1,0 +1,45 @@
+baseURL = 'https://peppercheck.com/'
+defaultContentLanguage = 'ja'
+defaultContentLanguageInSubdir = true
+disableKinds = ['taxonomy', 'term']
+enableRobotsTXT = true
+languageCode = 'ja-JP'
+title = 'Peppercheck'
+theme = 'peppercheck'
+
+[outputs]
+  home = ['HTML', 'RSS']
+
+[params]
+  brandName = 'Peppercheck'
+  androidBetaUrl = 'https://appdistribution.firebase.dev/i/b222a23741c5d83f'
+  waitlistAnchor = '#waitlist'
+  demoAnchor = '#demo'
+  heroImage = 'images/hero-placeholder.svg'
+  demoVideo = ''
+  demoPoster = 'images/demo-poster-placeholder.svg'
+  emailContact = 'hi@peppercheck.app'
+
+[languages]
+
+  [languages.ja]
+    contentDir = 'content/ja'
+    languageCode = 'ja-JP'
+    languageDirection = 'ltr'
+    languageName = '日本語'
+    title = 'Peppercheck'
+    weight = 1
+
+    [languages.ja.params]
+      ctaPrimaryUrl = 'https://appdistribution.firebase.dev/i/b222a23741c5d83f'
+
+  [languages.en]
+    contentDir = 'content/en'
+    languageCode = 'en-US'
+    languageDirection = 'ltr'
+    languageName = 'English'
+    title = 'Peppercheck'
+    weight = 2
+
+    [languages.en.params]
+      ctaPrimaryUrl = 'https://appdistribution.firebase.dev/i/b222a23741c5d83f'

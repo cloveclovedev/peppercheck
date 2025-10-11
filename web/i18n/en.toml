@@ -1,0 +1,174 @@
+[hero.heading]
+other = "Peer Referee Platform for Tasks"
+
+[hero.subcopy.primary]
+other = "External reviews introduce healthy accountability so your daily tasks keep moving forward."
+
+[hero.subcopy.secondary]
+other = "Make personal commitments feel real with a lightweight platform for finding task referees."
+
+[cta.androidPrimary]
+other = "Join Android Beta"
+
+[cta.iosWaitlist]
+other = "Join iOS Waitlist"
+
+[cta.watchDemo]
+other = "Watch Demo"
+
+[cta.comingSoon]
+other = "Coming Soon"
+
+[section.problem.title]
+other = "Challenges & Solutions"
+
+[problem.before.commitment]
+other = "It is easy to postpone promises made only to yourself."
+
+[problem.after.commitment]
+other = "Referee reviews add just enough pressure to keep every task moving."
+
+[problem.before.motivation]
+other = "Long-running tasks lose momentum fast."
+
+[problem.after.motivation]
+other = "Shared success criteria and deadlines deliver steady progress."
+
+[problem.before.access]
+other = "Reliable reviewers are hard to find."
+
+[problem.after.access]
+other = "Paying a commitment fee lets you request help from available referees anytime."
+
+[section.features.title]
+other = "What Makes Peppercheck Different"
+
+[features.refereeMatching.title]
+other = "Referee Matching"
+
+[features.refereeMatching.description]
+other = "Set criteria and due dates to be matched with referees who can support you."
+
+[features.evidenceSubmission.title]
+other = "Evidence & Decisions"
+
+[features.evidenceSubmission.description]
+other = "Submit proof in text or images and receive verdicts aligned with your criteria."
+
+[features.refereeReward.title]
+other = "Referee Rewards"
+
+[features.refereeReward.description]
+other = "Commitment fees are released to referees when reviews are completed."
+
+[section.demo.title]
+other = "Product Demo"
+
+[demo.placeholder]
+other = "The demo video is coming soon. Stay tuned!"
+
+[socialProof.title]
+other = "Social Proof"
+
+[socialProof.placeholder]
+other = "Beta user stories will appear here once available."
+
+[participation.android.title]
+other = "Join the Android Beta"
+
+[participation.android.description]
+other = "Share your email to access the latest builds and product updates."
+
+[participation.ios.title]
+other = "Join the iOS Waitlist"
+
+[participation.ios.description]
+other = "Add your email to receive priority invites when iOS is ready."
+
+[faq.title]
+other = "Frequently Asked Questions"
+
+[faq.items.auth.question]
+other = "How do I sign in?"
+
+[faq.items.auth.answer]
+other = "We currently support Google Account authentication."
+
+[faq.items.payment.question]
+other = "Is payment secure?"
+
+[faq.items.payment.answer]
+other = "Payments run through Stripe, so Peppercheck never holds your funds."
+
+[faq.items.refereeSelection.question]
+other = "How are referees chosen?"
+
+[faq.items.refereeSelection.answer]
+other = "We match users who can meet your timeline and continue improving the algorithm."
+
+[faq.items.pricing.question]
+other = "Can I use Peppercheck for free?"
+
+[faq.items.pricing.answer]
+other = "Your first task is free; after that, each task requires a commitment fee."
+
+[faq.items.ios.question]
+other = "Is there an iOS version?"
+
+[faq.items.ios.answer]
+other = "Android is available today. Join the waitlist to be notified about iOS."
+
+[footer.company]
+other = "Peppercheck"
+
+[footer.tagline]
+other = "Accountability that keeps personal commitments on track."
+
+[footer.links.terms]
+other = "Terms"
+
+[footer.links.privacy]
+other = "Privacy"
+
+[footer.links.contact]
+other = "Contact"
+
+[footer.social.x]
+other = "X"
+
+[footer.social.youtube]
+other = "YouTube"
+
+[language.switcher.label]
+other = "Language"
+
+[language.switcher.ja]
+other = "日本語"
+
+[language.switcher.en]
+other = "English"
+
+[forms.waitlist.emailLabel]
+other = "Email"
+
+[forms.waitlist.emailPlaceholder]
+other = "you@example.com"
+
+[forms.waitlist.submit]
+other = "Join"
+
+[forms.waitlist.note]
+other = "Waitlist form is coming soon."
+[accessibility.skipToContent]
+other = "Skip to main content"
+[hero.image.alt]
+other = "Peppercheck app home screen mock"
+[problem.label.before]
+other = "Before"
+
+[problem.label.after]
+other = "After"
+[section.participation.title]
+other = "How to Join"
+[footer.legalNav]
+other = "Footer navigation"

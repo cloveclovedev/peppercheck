@@ -1,0 +1,20 @@
+{{ $site := .Site }}
+{{ if gt (len $site.Sites) 1 }}
+  {{ $ordered := sort $site.Sites "Language.Weight" "asc" }}
+  <nav class="language-switcher" aria-label="{{ i18n "language.switcher.label" }}">
+    <div class="language-switcher__inline">
+      {{ range $index, $langSite := $ordered }}
+        {{ $lang := $langSite.Language.Lang }}
+        {{ $label := cond (eq $lang "ja") "JP" (cond (eq $lang "en") "EN" (upper $lang)) }}
+        {{ if eq $lang $site.Language.Lang }}
+          <span class="language-switcher__current" aria-current="true">{{ $label }}</span>
+        {{ else }}
+          <a class="language-switcher__link" href="{{ $langSite.Home.RelPermalink }}">{{ $label }}</a>
+        {{ end }}
+        {{ if lt (add $index 1) (len $ordered) }}
+          <span class="language-switcher__separator" aria-hidden="true">|</span>
+        {{ end }}
+      {{ end }}
+    </div>
+  </nav>
+{{ end }}

@@ -1,0 +1,22 @@
+{{ $participation := .Params.participation }}
+<section class="section section--participation" id="participation">
+  <div class="section__header">
+    <h2>{{ i18n "section.participation.title" }}</h2>
+  </div>
+  <div class="participation-grid">
+    {{ with $participation.android }}
+      <article class="participation-card participation-card--android">
+        <h3>{{ i18n .titleKey }}</h3>
+        <p>{{ i18n .descriptionKey }}</p>
+        <a class="button button--primary" href="{{ .url }}" target="_blank" rel="noopener">{{ i18n .ctaLabelKey }}</a>
+      </article>
+    {{ end }}
+    {{ with $participation.ios }}
+      <article class="participation-card participation-card--ios" id="waitlist">
+        <h3>{{ i18n .titleKey }}</h3>
+        <p>{{ i18n .descriptionKey }}</p>
+        {{ partial "forms/waitlist.html" (dict "config" . "context" $) }}
+      </article>
+    {{ end }}
+  </div>
+</section>

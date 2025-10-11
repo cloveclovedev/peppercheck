@@ -1,0 +1,228 @@
+@use "tokens";
+@use "mixins";
+
+.problem-grid {
+  display: grid;
+  gap: tokens.$grid-gap;
+}
+
+.problem-pair {
+  display: grid;
+  gap: 1rem;
+
+  @include mixins.respond("sm") {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.problem-card {
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border-radius: tokens.$radius-lg;
+  background: #fff;
+  box-shadow: tokens.$shadow-soft;
+}
+
+.problem-card--before {
+  border-left: 6px solid tokens.$color-accent-red;
+}
+
+.problem-card--after {
+  border-left: 6px solid tokens.$color-accent-green;
+}
+
+.problem-card h3 {
+  font-size: 1.05rem;
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.feature-grid {
+  display: grid;
+  gap: tokens.$grid-gap;
+
+  @include mixins.respond("md") {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.feature-card {
+  background: #fff;
+  border-radius: tokens.$radius-lg;
+  padding: clamp(1.5rem, 3vw, 2rem);
+  box-shadow: tokens.$shadow-soft;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  text-align: left;
+}
+
+.feature-card__visual {
+  display: flex;
+  justify-content: center;
+}
+
+.feature-card h3 {
+  font-size: 1.25rem;
+}
+
+.demo {
+  background: #fff;
+  border-radius: tokens.$radius-lg;
+  padding: clamp(1.5rem, 3vw, 2.5rem);
+  box-shadow: tokens.$shadow-soft;
+}
+
+.demo__placeholder {
+  display: grid;
+  place-items: center;
+  padding: clamp(2rem, 6vw, 4rem);
+  border: 2px dashed rgba(23, 100, 120, 0.25);
+  border-radius: tokens.$radius-md;
+  color: rgba(59, 47, 47, 0.8);
+}
+
+.participation-grid {
+  display: grid;
+  gap: tokens.$grid-gap;
+
+  @include mixins.respond("md") {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.participation-card {
+  background: #fff;
+  border-radius: tokens.$radius-lg;
+  padding: clamp(1.5rem, 3vw, 2.5rem);
+  box-shadow: tokens.$shadow-soft;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.waitlist-form {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.waitlist-form__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.waitlist-form__input {
+  flex: 1 1 240px;
+  padding: 0.7rem 1rem;
+  border-radius: tokens.$radius-md;
+  border: 1px solid rgba(23, 100, 120, 0.25);
+  background: rgba(248, 241, 229, 0.5);
+}
+
+.waitlist-form__input:disabled {
+  color: rgba(59, 47, 47, 0.6);
+}
+
+.waitlist-form__note {
+  font-size: 0.875rem;
+  color: rgba(59, 47, 47, 0.7);
+}
+
+.faq {
+  background: #fff;
+  border-radius: tokens.$radius-lg;
+  box-shadow: tokens.$shadow-soft;
+  padding: clamp(1.5rem, 3vw, 2.5rem);
+}
+
+.faq__item + .faq__item {
+  margin-top: 1rem;
+}
+
+.faq__item summary {
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.faq__item summary::-webkit-details-marker {
+  display: none;
+}
+
+.faq__item summary::after {
+  content: '+';
+  float: right;
+}
+
+.faq__item[open] summary::after {
+  content: '−';
+}
+
+.faq__item p {
+  margin-top: 0.75rem;
+  color: rgba(59, 47, 47, 0.8);
+}
+
+.social-proof__placeholder {
+  background: rgba(236, 174, 30, 0.12);
+  padding: clamp(1.5rem, 3vw, 2.5rem);
+  border-radius: tokens.$radius-lg;
+  text-align: center;
+}
+
+.footer {
+  margin-inline: auto;
+  max-width: tokens.$max-content-width;
+  padding: clamp(1rem, 2.6vw, 1.6rem) clamp(1.25rem, 4vw, 3rem);
+  border-top: 1px solid tokens.$color-text;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.footer__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.footer__row--bottom {
+  justify-content: center;
+}
+
+.footer__links {
+  display: flex;
+  align-items: center;
+}
+
+.footer__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.footer__social {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.footer__social-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: tokens.$color-text;
+}
+
+.footer__social-link:hover,
+.footer__social-link:focus {
+  color: tokens.$color-text;
+}
+
+.footer__legal-note {
+  font-size: 0.9rem;
+  color: rgba(31, 31, 31, 0.65);
+}
