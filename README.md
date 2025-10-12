@@ -18,7 +18,25 @@ These configuration files are intentionally excluded from version control, so ea
 2. Copy `supabase/.env.example` to `supabase/.env` and fill in provider credentials such as `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` if you intend to enable those auth providers.
 3. Copy `supabase/functions/.env.example` to `supabase/functions/.env` and supply your Cloudflare R2 credentials (`CLOUDFLARE_ACCOUNT_ID`, `R2_BUCKET_NAME`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`). These are required for the `generate-upload-url` Edge Function.
 4. For local development, run `supabase start` from the repository root to launch a local Postgres + Supabase stack, then point `SUPABASE_URL_DEBUG` / `GATEWAY_URL_DEBUG` in `local.properties` at the local endpoint (`http://10.0.2.2:54321` for Android emulator).
-5. To deploy to your Supabase project, log in with `supabase login`, link the project (`supabase link --project-ref <your-ref>`), and use the supplied GitHub Actions or `supabase db push` / `supabase functions deploy` manually.
+5. To deploy to your Supabase project:
+   - Log in and link your project:
+     ```sh
+     supabase login
+     supabase link --project-ref <your-ref>
+     ```
+   - Set Edge Functions environment variables from `supabase/functions/.env`:
+     ```sh
+     supabase secrets set --env-file supabase/functions/.env
+     ```
+   - Deploy required Edge Functions (example):
+     ```sh
+     supabase functions deploy generate-upload-url
+     ```
+   - Apply database changes as needed:
+     ```sh
+     supabase db push
+     ```
+   You can also rely on the supplied GitHub Actions for CI/CD if preferred.
 
 ## Cloudflare Gateway Worker
 
