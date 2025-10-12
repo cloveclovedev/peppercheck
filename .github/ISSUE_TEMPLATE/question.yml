@@ -1,0 +1,25 @@
+name: "❓ Question"
+description: Ask a question
+labels: ["type/question", "status/triage"]
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Topic (labels to apply)
+      options:
+        - area/android
+        - area/supabase
+        - area/cloudflare
+        - area/web
+        - area/backend
+        - area/infra
+        - area/design
+        - area/ux
+      multiple: true
+  - type: textarea
+    id: question
+    attributes:
+      label: Your question
+    validations:
+      required: true
+

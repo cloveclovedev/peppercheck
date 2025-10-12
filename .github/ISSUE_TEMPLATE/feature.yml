@@ -1,0 +1,48 @@
+name: "✨ Feature request"
+description: Propose a new feature
+labels: ["type/feature", "status/triage"]
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area (labels to apply)
+      options:
+        - area/android
+        - area/supabase
+        - area/cloudflare
+        - area/web
+        - area/backend
+        - area/infra
+        - area/design
+        - area/ux
+      multiple: true
+    validations:
+      required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+    validations:
+      required: true
+  - type: textarea
+    id: user_story
+    attributes:
+      label: User story
+      placeholder: As a [persona], I want [capability], so that [outcome].
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      placeholder: |
+        - [ ] Given/When/Then ...
+        - [ ] ...
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority (label to apply)
+      options:
+        - priority/P0
+        - priority/P1
+        - priority/P2
+        - priority/P3
+
