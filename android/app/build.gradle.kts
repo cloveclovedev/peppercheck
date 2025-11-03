@@ -44,11 +44,18 @@ android {
                 ?: localProperties.requireProperty("SUPABASE_URL")
             val gatewayUrlDebug = localProperties.getProperty("GATEWAY_URL_DEBUG")
                 ?: localProperties.requireProperty("GATEWAY_URL")
+            val stripePublishableKeyDebug = localProperties.getProperty("STRIPE_PUBLISHABLE_KEY_DEBUG")
+                ?: localProperties.requireProperty("STRIPE_PUBLISHABLE_KEY")
             buildConfigField("String", "SUPABASE_URL", "\"$supabaseUrlDebug\"")
             buildConfigField(
                 "String",
                 "GATEWAY_URL",
                 "\"$gatewayUrlDebug\""
+            )
+            buildConfigField(
+                "String",
+                "STRIPE_PUBLISHABLE_KEY",
+                "\"$stripePublishableKeyDebug\""
             )
         }
         release {
@@ -66,6 +73,11 @@ android {
                 "String",
                 "GATEWAY_URL",
                 "\"${localProperties.requireProperty("GATEWAY_URL")}\""
+            )
+            buildConfigField(
+                "String",
+                "STRIPE_PUBLISHABLE_KEY",
+                "\"${localProperties.requireProperty("STRIPE_PUBLISHABLE_KEY")}\""
             )
         }
     }
@@ -108,6 +120,7 @@ dependencies {
     implementation(libs.coil.network.okhttp)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
+    implementation(libs.stripe.android)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
