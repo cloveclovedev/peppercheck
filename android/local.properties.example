@@ -18,3 +18,7 @@ GATEWAY_URL=
 
 # Google OAuth client ID for web (used by Google Sign-In)
 WEB_GOOGLE_CLIENT_ID=
+
+# Stripe publishable key
+STRIPE_PUBLISHABLE_KEY=
+STRIPE_PUBLISHABLE_KEY_DEBUG=
