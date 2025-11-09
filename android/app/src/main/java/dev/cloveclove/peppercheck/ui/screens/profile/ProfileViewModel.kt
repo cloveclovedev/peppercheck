@@ -14,7 +14,8 @@ class ProfileViewModel(
     private val getUserAvailableTimeSlotsUseCase: GetUserAvailableTimeSlotsUseCase,
     private val addAvailableTimeSlotUseCase: AddAvailableTimeSlotUseCase,
     private val deleteAvailableTimeSlotUseCase: DeleteAvailableTimeSlotUseCase,
-    private val createStripeConnectLinkUseCase: CreateStripeConnectLinkUseCase
+    private val createStripeConnectLinkUseCase: CreateStripeConnectLinkUseCase,
+    private val getStripeAccountUseCase: GetStripeAccountUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfileUiState())
@@ -24,9 +25,10 @@ class ProfileViewModel(
 
     fun onEvent(event: ProfileEvent) {
         when (event) {
-            ProfileEvent.LoadData, ProfileEvent.RefreshData -> loadAvailableTimeSlots()
+            ProfileEvent.LoadData, ProfileEvent.RefreshData -> loadProfileData()
             ProfileEvent.CreateConnectLink -> createConnectLink()
             ProfileEvent.ConnectLinkHandled -> _uiState.update { it.copy(connectLinkState = ConnectLinkState.Idle) }
+            ProfileEvent.SetupPaymentMethodClicked -> handlePaymentMethodClicked()
             
             ProfileEvent.AddTimeSlotClicked -> _uiState.update { it.copy(isAddTimeSlotDialogVisible = true) }
             ProfileEvent.AddTimeSlotDialogDismissed -> _uiState.update { it.copy(isAddTimeSlotDialogVisible = false) }
@@ -39,25 +41,42 @@ class ProfileViewModel(
         }
     }
 
-    private fun loadAvailableTimeSlots() {
+    private fun loadProfileData() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
-            getUserAvailableTimeSlotsUseCase()
-                .onSuccess { timeSlots ->
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            availableTimeSlots = timeSlots.sortedWith(
-                                compareBy(RefereeAvailableTimeSlot::dow)
-                                    .thenBy(RefereeAvailableTimeSlot::startMin)
-                            )
-                        )
-                    }
+            val availableTimeSlotsResult = getUserAvailableTimeSlotsUseCase()
+            val stripeAccountResult = getStripeAccountUseCase()
+
+            availableTimeSlotsResult.exceptionOrNull()?.let { error ->
+                Log.e(TAG, "Failed to load available time slots", error)
+            }
+            stripeAccountResult.exceptionOrNull()?.let { error ->
+                Log.e(TAG, "Failed to load stripe account", error)
+            }
+
+            _uiState.update { current ->
+                val sortedTimeSlots = availableTimeSlotsResult.getOrNull()
+                    ?.sortedWith(
+                        compareBy(RefereeAvailableTimeSlot::dow)
+                            .thenBy(RefereeAvailableTimeSlot::startMin)
+                    ) ?: current.availableTimeSlots
+
+                val stripeAccount = if (stripeAccountResult.isSuccess) {
+                    stripeAccountResult.getOrNull()
+                } else {
+                    current.stripeAccount
                 }
-                .onFailure { error -> 
-                    Log.e(TAG, "Failed to load available time slots", error)
-                    _uiState.update { it.copy(isLoading = false, error = error.message) } 
-                }
+
+                val errorMessage = availableTimeSlotsResult.exceptionOrNull()?.message
+                    ?: stripeAccountResult.exceptionOrNull()?.message
+
+                current.copy(
+                    isLoading = false,
+                    availableTimeSlots = sortedTimeSlots,
+                    stripeAccount = stripeAccount,
+                    error = errorMessage
+                )
+            }
         }
     }
 
@@ -73,7 +92,7 @@ class ProfileViewModel(
             addAvailableTimeSlotUseCase(params, currentState.availableTimeSlots)
                 .onSuccess {
                     _uiState.update { it.copy(isAddTimeSlotDialogVisible = false) }
-                    loadAvailableTimeSlots()
+                    loadProfileData()
                 }
                 .onFailure { error -> 
                     Log.e(TAG, "Failed to add available time slot", error)
@@ -85,12 +104,17 @@ class ProfileViewModel(
     private fun deleteAvailableTimeSlot(timeSlotId: String) {
         viewModelScope.launch {
             deleteAvailableTimeSlotUseCase(timeSlotId)
-                .onSuccess { loadAvailableTimeSlots() }
+                .onSuccess { loadProfileData() }
                 .onFailure { error -> 
                     Log.e(TAG, "Failed to delete available time slot with id: $timeSlotId", error)
                     _uiState.update { it.copy(error = error.message) } 
                 }
         }
+    }
+
+    private fun handlePaymentMethodClicked() {
+        // 決済フローは今後の実装で追加予定
+        Log.d(TAG, "Payment method setup clicked")
     }
 
     private fun createConnectLink() {

@@ -7,6 +7,7 @@ sealed class ProfileEvent {
     data object RefreshData : ProfileEvent()
     data object CreateConnectLink : ProfileEvent()
     data object ConnectLinkHandled : ProfileEvent()
+    data object SetupPaymentMethodClicked : ProfileEvent()
     data object AddTimeSlotClicked : ProfileEvent()
     data object AddTimeSlotDialogDismissed : ProfileEvent()
     data class DayOfWeekSelected(val day: Int) : ProfileEvent()

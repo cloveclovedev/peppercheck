@@ -17,6 +17,7 @@ import dev.cloveclove.peppercheck.ui.components.common.AppScaffold
 import dev.cloveclove.peppercheck.ui.components.profile.AddAvailableTimeSlotDialog
 import dev.cloveclove.peppercheck.ui.components.profile.ConnectAccountSection
 import dev.cloveclove.peppercheck.ui.components.profile.RefereeAvailableTimeSlotSection
+import dev.cloveclove.peppercheck.ui.components.profile.StripePaymentMethodSection
 import dev.cloveclove.peppercheck.ui.theme.TextBlack
 import dev.cloveclove.peppercheck.ui.theme.standardScreenPadding
 
@@ -69,6 +70,13 @@ fun ProfileScreen(
                         error = uiState.error,
                         onAddClick = { viewModel.onEvent(ProfileEvent.AddTimeSlotClicked) },
                         onDeleteClick = { id -> viewModel.onEvent(ProfileEvent.DeleteTimeSlot(id)) }
+                    )
+                }
+                item {
+                    StripePaymentMethodSection(
+                        stripeAccount = uiState.stripeAccount,
+                        isLoading = uiState.isLoading,
+                        onRegisterPaymentMethodClick = { viewModel.onEvent(ProfileEvent.SetupPaymentMethodClicked) }
                     )
                 }
                 item {

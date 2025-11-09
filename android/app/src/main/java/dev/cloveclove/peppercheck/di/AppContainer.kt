@@ -12,6 +12,7 @@ import dev.cloveclove.peppercheck.repository.RefereeAvailableTimeSlotRepository
 import dev.cloveclove.peppercheck.repository.TaskEvidenceRepository
 import dev.cloveclove.peppercheck.repository.TaskRefereeRequestRepository
 import dev.cloveclove.peppercheck.repository.TaskRepository
+import dev.cloveclove.peppercheck.repository.StripeRepository
 import dev.cloveclove.peppercheck.domain.home.GetHomeTasksUseCase
 import dev.cloveclove.peppercheck.domain.task.CreateTaskUseCase
 import dev.cloveclove.peppercheck.domain.task.GetTaskDetailsUseCase
@@ -28,6 +29,7 @@ import dev.cloveclove.peppercheck.domain.profile.AddAvailableTimeSlotUseCase
 import dev.cloveclove.peppercheck.domain.profile.CreateStripeConnectLinkUseCase
 import dev.cloveclove.peppercheck.domain.profile.DeleteAvailableTimeSlotUseCase
 import dev.cloveclove.peppercheck.domain.profile.GetUserAvailableTimeSlotsUseCase
+import dev.cloveclove.peppercheck.domain.profile.GetStripeAccountUseCase
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.createSupabaseClient
@@ -118,6 +120,10 @@ class AppContainer(private val contentResolver: ContentResolver) {
     val ratingRepository: RatingRepository by lazy {
         ApiRatingRepository(httpClient, authRepository)
     }
+    
+    val stripeRepository: StripeRepository by lazy {
+        StripeRepository(httpClient, authRepository)
+    }
 
     // Use Cases
     val getHomeTasksUseCase: GetHomeTasksUseCase by lazy {
@@ -143,6 +149,10 @@ class AppContainer(private val contentResolver: ContentResolver) {
     
     val createStripeConnectLinkUseCase: CreateStripeConnectLinkUseCase by lazy {
         CreateStripeConnectLinkUseCase(profileRepository)
+    }
+    
+    val getStripeAccountUseCase: GetStripeAccountUseCase by lazy {
+        GetStripeAccountUseCase(stripeRepository)
     }
 
     val getTaskDetailsUseCase: GetTaskDetailsUseCase by lazy {
