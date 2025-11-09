@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.cloveclove.peppercheck.data.referee_available_time_slot.RefereeAvailableTimeSlot
 import dev.cloveclove.peppercheck.domain.profile.*
+import com.stripe.android.paymentsheet.PaymentSheetResult
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -15,7 +16,8 @@ class ProfileViewModel(
     private val addAvailableTimeSlotUseCase: AddAvailableTimeSlotUseCase,
     private val deleteAvailableTimeSlotUseCase: DeleteAvailableTimeSlotUseCase,
     private val createStripeConnectLinkUseCase: CreateStripeConnectLinkUseCase,
-    private val getStripeAccountUseCase: GetStripeAccountUseCase
+    private val getStripeAccountUseCase: GetStripeAccountUseCase,
+    private val createStripePaymentSetupSessionUseCase: CreateStripePaymentSetupSessionUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfileUiState())
@@ -28,7 +30,10 @@ class ProfileViewModel(
             ProfileEvent.LoadData, ProfileEvent.RefreshData -> loadProfileData()
             ProfileEvent.CreateConnectLink -> createConnectLink()
             ProfileEvent.ConnectLinkHandled -> _uiState.update { it.copy(connectLinkState = ConnectLinkState.Idle) }
-            ProfileEvent.SetupPaymentMethodClicked -> handlePaymentMethodClicked()
+            ProfileEvent.SetupPaymentMethodClicked -> startPaymentMethodSetup()
+            ProfileEvent.PaymentSheetLaunchHandled -> _uiState.update { it.copy(paymentSheetSetupData = null) }
+            is ProfileEvent.PaymentSheetLaunchFailed -> handlePaymentSheetLaunchFailure(event.message)
+            is ProfileEvent.PaymentSheetResultReceived -> handlePaymentSheetResult(event.result)
             
             ProfileEvent.AddTimeSlotClicked -> _uiState.update { it.copy(isAddTimeSlotDialogVisible = true) }
             ProfileEvent.AddTimeSlotDialogDismissed -> _uiState.update { it.copy(isAddTimeSlotDialogVisible = false) }
@@ -112,9 +117,87 @@ class ProfileViewModel(
         }
     }
 
-    private fun handlePaymentMethodClicked() {
-        // 決済フローは今後の実装で追加予定
-        Log.d(TAG, "Payment method setup clicked")
+    private fun startPaymentMethodSetup() {
+        if (_uiState.value.isPaymentSheetInProgress) return
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(
+                    isPaymentSheetInProgress = true,
+                    paymentSheetError = null,
+                    paymentSheetMessage = null,
+                    paymentSheetSetupData = null
+                )
+            }
+
+            createStripePaymentSetupSessionUseCase()
+                .onSuccess { session ->
+                    _uiState.update { it.copy(paymentSheetSetupData = session) }
+                }
+                .onFailure { error ->
+                    Log.e(TAG, "Failed to create billing setup session", error)
+                    _uiState.update {
+                        it.copy(
+                            isPaymentSheetInProgress = false,
+                            paymentSheetError = error.message ?: "Failed to start payment setup"
+                        )
+                    }
+                }
+        }
+    }
+
+    private fun handlePaymentSheetLaunchFailure(message: String) {
+        _uiState.update {
+            it.copy(
+                isPaymentSheetInProgress = false,
+                paymentSheetSetupData = null,
+                paymentSheetError = message
+            )
+        }
+    }
+
+    private fun handlePaymentSheetResult(result: PaymentSheetResult) {
+        when (result) {
+            PaymentSheetResult.Completed -> {
+                _uiState.update {
+                    it.copy(
+                        isPaymentSheetInProgress = false,
+                        paymentSheetMessage = "Payment method successfully registered",
+                        paymentSheetError = null
+                    )
+                }
+                refreshStripeAccount()
+            }
+            PaymentSheetResult.Canceled -> {
+                _uiState.update {
+                    it.copy(
+                        isPaymentSheetInProgress = false,
+                        paymentSheetMessage = "Payment method setup canceled",
+                        paymentSheetError = null
+                    )
+                }
+            }
+            is PaymentSheetResult.Failed -> {
+                Log.e(TAG, "PaymentSheet failed", result.error)
+                _uiState.update {
+                    it.copy(
+                        isPaymentSheetInProgress = false,
+                        paymentSheetError = result.error.message ?: "Payment method setup failed"
+                    )
+                }
+            }
+        }
+    }
+
+    private fun refreshStripeAccount() {
+        viewModelScope.launch {
+            getStripeAccountUseCase()
+                .onSuccess { account ->
+                    _uiState.update { it.copy(stripeAccount = account) }
+                }
+                .onFailure { error ->
+                    Log.e(TAG, "Failed to refresh stripe account", error)
+                }
+        }
     }
 
     private fun createConnectLink() {
