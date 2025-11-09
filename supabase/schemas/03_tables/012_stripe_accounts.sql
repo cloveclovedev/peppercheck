@@ -1,0 +1,17 @@
+-- Table: stripe_accounts
+CREATE TABLE IF NOT EXISTS "public"."stripe_accounts" (
+    "profile_id" "uuid" NOT NULL,
+    "stripe_customer_id" "text",
+    -- Stripe Connect account ID will be stored here for referees in the future.
+    -- "stripe_connect_account_id" "text",
+    "default_payment_method_id" "text",
+    "pm_brand" "text",
+    "pm_last4" "text",
+    "pm_exp_month" integer,
+    "pm_exp_year" integer,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+ALTER TABLE "public"."stripe_accounts" OWNER TO "postgres";
+

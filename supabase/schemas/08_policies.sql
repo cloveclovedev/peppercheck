@@ -21,6 +21,7 @@ ALTER TABLE "public"."tasks" ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE "public"."user_ratings" ENABLE ROW LEVEL SECURITY;
 
+ALTER TABLE "public"."stripe_accounts" ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Judgements: insert if referee" ON "public"."judgements" FOR INSERT WITH CHECK (("referee_id" = ( SELECT "auth"."uid"() AS "uid")));
 
@@ -142,5 +143,7 @@ CREATE POLICY "task_referee_requests: select for owners and assigned referees" O
 CREATE POLICY "task_referee_requests: update for assigned referees" ON "public"."task_referee_requests" FOR UPDATE USING (("matched_referee_id" = ( SELECT "auth"."uid"() AS "uid"))) WITH CHECK (("matched_referee_id" = ( SELECT "auth"."uid"() AS "uid")));
 
 CREATE POLICY "user_ratings: select for all" ON "public"."user_ratings" FOR SELECT USING (true);
+
+CREATE POLICY "stripe_accounts: select if self" ON "public"."stripe_accounts" FOR SELECT USING (("profile_id" = ( SELECT "auth"."uid"() AS "uid")));
 
 COMMENT ON POLICY "Tasks: select if tasker, referee, or referee candidate" ON "public"."tasks" IS 'Allow access to task details for taskers, assigned referees, and referee candidates. Referee candidates can only see task information, not judgements or evidences.';

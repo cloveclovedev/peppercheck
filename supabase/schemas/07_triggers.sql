@@ -19,6 +19,8 @@ CREATE OR REPLACE TRIGGER "set_task_referee_requests_updated_at" BEFORE UPDATE O
 
 CREATE OR REPLACE TRIGGER "set_user_ratings_updated_at" BEFORE UPDATE ON "public"."user_ratings" FOR EACH ROW EXECUTE FUNCTION "public"."handle_updated_at"();
 
+CREATE OR REPLACE TRIGGER "set_stripe_accounts_updated_at" BEFORE UPDATE ON "public"."stripe_accounts" FOR EACH ROW EXECUTE FUNCTION "public"."handle_updated_at"();
+
 CREATE OR REPLACE TRIGGER "task_referee_requests_matching_trigger" AFTER INSERT OR UPDATE ON "public"."task_referee_requests" FOR EACH ROW EXECUTE FUNCTION "public"."trigger_process_matching"();
 
 CREATE OR REPLACE TRIGGER "on_auth_user_created" AFTER INSERT ON "auth"."users" FOR EACH ROW EXECUTE FUNCTION "public"."handle_new_user"();
