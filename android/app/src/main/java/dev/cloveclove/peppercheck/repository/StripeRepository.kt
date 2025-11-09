@@ -2,10 +2,12 @@ package dev.cloveclove.peppercheck.repository
 
 import dev.cloveclove.peppercheck.BuildConfig
 import dev.cloveclove.peppercheck.data.stripe.StripeAccount
+import dev.cloveclove.peppercheck.data.stripe.StripePaymentSetupSession
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.get
+import io.ktor.client.request.post
 import io.ktor.client.request.headers
 import io.ktor.http.HttpHeaders
 
@@ -34,6 +36,23 @@ class StripeRepository(
 
             val stripeAccounts: List<StripeAccount> = response.body()
             stripeAccounts.firstOrNull()
+        }
+    }
+
+    suspend fun createPaymentSetupSession(): Result<StripePaymentSetupSession> {
+        return runCatching {
+            val authToken = authRepository.getCurrentAuthToken()
+            val response = httpClient.post("$baseUrl/functions/v1/billing-setup") {
+                headers {
+                    append(HttpHeaders.Authorization, "Bearer $authToken")
+                }
+            }
+
+            if (response.status.value !in 200..299) {
+                throw IllegalStateException("Failed to create billing setup session: ${response.status}")
+            }
+
+            response.body<StripePaymentSetupSession>()
         }
     }
 }

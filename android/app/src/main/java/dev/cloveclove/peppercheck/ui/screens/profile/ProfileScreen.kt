@@ -4,9 +4,17 @@ import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.*
-import androidx.compose.material3.pulltorefresh.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -20,6 +28,8 @@ import dev.cloveclove.peppercheck.ui.components.profile.RefereeAvailableTimeSlot
 import dev.cloveclove.peppercheck.ui.components.profile.StripePaymentMethodSection
 import dev.cloveclove.peppercheck.ui.theme.TextBlack
 import dev.cloveclove.peppercheck.ui.theme.standardScreenPadding
+import com.stripe.android.paymentsheet.PaymentSheet
+import com.stripe.android.paymentsheet.rememberPaymentSheet
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -31,6 +41,10 @@ fun ProfileScreen(
     val pullToRefreshState = rememberPullToRefreshState()
     val context = LocalContext.current
 
+    val paymentSheet = rememberPaymentSheet { result ->
+        viewModel.onEvent(ProfileEvent.PaymentSheetResultReceived(result))
+    }
+
     LaunchedEffect(uiState.connectLinkState) {
         if (uiState.connectLinkState is ConnectLinkState.Success) {
             val url = (uiState.connectLinkState as ConnectLinkState.Success).url
@@ -38,6 +52,39 @@ fun ProfileScreen(
             context.startActivity(intent)
             viewModel.onEvent(ProfileEvent.ConnectLinkHandled)
         }
+    }
+
+    LaunchedEffect(uiState.paymentSheetSetupData) {
+        val setupData = uiState.paymentSheetSetupData ?: return@LaunchedEffect
+        val hasRequiredSecrets = setupData.setupIntentClientSecret.isNotBlank() &&
+            setupData.ephemeralKeySecret.isNotBlank()
+
+        val presentationResult = if (hasRequiredSecrets) {
+            runCatching {
+                paymentSheet.presentWithSetupIntent(
+                    setupData.setupIntentClientSecret,
+                    PaymentSheet.Configuration(
+                        merchantDisplayName = "Peppercheck",
+                        customer = PaymentSheet.CustomerConfiguration(
+                            setupData.customerId,
+                            setupData.ephemeralKeySecret
+                        )
+                    )
+                )
+            }
+        } else {
+            Result.failure(IllegalStateException("Missing Stripe secrets for PaymentSheet"))
+        }
+
+        presentationResult.exceptionOrNull()?.let { error ->
+            viewModel.onEvent(
+                ProfileEvent.PaymentSheetLaunchFailed(
+                    error.message ?: "Failed to open payment sheet"
+                )
+            )
+        }
+
+        viewModel.onEvent(ProfileEvent.PaymentSheetLaunchHandled)
     }
 
     AppScaffold(
@@ -75,7 +122,9 @@ fun ProfileScreen(
                 item {
                     StripePaymentMethodSection(
                         stripeAccount = uiState.stripeAccount,
-                        isLoading = uiState.isLoading,
+                        isSetupInProgress = uiState.isPaymentSheetInProgress,
+                        statusMessage = uiState.paymentSheetMessage,
+                        errorMessage = uiState.paymentSheetError,
                         onRegisterPaymentMethodClick = { viewModel.onEvent(ProfileEvent.SetupPaymentMethodClicked) }
                     )
                 }

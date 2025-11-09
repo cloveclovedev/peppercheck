@@ -2,6 +2,7 @@ package dev.cloveclove.peppercheck.ui.screens.profile
 
 import dev.cloveclove.peppercheck.data.referee_available_time_slot.RefereeAvailableTimeSlot
 import dev.cloveclove.peppercheck.data.stripe.StripeAccount
+import dev.cloveclove.peppercheck.data.stripe.StripePaymentSetupSession
 import java.time.LocalTime
 
 data class ProfileUiState(
@@ -10,6 +11,10 @@ data class ProfileUiState(
     val error: String? = null,
     val connectLinkState: ConnectLinkState = ConnectLinkState.Idle,
     val stripeAccount: StripeAccount? = null,
+    val isPaymentSheetInProgress: Boolean = false,
+    val paymentSheetSetupData: StripePaymentSetupSession? = null,
+    val paymentSheetMessage: String? = null,
+    val paymentSheetError: String? = null,
     val isAddTimeSlotDialogVisible: Boolean = false,
     val dialogSelectedDay: Int = 1, // Monday
     val dialogStartTime: LocalTime = LocalTime.of(9, 0),

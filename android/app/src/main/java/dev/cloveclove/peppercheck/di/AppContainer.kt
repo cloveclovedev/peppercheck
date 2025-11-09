@@ -30,6 +30,7 @@ import dev.cloveclove.peppercheck.domain.profile.CreateStripeConnectLinkUseCase
 import dev.cloveclove.peppercheck.domain.profile.DeleteAvailableTimeSlotUseCase
 import dev.cloveclove.peppercheck.domain.profile.GetUserAvailableTimeSlotsUseCase
 import dev.cloveclove.peppercheck.domain.profile.GetStripeAccountUseCase
+import dev.cloveclove.peppercheck.domain.profile.CreateStripePaymentSetupSessionUseCase
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.createSupabaseClient
@@ -153,6 +154,10 @@ class AppContainer(private val contentResolver: ContentResolver) {
     
     val getStripeAccountUseCase: GetStripeAccountUseCase by lazy {
         GetStripeAccountUseCase(stripeRepository)
+    }
+
+    val createStripePaymentSetupSessionUseCase: CreateStripePaymentSetupSessionUseCase by lazy {
+        CreateStripePaymentSetupSessionUseCase(stripeRepository)
     }
 
     val getTaskDetailsUseCase: GetTaskDetailsUseCase by lazy {
