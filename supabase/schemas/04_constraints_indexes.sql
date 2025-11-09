@@ -95,6 +95,15 @@ ALTER TABLE ONLY "public"."task_referee_requests"
 ALTER TABLE ONLY "public"."tasks"
     ADD CONSTRAINT "tasks_tasker_id_fkey" FOREIGN KEY ("tasker_id") REFERENCES "public"."profiles"("id") ON DELETE SET NULL;
 
+ALTER TABLE ONLY "public"."stripe_accounts"
+    ADD CONSTRAINT "stripe_accounts_pkey" PRIMARY KEY ("profile_id");
+
+ALTER TABLE ONLY "public"."stripe_accounts"
+    ADD CONSTRAINT "stripe_accounts_stripe_customer_id_key" UNIQUE ("stripe_customer_id");
+
+ALTER TABLE ONLY "public"."stripe_accounts"
+    ADD CONSTRAINT "stripe_accounts_profile_id_fkey" FOREIGN KEY ("profile_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE;
+
 
 ALTER TABLE ONLY "public"."user_ratings"
     ADD CONSTRAINT "user_ratings_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE;
@@ -149,4 +158,3 @@ CREATE INDEX "idx_tasks_status" ON "public"."tasks" USING "btree" ("status");
 CREATE INDEX "idx_tasks_status_tasker_id" ON "public"."tasks" USING "btree" ("status", "tasker_id");
 
 CREATE INDEX "idx_tasks_tasker_id" ON "public"."tasks" USING "btree" ("tasker_id");
-
