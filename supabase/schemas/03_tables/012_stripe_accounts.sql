@@ -2,8 +2,10 @@
 CREATE TABLE IF NOT EXISTS "public"."stripe_accounts" (
     "profile_id" "uuid" NOT NULL,
     "stripe_customer_id" "text",
-    -- Stripe Connect account ID will be stored here for referees in the future.
-    -- "stripe_connect_account_id" "text",
+    "stripe_connect_account_id" "text",
+    "charges_enabled" boolean DEFAULT false,
+    "payouts_enabled" boolean DEFAULT false,
+    "connect_requirements" jsonb,
     "default_payment_method_id" "text",
     "pm_brand" "text",
     "pm_last4" "text",
@@ -14,4 +16,3 @@ CREATE TABLE IF NOT EXISTS "public"."stripe_accounts" (
 );
 
 ALTER TABLE "public"."stripe_accounts" OWNER TO "postgres";
-

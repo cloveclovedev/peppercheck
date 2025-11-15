@@ -102,6 +102,9 @@ ALTER TABLE ONLY "public"."stripe_accounts"
     ADD CONSTRAINT "stripe_accounts_stripe_customer_id_key" UNIQUE ("stripe_customer_id");
 
 ALTER TABLE ONLY "public"."stripe_accounts"
+    ADD CONSTRAINT "stripe_accounts_stripe_connect_account_id_key" UNIQUE ("stripe_connect_account_id");
+
+ALTER TABLE ONLY "public"."stripe_accounts"
     ADD CONSTRAINT "stripe_accounts_profile_id_fkey" FOREIGN KEY ("profile_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE;
 
 
