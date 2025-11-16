@@ -65,6 +65,9 @@ Deno.serve(async (req) => {
 
   try {
     switch (event.type) {
+      case "account.updated":
+        await handleAccountUpdated(event.data.object as Stripe.Account)
+        break
       case "setup_intent.succeeded":
         await handleSetupIntentSucceeded(event.data.object as Stripe.SetupIntent)
         break
@@ -82,6 +85,64 @@ Deno.serve(async (req) => {
 
   return new Response(JSON.stringify({ received: true }), { headers: jsonHeaders })
 })
+
+async function handleAccountUpdated(account: Stripe.Account) {
+  const connectAccountId = account.id
+  if (!connectAccountId) {
+    console.warn("account.updated event missing account id")
+    return
+  }
+
+  const updatePayload = {
+    charges_enabled: account.charges_enabled ?? false,
+    payouts_enabled: account.payouts_enabled ?? false,
+    connect_requirements: account.requirements ?? null,
+    stripe_connect_account_id: connectAccountId,
+  }
+
+  const { error, count } = await supabase
+    .from("stripe_accounts")
+    .update(updatePayload)
+    .eq("stripe_connect_account_id", connectAccountId)
+    .select("profile_id", { count: "exact", head: true })
+
+  if (error) {
+    console.error("Failed to update stripe_accounts by connect account id", error.message)
+    throw error
+  }
+
+  if (count && count > 0) {
+    return
+  }
+
+  const profileId = extractProfileIdFromAccount(account)
+  if (!profileId) {
+    console.warn(
+      `No stripe_accounts row found for connect account ${connectAccountId} and profile_id metadata missing`,
+    )
+    return
+  }
+
+  const { error: profileUpdateError, count: profileUpdateCount } = await supabase
+    .from("stripe_accounts")
+    .update(updatePayload)
+    .eq("profile_id", profileId)
+    .select("profile_id", { count: "exact", head: true })
+
+  if (profileUpdateError) {
+    console.error(
+      `Failed to update stripe_accounts for profile ${profileId}`,
+      profileUpdateError.message,
+    )
+    throw profileUpdateError
+  }
+
+  if (!profileUpdateCount || profileUpdateCount === 0) {
+    console.warn(
+      `No stripe_accounts row updated for profile ${profileId} while handling connect account ${connectAccountId}`,
+    )
+  }
+}
 
 async function handleSetupIntentSucceeded(setupIntent: Stripe.SetupIntent) {
   const customerId = extractCustomerId(setupIntent)
@@ -150,6 +211,15 @@ async function fetchPaymentMethod(
     return paymentMethodRef
   }
   return await stripe.paymentMethods.retrieve(paymentMethodRef)
+}
+
+function extractProfileIdFromAccount(account: Stripe.Account): string | null {
+  if (!account.metadata) {
+    return null
+  }
+  const metadata = account.metadata as Record<string, string | undefined>
+  const profileId = metadata["profile_id"] ?? metadata["profileId"]
+  return profileId ?? null
 }
 
 /* To invoke locally:
