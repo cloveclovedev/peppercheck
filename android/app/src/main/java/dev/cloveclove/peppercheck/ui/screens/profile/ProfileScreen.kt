@@ -130,6 +130,7 @@ fun ProfileScreen(
                 }
                 item {
                     ConnectAccountSection(
+                        stripeAccount = uiState.stripeAccount,
                         connectLinkState = uiState.connectLinkState,
                         onSetupClick = { viewModel.onEvent(ProfileEvent.CreateConnectLink) }
                     )

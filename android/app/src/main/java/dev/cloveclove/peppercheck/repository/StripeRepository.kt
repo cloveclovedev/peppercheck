@@ -3,6 +3,7 @@ package dev.cloveclove.peppercheck.repository
 import dev.cloveclove.peppercheck.BuildConfig
 import dev.cloveclove.peppercheck.data.stripe.StripeAccount
 import dev.cloveclove.peppercheck.data.stripe.StripePaymentSetupSession
+import dev.cloveclove.peppercheck.data.stripe.StripePayoutSetupLink
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.HttpRequestBuilder
@@ -53,6 +54,23 @@ class StripeRepository(
             }
 
             response.body<StripePaymentSetupSession>()
+        }
+    }
+
+    suspend fun createPayoutSetupLink(): Result<String> {
+        return runCatching {
+            val authToken = authRepository.getCurrentAuthToken()
+            val response = httpClient.post("$baseUrl/functions/v1/payout-setup") {
+                headers {
+                    append(HttpHeaders.Authorization, "Bearer $authToken")
+                }
+            }
+
+            if (response.status.value !in 200..299) {
+                throw IllegalStateException("Failed to create payout setup link: ${response.status}")
+            }
+
+            response.body<StripePayoutSetupLink>().url
         }
     }
 }

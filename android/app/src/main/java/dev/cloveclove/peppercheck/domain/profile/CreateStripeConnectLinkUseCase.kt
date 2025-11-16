@@ -1,12 +1,11 @@
 package dev.cloveclove.peppercheck.domain.profile
 
-import dev.cloveclove.peppercheck.repository.ProfileRepository
+import dev.cloveclove.peppercheck.repository.StripeRepository
 
 class CreateStripeConnectLinkUseCase(
-    private val profileRepository: ProfileRepository
+    private val stripeRepository: StripeRepository
 ) {
     suspend operator fun invoke(): Result<String> {
-        // Stripe Connect Link作成のロジックはProfileRepositoryに移動することを想定
-        return profileRepository.createConnectLink()
+        return stripeRepository.createPayoutSetupLink()
     }
 }
