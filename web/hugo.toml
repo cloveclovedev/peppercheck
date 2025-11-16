@@ -1,5 +1,5 @@
 baseURL = 'https://peppercheck.com/'
-defaultContentLanguage = 'ja'
+defaultContentLanguage = 'en'
 defaultContentLanguageInSubdir = true
 disableKinds = ['taxonomy', 'term']
 enableRobotsTXT = true
@@ -22,24 +22,24 @@ theme = 'peppercheck'
 
 [languages]
 
-  [languages.ja]
-    contentDir = 'content/ja'
-    languageCode = 'ja-JP'
-    languageDirection = 'ltr'
-    languageName = '日本語'
-    title = 'Peppercheck'
-    weight = 1
-
-    [languages.ja.params]
-      ctaPrimaryUrl = 'https://appdistribution.firebase.dev/i/b222a23741c5d83f'
-
   [languages.en]
     contentDir = 'content/en'
     languageCode = 'en-US'
     languageDirection = 'ltr'
     languageName = 'English'
     title = 'Peppercheck'
-    weight = 2
+    weight = 1
 
     [languages.en.params]
+      ctaPrimaryUrl = 'https://appdistribution.firebase.dev/i/b222a23741c5d83f'
+
+  [languages.ja]
+    contentDir = 'content/ja'
+    languageCode = 'ja-JP'
+    languageDirection = 'ltr'
+    languageName = '日本語'
+    title = 'Peppercheck'
+    weight = 2
+
+    [languages.ja.params]
       ctaPrimaryUrl = 'https://appdistribution.firebase.dev/i/b222a23741c5d83f'
