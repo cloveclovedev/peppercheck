@@ -149,7 +149,7 @@ class AppContainer(private val contentResolver: ContentResolver) {
     }
     
     val createStripeConnectLinkUseCase: CreateStripeConnectLinkUseCase by lazy {
-        CreateStripeConnectLinkUseCase(profileRepository)
+        CreateStripeConnectLinkUseCase(stripeRepository)
     }
     
     val getStripeAccountUseCase: GetStripeAccountUseCase by lazy {

@@ -37,8 +37,4 @@ class ProfileRepository(
         }
     }
 
-    suspend fun createConnectLink(): Result<String> {
-        // Stripe Connect Edge Function has been removed, so this endpoint is no longer available
-        return Result.failure(IllegalStateException("Stripe Connect link generation is currently unavailable."))
-    }
 }
