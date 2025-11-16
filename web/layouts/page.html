@@ -1,0 +1,11 @@
+{{ define "header" }}
+  {{ partial "header.html" . }}
+{{ end }}
+
+{{ define "main" }}
+  <section class="section">
+    <article>
+      {{ .Content }}
+    </article>
+  </section>
+{{ end }}
