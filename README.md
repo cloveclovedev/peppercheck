@@ -38,6 +38,23 @@ These configuration files are intentionally excluded from version control, so ea
      ```
    You can also rely on the supplied GitHub Actions for CI/CD if preferred.
 
+## Edge Function formatting & linting
+
+Supabase Edge Functions are written in TypeScript (Deno). A minimal toolchain is provided to
+keep them consistent locally and inside pull requests:
+
+- `.pre-commit-config.yaml` runs `deno fmt --check` and `deno lint` against every
+  `supabase/functions/**` file. Install it once with `pip install pre-commit && pre-commit install`,
+  then the checks run automatically before each commit or manually via `pre-commit run --all-files`.
+- `supabase/deno.jsonc` defines the shared formatting/linting scope so every function follows the
+  same line width, quote style, and lint rule-set.
+- `.vscode/settings.json` enables the official Deno extension only for `supabase/functions`, turns on
+  format-on-save, and applies the same config while editing so you see formatter/lint feedback in the
+  editor.
+
+Ensure you have Deno installed locally (<https://deno.com/manual/getting_started/installation>) so
+that both pre-commit hooks and the VS Code extension can execute.
+
 ## Cloudflare Gateway Worker
 
 The repository includes `cloudflare/gateway-proxy`, a Cloudflare Worker that proxies API traffic to Supabase.

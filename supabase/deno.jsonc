@@ -1,0 +1,28 @@
+// Shared Deno configuration for Supabase Edge Functions
+{
+  "fmt": {
+    "files": {
+      "include": ["functions"],
+      "exclude": [
+        "functions/**/node_modules",
+        "functions/**/dist",
+        "functions/**/vendor"
+      ]
+    },
+    "options": {
+      "lineWidth": 100,
+      "indentWidth": 2,
+      "useTabs": false,
+      "singleQuote": true,
+      "proseWrap": "preserve"
+    }
+  },
+  "lint": {
+    "files": {
+      "include": ["functions"]
+    },
+    "rules": {
+      "tags": ["recommended"]
+    }
+  }
+}
