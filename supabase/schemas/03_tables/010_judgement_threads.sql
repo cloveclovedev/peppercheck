@@ -10,3 +10,6 @@ CREATE TABLE IF NOT EXISTS "public"."judgement_threads" (
 
 ALTER TABLE "public"."judgement_threads" OWNER TO "postgres";
 
+ALTER TABLE ONLY "public"."judgement_threads"
+    ADD CONSTRAINT "judgement_threads_pkey" PRIMARY KEY ("id");
+

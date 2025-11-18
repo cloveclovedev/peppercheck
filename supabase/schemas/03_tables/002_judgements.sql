@@ -14,3 +14,6 @@ CREATE TABLE IF NOT EXISTS "public"."judgements" (
 
 ALTER TABLE "public"."judgements" OWNER TO "postgres";
 
+ALTER TABLE ONLY "public"."judgements"
+    ADD CONSTRAINT "judgements_pkey" PRIMARY KEY ("id");
+

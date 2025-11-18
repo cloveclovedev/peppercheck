@@ -13,3 +13,6 @@ CREATE TABLE IF NOT EXISTS "public"."task_evidence_assets" (
 
 ALTER TABLE "public"."task_evidence_assets" OWNER TO "postgres";
 
+ALTER TABLE ONLY "public"."task_evidence_assets"
+    ADD CONSTRAINT "task_evidence_assets_pkey" PRIMARY KEY ("id");
+

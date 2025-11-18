@@ -15,3 +15,6 @@ CREATE TABLE IF NOT EXISTS "public"."task_referee_requests" (
 
 ALTER TABLE "public"."task_referee_requests" OWNER TO "postgres";
 
+ALTER TABLE ONLY "public"."task_referee_requests"
+    ADD CONSTRAINT "task_referee_requests_pkey" PRIMARY KEY ("id");
+

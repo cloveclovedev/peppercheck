@@ -15,3 +15,6 @@ CREATE TABLE IF NOT EXISTS "public"."tasks" (
 
 ALTER TABLE "public"."tasks" OWNER TO "postgres";
 
+ALTER TABLE ONLY "public"."tasks"
+    ADD CONSTRAINT "tasks_pkey" PRIMARY KEY ("id");
+

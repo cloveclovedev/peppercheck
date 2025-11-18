@@ -16,3 +16,12 @@ CREATE TABLE IF NOT EXISTS "public"."stripe_accounts" (
 );
 
 ALTER TABLE "public"."stripe_accounts" OWNER TO "postgres";
+
+ALTER TABLE ONLY "public"."stripe_accounts"
+    ADD CONSTRAINT "stripe_accounts_pkey" PRIMARY KEY ("profile_id");
+
+ALTER TABLE ONLY "public"."stripe_accounts"
+    ADD CONSTRAINT "stripe_accounts_stripe_customer_id_key" UNIQUE ("stripe_customer_id");
+
+ALTER TABLE ONLY "public"."stripe_accounts"
+    ADD CONSTRAINT "stripe_accounts_stripe_connect_account_id_key" UNIQUE ("stripe_connect_account_id");
