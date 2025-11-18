@@ -15,3 +15,8 @@ CREATE TABLE IF NOT EXISTS "public"."rating_histories" (
 
 ALTER TABLE "public"."rating_histories" OWNER TO "postgres";
 
+-- Indexes
+CREATE INDEX "idx_rating_histories_task_id" ON "public"."rating_histories" USING "btree" ("task_id");
+CREATE INDEX "idx_rating_histories_user_id" ON "public"."rating_histories" USING "btree" ("ratee_id");
+CREATE INDEX "idx_rating_histories_user_type" ON "public"."rating_histories" USING "btree" ("ratee_id", "rating_type");
+

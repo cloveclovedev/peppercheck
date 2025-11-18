@@ -16,3 +16,7 @@ CREATE TABLE IF NOT EXISTS "public"."referee_available_time_slots" (
 
 ALTER TABLE "public"."referee_available_time_slots" OWNER TO "postgres";
 
+-- Indexes
+CREATE INDEX "idx_referee_available_time_slots_dow_time" ON "public"."referee_available_time_slots" USING "btree" ("dow", "start_min", "end_min") WHERE ("is_active" = true);
+CREATE INDEX "idx_referee_available_time_slots_user_id" ON "public"."referee_available_time_slots" USING "btree" ("user_id");
+

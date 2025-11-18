@@ -14,3 +14,8 @@ CREATE TABLE IF NOT EXISTS "public"."judgements" (
 
 ALTER TABLE "public"."judgements" OWNER TO "postgres";
 
+-- Indexes
+CREATE INDEX "idx_judgements_evidence_timeout_confirmed" ON "public"."judgements" USING "btree" ("is_evidence_timeout_confirmed") WHERE ("status" = 'evidence_timeout'::"text");
+CREATE INDEX "idx_judgements_referee_id" ON "public"."judgements" USING "btree" ("referee_id");
+CREATE INDEX "idx_judgements_task_id" ON "public"."judgements" USING "btree" ("task_id");
+

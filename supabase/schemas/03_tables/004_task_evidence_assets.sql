@@ -13,3 +13,8 @@ CREATE TABLE IF NOT EXISTS "public"."task_evidence_assets" (
 
 ALTER TABLE "public"."task_evidence_assets" OWNER TO "postgres";
 
+-- Indexes
+CREATE INDEX "idx_task_evidence_assets_evidence_id" ON "public"."task_evidence_assets" USING "btree" ("evidence_id");
+CREATE INDEX "idx_task_evidence_assets_processing_status" ON "public"."task_evidence_assets" USING "btree" ("processing_status");
+CREATE INDEX "idx_task_evidence_assets_public_url" ON "public"."task_evidence_assets" USING "btree" ("public_url");
+

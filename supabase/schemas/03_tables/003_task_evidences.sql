@@ -11,3 +11,7 @@ CREATE TABLE IF NOT EXISTS "public"."task_evidences" (
 
 ALTER TABLE "public"."task_evidences" OWNER TO "postgres";
 
+-- Indexes
+CREATE INDEX "idx_task_evidences_status" ON "public"."task_evidences" USING "btree" ("status");
+CREATE INDEX "idx_task_evidences_task_id" ON "public"."task_evidences" USING "btree" ("task_id");
+

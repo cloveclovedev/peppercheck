@@ -11,3 +11,6 @@ CREATE TABLE IF NOT EXISTS "public"."profiles" (
 
 ALTER TABLE "public"."profiles" OWNER TO "postgres";
 
+-- Indexes
+CREATE INDEX "idx_profiles_timezone" ON "public"."profiles" USING "btree" ("timezone");
+
