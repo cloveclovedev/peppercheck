@@ -1,0 +1,17 @@
+repos:
+  - repo: local
+    hooks:
+      - id: deno-fmt
+        name: Deno fmt (Edge Functions)
+        entry: deno fmt --config supabase/deno.jsonc --check
+        language: system
+        types_or: [ts, tsx, js, jsx]
+        pass_filenames: false
+        files: ^supabase/functions/
+      - id: deno-lint
+        name: Deno lint (Edge Functions)
+        entry: deno lint --config supabase/deno.jsonc
+        language: system
+        types_or: [ts, tsx, js, jsx]
+        pass_filenames: false
+        files: ^supabase/functions/
