@@ -16,3 +16,9 @@ CREATE TABLE IF NOT EXISTS "public"."referee_available_time_slots" (
 
 ALTER TABLE "public"."referee_available_time_slots" OWNER TO "postgres";
 
+ALTER TABLE ONLY "public"."referee_available_time_slots"
+    ADD CONSTRAINT "referee_available_time_slots_pkey" PRIMARY KEY ("id");
+
+ALTER TABLE ONLY "public"."referee_available_time_slots"
+    ADD CONSTRAINT "referee_available_time_slots_user_id_dow_start_min_key" UNIQUE ("user_id", "dow", "start_min");
+

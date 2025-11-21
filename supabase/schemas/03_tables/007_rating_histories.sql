@@ -15,3 +15,9 @@ CREATE TABLE IF NOT EXISTS "public"."rating_histories" (
 
 ALTER TABLE "public"."rating_histories" OWNER TO "postgres";
 
+ALTER TABLE ONLY "public"."rating_histories"
+    ADD CONSTRAINT "rating_history_pkey" PRIMARY KEY ("id");
+
+ALTER TABLE ONLY "public"."rating_histories"
+    ADD CONSTRAINT "unique_rating_per_judgement" UNIQUE ("rater_id", "ratee_id", "judgement_id");
+
