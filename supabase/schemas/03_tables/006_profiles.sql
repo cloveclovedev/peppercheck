@@ -17,3 +17,5 @@ ALTER TABLE ONLY "public"."profiles"
 ALTER TABLE ONLY "public"."profiles"
     ADD CONSTRAINT "profiles_username_key" UNIQUE ("username");
 
+-- Indexes
+CREATE INDEX "idx_profiles_timezone" ON "public"."profiles" USING "btree" ("timezone");

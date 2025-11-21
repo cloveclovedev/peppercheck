@@ -12,3 +12,5 @@ ALTER TABLE "public"."judgement_thread_assets" OWNER TO "postgres";
 ALTER TABLE ONLY "public"."judgement_thread_assets"
     ADD CONSTRAINT "judgement_thread_assets_pkey" PRIMARY KEY ("id");
 
+-- Indexes
+CREATE INDEX "idx_judgement_thread_assets_thread_id" ON "public"."judgement_thread_assets" USING "btree" ("thread_id");

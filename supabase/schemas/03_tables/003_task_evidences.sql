@@ -14,3 +14,6 @@ ALTER TABLE "public"."task_evidences" OWNER TO "postgres";
 ALTER TABLE ONLY "public"."task_evidences"
     ADD CONSTRAINT "task_evidences_pkey" PRIMARY KEY ("id");
 
+-- Indexes
+CREATE INDEX "idx_task_evidences_status" ON "public"."task_evidences" USING "btree" ("status");
+CREATE INDEX "idx_task_evidences_task_id" ON "public"."task_evidences" USING "btree" ("task_id");

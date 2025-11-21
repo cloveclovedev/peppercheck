@@ -22,3 +22,6 @@ ALTER TABLE ONLY "public"."referee_available_time_slots"
 ALTER TABLE ONLY "public"."referee_available_time_slots"
     ADD CONSTRAINT "referee_available_time_slots_user_id_dow_start_min_key" UNIQUE ("user_id", "dow", "start_min");
 
+-- Indexes
+CREATE INDEX "idx_referee_available_time_slots_dow_time" ON "public"."referee_available_time_slots" USING "btree" ("dow", "start_min", "end_min") WHERE ("is_active" = true);
+CREATE INDEX "idx_referee_available_time_slots_user_id" ON "public"."referee_available_time_slots" USING "btree" ("user_id");
