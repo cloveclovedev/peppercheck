@@ -1,6 +1,6 @@
 -- Functions grouped in 003_matching_core.sql
-CREATE OR REPLACE FUNCTION "public"."process_matching"("p_request_id" "uuid") RETURNS "json"
-    LANGUAGE "plpgsql" SECURITY DEFINER
+CREATE OR REPLACE FUNCTION public.process_matching(p_request_id uuid) RETURNS json
+    LANGUAGE plpgsql SECURITY DEFINER
     SET search_path = ''
     AS $$
 DECLARE
@@ -191,12 +191,12 @@ EXCEPTION
 END;
 $$;
 
-ALTER FUNCTION "public"."process_matching"("p_request_id" "uuid") OWNER TO "postgres";
+ALTER FUNCTION public.process_matching(p_request_id uuid) OWNER TO postgres;
 
-COMMENT ON FUNCTION "public"."process_matching"("p_request_id" "uuid") IS 'Fixed version: Core function to process matching for a single task referee request. Fixes array_length NULL handling and replaces loop-based approach with efficient SQL query. Used by both trigger and batch processing.';
+COMMENT ON FUNCTION public.process_matching(p_request_id uuid) IS 'Fixed version: Core function to process matching for a single task referee request. Fixes array_length NULL handling and replaces loop-based approach with efficient SQL query. Used by both trigger and batch processing.';
 
-CREATE OR REPLACE FUNCTION "public"."trigger_process_matching"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
+CREATE OR REPLACE FUNCTION public.trigger_process_matching() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
     SET search_path = ''
     AS $$
 DECLARE
@@ -217,6 +217,6 @@ BEGIN
 END;
 $$;
 
-ALTER FUNCTION "public"."trigger_process_matching"() OWNER TO "postgres";
+ALTER FUNCTION public.trigger_process_matching() OWNER TO postgres;
 
-COMMENT ON FUNCTION "public"."trigger_process_matching"() IS 'Main trigger function that processes matching in real-time when task_referee_requests are inserted or updated to pending status. This is the primary processing mechanism.';
+COMMENT ON FUNCTION public.trigger_process_matching() IS 'Main trigger function that processes matching in real-time when task_referee_requests are inserted or updated to pending status. This is the primary processing mechanism.';

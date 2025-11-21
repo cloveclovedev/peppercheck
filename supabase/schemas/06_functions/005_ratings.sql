@@ -1,6 +1,6 @@
 -- Functions grouped in 005_ratings.sql
-CREATE OR REPLACE FUNCTION "public"."confirm_judgement_and_rate_referee"("p_task_id" "uuid", "p_judgement_id" "uuid", "p_ratee_id" "uuid", "p_rating" integer, "p_comment" "text") RETURNS "void"
-    LANGUAGE "plpgsql"
+CREATE OR REPLACE FUNCTION public.confirm_judgement_and_rate_referee(p_task_id uuid, p_judgement_id uuid, p_ratee_id uuid, p_rating integer, p_comment text) RETURNS void
+    LANGUAGE plpgsql
     SET search_path = ''
     AS $$
 DECLARE
@@ -34,10 +34,10 @@ BEGIN
 END;
 $$;
 
-ALTER FUNCTION "public"."confirm_judgement_and_rate_referee"("p_task_id" "uuid", "p_judgement_id" "uuid", "p_ratee_id" "uuid", "p_rating" integer, "p_comment" "text") OWNER TO "postgres";
+ALTER FUNCTION public.confirm_judgement_and_rate_referee(p_task_id uuid, p_judgement_id uuid, p_ratee_id uuid, p_rating integer, p_comment text) OWNER TO postgres;
 
-CREATE OR REPLACE FUNCTION "public"."set_rater_id"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
+CREATE OR REPLACE FUNCTION public.set_rater_id() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
     SET search_path = ''
     AS $$
 BEGIN
@@ -49,10 +49,10 @@ BEGIN
 END;
 $$;
 
-ALTER FUNCTION "public"."set_rater_id"() OWNER TO "postgres";
+ALTER FUNCTION public.set_rater_id() OWNER TO postgres;
 
-CREATE OR REPLACE FUNCTION "public"."update_user_ratings"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
+CREATE OR REPLACE FUNCTION public.update_user_ratings() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
     SET search_path = ''
     AS $$
 DECLARE
@@ -88,4 +88,4 @@ BEGIN
 END;
 $$;
 
-ALTER FUNCTION "public"."update_user_ratings"() OWNER TO "postgres";
+ALTER FUNCTION public.update_user_ratings() OWNER TO postgres;

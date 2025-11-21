@@ -1,3 +1,3 @@
 -- Schema definitions and metadata
-COMMENT ON SCHEMA "public" IS 'standard public schema';
+COMMENT ON SCHEMA public IS 'standard public schema';
 

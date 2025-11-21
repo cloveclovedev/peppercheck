@@ -1,7 +1,7 @@
 -- Functions grouped in 001_util_updated_at.sql
-CREATE OR REPLACE FUNCTION "public"."handle_updated_at"() RETURNS "trigger"
-    LANGUAGE "plpgsql"
-    SET "search_path" TO ''
+CREATE OR REPLACE FUNCTION public.handle_updated_at() RETURNS trigger
+    LANGUAGE plpgsql
+    SET search_path TO ''
     AS $$
 BEGIN
   NEW.updated_at = NOW();
@@ -9,5 +9,5 @@ BEGIN
 END;
 $$;
 
-ALTER FUNCTION "public"."handle_updated_at"() OWNER TO "postgres";
+ALTER FUNCTION public.handle_updated_at() OWNER TO postgres;
 

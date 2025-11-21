@@ -1,6 +1,6 @@
 -- Functions grouped in 004_time_limits.sql
-CREATE OR REPLACE FUNCTION "public"."auto_score_timeout_referee"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
+CREATE OR REPLACE FUNCTION public.auto_score_timeout_referee() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
     SET search_path = ''
     AS $$
 DECLARE
@@ -58,12 +58,12 @@ BEGIN
 END;
 $$;
 
-ALTER FUNCTION "public"."auto_score_timeout_referee"() OWNER TO "postgres";
+ALTER FUNCTION public.auto_score_timeout_referee() OWNER TO postgres;
 
-COMMENT ON FUNCTION "public"."auto_score_timeout_referee"() IS 'Corrected version: Automatically scores referee as 0 when a judgement_timeout is confirmed by the tasker. Only inserts into rating_histories - user_ratings table is updated automatically by existing trigger system. This maintains consistency with the existing rating architecture.';
+COMMENT ON FUNCTION public.auto_score_timeout_referee() IS 'Corrected version: Automatically scores referee as 0 when a judgement_timeout is confirmed by the tasker. Only inserts into rating_histories - user_ratings table is updated automatically by existing trigger system. This maintains consistency with the existing rating architecture.';
 
-CREATE OR REPLACE FUNCTION "public"."confirm_evidence_timeout_from_referee"("p_judgement_id" "uuid") RETURNS "json"
-    LANGUAGE "plpgsql" SECURITY DEFINER
+CREATE OR REPLACE FUNCTION public.confirm_evidence_timeout_from_referee(p_judgement_id uuid) RETURNS json
+    LANGUAGE plpgsql SECURITY DEFINER
     SET search_path = ''
     AS $$
 DECLARE
@@ -105,12 +105,12 @@ BEGIN
 END;
 $$;
 
-ALTER FUNCTION "public"."confirm_evidence_timeout_from_referee"("p_judgement_id" "uuid") OWNER TO "postgres";
+ALTER FUNCTION public.confirm_evidence_timeout_from_referee(p_judgement_id uuid) OWNER TO postgres;
 
-COMMENT ON FUNCTION "public"."confirm_evidence_timeout_from_referee"("p_judgement_id" "uuid") IS 'Allows referee to confirm evidence timeout by setting is_evidence_timeout_confirmed to true. Returns JSON on success, raises exception on error. Triggers system processes to close the task_referee_request.';
+COMMENT ON FUNCTION public.confirm_evidence_timeout_from_referee(p_judgement_id uuid) IS 'Allows referee to confirm evidence timeout by setting is_evidence_timeout_confirmed to true. Returns JSON on success, raises exception on error. Triggers system processes to close the task_referee_request.';
 
-CREATE OR REPLACE FUNCTION "public"."detect_and_handle_evidence_timeouts"() RETURNS "json"
-    LANGUAGE "plpgsql" SECURITY DEFINER
+CREATE OR REPLACE FUNCTION public.detect_and_handle_evidence_timeouts() RETURNS json
+    LANGUAGE plpgsql SECURITY DEFINER
     SET search_path = ''
     AS $$
 DECLARE
@@ -150,12 +150,12 @@ EXCEPTION
 END;
 $$;
 
-ALTER FUNCTION "public"."detect_and_handle_evidence_timeouts"() OWNER TO "postgres";
+ALTER FUNCTION public.detect_and_handle_evidence_timeouts() OWNER TO postgres;
 
-COMMENT ON FUNCTION "public"."detect_and_handle_evidence_timeouts"() IS 'Detects evidence timeouts (due_date passed without evidence submission) and updates judgement status to evidence_timeout. Should be called periodically by a cron job or scheduler.';
+COMMENT ON FUNCTION public.detect_and_handle_evidence_timeouts() IS 'Detects evidence timeouts (due_date passed without evidence submission) and updates judgement status to evidence_timeout. Should be called periodically by a cron job or scheduler.';
 
-CREATE OR REPLACE FUNCTION "public"."detect_and_handle_referee_timeouts"() RETURNS "json"
-    LANGUAGE "plpgsql" SECURITY DEFINER
+CREATE OR REPLACE FUNCTION public.detect_and_handle_referee_timeouts() RETURNS json
+    LANGUAGE plpgsql SECURITY DEFINER
     SET search_path = ''
     AS $$
 DECLARE
@@ -195,12 +195,12 @@ EXCEPTION
 END;
 $$;
 
-ALTER FUNCTION "public"."detect_and_handle_referee_timeouts"() OWNER TO "postgres";
+ALTER FUNCTION public.detect_and_handle_referee_timeouts() OWNER TO postgres;
 
-COMMENT ON FUNCTION "public"."detect_and_handle_referee_timeouts"() IS 'Detects referee timeouts (due_date + 3 hours) and updates judgement status to judgement_timeout. Should be called periodically by a cron job or scheduler.';
+COMMENT ON FUNCTION public.detect_and_handle_referee_timeouts() IS 'Detects referee timeouts (due_date + 3 hours) and updates judgement status to judgement_timeout. Should be called periodically by a cron job or scheduler.';
 
-CREATE OR REPLACE FUNCTION "public"."handle_evidence_timeout_confirmation"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
+CREATE OR REPLACE FUNCTION public.handle_evidence_timeout_confirmation() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
     SET search_path = ''
     AS $$
 DECLARE
@@ -248,12 +248,12 @@ EXCEPTION
 END;
 $$;
 
-ALTER FUNCTION "public"."handle_evidence_timeout_confirmation"() OWNER TO "postgres";
+ALTER FUNCTION public.handle_evidence_timeout_confirmation() OWNER TO postgres;
 
-COMMENT ON FUNCTION "public"."handle_evidence_timeout_confirmation"() IS 'Automatically closes the specific task_referee_request (matched to the referee) when referee confirms evidence timeout by setting is_evidence_timeout_confirmed to true';
+COMMENT ON FUNCTION public.handle_evidence_timeout_confirmation() IS 'Automatically closes the specific task_referee_request (matched to the referee) when referee confirms evidence timeout by setting is_evidence_timeout_confirmed to true';
 
-CREATE OR REPLACE FUNCTION "public"."validate_evidence_due_date"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
+CREATE OR REPLACE FUNCTION public.validate_evidence_due_date() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
     SET search_path = ''
     AS $$
 DECLARE
@@ -276,6 +276,6 @@ BEGIN
 END;
 $$;
 
-ALTER FUNCTION "public"."validate_evidence_due_date"() OWNER TO "postgres";
+ALTER FUNCTION public.validate_evidence_due_date() OWNER TO postgres;
 
-COMMENT ON FUNCTION "public"."validate_evidence_due_date"() IS 'Validates that evidence cannot be submitted or updated after the task due date has passed. Raises exception if due date validation fails.';
+COMMENT ON FUNCTION public.validate_evidence_due_date() IS 'Validates that evidence cannot be submitted or updated after the task due date has passed. Raises exception if due date validation fails.';
