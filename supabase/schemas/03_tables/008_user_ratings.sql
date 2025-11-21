@@ -11,3 +11,6 @@ CREATE TABLE IF NOT EXISTS "public"."user_ratings" (
 
 ALTER TABLE "public"."user_ratings" OWNER TO "postgres";
 
+ALTER TABLE ONLY "public"."user_ratings"
+    ADD CONSTRAINT "user_ratings_pkey" PRIMARY KEY ("user_id");
+

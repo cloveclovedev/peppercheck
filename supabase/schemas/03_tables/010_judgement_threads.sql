@@ -10,7 +10,9 @@ CREATE TABLE IF NOT EXISTS "public"."judgement_threads" (
 
 ALTER TABLE "public"."judgement_threads" OWNER TO "postgres";
 
+ALTER TABLE ONLY "public"."judgement_threads"
+    ADD CONSTRAINT "judgement_threads_pkey" PRIMARY KEY ("id");
+
 -- Indexes
 CREATE INDEX "idx_judgement_threads_judgement_id" ON "public"."judgement_threads" USING "btree" ("judgement_id");
 CREATE INDEX "idx_judgement_threads_sender_id" ON "public"."judgement_threads" USING "btree" ("sender_id");
-
