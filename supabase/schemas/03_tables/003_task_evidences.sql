@@ -17,3 +17,6 @@ ALTER TABLE ONLY public.task_evidences
 -- Indexes
 CREATE INDEX idx_task_evidences_status ON public.task_evidences USING btree (status);
 CREATE INDEX idx_task_evidences_task_id ON public.task_evidences USING btree (task_id);
+
+COMMENT ON TABLE public.task_evidences IS 'Task-level evidence records shared across all referees';
+COMMENT ON COLUMN public.task_evidences.status IS 'Upload status: pending_upload, ready';

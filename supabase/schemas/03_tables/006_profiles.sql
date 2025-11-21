@@ -19,3 +19,5 @@ ALTER TABLE ONLY public.profiles
 
 -- Indexes
 CREATE INDEX idx_profiles_timezone ON public.profiles USING btree (timezone);
+
+COMMENT ON COLUMN public.profiles.timezone IS 'User timezone in IANA format (e.g., Asia/Tokyo, America/New_York, Europe/London)';

@@ -21,3 +21,6 @@ ALTER TABLE ONLY public.judgements
 CREATE INDEX idx_judgements_evidence_timeout_confirmed ON public.judgements USING btree (is_evidence_timeout_confirmed) WHERE (status = 'evidence_timeout'::text);
 CREATE INDEX idx_judgements_referee_id ON public.judgements USING btree (referee_id);
 CREATE INDEX idx_judgements_task_id ON public.judgements USING btree (task_id);
+
+COMMENT ON COLUMN public.judgements.reopen_count IS 'Number of times this judgement has been reopened after rejection (operationally limited to 1; no DB-enforced cap)';
+COMMENT ON COLUMN public.judgements.is_evidence_timeout_confirmed IS 'Indicates whether the referee has confirmed the evidence timeout. Used to trigger task_referee_request closure by the system.';
