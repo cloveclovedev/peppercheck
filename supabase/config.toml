@@ -53,7 +53,7 @@ schema_paths = [
   "./schemas/01_schemas.sql",
   "./schemas/02_types.sql",
   "./schemas/03_tables/*.sql",
-  "./schemas/04_constraints_indexes.sql",
+  "./schemas/04_foreign_keys.sql",
   "./schemas/05_views.sql",
   "./schemas/06_functions/*.sql",
   "./schemas/07_triggers.sql",
