@@ -233,3 +233,23 @@ ALTER TABLE public.stripe_accounts ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "stripe_accounts: select if self" ON public.stripe_accounts
 FOR SELECT
 USING ((profile_id = (SELECT auth.uid() AS uid)));
+
+-- billing_jobs ----------------------------------------------------
+ALTER TABLE public.billing_jobs ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "billing_jobs: select if tasker" ON public.billing_jobs
+FOR SELECT
+USING ((EXISTS (
+   SELECT 1
+     FROM (public.task_referee_requests trr
+       JOIN public.tasks t ON ((t.id = trr.task_id)))
+    WHERE ((trr.id = billing_jobs.referee_request_id)
+       AND (t.tasker_id = (SELECT auth.uid() AS uid))))));
+
+CREATE POLICY "billing_jobs: select if referee" ON public.billing_jobs
+FOR SELECT
+USING ((EXISTS (
+   SELECT 1
+     FROM public.task_referee_requests trr
+    WHERE ((trr.id = billing_jobs.referee_request_id)
+       AND (trr.matched_referee_id = (SELECT auth.uid() AS uid))))));
