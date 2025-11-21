@@ -60,7 +60,6 @@ schema_paths = [
   "./schemas/08_policies.sql",
   "./schemas/09_grants.sql",
   "./schemas/10_cron_jobs.sql",
-  "./schemas/99_comments.sql",
 ]
 
 [db.seed]

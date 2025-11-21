@@ -23,3 +23,11 @@ CREATE INDEX idx_task_referee_requests_matched_referee_id ON public.task_referee
 CREATE INDEX idx_task_referee_requests_matching_strategy ON public.task_referee_requests USING btree (matching_strategy);
 CREATE INDEX idx_task_referee_requests_status ON public.task_referee_requests USING btree (status);
 CREATE INDEX idx_task_referee_requests_task_id ON public.task_referee_requests USING btree (task_id);
+
+COMMENT ON TABLE public.task_referee_requests IS 'Manages referee matching requests for tasks, supporting multiple referees per task with different strategies';
+COMMENT ON COLUMN public.task_referee_requests.matching_strategy IS 'Referee matching strategy: standard (basic auto-match), premium (advanced auto-match), direct (manual selection)';
+COMMENT ON COLUMN public.task_referee_requests.preferred_referee_id IS 'Specific referee ID for direct assignment (required when matching_strategy = direct)';
+COMMENT ON COLUMN public.task_referee_requests.status IS 'Request status: pending → matched → accepted/declined/expired';
+COMMENT ON COLUMN public.task_referee_requests.matched_referee_id IS 'Referee assigned by matching algorithm';
+COMMENT ON COLUMN public.task_referee_requests.responded_at IS 'Timestamp when referee accepted or declined the request';
+COMMENT ON CONSTRAINT task_referee_requests_status_check ON public.task_referee_requests IS 'Updated constraint to include closed status for confirmed judgements';

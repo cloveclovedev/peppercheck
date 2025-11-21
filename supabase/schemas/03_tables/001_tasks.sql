@@ -22,3 +22,9 @@ ALTER TABLE ONLY public.tasks
 CREATE INDEX idx_tasks_status ON public.tasks USING btree (status);
 CREATE INDEX idx_tasks_status_tasker_id ON public.tasks USING btree (status, tasker_id);
 CREATE INDEX idx_tasks_tasker_id ON public.tasks USING btree (tasker_id);
+
+COMMENT ON COLUMN public.tasks.criteria IS 'Evaluation criteria for the task. NULL allowed for draft status.';
+COMMENT ON COLUMN public.tasks.due_date IS 'Due date for task completion. NULL allowed for draft status.';
+COMMENT ON COLUMN public.tasks.fee_amount IS 'Fee amount for the task. NULL allowed for draft status.';
+COMMENT ON COLUMN public.tasks.fee_currency IS 'Currency for fee amount. NULL allowed for draft status, defaults to JPY when published.';
+COMMENT ON COLUMN public.tasks.status IS 'Valid values: draft, open, judging, rejected, completed, closed, self_completed, expired. No constraints during MVP phase.';

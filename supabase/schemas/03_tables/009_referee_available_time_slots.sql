@@ -25,3 +25,8 @@ ALTER TABLE ONLY public.referee_available_time_slots
 -- Indexes
 CREATE INDEX idx_referee_available_time_slots_dow_time ON public.referee_available_time_slots USING btree (dow, start_min, end_min) WHERE (is_active = true);
 CREATE INDEX idx_referee_available_time_slots_user_id ON public.referee_available_time_slots USING btree (user_id);
+
+COMMENT ON TABLE public.referee_available_time_slots IS 'Referee available time slots using minute-based time slots with UUID primary key. Overlap prevention handled client-side in MVP, future: int4range + EXCLUDE USING GIST';
+COMMENT ON COLUMN public.referee_available_time_slots.dow IS 'Day of week: 0=Sunday, 6=Saturday';
+COMMENT ON COLUMN public.referee_available_time_slots.start_min IS 'Start time in minutes from midnight (0-1439)';
+COMMENT ON COLUMN public.referee_available_time_slots.end_min IS 'End time in minutes from midnight (1-1440, where 1440 = next day 00:00)';

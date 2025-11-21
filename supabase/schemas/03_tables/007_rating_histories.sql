@@ -25,3 +25,9 @@ ALTER TABLE ONLY public.rating_histories
 CREATE INDEX idx_rating_histories_task_id ON public.rating_histories USING btree (task_id);
 CREATE INDEX idx_rating_histories_user_id ON public.rating_histories USING btree (ratee_id);
 CREATE INDEX idx_rating_histories_user_type ON public.rating_histories USING btree (ratee_id, rating_type);
+
+COMMENT ON COLUMN public.rating_histories.ratee_id IS 'ID of the user who received the rating (renamed from user_id)';
+COMMENT ON COLUMN public.rating_histories.rating IS '0-5 rating scale: 0=system timeout, 1-5=user rating';
+COMMENT ON COLUMN public.rating_histories.rater_id IS 'ID of the user who gave the rating; if NULL on insert, trigger set_rater_id() sets auth.uid()';
+COMMENT ON COLUMN public.rating_histories.judgement_id IS 'ID of the specific judgement this rating is for (when rating_type is referee)';
+COMMENT ON CONSTRAINT unique_rating_per_judgement ON public.rating_histories IS 'Ensures that each rater can only rate each ratee once per judgement. This constraint enables ON CONFLICT functionality in the auto_score_timeout_referee trigger and prevents duplicate ratings.';
