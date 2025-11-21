@@ -1,6 +1,6 @@
 -- Functions grouped in 007_api_helpers.sql
-CREATE OR REPLACE FUNCTION "public"."close_task_if_all_judgements_confirmed"() RETURNS "trigger"
-    LANGUAGE "plpgsql"
+CREATE OR REPLACE FUNCTION public.close_task_if_all_judgements_confirmed() RETURNS trigger
+    LANGUAGE plpgsql
     SET search_path = ''
     AS $$
 BEGIN
@@ -19,10 +19,10 @@ BEGIN
 END;
 $$;
 
-ALTER FUNCTION "public"."close_task_if_all_judgements_confirmed"() OWNER TO "postgres";
+ALTER FUNCTION public.close_task_if_all_judgements_confirmed() OWNER TO postgres;
 
-CREATE OR REPLACE FUNCTION "public"."get_active_referee_tasks"() RETURNS "jsonb"
-    LANGUAGE "sql"
+CREATE OR REPLACE FUNCTION public.get_active_referee_tasks() RETURNS jsonb
+    LANGUAGE sql
     SET search_path = ''
     AS $$
   SELECT COALESCE(
@@ -48,10 +48,10 @@ CREATE OR REPLACE FUNCTION "public"."get_active_referee_tasks"() RETURNS "jsonb"
     AND trr.status IN ('matched', 'accepted');
 $$;
 
-ALTER FUNCTION "public"."get_active_referee_tasks"() OWNER TO "postgres";
+ALTER FUNCTION public.get_active_referee_tasks() OWNER TO postgres;
 
-CREATE OR REPLACE FUNCTION "public"."handle_judgement_confirmation"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
+CREATE OR REPLACE FUNCTION public.handle_judgement_confirmation() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
     SET search_path = ''
     AS $$
 BEGIN
@@ -71,10 +71,10 @@ BEGIN
 END;
 $$;
 
-ALTER FUNCTION "public"."handle_judgement_confirmation"() OWNER TO "postgres";
+ALTER FUNCTION public.handle_judgement_confirmation() OWNER TO postgres;
 
-CREATE OR REPLACE FUNCTION "public"."reopen_judgement"("p_judgement_id" "uuid") RETURNS "void"
-    LANGUAGE "plpgsql"
+CREATE OR REPLACE FUNCTION public.reopen_judgement(p_judgement_id uuid) RETURNS void
+    LANGUAGE plpgsql
     SET search_path = ''
     AS $$
 DECLARE
@@ -112,4 +112,4 @@ BEGIN
 END;
 $$;
 
-ALTER FUNCTION "public"."reopen_judgement"("p_judgement_id" "uuid") OWNER TO "postgres";
+ALTER FUNCTION public.reopen_judgement(p_judgement_id uuid) OWNER TO postgres;
