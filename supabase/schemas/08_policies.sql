@@ -234,6 +234,9 @@ CREATE POLICY "stripe_accounts: select if self" ON public.stripe_accounts
 FOR SELECT
 USING ((profile_id = (SELECT auth.uid() AS uid)));
 
+-- billing_prices --------------------------------------------------
+ALTER TABLE public.billing_prices ENABLE ROW LEVEL SECURITY;
+
 -- billing_jobs ----------------------------------------------------
 ALTER TABLE public.billing_jobs ENABLE ROW LEVEL SECURITY;
 

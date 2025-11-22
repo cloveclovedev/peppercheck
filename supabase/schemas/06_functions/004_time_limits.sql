@@ -221,19 +221,12 @@ BEGIN
         v_task_id := NEW.task_id;
         v_referee_id := NEW.referee_id;
         
-        -- Close the specific task_referee_request for this task and referee
-        UPDATE public.task_referee_requests 
-        SET 
-            status = 'closed',
-            updated_at = v_now
-        WHERE task_id = v_task_id 
-        AND matched_referee_id = v_referee_id
-        AND status = 'accepted';
-        
-        GET DIAGNOSTICS v_request_count = ROW_COUNT;
-        
-        RAISE NOTICE 'Evidence timeout confirmed: closed % task_referee_request(s) for task % referee %', 
-            v_request_count, v_task_id, v_referee_id;
+        -- Let billing logic decide processing/close
+        PERFORM public.start_billing(trr.id)
+        FROM public.task_referee_requests trr
+        WHERE trr.task_id = v_task_id
+          AND trr.matched_referee_id = v_referee_id
+        LIMIT 1;
         
     END IF;
     
