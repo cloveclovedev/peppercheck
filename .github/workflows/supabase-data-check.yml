@@ -36,9 +36,9 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install Supabase CLI
-        run: |
-          curl -fsSL https://supabase.com/cli/install/linux | sh
-          echo "$HOME/.supabase/bin" >> "$GITHUB_PATH"
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
 
       - name: Apply migrations to temp DB
         run: supabase db reset --db-url "$DB_URL"
