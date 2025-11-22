@@ -93,6 +93,12 @@ CREATE OR REPLACE TRIGGER set_billing_jobs_updated_at
 BEFORE UPDATE ON public.billing_jobs
 FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 
+CREATE OR REPLACE TRIGGER trigger_call_billing_worker
+AFTER INSERT ON public.billing_jobs
+FOR EACH ROW
+WHEN (NEW.status = 'pending')
+EXECUTE FUNCTION public.call_billing_worker();
+
 -- auth.users ------------------------------------------------------
 CREATE OR REPLACE TRIGGER on_auth_user_created
 AFTER INSERT ON auth.users
