@@ -1,0 +1,57 @@
+name: Supabase data check
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/data/**'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/data/**'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: supabase/postgres:17.6.1.052
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DB_URL: postgres://postgres:postgres@localhost:5432/postgres
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Supabase CLI
+        run: |
+          curl -fsSL https://supabase.com/cli/install/linux | sh
+          echo "$HOME/.supabase/bin" >> "$GITHUB_PATH"
+
+      - name: Apply migrations to temp DB
+        run: supabase db reset --db-url "$DB_URL"
+
+      - name: Check reference CSVs
+        run: |
+          set -euo pipefail
+          declare -A queries
+          queries["currencies"]="SELECT code, kind, exponent, description FROM public.currencies ORDER BY code"
+          queries["billing_prices"]="SELECT currency_code, matching_strategy, amount_minor FROM public.billing_prices ORDER BY currency_code, matching_strategy"
+
+          for name in "${!queries[@]}"; do
+            out="/tmp/${name}_out.csv"
+            psql "$DB_URL" -c "COPY (${queries[$name]}) TO STDOUT CSV HEADER" > "$out"
+            diff -u "supabase/data/${name}.csv" "$out"
+          done
