@@ -18,19 +18,19 @@ jobs:
       postgres:
         image: supabase/postgres:17.6.1.052
         env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: supabase_admin
+          POSTGRES_USER: supabase_admin
           POSTGRES_DB: postgres
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U postgres"
+          --health-cmd "pg_isready -U supabase_admin"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
 
     env:
-      DB_URL: postgres://postgres:postgres@localhost:5432/postgres
+      DB_URL: postgres://supabase_admin:supabase_admin@localhost:5432/postgres
 
     steps:
       - uses: actions/checkout@v4
