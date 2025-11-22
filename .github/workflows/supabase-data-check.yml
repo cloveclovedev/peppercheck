@@ -26,10 +26,7 @@ jobs:
       - name: Start Supabase (headless)
         run: |
           sed -i 's/^major_version = 17/# major_version = 17/' supabase/config.toml
-          supabase start -x studio,imgproxy,realtime,storage-api,gotrue,kong,mailpit
-
-      - name: Apply migrations to temp DB
-        run: supabase db reset
+          supabase start -x studio,imgproxy,realtime,storage-api,mailpit,vector,logflare,edge-runtime
 
       - name: Check reference CSVs
         run: |
