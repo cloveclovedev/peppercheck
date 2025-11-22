@@ -63,3 +63,11 @@ ALTER TABLE ONLY public.billing_jobs
 
 ALTER TABLE ONLY public.billing_jobs
     ADD CONSTRAINT billing_jobs_currency_code_fkey FOREIGN KEY (currency_code) REFERENCES public.currencies(code);
+
+-- judgements
+ALTER TABLE ONLY public.judgements
+    ADD CONSTRAINT judgements_referee_request_id_fkey FOREIGN KEY (referee_request_id) REFERENCES public.task_referee_requests(id);
+
+-- billing_prices
+ALTER TABLE ONLY public.billing_prices
+    ADD CONSTRAINT billing_prices_currency_code_fkey FOREIGN KEY (currency_code) REFERENCES public.currencies(code);

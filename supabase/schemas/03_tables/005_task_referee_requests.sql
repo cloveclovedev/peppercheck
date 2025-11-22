@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS public.task_referee_requests (
     created_at timestamp with time zone DEFAULT now(),
     updated_at timestamp with time zone DEFAULT now(),
     CONSTRAINT task_referee_requests_matching_strategy_check CHECK ((matching_strategy = ANY (ARRAY['standard'::text, 'premium'::text, 'direct'::text]))),
-    CONSTRAINT task_referee_requests_status_check CHECK ((status = ANY (ARRAY['pending'::text, 'matched'::text, 'accepted'::text, 'declined'::text, 'expired'::text, 'closed'::text])))
+    CONSTRAINT task_referee_requests_status_check CHECK ((status = ANY (ARRAY['pending'::text, 'matched'::text, 'accepted'::text, 'declined'::text, 'expired'::text, 'payment_processing'::text, 'closed'::text])))
 );
 
 ALTER TABLE public.task_referee_requests OWNER TO postgres;
@@ -27,7 +27,7 @@ CREATE INDEX idx_task_referee_requests_task_id ON public.task_referee_requests U
 COMMENT ON TABLE public.task_referee_requests IS 'Manages referee matching requests for tasks, supporting multiple referees per task with different strategies';
 COMMENT ON COLUMN public.task_referee_requests.matching_strategy IS 'Referee matching strategy: standard (basic auto-match), premium (advanced auto-match), direct (manual selection)';
 COMMENT ON COLUMN public.task_referee_requests.preferred_referee_id IS 'Specific referee ID for direct assignment (required when matching_strategy = direct)';
-COMMENT ON COLUMN public.task_referee_requests.status IS 'Request status: pending → matched → accepted/declined/expired';
+COMMENT ON COLUMN public.task_referee_requests.status IS 'Request status: pending → matched → accepted/declined/expired → payment_processing → closed';
 COMMENT ON COLUMN public.task_referee_requests.matched_referee_id IS 'Referee assigned by matching algorithm';
 COMMENT ON COLUMN public.task_referee_requests.responded_at IS 'Timestamp when referee accepted or declined the request';
 COMMENT ON CONSTRAINT task_referee_requests_status_check ON public.task_referee_requests IS 'Updated constraint to include closed status for confirmed judgements';

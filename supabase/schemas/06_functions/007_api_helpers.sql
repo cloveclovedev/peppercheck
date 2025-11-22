@@ -58,12 +58,12 @@ BEGIN
   -- Only execute when is_confirmed changes from FALSE to TRUE
   IF NEW.is_confirmed = TRUE AND (OLD.is_confirmed IS NULL OR OLD.is_confirmed = FALSE) THEN
     
-    -- Close the corresponding task_referee_request
-    UPDATE public.task_referee_requests
-    SET status = 'closed'
-    WHERE task_id = NEW.task_id 
-      AND matched_referee_id = NEW.referee_id
-      AND status IN ('matched', 'accepted');
+    -- Trigger billing (function handles non-billable cases by closing)
+    PERFORM public.start_billing(trr.id)
+    FROM public.task_referee_requests trr
+    WHERE trr.task_id = NEW.task_id
+      AND trr.matched_referee_id = NEW.referee_id
+    LIMIT 1;
       
   END IF;
 
