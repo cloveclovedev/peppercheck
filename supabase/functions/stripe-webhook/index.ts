@@ -71,6 +71,12 @@ Deno.serve(async (req) => {
       case "setup_intent.succeeded":
         await handleSetupIntentSucceeded(event.data.object as Stripe.SetupIntent)
         break
+      case "payment_intent.succeeded":
+        await handlePaymentIntentSucceeded(event.data.object as Stripe.PaymentIntent)
+        break
+      case "payment_intent.payment_failed":
+        await handlePaymentIntentPaymentFailed(event.data.object as Stripe.PaymentIntent)
+        break
       default:
         // Ignore other events for now
         break
@@ -220,6 +226,66 @@ function extractProfileIdFromAccount(account: Stripe.Account): string | null {
   const metadata = account.metadata as Record<string, string | undefined>
   const profileId = metadata["profile_id"] ?? metadata["profileId"]
   return profileId ?? null
+}
+
+async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent) {
+  const billingJobId = extractBillingJobId(paymentIntent)
+  const currency = (paymentIntent.currency ?? "").toUpperCase() || null
+  const amountMinor = paymentIntent.amount_received ?? paymentIntent.amount ?? null
+
+  const { error } = await supabase.rpc("finalize_billing_job", {
+    p_job_id: billingJobId,
+    p_payment_intent_id: paymentIntent.id,
+    p_status: "succeeded",
+    p_currency_code: currency,
+    p_amount_minor: amountMinor,
+    p_error_code: null,
+    p_error_message: null,
+  })
+
+  if (error) {
+    console.error("Failed to finalize billing job (succeeded)", {
+      payment_intent_id: paymentIntent.id,
+      billing_job_id: billingJobId,
+      error: error.message,
+    })
+    throw error
+  }
+}
+
+async function handlePaymentIntentPaymentFailed(paymentIntent: Stripe.PaymentIntent) {
+  const billingJobId = extractBillingJobId(paymentIntent)
+  const currency = (paymentIntent.currency ?? "").toUpperCase() || null
+  const amountMinor = paymentIntent.amount_received ?? paymentIntent.amount ?? null
+
+  const lastError = paymentIntent.last_payment_error
+  const errorCode = lastError?.code ?? paymentIntent.status ?? "payment_failed"
+  const errorMessage = lastError?.message ?? "Payment failed"
+
+  const { error } = await supabase.rpc("finalize_billing_job", {
+    p_job_id: billingJobId,
+    p_payment_intent_id: paymentIntent.id,
+    p_status: "failed",
+    p_currency_code: currency,
+    p_amount_minor: amountMinor,
+    p_error_code: errorCode,
+    p_error_message: errorMessage,
+  })
+
+  if (error) {
+    console.error("Failed to finalize billing job (failed)", {
+      payment_intent_id: paymentIntent.id,
+      billing_job_id: billingJobId,
+      error: error.message,
+    })
+    throw error
+  }
+}
+
+function extractBillingJobId(paymentIntent: Stripe.PaymentIntent): string | null {
+  const metadata = paymentIntent.metadata as Record<string, string | undefined> | undefined
+  if (!metadata) return null
+  return metadata["billing_job_id"] ?? null
 }
 
 /* To invoke locally:
