@@ -296,7 +296,10 @@ function extractBillingJobId(paymentIntent: Stripe.PaymentIntent): string | null
 
 async function handlePayoutPaid(payout: Stripe.Payout) {
   const payoutJobId = extractPayoutJobIdFromMetadata(payout.metadata)
-  if (!payoutJobId) return
+  if (!payoutJobId) {
+    console.warn("payout.paid missing payout_job_id metadata", { payout_id: payout.id })
+    return
+  }
 
   const currency = (payout.currency ?? "").toUpperCase() || null
   const amountMinor = payout.amount ?? null
@@ -323,7 +326,10 @@ async function handlePayoutPaid(payout: Stripe.Payout) {
 
 async function handlePayoutFailed(payout: Stripe.Payout) {
   const payoutJobId = extractPayoutJobIdFromMetadata(payout.metadata)
-  if (!payoutJobId) return
+  if (!payoutJobId) {
+    console.warn("payout.failed missing payout_job_id metadata", { payout_id: payout.id })
+    return
+  }
 
   const currency = (payout.currency ?? "").toUpperCase() || null
   const amountMinor = payout.amount ?? null
