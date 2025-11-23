@@ -30,7 +30,8 @@ AS $$
 DECLARE
   v_url text;
   v_service_role_key text;
-  v_payload text;
+  v_headers jsonb;
+  v_payload jsonb;
 BEGIN
   IF NEW.status <> 'pending' THEN
     RETURN NEW;
@@ -51,15 +52,18 @@ BEGIN
     RETURN NEW;
   END IF;
 
-  v_payload := jsonb_build_object('id', NEW.id)::text;
+  v_headers := jsonb_build_object(
+    'Content-Type', 'application/json',
+    'Authorization', 'Bearer ' || v_service_role_key,
+    'apikey', v_service_role_key
+  );
+  v_payload := jsonb_build_object('id', NEW.id);
 
+  -- Send via pg_net with explicit named args and jsonb body.
   PERFORM net.http_post(
     url => v_url,
-    headers => jsonb_build_object(
-      'Content-Type', 'application/json',
-      'Authorization', 'Bearer ' || v_service_role_key
-    ),
     body => v_payload,
+    headers => v_headers,
     timeout_milliseconds => 8000
   );
 
@@ -67,4 +71,4 @@ BEGIN
 END;
 $$;
 
-COMMENT ON FUNCTION public.call_billing_worker() IS 'Trigger hook that sends pending billing_job id to the billing-worker Edge Function via pg_net.';
+COMMENT ON FUNCTION public.call_billing_worker() IS 'Trigger hook that sends pending billing_job id to the billing-worker Edge Function via database webhooks (supabase_functions.http_request).';
