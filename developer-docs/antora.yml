@@ -1,0 +1,6 @@
+name: peppercheck-developer-docs
+version: ~
+title: Peppercheck Developer Documentation
+nav:
+- modules/ROOT/nav.adoc
+
