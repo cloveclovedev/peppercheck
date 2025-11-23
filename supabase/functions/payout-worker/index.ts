@@ -75,39 +75,42 @@ Deno.serve(async (req) => {
 
     const { account } = context.data
 
-    const amountMinor = job.amount_minor
-    const currency = job.currency_code.toLowerCase()
+  const amountMinor = job.amount_minor
+  const currency = job.currency_code.toLowerCase()
 
-    const transfer = await stripe.transfers.create(
-      {
-        amount: amountMinor,
-        currency,
-        destination: account.stripe_connect_account_id!,
-        metadata: {
-          payout_job_id: job.id,
-          user_id: job.user_id,
-        },
+  // Create a payout from the connected account balance to its external bank account.
+  const payout = await stripe.payouts.create(
+    {
+      amount: amountMinor,
+      currency,
+      metadata: {
+        payout_job_id: job.id,
+        user_id: job.user_id,
       },
-      { idempotencyKey: `payout_job_${job.id}` },
-    )
+    },
+    {
+      idempotencyKey: `payout_job_${job.id}`,
+      stripeAccount: account.stripe_connect_account_id!, // act on behalf of the connected account
+    },
+  )
 
-    await supabase
-      .from("payout_jobs")
-      .update({
-        provider_payout_id: transfer.id,
-        currency_code: transfer.currency.toUpperCase(),
-        amount_minor: transfer.amount,
-        last_error_code: null,
-        last_error_message: null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", job.id)
-
-    return jsonResponse({
-      id: job.id,
-      status: "processing",
-      transfer_id: transfer.id,
+  await supabase
+    .from("payout_jobs")
+    .update({
+      provider_payout_id: payout.id,
+      currency_code: payout.currency.toUpperCase(),
+      amount_minor: payout.amount,
+      last_error_code: null,
+      last_error_message: null,
+      updated_at: new Date().toISOString(),
     })
+    .eq("id", job.id)
+
+  return jsonResponse({
+    id: job.id,
+    status: "processing",
+    payout_id: payout.id,
+  })
   } catch (error) {
     if (claimedJobId) {
       const parsed = parseError(error)
