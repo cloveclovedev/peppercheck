@@ -1,28 +1,26 @@
-# Stripe Webhook Configuration
-
-This document tracks how we configure Stripe webhooks for Peppercheck.
+# Stripe Webhook Setup (notes)
 
 ## Endpoint
+- Deploy URL: `/functions/v1/stripe-webhook` (Supabase Edge Functions)
 
-- **Destination**: Supabase Edge Function `stripe-webhook`
-  - URL (production): `https://<project>.functions.supabase.co/stripe-webhook`
-- **Request authentication**: Stripe signing secret (`STRIPE_WEBHOOK_SECRET`) stored in Supabase function secrets.
-- **JWT verification**: Disabled in `supabase/functions/config.toml` for `stripe-webhook`.
+## Events to subscribe
+- `account.updated` — keep `charges_enabled` / `payouts_enabled` and requirements in sync.
+- `setup_intent.succeeded` — update default payment method details.
+- `payment_intent.succeeded` — finalize billing_jobs as succeeded.
+- `payment_intent.payment_failed` — finalize billing_jobs as failed.
+- `payout.paid` — payout created by payout-worker succeeded → finalize payout_jobs as succeeded.
+- `payout.failed` — payout failed → finalize payout_jobs as failed.
 
-## Events
+Note: payout-worker now uses Stripe Payouts (from connected account balance to bank). `transfer.*` events are not required; subscribe to them only if you later switch back to Transfers.
 
-| Event                    | Purpose                                                          |
-|-------------------------|------------------------------------------------------------------|
-| `setup_intent.succeeded` | Triggered whenever a PaymentSheet Setup Intent completes. Used to cache the default payment method (brand / last4 / exp) into `stripe_accounts`. |
+## Stripe Dashboard steps
+1. Developers → Webhooks → “Add endpoint”.
+2. Set the environment-specific Edge Function URL, e.g. `https://<project>.functions.supabase.co/stripe-webhook`.
+3. “Select events” and add the events listed above.
+4. Copy the signing secret and set it as `STRIPE_WEBHOOK_SECRET` in the Edge Function environment.
 
-We do not currently subscribe to `setup_intent.canceled` or `payment_method.attached`. If future flows require them, expand the webhook accordingly.
+## Local development
+- Use Stripe CLI: `stripe listen --forward-to http://127.0.0.1:54321/functions/v1/stripe-webhook`.
 
-## Stripe Dashboard Steps
-
-1. Navigate to **Developers → Webhooks → +Add endpoint**.
-2. Enter the Supabase Edge Function URL and select **Listen to events on your account**.
-3. Choose API version `2025-10-29.clover` (or latest compatible).
-4. Add the `setup_intent.succeeded` event.
-5. Save and copy the **Signing secret**, set it as `STRIPE_WEBHOOK_SECRET` in Supabase (`supabase secrets set` or dashboard).
-
-Keep this document updated whenever webhook endpoints or events change.
+## Notes
+- finalize handlers rely on metadata `billing_job_id` / `payout_job_id`; if metadata is missing, the job will not be finalized.

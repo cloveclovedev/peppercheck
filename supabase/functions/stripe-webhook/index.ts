@@ -77,6 +77,12 @@ Deno.serve(async (req) => {
       case "payment_intent.payment_failed":
         await handlePaymentIntentPaymentFailed(event.data.object as Stripe.PaymentIntent)
         break
+      case "payout.paid":
+        await handlePayoutPaid(event.data.object as Stripe.Payout)
+        break
+      case "payout.failed":
+        await handlePayoutFailed(event.data.object as Stripe.Payout)
+        break
       default:
         // Ignore other events for now
         break
@@ -286,6 +292,76 @@ function extractBillingJobId(paymentIntent: Stripe.PaymentIntent): string | null
   const metadata = paymentIntent.metadata as Record<string, string | undefined> | undefined
   if (!metadata) return null
   return metadata["billing_job_id"] ?? null
+}
+
+async function handlePayoutPaid(payout: Stripe.Payout) {
+  const payoutJobId = extractPayoutJobIdFromMetadata(payout.metadata)
+  if (!payoutJobId) {
+    console.warn("payout.paid missing payout_job_id metadata", { payout_id: payout.id })
+    return
+  }
+
+  const currency = (payout.currency ?? "").toUpperCase() || null
+  const amountMinor = payout.amount ?? null
+
+  const { error } = await supabase.rpc("finalize_payout_job", {
+    p_job_id: payoutJobId,
+    p_provider_payout_id: payout.id,
+    p_status: "succeeded",
+    p_currency_code: currency,
+    p_amount_minor: amountMinor,
+    p_error_code: null,
+    p_error_message: null,
+  })
+
+  if (error) {
+    console.error("Failed to finalize payout job (payout.paid)", {
+      payout_id: payout.id,
+      payout_job_id: payoutJobId,
+      error: error.message,
+    })
+    throw error
+  }
+}
+
+async function handlePayoutFailed(payout: Stripe.Payout) {
+  const payoutJobId = extractPayoutJobIdFromMetadata(payout.metadata)
+  if (!payoutJobId) {
+    console.warn("payout.failed missing payout_job_id metadata", { payout_id: payout.id })
+    return
+  }
+
+  const currency = (payout.currency ?? "").toUpperCase() || null
+  const amountMinor = payout.amount ?? null
+  const errorCode = payout.failure_code ?? "payout_failed"
+  const errorMessage = payout.failure_message ?? "Payout failed"
+
+  const { error } = await supabase.rpc("finalize_payout_job", {
+    p_job_id: payoutJobId,
+    p_provider_payout_id: payout.id,
+    p_status: "failed",
+    p_currency_code: currency,
+    p_amount_minor: amountMinor,
+    p_error_code: errorCode,
+    p_error_message: errorMessage,
+  })
+
+  if (error) {
+    console.error("Failed to finalize payout job (payout.failed)", {
+      payout_id: payout.id,
+      payout_job_id: payoutJobId,
+      error: error.message,
+    })
+    throw error
+  }
+}
+
+function extractPayoutJobIdFromMetadata(
+  metadata: Stripe.Metadata | null | undefined,
+): string | null {
+  if (!metadata) return null
+  const md = metadata as Record<string, string | undefined>
+  return md["payout_job_id"] ?? null
 }
 
 /* To invoke locally:
