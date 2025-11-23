@@ -256,3 +256,14 @@ USING ((EXISTS (
      FROM public.task_referee_requests trr
     WHERE ((trr.id = billing_jobs.referee_request_id)
        AND (trr.matched_referee_id = (SELECT auth.uid() AS uid))))));
+
+-- payout_jobs ----------------------------------------------------
+ALTER TABLE public.payout_jobs ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "payout_jobs: select if self" ON public.payout_jobs
+FOR SELECT
+USING (user_id = (SELECT auth.uid() AS uid));
+
+CREATE POLICY "payout_jobs: insert if self" ON public.payout_jobs
+FOR INSERT
+WITH CHECK (user_id = (SELECT auth.uid() AS uid));

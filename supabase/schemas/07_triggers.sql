@@ -99,6 +99,17 @@ FOR EACH ROW
 WHEN (NEW.status = 'pending')
 EXECUTE FUNCTION public.call_billing_worker();
 
+-- payout_jobs ----------------------------------------------------
+CREATE OR REPLACE TRIGGER set_payout_jobs_updated_at
+BEFORE UPDATE ON public.payout_jobs
+FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
+CREATE OR REPLACE TRIGGER trigger_call_payout_worker
+AFTER INSERT ON public.payout_jobs
+FOR EACH ROW
+WHEN (NEW.status = 'pending')
+EXECUTE FUNCTION public.call_payout_worker();
+
 -- auth.users ------------------------------------------------------
 CREATE OR REPLACE TRIGGER on_auth_user_created
 AFTER INSERT ON auth.users
