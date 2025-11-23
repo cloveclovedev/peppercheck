@@ -1,0 +1,13 @@
+site:
+  title: Peppercheck Developer Documentation
+  start_page: peppercheck-developer-docs::index.adoc
+content:
+  sources:
+  - url: ..
+    branches: HEAD
+    start_path: developer-docs
+ui:
+  bundle:
+    url: https://gitlab.com/antora/antora-ui-default/-/jobs/artifacts/HEAD/raw/build/ui-bundle.zip?job=bundle-stable
+    snapshot: true
+
