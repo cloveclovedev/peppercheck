@@ -19,4 +19,9 @@ sealed class ProfileEvent {
     data class EndTimeSelected(val time: LocalTime) : ProfileEvent()
     data object AddTimeSlotConfirmed : ProfileEvent()
     data class DeleteTimeSlot(val timeSlotId: String) : ProfileEvent()
+    data object LoadPayoutSummary : ProfileEvent()
+    data object PayoutRequestClicked : ProfileEvent()
+    data class PayoutAmountChanged(val amountMinor: Long) : ProfileEvent()
+    data object PayoutDialogDismissed : ProfileEvent()
+    data object ConfirmPayout : ProfileEvent()
 }

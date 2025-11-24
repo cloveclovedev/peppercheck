@@ -26,6 +26,8 @@ import dev.cloveclove.peppercheck.ui.components.profile.AddAvailableTimeSlotDial
 import dev.cloveclove.peppercheck.ui.components.profile.ConnectAccountSection
 import dev.cloveclove.peppercheck.ui.components.profile.RefereeAvailableTimeSlotSection
 import dev.cloveclove.peppercheck.ui.components.profile.StripePaymentMethodSection
+import dev.cloveclove.peppercheck.ui.components.profile.PayoutRequestSection
+import dev.cloveclove.peppercheck.ui.components.profile.PayoutAmountDialog
 import dev.cloveclove.peppercheck.ui.theme.TextBlack
 import dev.cloveclove.peppercheck.ui.theme.standardScreenPadding
 import com.stripe.android.paymentsheet.PaymentSheet
@@ -135,6 +137,19 @@ fun ProfileScreen(
                         onSetupClick = { viewModel.onEvent(ProfileEvent.CreateConnectLink) }
                     )
                 }
+                item {
+                    PayoutRequestSection(
+                        availableMinor = uiState.payoutAvailableMinor,
+                        pendingMinor = uiState.payoutPendingMinor,
+                        incomingPendingMinor = uiState.payoutIncomingPendingMinor,
+                        currencyCode = uiState.payoutCurrency,
+                        payoutsEnabled = uiState.stripeAccount?.payoutsEnabled == true,
+                        isInProgress = uiState.isPayoutInProgress,
+                        message = uiState.payoutMessage,
+                        error = uiState.payoutError,
+                        onRequestClick = { viewModel.onEvent(ProfileEvent.PayoutRequestClicked) }
+                    )
+                }
             }
         }
     }
@@ -149,6 +164,17 @@ fun ProfileScreen(
             onStartTimeSelected = { time -> viewModel.onEvent(ProfileEvent.StartTimeSelected(time))},
             onEndTimeSelected = { time -> viewModel.onEvent(ProfileEvent.EndTimeSelected(time)) },
             onConfirm = { viewModel.onEvent(ProfileEvent.AddTimeSlotConfirmed) }
+        )
+    }
+
+    if (uiState.isPayoutDialogVisible) {
+        PayoutAmountDialog(
+            amountMinor = uiState.payoutInputMinor,
+            currencyCode = uiState.payoutCurrency,
+            isSubmitting = uiState.isPayoutInProgress,
+            onAmountChange = { amount -> viewModel.onEvent(ProfileEvent.PayoutAmountChanged(amount)) },
+            onConfirm = { viewModel.onEvent(ProfileEvent.ConfirmPayout) },
+            onDismiss = { viewModel.onEvent(ProfileEvent.PayoutDialogDismissed) }
         )
     }
 }

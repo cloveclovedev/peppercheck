@@ -33,7 +33,9 @@ class ViewModelFactory(private val container: AppContainer) : ViewModelProvider.
                     deleteAvailableTimeSlotUseCase = container.deleteAvailableTimeSlotUseCase,
                     createStripeConnectLinkUseCase = container.createStripeConnectLinkUseCase,
                     getStripeAccountUseCase = container.getStripeAccountUseCase,
-                    createStripePaymentSetupSessionUseCase = container.createStripePaymentSetupSessionUseCase
+                    createStripePaymentSetupSessionUseCase = container.createStripePaymentSetupSessionUseCase,
+                    requestPayoutUseCase = container.requestPayoutUseCase,
+                    getPayoutSummaryUseCase = container.getPayoutSummaryUseCase
                 ) as T
             }
             modelClass.isAssignableFrom(TaskerViewModel::class.java) -> {
