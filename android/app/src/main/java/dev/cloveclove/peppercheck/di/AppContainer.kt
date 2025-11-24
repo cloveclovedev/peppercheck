@@ -13,6 +13,7 @@ import dev.cloveclove.peppercheck.repository.TaskEvidenceRepository
 import dev.cloveclove.peppercheck.repository.TaskRefereeRequestRepository
 import dev.cloveclove.peppercheck.repository.TaskRepository
 import dev.cloveclove.peppercheck.repository.StripeRepository
+import dev.cloveclove.peppercheck.repository.PayoutRepository
 import dev.cloveclove.peppercheck.domain.home.GetHomeTasksUseCase
 import dev.cloveclove.peppercheck.domain.task.CreateTaskUseCase
 import dev.cloveclove.peppercheck.domain.task.GetTaskDetailsUseCase
@@ -31,6 +32,8 @@ import dev.cloveclove.peppercheck.domain.profile.DeleteAvailableTimeSlotUseCase
 import dev.cloveclove.peppercheck.domain.profile.GetUserAvailableTimeSlotsUseCase
 import dev.cloveclove.peppercheck.domain.profile.GetStripeAccountUseCase
 import dev.cloveclove.peppercheck.domain.profile.CreateStripePaymentSetupSessionUseCase
+import dev.cloveclove.peppercheck.domain.payout.RequestPayoutUseCase
+import dev.cloveclove.peppercheck.domain.payout.GetPayoutSummaryUseCase
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.createSupabaseClient
@@ -125,6 +128,10 @@ class AppContainer(private val contentResolver: ContentResolver) {
     val stripeRepository: StripeRepository by lazy {
         StripeRepository(httpClient, authRepository)
     }
+    
+    val payoutRepository: PayoutRepository by lazy {
+        PayoutRepository(httpClient, authRepository)
+    }
 
     // Use Cases
     val getHomeTasksUseCase: GetHomeTasksUseCase by lazy {
@@ -158,6 +165,14 @@ class AppContainer(private val contentResolver: ContentResolver) {
 
     val createStripePaymentSetupSessionUseCase: CreateStripePaymentSetupSessionUseCase by lazy {
         CreateStripePaymentSetupSessionUseCase(stripeRepository)
+    }
+    
+    val requestPayoutUseCase: RequestPayoutUseCase by lazy {
+        RequestPayoutUseCase(payoutRepository)
+    }
+
+    val getPayoutSummaryUseCase: GetPayoutSummaryUseCase by lazy {
+        GetPayoutSummaryUseCase(payoutRepository)
     }
 
     val getTaskDetailsUseCase: GetTaskDetailsUseCase by lazy {

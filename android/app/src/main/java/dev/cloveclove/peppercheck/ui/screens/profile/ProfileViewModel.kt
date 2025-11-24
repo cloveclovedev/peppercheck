@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.cloveclove.peppercheck.data.referee_available_time_slot.RefereeAvailableTimeSlot
 import dev.cloveclove.peppercheck.domain.profile.*
+import dev.cloveclove.peppercheck.domain.payout.GetPayoutSummaryUseCase
+import dev.cloveclove.peppercheck.domain.payout.RequestPayoutUseCase
 import com.stripe.android.paymentsheet.PaymentSheetResult
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -17,7 +19,9 @@ class ProfileViewModel(
     private val deleteAvailableTimeSlotUseCase: DeleteAvailableTimeSlotUseCase,
     private val createStripeConnectLinkUseCase: CreateStripeConnectLinkUseCase,
     private val getStripeAccountUseCase: GetStripeAccountUseCase,
-    private val createStripePaymentSetupSessionUseCase: CreateStripePaymentSetupSessionUseCase
+    private val createStripePaymentSetupSessionUseCase: CreateStripePaymentSetupSessionUseCase,
+    private val requestPayoutUseCase: RequestPayoutUseCase,
+    private val getPayoutSummaryUseCase: GetPayoutSummaryUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfileUiState())
@@ -28,6 +32,7 @@ class ProfileViewModel(
     fun onEvent(event: ProfileEvent) {
         when (event) {
             ProfileEvent.LoadData, ProfileEvent.RefreshData -> loadProfileData()
+            ProfileEvent.LoadPayoutSummary -> loadPayoutSummary()
             ProfileEvent.CreateConnectLink -> createConnectLink()
             ProfileEvent.ConnectLinkHandled -> _uiState.update { it.copy(connectLinkState = ConnectLinkState.Idle) }
             ProfileEvent.SetupPaymentMethodClicked -> startPaymentMethodSetup()
@@ -43,6 +48,10 @@ class ProfileViewModel(
             ProfileEvent.AddTimeSlotConfirmed -> addAvailableTimeSlot()
 
             is ProfileEvent.DeleteTimeSlot -> deleteAvailableTimeSlot(event.timeSlotId)
+            ProfileEvent.PayoutRequestClicked -> openPayoutDialog()
+            ProfileEvent.PayoutDialogDismissed -> _uiState.update { it.copy(isPayoutDialogVisible = false, payoutError = null) }
+            is ProfileEvent.PayoutAmountChanged -> _uiState.update { it.copy(payoutInputMinor = event.amountMinor) }
+            ProfileEvent.ConfirmPayout -> submitPayoutRequest()
         }
     }
 
@@ -82,6 +91,9 @@ class ProfileViewModel(
                     error = errorMessage
                 )
             }
+
+            // Also refresh payout summary
+            loadPayoutSummary()
         }
     }
 
@@ -208,6 +220,70 @@ class ProfileViewModel(
                 .onFailure { error -> 
                     Log.e(TAG, "Failed to create Stripe Connect link", error)
                     _uiState.update { it.copy(connectLinkState = ConnectLinkState.Error(error.message ?: "Unknown error")) } 
+                }
+        }
+    }
+
+    private fun loadPayoutSummary() {
+        viewModelScope.launch {
+            getPayoutSummaryUseCase()
+                .onSuccess { summary ->
+                    _uiState.update {
+                        it.copy(
+                            payoutAvailableMinor = summary.availableMinor,
+                            payoutPendingMinor = summary.pendingMinor,
+                            payoutIncomingPendingMinor = summary.incomingPendingMinor,
+                            payoutCurrency = summary.currencyCode,
+                            payoutError = null
+                        )
+                    }
+                }
+                .onFailure { error ->
+                    Log.e(TAG, "Failed to fetch payout summary", error)
+                    _uiState.update { it.copy(payoutError = error.message) }
+                }
+        }
+    }
+
+    private fun openPayoutDialog() {
+        _uiState.update {
+            it.copy(
+                isPayoutDialogVisible = true,
+                payoutInputMinor = it.payoutAvailableMinor ?: 0,
+                payoutError = null,
+                payoutMessage = null
+            )
+        }
+    }
+
+    private fun submitPayoutRequest() {
+        val state = _uiState.value
+        val amount = state.payoutInputMinor
+        if (state.isPayoutInProgress || amount <= 0) return
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isPayoutInProgress = true, payoutError = null, payoutMessage = null) }
+
+            requestPayoutUseCase(amount, state.payoutCurrency)
+                .onSuccess {
+                    _uiState.update {
+                        it.copy(
+                            isPayoutInProgress = false,
+                            isPayoutDialogVisible = false,
+                            payoutMessage = "Payout request submitted",
+                            payoutError = null
+                        )
+                    }
+                    loadPayoutSummary()
+                }
+                .onFailure { error ->
+                    Log.e(TAG, "Failed to submit payout request", error)
+                    _uiState.update {
+                        it.copy(
+                            isPayoutInProgress = false,
+                            payoutError = error.message ?: "Failed to submit payout request"
+                        )
+                    }
                 }
         }
     }
