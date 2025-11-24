@@ -12,13 +12,14 @@ const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY") ?? ""
 const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? ""
 const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
 const stripeApiVersion = "2024-11-20.acacia"
-const stripeReturnUrl = Deno.env.get("STRIPE_RETURN_URL") // optional; only sent if provided
+// Required when use_stripe_sdk=true (3DS/redirection)
+const stripeBillingReturnUrl = Deno.env.get("STRIPE_BILLING_RETURN_URL")
 const applicationFeeRate = 0.2 // 20%
 
 if (!stripeSecretKey) console.warn("Missing STRIPE_SECRET_KEY")
 if (!supabaseUrl) console.warn("Missing SUPABASE_URL")
 if (!supabaseServiceRoleKey) console.warn("Missing SUPABASE_SERVICE_ROLE_KEY")
-if (!stripeReturnUrl) console.error("Missing STRIPE_RETURN_URL (required when use_stripe_sdk=true)")
+if (!stripeBillingReturnUrl) console.error("Missing STRIPE_BILLING_RETURN_URL (required when use_stripe_sdk=true)")
 
 const stripe = new Stripe(stripeSecretKey, { apiVersion: stripeApiVersion })
 const supabase = createClient(supabaseUrl, supabaseServiceRoleKey)
@@ -70,8 +71,8 @@ Deno.serve(async (req) => {
   if (!stripeSecretKey || !supabaseUrl || !supabaseServiceRoleKey) {
     return jsonResponse({ error: "Server not configured" }, 500)
   }
-  if (!stripeReturnUrl) {
-    return jsonResponse({ error: "Missing STRIPE_RETURN_URL" }, 500)
+  if (!stripeBillingReturnUrl) {
+    return jsonResponse({ error: "Missing STRIPE_BILLING_RETURN_URL" }, 500)
   }
 
   let claimedJobId: string | null = null
@@ -118,7 +119,7 @@ Deno.serve(async (req) => {
         off_session: true,
         confirm: true,
         use_stripe_sdk: true,
-        ...(stripeReturnUrl ? { return_url: stripeReturnUrl } : {}),
+        return_url: stripeBillingReturnUrl,
         payment_method_options: {
           card: {
             request_three_d_secure: "automatic",
