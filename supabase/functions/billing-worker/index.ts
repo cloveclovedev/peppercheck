@@ -15,6 +15,7 @@ const stripeApiVersion = "2024-11-20.acacia"
 // Required when use_stripe_sdk=true (3DS/redirection)
 const stripeBillingReturnUrl = Deno.env.get("STRIPE_BILLING_RETURN_URL")
 const applicationFeeRate = 0.2 // 20%
+const defaultMaxRetryAttempts = 3
 
 if (!stripeSecretKey) console.warn("Missing STRIPE_SECRET_KEY")
 if (!supabaseUrl) console.warn("Missing SUPABASE_URL")
@@ -59,6 +60,10 @@ type StripeAccountRow = {
   stripe_connect_account_id: string | null
 }
 
+type BillingSettings = {
+  max_retry_attempts: number
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders })
@@ -76,8 +81,16 @@ Deno.serve(async (req) => {
   }
 
   let claimedJobId: string | null = null
+  let maxRetryAttempts = defaultMaxRetryAttempts
 
   try {
+    const settings = await fetchBillingSettings()
+    if (!settings.ok || settings.data.max_retry_attempts == null) {
+      console.error("billing-worker: billing_settings missing or max_retry_attempts null; aborting")
+      return jsonResponse({ error: "Billing settings not configured" }, 500)
+    }
+    maxRetryAttempts = settings.data.max_retry_attempts
+
     const payload = await req.json()
     const jobId = payload?.id as string | undefined
     if (!jobId) {
@@ -86,8 +99,14 @@ Deno.serve(async (req) => {
 
     const job = await claimJob(jobId)
     if (!job) {
-      return jsonResponse({ error: "Job not found or not pending" }, 409)
+      return jsonResponse({ error: "Job not found, not claimable, or retry limit reached" }, 409)
     }
+
+    console.log("billing-worker: claimed job", {
+      job_id: job.id,
+      attempt_count: job.attempt_count,
+      max_retry_attempts: maxRetryAttempts,
+    })
 
     claimedJobId = job.id
 
@@ -285,4 +304,19 @@ function parseError(error: unknown): { code: string; message: string } {
     }
   }
   return fallback
+}
+
+async function fetchBillingSettings(): Promise<{ ok: true; data: BillingSettings } | { ok: false }> {
+  const { data, error } = await supabase
+    .from("billing_settings")
+    .select("max_retry_attempts")
+    .eq("id", 1)
+    .maybeSingle()
+
+  if (error || !data) {
+    console.error("billing-worker: failed to load billing_settings", { error })
+    return { ok: false }
+  }
+
+  return { ok: true, data: data as BillingSettings }
 }

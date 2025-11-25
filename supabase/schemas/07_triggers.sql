@@ -88,6 +88,11 @@ CREATE OR REPLACE TRIGGER set_stripe_accounts_updated_at
 BEFORE UPDATE ON public.stripe_accounts
 FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 
+-- billing_settings -------------------------------------------------
+CREATE OR REPLACE TRIGGER set_billing_settings_updated_at
+BEFORE UPDATE ON public.billing_settings
+FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
 -- billing_jobs ----------------------------------------------------
 CREATE OR REPLACE TRIGGER set_billing_jobs_updated_at
 BEFORE UPDATE ON public.billing_jobs

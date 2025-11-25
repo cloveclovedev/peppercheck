@@ -34,6 +34,7 @@ jobs:
           declare -A queries
           queries["currencies"]="SELECT code, kind, exponent, description FROM public.currencies ORDER BY code"
           queries["billing_prices"]="SELECT currency_code, matching_strategy, amount_minor FROM public.billing_prices ORDER BY currency_code, matching_strategy"
+          queries["billing_settings"]="SELECT id, max_retry_attempts FROM public.billing_settings ORDER BY id"
 
           for name in "${!queries[@]}"; do
             out="/tmp/${name}_out.csv"
