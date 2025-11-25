@@ -1,25 +1,37 @@
 -- Functions to claim billing jobs and invoke the billing-worker Edge Function
 
--- Claims a pending billing_job atomically and marks it processing while incrementing attempt_count.
+-- Claims a pending or failed billing_job atomically and marks it processing while incrementing attempt_count.
 CREATE OR REPLACE FUNCTION public.claim_billing_job(p_job_id uuid)
 RETURNS SETOF public.billing_jobs
     LANGUAGE plpgsql
     SECURITY DEFINER
     SET search_path = ''
 AS $$
+DECLARE
+  v_max_attempts integer;
 BEGIN
+  SELECT max_retry_attempts
+    INTO v_max_attempts
+    FROM public.billing_settings
+   WHERE id = 1;
+
+  IF v_max_attempts IS NULL THEN
+    RAISE EXCEPTION 'claim_billing_job: billing_settings not found or max_retry_attempts is null';
+  END IF;
+
   RETURN QUERY
     UPDATE public.billing_jobs
        SET status = 'processing',
            attempt_count = attempt_count + 1,
            updated_at = now()
      WHERE id = p_job_id
-       AND status = 'pending'
+       AND status IN ('pending', 'failed')
+       AND attempt_count < v_max_attempts
     RETURNING *;
 END;
 $$;
 
-COMMENT ON FUNCTION public.claim_billing_job(uuid) IS 'Atomically claims a pending billing_job for processing and increments attempt_count.';
+COMMENT ON FUNCTION public.claim_billing_job(uuid) IS 'Atomically claims a pending/failed billing_job for processing and increments attempt_count with retry guard.';
 
 
 -- Trigger function: posts the new billing_job to the billing-worker Edge Function.
