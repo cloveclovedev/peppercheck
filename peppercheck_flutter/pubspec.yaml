@@ -46,6 +46,7 @@ dependencies:
   slang_flutter: ^4.11.0
   flutter_localizations:
     sdk: flutter
+  google_sign_in: ^7.2.0
 
 dev_dependencies:
   flutter_test:
