@@ -1,4 +1,4 @@
-package com.example.peppercheck_flutter
+package dev.cloveclove.peppercheck
 
 import io.flutter.embedding.android.FlutterActivity
 
