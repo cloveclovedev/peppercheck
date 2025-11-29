@@ -93,11 +93,12 @@ Deno.serve(async (req) => {
 
     const payload = await req.json()
     const jobId = payload?.id as string | undefined
+    const forceRetry = Boolean(payload?.force_retry)
     if (!jobId) {
       return jsonResponse({ error: "Missing billing_job id" }, 400)
     }
 
-    const job = await claimJob(jobId)
+    const job = await claimJob(jobId, forceRetry)
     if (!job) {
       return jsonResponse({ error: "Job not found, not claimable, or retry limit reached" }, 409)
     }
@@ -106,6 +107,7 @@ Deno.serve(async (req) => {
       job_id: job.id,
       attempt_count: job.attempt_count,
       max_retry_attempts: maxRetryAttempts,
+      force_retry: forceRetry,
     })
 
     claimedJobId = job.id
@@ -188,8 +190,8 @@ Deno.serve(async (req) => {
   }
 })
 
-async function claimJob(jobId: string): Promise<BillingJob | null> {
-  const { data, error } = await supabase.rpc("claim_billing_job", { p_job_id: jobId })
+async function claimJob(jobId: string, forceRetry: boolean): Promise<BillingJob | null> {
+  const { data, error } = await supabase.rpc("claim_billing_job", { p_job_id: jobId, p_force_retry: forceRetry })
   if (error) {
     throw error
   }

@@ -257,6 +257,13 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
     })
     throw error
   }
+
+  console.log("stripe-webhook: payment_intent.succeeded", {
+    billing_job_id: billingJobId,
+    payment_intent_id: paymentIntent.id,
+    currency,
+    amount_minor: amountMinor,
+  })
 }
 
 async function handlePaymentIntentPaymentFailed(paymentIntent: Stripe.PaymentIntent) {
@@ -286,6 +293,13 @@ async function handlePaymentIntentPaymentFailed(paymentIntent: Stripe.PaymentInt
     })
     throw error
   }
+
+  console.log("stripe-webhook: payment_intent.payment_failed", {
+    billing_job_id: billingJobId,
+    payment_intent_id: paymentIntent.id,
+    error_code: errorCode,
+    error_message: errorMessage,
+  })
 }
 
 function extractBillingJobId(paymentIntent: Stripe.PaymentIntent): string | null {
