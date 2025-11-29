@@ -5,6 +5,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:peppercheck_flutter/gen/assets.gen.dart';
 import 'package:peppercheck_flutter/app/theme/colors.dart';
 
+import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
+
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
 
@@ -31,7 +33,7 @@ class LoginScreen extends StatelessWidget {
                   Assets.images.peppercheckLogo.image(height: 140),
                   const Spacer(flex: 2),
                   Text(
-                    'PEPPERCHECK',
+                    t.login.title,
                     style: GoogleFonts.luckiestGuy(
                       fontSize: 48,
                       color: AppColors.accentRed,

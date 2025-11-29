@@ -1,0 +1,5 @@
+base_locale: ja
+fallback_strategy: base_locale
+input_directory: assets/i18n
+output_directory: lib/gen/slang
+output_file_name: strings.g.dart
