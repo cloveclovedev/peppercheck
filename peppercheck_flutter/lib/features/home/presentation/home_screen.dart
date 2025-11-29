@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -6,8 +7,8 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Home Screen')),
-      body: const Center(child: Text('Home Screen')),
+      appBar: AppBar(title: Text(t.home.title)),
+      body: Center(child: Text(t.home.title)),
     );
   }
 }
