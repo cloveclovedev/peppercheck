@@ -47,6 +47,7 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   google_sign_in: ^7.2.0
+  supabase_flutter: ^2.10.3
 
 dev_dependencies:
   flutter_test:
