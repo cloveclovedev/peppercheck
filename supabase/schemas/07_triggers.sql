@@ -37,6 +37,11 @@ CREATE OR REPLACE TRIGGER on_tasks_update
 BEFORE UPDATE ON public.tasks
 FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 
+-- Block task creation when unpaid billing exists
+CREATE OR REPLACE TRIGGER block_task_creation_if_unpaid
+BEFORE INSERT ON public.tasks
+FOR EACH ROW EXECUTE FUNCTION public.block_task_creation_if_unpaid();
+
 -- task_evidences --------------------------------------------------
 CREATE OR REPLACE TRIGGER validate_evidence_due_date_insert
 BEFORE INSERT ON public.task_evidences

@@ -46,7 +46,7 @@ BEGIN
   );
 
   FOR r IN
-    SELECT id
+    SELECT id, attempt_count
       FROM public.billing_jobs
      WHERE status = 'failed'
        AND attempt_count < v_max_attempts
@@ -54,7 +54,7 @@ BEGIN
      LIMIT v_limit
      FOR UPDATE SKIP LOCKED
   LOOP
-    v_payload := jsonb_build_object('id', r.id);
+    v_payload := jsonb_build_object('id', r.id, 'force_retry', false);
 
     PERFORM net.http_post(
       url => v_url,
@@ -64,6 +64,7 @@ BEGIN
     );
 
     v_count := v_count + 1;
+    RAISE LOG 'retry_failed_billing_jobs enqueued job % (attempt_count=%)', r.id, r.attempt_count;
   END LOOP;
 
   RAISE NOTICE 'retry_failed_billing_jobs: enqueued % jobs', v_count;
