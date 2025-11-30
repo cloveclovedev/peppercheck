@@ -10,7 +10,29 @@
   },
   "nav": {
     "home": "Home",
+    "payments": "Payments",
     "profile": "Profile"
+  },
+  "billing": {
+    "title": "支払い設定",
+    "paymentMethod": "支払い方法",
+    "addPaymentMethod": "支払い方法を追加",
+    "changePaymentMethod": "支払い方法を変更",
+    "noPaymentMethod": "支払い方法が設定されていません"
+  },
+  "payout": {
+    "title": "出金設定",
+    "setupPayout": "出金設定を行う",
+    "payoutSetupDescription": "報酬を受け取るには出金設定が必要です",
+    "changePayoutSettings": "出金設定を変更",
+    "payoutSetupComplete": "出金設定は完了しています"
+  },
+  "dashboard": {
+    "totalEarnings": "総収益",
+    "pending": "保留中",
+    "available": "出金可能額",
+    "requestPayout": "出金を申請",
+    "payoutRequested": "出金申請済み"
   },
   "task": {
     "status": {

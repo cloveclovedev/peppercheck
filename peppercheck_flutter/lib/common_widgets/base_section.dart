@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:peppercheck_flutter/app/theme/colors.dart';
+import 'package:peppercheck_flutter/app/theme/app_colors.dart';
 
 class BaseSection extends StatelessWidget {
   final String title;
@@ -27,7 +27,12 @@ class BaseSection extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            child,
+            DefaultTextStyle.merge(
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: AppColors.textBlack),
+              child: child,
+            ),
           ],
         ),
       ),

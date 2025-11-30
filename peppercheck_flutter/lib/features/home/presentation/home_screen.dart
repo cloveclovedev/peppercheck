@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:peppercheck_flutter/app/theme/colors.dart';
+import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
 import 'package:peppercheck_flutter/common_widgets/app_background.dart';
 import 'package:peppercheck_flutter/common_widgets/app_scaffold.dart';
 import 'package:peppercheck_flutter/common_widgets/base_section.dart';
@@ -18,19 +18,6 @@ class HomeScreen extends ConsumerWidget {
       child: AppScaffold(
         title: t.home.title,
         currentIndex: 0,
-        onNavigationSelected: (index) {
-          if (index == 1) {
-            // TODO: Navigate to Profile
-          }
-        },
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            // TODO: Navigate to Create Task
-          },
-          backgroundColor: AppColors.accentYellow,
-          foregroundColor: AppColors.textBlack,
-          child: const Icon(Icons.add),
-        ),
         body: SafeArea(
           child: RefreshIndicator(
             onRefresh: () async {
@@ -41,7 +28,12 @@ class HomeScreen extends ConsumerWidget {
             child: CustomScrollView(
               slivers: [
                 SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSizes.spacingStandard,
+                    AppSizes.spacingSmall,
+                    AppSizes.spacingStandard,
+                    AppSizes.spacingStandard,
+                  ),
                   sliver: SliverList(
                     delegate: SliverChildListDelegate([
                       // Header removed (moved to AppScaffold)
@@ -52,7 +44,7 @@ class HomeScreen extends ConsumerWidget {
                         tasksValue: ref.watch(activeUserTasksProvider),
                         isMyTask: true,
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSizes.sectionGap),
 
                       // Referee Tasks Section
                       _TaskSection(
@@ -93,17 +85,24 @@ class _TaskSection extends StatelessWidget {
         data: (tasks) {
           if (tasks.isEmpty) {
             return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              padding: const EdgeInsets.symmetric(
+                vertical: AppSizes.spacingSmall,
+              ),
               child: Text(
                 t.home.noTasks,
-                style: const TextStyle(color: Colors.grey),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: Colors.grey),
               ),
             );
           }
           return Column(
-            children: tasks
-                .map((task) => TaskCard(task: task, isMyTask: isMyTask))
-                .toList(),
+            children: [
+              for (int i = 0; i < tasks.length; i++) ...[
+                if (i > 0) const SizedBox(height: AppSizes.spacingTiny),
+                TaskCard(task: tasks[i], isMyTask: isMyTask),
+              ],
+            ],
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),

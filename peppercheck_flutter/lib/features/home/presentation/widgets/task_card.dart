@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:peppercheck_flutter/app/theme/colors.dart';
+import 'package:peppercheck_flutter/app/theme/app_colors.dart';
 import 'package:peppercheck_flutter/features/task/domain/task.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 
@@ -28,7 +28,7 @@ class TaskCard extends StatelessWidget {
       color: AppColors.backgroundWhite,
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      margin: const EdgeInsets.symmetric(vertical: 4),
+      margin: EdgeInsets.zero,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
