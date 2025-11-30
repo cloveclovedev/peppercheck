@@ -90,6 +90,9 @@ class TranslationsNavJa {
 	/// ja: 'Home'
 	String get home => 'Home';
 
+	/// ja: 'Payments'
+	String get payments => 'Payments';
+
 	/// ja: 'Profile'
 	String get profile => 'Profile';
 }
@@ -154,6 +157,7 @@ extension on Translations {
 			'home.refereeTasks' => '判定依頼',
 			'home.noTasks' => 'タスクはありません',
 			'nav.home' => 'Home',
+			'nav.payments' => 'Payments',
 			'nav.profile' => 'Profile',
 			'task.status.draft' => '下書き',
 			'task.status.open' => '募集中',

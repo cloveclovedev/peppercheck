@@ -1,26 +1,51 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:peppercheck_flutter/app/theme/colors.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 
 class AppScaffold extends StatelessWidget {
   final Widget body;
-  final Widget? floatingActionButton;
   final PreferredSizeWidget? appBar;
   final int currentIndex;
-  final ValueChanged<int>? onNavigationSelected;
   final String? title;
   final List<Widget>? actions;
 
   const AppScaffold({
     super.key,
     required this.body,
-    this.floatingActionButton,
     this.appBar,
     this.currentIndex = 0,
-    this.onNavigationSelected,
     this.title,
     this.actions,
   });
+
+  void _onItemTapped(int index, BuildContext context) {
+    switch (index) {
+      case 0:
+        context.go('/home');
+        break;
+      case 1:
+        context.go('/payments');
+        break;
+      case 2:
+        // TODO: Navigate to Profile
+        break;
+    }
+  }
+
+  Widget? _buildFloatingActionButton(BuildContext context) {
+    if (currentIndex == 0) {
+      return FloatingActionButton(
+        onPressed: () {
+          // TODO: Navigate to Create Task
+        },
+        backgroundColor: AppColors.accentYellow,
+        foregroundColor: AppColors.textBlack,
+        child: const Icon(Icons.add),
+      );
+    }
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -64,17 +89,21 @@ class AppScaffold extends StatelessWidget {
                   label: t.nav.home,
                 ),
                 NavigationDestination(
+                  icon: Icon(Icons.payments, color: AppColors.textBlack),
+                  label: t.nav.payments,
+                ),
+                NavigationDestination(
                   icon: Icon(Icons.person, color: AppColors.textBlack),
                   label: t.nav.profile,
                 ),
               ],
               selectedIndex: currentIndex,
-              onDestinationSelected: onNavigationSelected,
+              onDestinationSelected: (index) => _onItemTapped(index, context),
             ),
           ),
         ),
       ),
-      floatingActionButton: floatingActionButton,
+      floatingActionButton: _buildFloatingActionButton(context),
     );
   }
 }

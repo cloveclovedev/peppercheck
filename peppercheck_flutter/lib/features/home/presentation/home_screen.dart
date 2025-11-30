@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:peppercheck_flutter/app/theme/colors.dart';
 import 'package:peppercheck_flutter/common_widgets/app_background.dart';
 import 'package:peppercheck_flutter/common_widgets/app_scaffold.dart';
 import 'package:peppercheck_flutter/common_widgets/base_section.dart';
@@ -18,19 +17,6 @@ class HomeScreen extends ConsumerWidget {
       child: AppScaffold(
         title: t.home.title,
         currentIndex: 0,
-        onNavigationSelected: (index) {
-          if (index == 1) {
-            // TODO: Navigate to Profile
-          }
-        },
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            // TODO: Navigate to Create Task
-          },
-          backgroundColor: AppColors.accentYellow,
-          foregroundColor: AppColors.textBlack,
-          child: const Icon(Icons.add),
-        ),
         body: SafeArea(
           child: RefreshIndicator(
             onRefresh: () async {
