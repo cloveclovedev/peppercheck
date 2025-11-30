@@ -3,9 +3,26 @@
     "title": "PEPPERCHECK"
   },
   "home": {
-    "title": "ホーム画面",
+    "title": "Home",
     "myTasks": "自分のタスク",
     "refereeTasks": "判定依頼",
     "noTasks": "タスクはありません"
+  },
+  "nav": {
+    "home": "Home",
+    "profile": "Profile"
+  },
+  "task": {
+    "status": {
+      "draft": "下書き",
+      "open": "募集中",
+      "judging": "判定中",
+      "rejected": "却下",
+      "completed": "完了",
+      "closed": "終了",
+      "self_completed": "自己完結",
+      "expired": "期限切れ",
+      "done": "完了"
+    }
   }
 }
