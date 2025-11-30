@@ -66,6 +66,15 @@ class TranslationsHomeJa {
 
 	/// ja: 'ホーム画面'
 	String get title => 'ホーム画面';
+
+	/// ja: '自分のタスク'
+	String get myTasks => '自分のタスク';
+
+	/// ja: '判定依頼'
+	String get refereeTasks => '判定依頼';
+
+	/// ja: 'タスクはありません'
+	String get noTasks => 'タスクはありません';
 }
 
 /// The flat map containing all translations for locale <ja>.
@@ -78,6 +87,9 @@ extension on Translations {
 		return switch (path) {
 			'login.title' => 'PEPPERCHECK',
 			'home.title' => 'ホーム画面',
+			'home.myTasks' => '自分のタスク',
+			'home.refereeTasks' => '判定依頼',
+			'home.noTasks' => 'タスクはありません',
 			_ => null,
 		};
 	}
