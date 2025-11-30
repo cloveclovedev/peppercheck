@@ -8,4 +8,5 @@ class AppSizes {
 
   // Section gap reduced to 8.0 as per user request
   static const double sectionGap = 8.0;
+  static const double radiusMedium = 12.0;
 }

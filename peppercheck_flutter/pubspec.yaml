@@ -50,6 +50,9 @@ dependencies:
   supabase_flutter: ^2.10.3
   logger: ^2.6.2
   intl: ^0.20.2
+  flutter_stripe: ^12.1.1
+  flutter_dotenv: ^6.0.0
+  font_awesome_flutter: ^10.12.0
 
 dev_dependencies:
   flutter_test:
@@ -83,8 +86,14 @@ flutter:
 
   assets:
     - assets/images/
+    - assets/env/.env.debug
+    - assets/env/.env.staging
+    - assets/env/.env.production
 
 flutter_gen:
   output: lib/gen/
   line_length: 80
+  assets:
+    exclude:
+      - assets/env/.env.*
 
