@@ -14,4 +14,6 @@ class AppColors {
   static const Color accentBlueLight = Color(0xFF84D4DB);
   static const Color accentGreen = Color(0xFF067F82);
   static const Color accentGreenLight = Color(0xFF93D2BD);
+  static const Color border = Color(0xFFD7C9B1);
+  static const Color textSecondary = Color(0xFF6B5D5D);
 }

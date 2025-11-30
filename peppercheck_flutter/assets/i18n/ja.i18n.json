@@ -18,7 +18,8 @@
     "paymentMethod": "支払い方法",
     "addPaymentMethod": "支払い方法を追加",
     "changePaymentMethod": "支払い方法を変更",
-    "noPaymentMethod": "支払い方法が設定されていません"
+    "noPaymentMethod": "支払い方法が設定されていません",
+    "paymentMethodAdded": "支払い方法を追加しました"
   },
   "payout": {
     "title": "出金設定",

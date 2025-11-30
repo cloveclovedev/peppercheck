@@ -122,6 +122,9 @@ class TranslationsBillingJa {
 
 	/// ja: '支払い方法が設定されていません'
 	String get noPaymentMethod => '支払い方法が設定されていません';
+
+	/// ja: '支払い方法を追加しました'
+	String get paymentMethodAdded => '支払い方法を追加しました';
 }
 
 // Path: payout
@@ -239,6 +242,7 @@ extension on Translations {
 			'billing.addPaymentMethod' => '支払い方法を追加',
 			'billing.changePaymentMethod' => '支払い方法を変更',
 			'billing.noPaymentMethod' => '支払い方法が設定されていません',
+			'billing.paymentMethodAdded' => '支払い方法を追加しました',
 			'payout.title' => '出金設定',
 			'payout.setupPayout' => '出金設定を行う',
 			'payout.payoutSetupDescription' => '報酬を受け取るには出金設定が必要です',
