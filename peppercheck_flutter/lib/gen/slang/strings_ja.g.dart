@@ -43,6 +43,8 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final TranslationsLoginJa login = TranslationsLoginJa.internal(_root);
 	late final TranslationsHomeJa home = TranslationsHomeJa.internal(_root);
 	late final TranslationsNavJa nav = TranslationsNavJa.internal(_root);
+	late final TranslationsBillingJa billing = TranslationsBillingJa.internal(_root);
+	late final TranslationsPayoutJa payout = TranslationsPayoutJa.internal(_root);
 	late final TranslationsTaskJa task = TranslationsTaskJa.internal(_root);
 }
 
@@ -95,6 +97,54 @@ class TranslationsNavJa {
 
 	/// ja: 'Profile'
 	String get profile => 'Profile';
+}
+
+// Path: billing
+class TranslationsBillingJa {
+	TranslationsBillingJa.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// ja: '支払い設定'
+	String get title => '支払い設定';
+
+	/// ja: '支払い方法'
+	String get paymentMethod => '支払い方法';
+
+	/// ja: '支払い方法を追加'
+	String get addPaymentMethod => '支払い方法を追加';
+
+	/// ja: '支払い方法を変更'
+	String get changePaymentMethod => '支払い方法を変更';
+
+	/// ja: '支払い方法が設定されていません'
+	String get noPaymentMethod => '支払い方法が設定されていません';
+}
+
+// Path: payout
+class TranslationsPayoutJa {
+	TranslationsPayoutJa.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// ja: '出金設定'
+	String get title => '出金設定';
+
+	/// ja: '出金設定を行う'
+	String get setupPayout => '出金設定を行う';
+
+	/// ja: '報酬を受け取るには出金設定が必要です'
+	String get payoutSetupDescription => '報酬を受け取るには出金設定が必要です';
+
+	/// ja: '出金設定を変更'
+	String get changePayoutSettings => '出金設定を変更';
+
+	/// ja: '出金設定は完了しています'
+	String get payoutSetupComplete => '出金設定は完了しています';
 }
 
 // Path: task
@@ -159,6 +209,16 @@ extension on Translations {
 			'nav.home' => 'Home',
 			'nav.payments' => 'Payments',
 			'nav.profile' => 'Profile',
+			'billing.title' => '支払い設定',
+			'billing.paymentMethod' => '支払い方法',
+			'billing.addPaymentMethod' => '支払い方法を追加',
+			'billing.changePaymentMethod' => '支払い方法を変更',
+			'billing.noPaymentMethod' => '支払い方法が設定されていません',
+			'payout.title' => '出金設定',
+			'payout.setupPayout' => '出金設定を行う',
+			'payout.payoutSetupDescription' => '報酬を受け取るには出金設定が必要です',
+			'payout.changePayoutSettings' => '出金設定を変更',
+			'payout.payoutSetupComplete' => '出金設定は完了しています',
 			'task.status.draft' => '下書き',
 			'task.status.open' => '募集中',
 			'task.status.judging' => '判定中',

@@ -27,7 +27,12 @@ class BaseSection extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            child,
+            DefaultTextStyle.merge(
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: AppColors.textBlack),
+              child: child,
+            ),
           ],
         ),
       ),

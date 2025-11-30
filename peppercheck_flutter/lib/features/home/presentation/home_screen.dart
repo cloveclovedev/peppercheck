@@ -82,7 +82,9 @@ class _TaskSection extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 8.0),
               child: Text(
                 t.home.noTasks,
-                style: const TextStyle(color: Colors.grey),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: Colors.grey),
               ),
             );
           }
