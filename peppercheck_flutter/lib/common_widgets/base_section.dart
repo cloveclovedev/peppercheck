@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:peppercheck_flutter/app/theme/colors.dart';
+import 'package:peppercheck_flutter/app/theme/app_colors.dart';
 
 class BaseSection extends StatelessWidget {
   final String title;

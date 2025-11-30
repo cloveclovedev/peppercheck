@@ -27,6 +27,13 @@
     "changePayoutSettings": "出金設定を変更",
     "payoutSetupComplete": "出金設定は完了しています"
   },
+  "dashboard": {
+    "totalEarnings": "総収益",
+    "pending": "保留中",
+    "available": "出金可能額",
+    "requestPayout": "出金を申請",
+    "payoutRequested": "出金申請済み"
+  },
   "task": {
     "status": {
       "draft": "下書き",

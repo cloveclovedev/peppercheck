@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:peppercheck_flutter/app/theme/colors.dart';
+import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
+import 'package:peppercheck_flutter/app/theme/app_colors.dart';
 import 'package:peppercheck_flutter/common_widgets/action_button.dart';
 import 'package:peppercheck_flutter/common_widgets/base_section.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
@@ -24,7 +25,7 @@ class PayoutSetupSection extends StatelessWidget {
                 color: AppColors.textBlack.withValues(alpha: 0.6),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSizes.spacingMedium),
             ActionButton(
               text: t.payout.setupPayout,
               icon: Icons.account_balance,

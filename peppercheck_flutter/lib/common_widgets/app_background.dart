@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:peppercheck_flutter/app/theme/colors.dart';
+import 'package:peppercheck_flutter/app/theme/app_colors.dart';
 
 class AppBackground extends StatelessWidget {
   final Widget child;

@@ -45,6 +45,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final TranslationsNavJa nav = TranslationsNavJa.internal(_root);
 	late final TranslationsBillingJa billing = TranslationsBillingJa.internal(_root);
 	late final TranslationsPayoutJa payout = TranslationsPayoutJa.internal(_root);
+	late final TranslationsDashboardJa dashboard = TranslationsDashboardJa.internal(_root);
 	late final TranslationsTaskJa task = TranslationsTaskJa.internal(_root);
 }
 
@@ -147,6 +148,30 @@ class TranslationsPayoutJa {
 	String get payoutSetupComplete => '出金設定は完了しています';
 }
 
+// Path: dashboard
+class TranslationsDashboardJa {
+	TranslationsDashboardJa.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// ja: '総収益'
+	String get totalEarnings => '総収益';
+
+	/// ja: '保留中'
+	String get pending => '保留中';
+
+	/// ja: '出金可能額'
+	String get available => '出金可能額';
+
+	/// ja: '出金を申請'
+	String get requestPayout => '出金を申請';
+
+	/// ja: '出金申請済み'
+	String get payoutRequested => '出金申請済み';
+}
+
 // Path: task
 class TranslationsTaskJa {
 	TranslationsTaskJa.internal(this._root);
@@ -219,6 +244,11 @@ extension on Translations {
 			'payout.payoutSetupDescription' => '報酬を受け取るには出金設定が必要です',
 			'payout.changePayoutSettings' => '出金設定を変更',
 			'payout.payoutSetupComplete' => '出金設定は完了しています',
+			'dashboard.totalEarnings' => '総収益',
+			'dashboard.pending' => '保留中',
+			'dashboard.available' => '出金可能額',
+			'dashboard.requestPayout' => '出金を申請',
+			'dashboard.payoutRequested' => '出金申請済み',
 			'task.status.draft' => '下書き',
 			'task.status.open' => '募集中',
 			'task.status.judging' => '判定中',

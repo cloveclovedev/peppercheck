@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:peppercheck_flutter/features/authentication/presentation/authentication_controller.dart';
 import 'package:peppercheck_flutter/gen/assets.gen.dart';
-import 'package:peppercheck_flutter/app/theme/colors.dart';
+import 'package:peppercheck_flutter/app/theme/app_colors.dart';
 
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 
