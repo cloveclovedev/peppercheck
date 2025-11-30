@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:peppercheck_flutter/app/routing/app_router.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(routerProvider);
+
     return TranslationProvider(
       child: Builder(
         builder: (context) {

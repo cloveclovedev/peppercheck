@@ -3,6 +3,9 @@
     "title": "PEPPERCHECK"
   },
   "home": {
-    "title": "ホーム画面"
+    "title": "ホーム画面",
+    "myTasks": "自分のタスク",
+    "refereeTasks": "判定依頼",
+    "noTasks": "タスクはありません"
   }
 }
