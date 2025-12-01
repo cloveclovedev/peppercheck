@@ -26,7 +26,17 @@
     "setupPayout": "出金設定を行う",
     "payoutSetupDescription": "報酬を受け取るには出金設定が必要です",
     "changePayoutSettings": "出金設定を変更",
-    "payoutSetupComplete": "出金設定は完了しています"
+    "payoutSetupComplete": "出金設定は完了しています",
+    "resumeSetup": "出金設定を再開する",
+    "payoutSetupInProgressDescription": "レフェリーをすることはできますが報酬を出金することはできません。出金設定を最後まで終わらせてください。",
+    "showHints": "入力のヒントを表示",
+    "hideHints": "入力のヒントを隠す",
+    "hintIndustry": "業種は「その他の個人向けサービス」を選んでください",
+    "hintDescription": "商品の説明は「依頼を受けたタスクについて進捗内容をレビューします。レビュー完了時に代金が支払われます。」と入力してください",
+    "hintDescriptionCopy": "依頼を受けたタスクについて進捗内容をレビューします。レビュー完了時に代金が支払われます。",
+    "hintWebsite": "ウェブサイトは「https://peppercheck.com」を入力してください",
+    "hintWebsiteCopy": "https://peppercheck.com",
+    "copiedInputExample": "入力例をコピーしました"
   },
   "dashboard": {
     "totalEarnings": "総収益",

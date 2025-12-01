@@ -149,6 +149,36 @@ class TranslationsPayoutJa {
 
 	/// ja: '出金設定は完了しています'
 	String get payoutSetupComplete => '出金設定は完了しています';
+
+	/// ja: '出金設定を再開する'
+	String get resumeSetup => '出金設定を再開する';
+
+	/// ja: 'レフェリーをすることはできますが報酬を出金することはできません。出金設定を最後まで終わらせてください。'
+	String get payoutSetupInProgressDescription => 'レフェリーをすることはできますが報酬を出金することはできません。出金設定を最後まで終わらせてください。';
+
+	/// ja: '入力のヒントを表示'
+	String get showHints => '入力のヒントを表示';
+
+	/// ja: '入力のヒントを隠す'
+	String get hideHints => '入力のヒントを隠す';
+
+	/// ja: '業種は「その他の個人向けサービス」を選んでください'
+	String get hintIndustry => '業種は「その他の個人向けサービス」を選んでください';
+
+	/// ja: '商品の説明は「依頼を受けたタスクについて進捗内容をレビューします。レビュー完了時に代金が支払われます。」と入力してください'
+	String get hintDescription => '商品の説明は「依頼を受けたタスクについて進捗内容をレビューします。レビュー完了時に代金が支払われます。」と入力してください';
+
+	/// ja: '依頼を受けたタスクについて進捗内容をレビューします。レビュー完了時に代金が支払われます。'
+	String get hintDescriptionCopy => '依頼を受けたタスクについて進捗内容をレビューします。レビュー完了時に代金が支払われます。';
+
+	/// ja: 'ウェブサイトは「https://peppercheck.com」を入力してください'
+	String get hintWebsite => 'ウェブサイトは「https://peppercheck.com」を入力してください';
+
+	/// ja: 'https://peppercheck.com'
+	String get hintWebsiteCopy => 'https://peppercheck.com';
+
+	/// ja: '入力例をコピーしました'
+	String get copiedInputExample => '入力例をコピーしました';
 }
 
 // Path: dashboard
@@ -248,6 +278,16 @@ extension on Translations {
 			'payout.payoutSetupDescription' => '報酬を受け取るには出金設定が必要です',
 			'payout.changePayoutSettings' => '出金設定を変更',
 			'payout.payoutSetupComplete' => '出金設定は完了しています',
+			'payout.resumeSetup' => '出金設定を再開する',
+			'payout.payoutSetupInProgressDescription' => 'レフェリーをすることはできますが報酬を出金することはできません。出金設定を最後まで終わらせてください。',
+			'payout.showHints' => '入力のヒントを表示',
+			'payout.hideHints' => '入力のヒントを隠す',
+			'payout.hintIndustry' => '業種は「その他の個人向けサービス」を選んでください',
+			'payout.hintDescription' => '商品の説明は「依頼を受けたタスクについて進捗内容をレビューします。レビュー完了時に代金が支払われます。」と入力してください',
+			'payout.hintDescriptionCopy' => '依頼を受けたタスクについて進捗内容をレビューします。レビュー完了時に代金が支払われます。',
+			'payout.hintWebsite' => 'ウェブサイトは「https://peppercheck.com」を入力してください',
+			'payout.hintWebsiteCopy' => 'https://peppercheck.com',
+			'payout.copiedInputExample' => '入力例をコピーしました',
 			'dashboard.totalEarnings' => '総収益',
 			'dashboard.pending' => '保留中',
 			'dashboard.available' => '出金可能額',
