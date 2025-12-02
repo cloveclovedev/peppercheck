@@ -8,4 +8,5 @@
 .vscode/*
 !.vscode/launch.json.example
 !.vscode/settings.json
+!.vscode/extensions.json
 
