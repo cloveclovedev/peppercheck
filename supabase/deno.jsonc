@@ -1,5 +1,8 @@
 // Shared Deno configuration for Supabase Edge Functions
 {
+  "workspace": [
+    "functions/*"
+  ],
   "fmt": {
     "files": {
       "include": ["functions"],
@@ -14,7 +17,8 @@
       "indentWidth": 2,
       "useTabs": false,
       "singleQuote": true,
-      "proseWrap": "preserve"
+      "proseWrap": "preserve",
+      "semiColons": false
     }
   },
   "lint": {
