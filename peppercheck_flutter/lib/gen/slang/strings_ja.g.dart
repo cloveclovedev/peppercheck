@@ -44,6 +44,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final TranslationsHomeJa home = TranslationsHomeJa.internal(_root);
 	late final TranslationsNavJa nav = TranslationsNavJa.internal(_root);
 	late final TranslationsBillingJa billing = TranslationsBillingJa.internal(_root);
+	late final TranslationsCommonJa common = TranslationsCommonJa.internal(_root);
 	late final TranslationsPayoutJa payout = TranslationsPayoutJa.internal(_root);
 	late final TranslationsDashboardJa dashboard = TranslationsDashboardJa.internal(_root);
 	late final TranslationsTaskJa task = TranslationsTaskJa.internal(_root);
@@ -127,6 +128,21 @@ class TranslationsBillingJa {
 	String get paymentMethodAdded => '支払い方法を追加しました';
 }
 
+// Path: common
+class TranslationsCommonJa {
+	TranslationsCommonJa.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// ja: 'キャンセル'
+	String get cancel => 'キャンセル';
+
+	/// ja: '確認'
+	String get confirm => '確認';
+}
+
 // Path: payout
 class TranslationsPayoutJa {
 	TranslationsPayoutJa.internal(this._root);
@@ -179,6 +195,18 @@ class TranslationsPayoutJa {
 
 	/// ja: '入力例をコピーしました'
 	String get copiedInputExample => '入力例をコピーしました';
+
+	/// ja: '金額'
+	String get amount => '金額';
+
+	/// ja: '金額が不正です'
+	String get invalidAmount => '金額が不正です';
+
+	/// ja: '出金可能額を超えています'
+	String get insufficientFunds => '出金可能額を超えています';
+
+	/// ja: '出金したい金額を入力してください'
+	String get enterAmountDescription => '出金したい金額を入力してください';
 }
 
 // Path: dashboard
@@ -273,6 +301,8 @@ extension on Translations {
 			'billing.changePaymentMethod' => '支払い方法を変更',
 			'billing.noPaymentMethod' => '支払い方法が設定されていません',
 			'billing.paymentMethodAdded' => '支払い方法を追加しました',
+			'common.cancel' => 'キャンセル',
+			'common.confirm' => '確認',
 			'payout.title' => '出金設定',
 			'payout.setupPayout' => '出金設定を行う',
 			'payout.payoutSetupDescription' => '報酬を受け取るには出金設定が必要です',
@@ -288,6 +318,10 @@ extension on Translations {
 			'payout.hintWebsite' => 'ウェブサイトは「https://peppercheck.com」を入力してください',
 			'payout.hintWebsiteCopy' => 'https://peppercheck.com',
 			'payout.copiedInputExample' => '入力例をコピーしました',
+			'payout.amount' => '金額',
+			'payout.invalidAmount' => '金額が不正です',
+			'payout.insufficientFunds' => '出金可能額を超えています',
+			'payout.enterAmountDescription' => '出金したい金額を入力してください',
 			'dashboard.totalEarnings' => '総収益',
 			'dashboard.pending' => '保留中',
 			'dashboard.available' => '出金可能額',
