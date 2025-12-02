@@ -21,6 +21,10 @@
     "noPaymentMethod": "支払い方法が設定されていません",
     "paymentMethodAdded": "支払い方法を追加しました"
   },
+  "common": {
+    "cancel": "キャンセル",
+    "confirm": "確認"
+  },
   "payout": {
     "title": "出金設定",
     "setupPayout": "出金設定を行う",
@@ -36,7 +40,11 @@
     "hintDescriptionCopy": "依頼を受けたタスクについて進捗内容をレビューします。レビュー完了時に代金が支払われます。",
     "hintWebsite": "ウェブサイトは「https://peppercheck.com」を入力してください",
     "hintWebsiteCopy": "https://peppercheck.com",
-    "copiedInputExample": "入力例をコピーしました"
+    "copiedInputExample": "入力例をコピーしました",
+    "amount": "金額",
+    "invalidAmount": "金額が不正です",
+    "insufficientFunds": "出金可能額を超えています",
+    "enterAmountDescription": "出金したい金額を入力してください"
   },
   "dashboard": {
     "totalEarnings": "総収益",
