@@ -22,6 +22,7 @@ class TaskCreationScreen extends ConsumerWidget {
 
     return AppBackground(
       child: AppScaffold.scrollable(
+        currentIndex: -1,
         title: t.task.creation.title,
         slivers: [
           SliverToBoxAdapter(
