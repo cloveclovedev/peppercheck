@@ -28,14 +28,13 @@ class TaskCreationScreen extends ConsumerWidget {
     });
 
     return AppBackground(
-      child: AppScaffold(
+      child: AppScaffold.scrollable(
         title: t.task.creation.title,
-        body: SafeArea(
-          child: state.when(
-            data: (request) {
-              return SingleChildScrollView(
-                padding: const EdgeInsets.all(AppSizes.spacingStandard),
-                child: Column(
+        slivers: [
+          SliverToBoxAdapter(
+            child: state.when(
+              data: (request) {
+                return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Header to Form spacing - matching Home/Payment (usually small or none if AppBar provides enough)
@@ -102,13 +101,13 @@ class TaskCreationScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 32),
                   ],
-                ),
-              );
-            },
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (err, stack) => Center(child: Text('Error: $err')),
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (err, stack) => Center(child: Text('Error: $err')),
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

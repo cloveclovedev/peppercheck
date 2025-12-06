@@ -15,52 +15,34 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return AppBackground(
-      child: AppScaffold(
+      child: AppScaffold.scrollable(
         title: t.home.title,
         currentIndex: 0,
-        body: SafeArea(
-          child: RefreshIndicator(
-            onRefresh: () async {
-              // Refresh both providers
-              ref.invalidate(activeUserTasksProvider);
-              ref.invalidate(activeRefereeTasksProvider);
-            },
-            child: CustomScrollView(
-              slivers: [
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSizes.spacingStandard,
-                    AppSizes.spacingSmall,
-                    AppSizes.spacingStandard,
-                    AppSizes.spacingStandard,
-                  ),
-                  sliver: SliverList(
-                    delegate: SliverChildListDelegate([
-                      // Header removed (moved to AppScaffold)
+        onRefresh: () async {
+          // Refresh both providers
+          ref.invalidate(activeUserTasksProvider);
+          ref.invalidate(activeRefereeTasksProvider);
+        },
+        slivers: [
+          SliverList(
+            delegate: SliverChildListDelegate([
+              // Your Tasks Section
+              _TaskSection(
+                title: t.home.myTasks,
+                tasksValue: ref.watch(activeUserTasksProvider),
+                isMyTask: true,
+              ),
+              const SizedBox(height: AppSizes.sectionGap),
 
-                      // Your Tasks Section
-                      _TaskSection(
-                        title: t.home.myTasks,
-                        tasksValue: ref.watch(activeUserTasksProvider),
-                        isMyTask: true,
-                      ),
-                      const SizedBox(height: AppSizes.sectionGap),
-
-                      // Referee Tasks Section
-                      _TaskSection(
-                        title: t.home.refereeTasks,
-                        tasksValue: ref.watch(activeRefereeTasksProvider),
-                        isMyTask: false,
-                      ),
-                      // Add extra padding at the bottom to avoid overlap with floating bottom bar
-                      const SizedBox(height: 80),
-                    ]),
-                  ),
-                ),
-              ],
-            ),
+              // Referee Tasks Section
+              _TaskSection(
+                title: t.home.refereeTasks,
+                tasksValue: ref.watch(activeRefereeTasksProvider),
+                isMyTask: false,
+              ),
+            ]),
           ),
-        ),
+        ],
       ),
     );
   }

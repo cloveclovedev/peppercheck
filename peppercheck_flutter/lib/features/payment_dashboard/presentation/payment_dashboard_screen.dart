@@ -14,28 +14,21 @@ class PaymentDashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return AppBackground(
-      child: AppScaffold(
+      child: AppScaffold.scrollable(
         title: t.nav.payments,
         currentIndex: 1, // Payments is index 1
-        body: SafeArea(
-          child: CustomScrollView(
-            slivers: [
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                sliver: SliverList(
-                  delegate: SliverChildListDelegate([
-                    const BillingSetupSection(),
-                    const SizedBox(height: AppSizes.sectionGap),
-                    const PayoutSetupSection(),
-                    const SizedBox(height: AppSizes.sectionGap),
-                    const RewardSummarySection(),
-                    const SizedBox(height: 80), // Bottom padding
-                  ]),
-                ),
-              ),
-            ],
+        slivers: [
+          SliverList(
+            delegate: SliverChildListDelegate([
+              const BillingSetupSection(),
+              const SizedBox(height: AppSizes.sectionGap),
+              const PayoutSetupSection(),
+              const SizedBox(height: AppSizes.sectionGap),
+              const RewardSummarySection(),
+              // Bottom padding is handled by AppScaffold
+            ]),
           ),
-        ),
+        ],
       ),
     );
   }
