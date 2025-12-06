@@ -22,8 +22,12 @@ Future<void> appStartup(AppConfig config) async {
   await GoogleSignIn.instance.initialize();
 
   // Initialize Supabase
-  await Supabase.initialize(
-    url: config.supabaseUrl,
-    anonKey: config.supabaseAnonKey,
-  );
+  final supabaseUrl = dotenv.env['SUPABASE_URL'];
+  final supabaseAnonKey = dotenv.env['SUPABASE_ANON_KEY'];
+
+  if (supabaseUrl == null || supabaseAnonKey == null) {
+    throw Exception('SUPABASE_URL and SUPABASE_ANON_KEY must be set in .env');
+  }
+
+  await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
 }
