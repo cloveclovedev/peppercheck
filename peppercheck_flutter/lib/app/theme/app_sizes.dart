@@ -16,4 +16,13 @@ class AppSizes {
   static const double screenVerticalPadding = 4.0;
   // Height of the floating navigation bar container + padding
   static const double bottomNavigationBarHeight = 80.0;
+  static const double bottomNavigationBarBorderRadius = 16.0;
+
+  // BaseSection
+  static const double baseSectionHorizontalPadding = 16.0;
+  static const double baseSectionTopPadding = 12.0;
+  static const double baseSectionBottomPadding = 16.0;
+  static const double baseSectionTitleBodyGap = 8.0;
+
+  static const double taskCardGap = 4.0;
 }

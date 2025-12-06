@@ -46,7 +46,7 @@ class RewardSummarySection extends ConsumerWidget {
                 formatCurrency(totalEarnings),
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textBlack,
+                  color: AppColors.textPrimary,
                 ),
               ),
               const SizedBox(height: AppSizes.spacingSmall),
@@ -155,7 +155,7 @@ class _SummaryItem extends StatelessWidget {
             amount,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
-              color: AppColors.textBlack,
+              color: AppColors.textPrimary,
             ),
           ),
         ],

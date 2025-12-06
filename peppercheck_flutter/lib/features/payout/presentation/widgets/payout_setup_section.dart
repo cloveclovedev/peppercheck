@@ -31,7 +31,7 @@ class _PayoutSetupSectionState extends ConsumerState<PayoutSetupSection> {
             Text(
               t.payout.payoutSetupComplete,
               style: TextStyle(
-                color: AppColors.textBlack.withValues(alpha: 0.6),
+                color: AppColors.textPrimary.withValues(alpha: 0.6),
               ),
             ),
             const SizedBox(height: AppSizes.spacingMedium),
@@ -48,14 +48,14 @@ class _PayoutSetupSectionState extends ConsumerState<PayoutSetupSection> {
               Text(
                 t.payout.payoutSetupInProgressDescription,
                 style: TextStyle(
-                  color: AppColors.textBlack.withValues(alpha: 0.6),
+                  color: AppColors.textPrimary.withValues(alpha: 0.6),
                 ),
               )
             else
               Text(
                 t.payout.payoutSetupDescription,
                 style: TextStyle(
-                  color: AppColors.textBlack.withValues(alpha: 0.6),
+                  color: AppColors.textPrimary.withValues(alpha: 0.6),
                 ),
               ),
             const SizedBox(height: AppSizes.spacingMedium),
@@ -83,7 +83,7 @@ class _PayoutSetupSectionState extends ConsumerState<PayoutSetupSection> {
                       ? '▲ ${t.payout.hideHints}'
                       : '▼ ${t.payout.showHints}',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.textBlack.withValues(alpha: 0.7),
+                    color: AppColors.textPrimary.withValues(alpha: 0.7),
                     fontSize: 10,
                   ),
                 ),
@@ -133,7 +133,7 @@ class _PayoutSetupSectionState extends ConsumerState<PayoutSetupSection> {
               text: _buildBoldText(
                 context,
                 text,
-                AppColors.textBlack.withValues(alpha: 0.7),
+                AppColors.textPrimary.withValues(alpha: 0.7),
               ),
             ),
           ),
@@ -151,7 +151,7 @@ class _PayoutSetupSectionState extends ConsumerState<PayoutSetupSection> {
               child: Icon(
                 Icons.copy,
                 size: 14,
-                color: AppColors.textBlack.withValues(alpha: 0.7),
+                color: AppColors.textPrimary.withValues(alpha: 0.7),
               ),
             ),
           ],

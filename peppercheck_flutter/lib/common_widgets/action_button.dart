@@ -21,13 +21,13 @@ class ActionButton extends StatelessWidget {
 
     final containerColor = active
         ? AppColors.accentBlueLight.withValues(alpha: 0.1)
-        : AppColors.textBlack.withValues(alpha: 0.05);
+        : AppColors.textPrimary.withValues(alpha: 0.05);
     final contentColor = active
         ? AppColors.accentBlueLight
-        : AppColors.textBlack.withValues(alpha: 0.4);
+        : AppColors.textPrimary.withValues(alpha: 0.4);
     final borderColor = active
         ? AppColors.accentBlueLight.withValues(alpha: 0.5)
-        : AppColors.textBlack.withValues(alpha: 0.2);
+        : AppColors.textPrimary.withValues(alpha: 0.2);
 
     Widget button = OutlinedButton(
       onPressed: active ? onPressed : null,

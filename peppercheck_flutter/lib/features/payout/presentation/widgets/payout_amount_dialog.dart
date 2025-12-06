@@ -85,7 +85,7 @@ class _PayoutAmountDialogState extends State<PayoutAmountDialog> {
       title: Text(
         t.dashboard.requestPayout,
         style: Theme.of(context).textTheme.titleMedium?.copyWith(
-          color: AppColors.textBlack,
+          color: AppColors.textPrimary,
           fontWeight: FontWeight.bold,
         ),
       ),
@@ -99,12 +99,12 @@ class _PayoutAmountDialogState extends State<PayoutAmountDialog> {
             inputFormatters: [
               FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d*')),
             ],
-            style: const TextStyle(color: AppColors.textBlack),
-            cursorColor: AppColors.textBlack,
+            style: const TextStyle(color: AppColors.textPrimary),
+            cursorColor: AppColors.textPrimary,
             decoration: InputDecoration(
               labelText: '${t.payout.amount} (${widget.currency.code})',
               labelStyle: TextStyle(
-                color: AppColors.textBlack.withValues(alpha: 0.6),
+                color: AppColors.textPrimary.withValues(alpha: 0.6),
               ),
               errorText: _errorText,
               filled: true,
@@ -138,7 +138,7 @@ class _PayoutAmountDialogState extends State<PayoutAmountDialog> {
           Text(
             t.payout.enterAmountDescription,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: AppColors.textBlack.withValues(alpha: 0.7),
+              color: AppColors.textPrimary.withValues(alpha: 0.7),
             ),
           ),
         ],
@@ -161,7 +161,7 @@ class _PayoutAmountDialogState extends State<PayoutAmountDialog> {
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.accentYellow,
-            foregroundColor: AppColors.textBlack,
+            foregroundColor: AppColors.textPrimary,
           ),
           child: Text(t.common.confirm),
         ),

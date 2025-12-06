@@ -22,7 +22,7 @@ class PrimaryActionButton extends StatelessWidget {
     final containerColor = active
         ? AppColors.accentYellow
         : AppColors.accentYellow.withValues(alpha: 0.5);
-    final contentColor = AppColors.textBlack;
+    final contentColor = AppColors.textPrimary;
 
     Widget button = ElevatedButton(
       onPressed: active ? onPressed : null,

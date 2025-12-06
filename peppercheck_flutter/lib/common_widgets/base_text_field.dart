@@ -31,13 +31,13 @@ class BaseTextField extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    // Native implementation uses AccentBlueLight for indicators and TextBlack for labels/text
+    // Native implementation uses AccentBlueLight for indicators and textPrimary for labels/text
     final focusedIndicatorColor = AppColors.accentBlueLight;
     final unfocusedIndicatorColor = AppColors.accentBlueLight.withValues(
       alpha: 0.6,
     );
-    final labelColor = AppColors.textBlack.withValues(alpha: 0.6);
-    final textColor = AppColors.textBlack;
+    final labelColor = AppColors.textPrimary.withValues(alpha: 0.6);
+    final textColor = AppColors.textPrimary;
 
     return InkWell(
       onTap: onClick,

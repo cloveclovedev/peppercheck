@@ -107,7 +107,7 @@ class BillingSetupSection extends ConsumerWidget {
             Text(
               t.billing.noPaymentMethod,
               style: TextStyle(
-                color: AppColors.textBlack.withValues(alpha: 0.6),
+                color: AppColors.textPrimary.withValues(alpha: 0.6),
               ),
             ),
             const SizedBox(height: AppSizes.spacingMedium),
