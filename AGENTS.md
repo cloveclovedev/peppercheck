@@ -76,3 +76,12 @@ We provide two distinct constructors to enforcing robust layouts:
 
 We prefer **Slivers** (`AppScaffold.scrollable` + `CustomScrollView`) over `SingleChildScrollView` for performance and flexibility.
 For form-like content that isn't a list, wrap it in a `SliverToBoxAdapter`.
+
+### Theme & Constants
+
+**Do NOT hardcode colors or sizes.**
+Always use the semantic constants defined in the application theme to ensure consistency and maintainability.
+
+- **Colors**: Use `AppColors` (e.g., `AppColors.textPrimary`, `AppColors.textMuted`, `AppColors.backgroundDark`).
+- **Sizes**: Use `AppSizes` (e.g., `AppSizes.baseSectionHorizontalPadding`, `AppSizes.taskCardGap`).
+  - Creating new constants in `AppSizes` or `AppColors` is preferred over hardcoding, even for one-off values that might be reused later.
