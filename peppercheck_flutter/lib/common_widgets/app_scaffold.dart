@@ -112,7 +112,9 @@ class AppScaffold extends StatelessWidget {
             ),
             child: NavigationBar(
               backgroundColor: Colors.transparent,
-              indicatorColor: AppColors.accentYellow,
+              indicatorColor: currentIndex == -1
+                  ? Colors.transparent
+                  : AppColors.accentYellow,
               destinations: [
                 NavigationDestination(
                   icon: Icon(Icons.home, color: AppColors.textPrimary),
@@ -127,7 +129,7 @@ class AppScaffold extends StatelessWidget {
                   label: t.nav.profile,
                 ),
               ],
-              selectedIndex: currentIndex,
+              selectedIndex: currentIndex == -1 ? 0 : currentIndex,
               onDestinationSelected: (index) => _onItemTapped(index, context),
             ),
           ),
