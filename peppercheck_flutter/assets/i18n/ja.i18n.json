@@ -56,7 +56,7 @@
   "task": {
     "status": {
       "draft": "下書き",
-      "open": "募集中",
+      "open": "マッチング開始",
       "judging": "判定中",
       "rejected": "却下",
       "completed": "完了",
@@ -64,6 +64,17 @@
       "self_completed": "自己完結",
       "expired": "期限切れ",
       "done": "完了"
+    },
+    "creation": {
+      "title": "Task Creation",
+      "sectionInfo": "タスク情報",
+      "labelTitle": "タイトル",
+      "labelDescription": "詳細 (任意)",
+      "labelCriteria": "完了条件",
+      "labelDeadline": "期限",
+      "sectionMatching": "マッチングプラン",
+      "buttonAdd": "追加",
+      "buttonCreate": "作成"
     }
   }
 }
