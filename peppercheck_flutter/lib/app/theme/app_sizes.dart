@@ -23,6 +23,7 @@ class AppSizes {
   static const double baseSectionTopPadding = 12.0;
   static const double baseSectionBottomPadding = 16.0;
   static const double baseSectionTitleBodyGap = 8.0;
+  static const double baseSectionBorderRadius = 16.0;
 
   static const double taskCardGap = 4.0;
 }
