@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:peppercheck_flutter/app/theme/app_colors.dart';
+import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
 import 'package:peppercheck_flutter/features/task/domain/task.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 
@@ -24,20 +25,27 @@ class TaskCard extends StatelessWidget {
           ).format(DateTime.parse(task.dueDate!).toLocal())
         : '';
 
-    return Card(
+    final statusStyle = _getStatusStyle(task);
+
+    return Material(
       color: AppColors.backgroundWhite,
-      elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      margin: EdgeInsets.zero,
+      borderRadius: BorderRadius.circular(AppSizes.taskCardBorderRadius),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSizes.taskCardHorizontalPadding,
+            vertical: AppSizes.taskCardVerticalPadding,
+          ),
           child: Row(
             children: [
-              const Icon(Icons.person, color: AppColors.textPrimary, size: 20),
-              const SizedBox(width: 12),
+              const Icon(
+                Icons.person,
+                color: AppColors.textSecondary,
+                size: AppSizes.taskCardIconSize,
+              ),
+              const SizedBox(width: AppSizes.taskCardIconGap),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -51,21 +59,21 @@ class TaskCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: AppSizes.taskCardTitleInfoGap),
                     Text(
-                      '$dueDateFormatted • ¥${task.feeAmount?.toInt() ?? 0}',
+                      '$dueDateFormatted   ¥${task.feeAmount?.toInt() ?? 0}', // TODO: Multi currency
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textPrimary.withValues(alpha: 0.7),
+                        color: AppColors.textSecondary,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSizes.taskCardStatusGap),
               Text(
-                _getStatusText(task.status),
+                statusStyle.text,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: _getStatusColor(task.status),
+                  color: statusStyle.color,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -76,53 +84,43 @@ class TaskCard extends StatelessWidget {
     );
   }
 
-  String _getStatusText(String status) {
-    switch (status) {
+  ({String text, Color color}) _getStatusStyle(Task task) {
+    switch (task.detailedStatus) {
       case 'draft':
-        return t.task.status.draft;
+        return (
+          text: t.task.status.draft,
+          color: AppColors.textPrimary.withValues(alpha: 0.6),
+        );
       case 'open':
-        return t.task.status.open;
+        return (text: t.task.status.open, color: AppColors.accentYellow);
       case 'judging':
-        return t.task.status.judging;
+        return (text: t.task.status.judging, color: AppColors.accentBlueLight);
       case 'rejected':
-        return t.task.status.rejected;
+        return (text: t.task.status.rejected, color: AppColors.accentRed);
       case 'completed':
-        return t.task.status.completed;
+        return (
+          text: t.task.status.completed,
+          color: AppColors.accentGreenLight,
+        );
       case 'closed':
-        return t.task.status.closed;
+        return (
+          text: t.task.status.closed,
+          color: AppColors.accentGreen.withValues(alpha: 0.7),
+        );
       case 'self_completed':
-        return t.task.status.self_completed;
+        return (
+          text: t.task.status.self_completed,
+          color: AppColors.accentGreen.withValues(alpha: 0.5),
+        );
       case 'expired':
-        return t.task.status.expired;
+        return (
+          text: t.task.status.expired,
+          color: AppColors.textPrimary.withValues(alpha: 0.4),
+        );
       case 'done':
-        return t.task.status.done;
+        return (text: t.task.status.done, color: AppColors.accentGreenLight);
       default:
-        return status;
-    }
-  }
-
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case 'draft':
-        return AppColors.textPrimary.withValues(alpha: 0.6);
-      case 'open':
-        return AppColors.accentYellow;
-      case 'judging':
-        return AppColors.accentBlueLight;
-      case 'rejected':
-        return AppColors.accentRed;
-      case 'completed':
-        return AppColors.accentGreenLight;
-      case 'closed':
-        return AppColors.accentGreen.withValues(alpha: 0.7);
-      case 'self_completed':
-        return AppColors.accentGreen.withValues(alpha: 0.5);
-      case 'expired':
-        return AppColors.textPrimary.withValues(alpha: 0.4);
-      case 'done':
-        return AppColors.accentGreenLight;
-      default:
-        return AppColors.textPrimary;
+        return (text: task.status, color: AppColors.textPrimary);
     }
   }
 }

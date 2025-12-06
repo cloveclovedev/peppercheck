@@ -233,8 +233,8 @@ return $default(_that.id,_that.taskerId,_that.title,_that.description,_that.crit
 /// @nodoc
 @JsonSerializable()
 
-class _Task implements Task {
-  const _Task({required this.id, @JsonKey(name: 'tasker_id') required this.taskerId, required this.title, this.description, this.criteria, @JsonKey(name: 'due_date') this.dueDate, @JsonKey(name: 'fee_amount') this.feeAmount, @JsonKey(name: 'fee_currency') this.feeCurrency, required this.status, @JsonKey(name: 'created_at') this.createdAt, @JsonKey(name: 'updated_at') this.updatedAt, @JsonKey(name: 'task_referee_requests') final  List<RefereeRequest> refereeRequests = const [], @JsonKey(name: 'tasker_profile') this.tasker}): _refereeRequests = refereeRequests;
+class _Task extends Task {
+  const _Task({required this.id, @JsonKey(name: 'tasker_id') required this.taskerId, required this.title, this.description, this.criteria, @JsonKey(name: 'due_date') this.dueDate, @JsonKey(name: 'fee_amount') this.feeAmount, @JsonKey(name: 'fee_currency') this.feeCurrency, required this.status, @JsonKey(name: 'created_at') this.createdAt, @JsonKey(name: 'updated_at') this.updatedAt, @JsonKey(name: 'task_referee_requests') final  List<RefereeRequest> refereeRequests = const [], @JsonKey(name: 'tasker_profile') this.tasker}): _refereeRequests = refereeRequests,super._();
   factory _Task.fromJson(Map<String, dynamic> json) => _$TaskFromJson(json);
 
 @override final  String id;
