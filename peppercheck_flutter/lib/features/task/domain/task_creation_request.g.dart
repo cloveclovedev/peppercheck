@@ -14,7 +14,7 @@ _TaskCreationRequest _$TaskCreationRequestFromJson(Map<String, dynamic> json) =>
       selectedDateTime: json['selectedDateTime'] == null
           ? null
           : DateTime.parse(json['selectedDateTime'] as String),
-      taskStatus: json['taskStatus'] as String? ?? 'open',
+      taskStatus: json['taskStatus'] as String? ?? 'draft',
       selectedStrategies:
           (json['selectedStrategies'] as List<dynamic>?)
               ?.map((e) => e as String)

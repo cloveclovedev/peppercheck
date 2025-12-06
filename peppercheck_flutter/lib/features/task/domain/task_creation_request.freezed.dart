@@ -214,7 +214,7 @@ return $default(_that.title,_that.description,_that.criteria,_that.selectedDateT
 @JsonSerializable()
 
 class _TaskCreationRequest implements TaskCreationRequest {
-  const _TaskCreationRequest({this.title = '', this.description = '', this.criteria = '', this.selectedDateTime, this.taskStatus = 'open', final  List<String> selectedStrategies = const []}): _selectedStrategies = selectedStrategies;
+  const _TaskCreationRequest({this.title = '', this.description = '', this.criteria = '', this.selectedDateTime, this.taskStatus = 'draft', final  List<String> selectedStrategies = const []}): _selectedStrategies = selectedStrategies;
   factory _TaskCreationRequest.fromJson(Map<String, dynamic> json) => _$TaskCreationRequestFromJson(json);
 
 @override@JsonKey() final  String title;

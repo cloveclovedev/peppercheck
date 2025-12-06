@@ -8,6 +8,7 @@ class AppSizes {
 
   // Section gap reduced to 8.0 as per user request
   static const double sectionGap = 8.0;
+  static const double buttonGap = 12.0;
   static const double radiusSmall = 8.0;
   static const double radiusMedium = 12.0;
 
@@ -33,4 +34,18 @@ class AppSizes {
   static const double taskCardTitleInfoGap = 2.0;
   static const double taskCardStatusGap = 8.0;
   static const double taskCardIconSize = 20.0;
+
+  static const double gapTaskStatusSelector = 8.0;
+  static const double gapTaskStatusSelectorButton = 8.0;
+  static const double taskStatusSelectorIconSize = 16.0;
+  static const double taskStatusSelectorButtonBorderRadius = 12.0;
+  static const double taskStatusSelectorButtonVerticalPadding = 12.0;
+
+  // Matching strategy
+  static const double matchingStrategyTitleButtonGap = 4.0;
+  static const double matchingStrategyButtonGap = 8.0;
+  static const double matchingStrategyButtonHeight = 36.0;
+  static const double matchingStrategyButtonIconSize = 16.0;
+  static const double matchingStrategyButtonBorderRadius = 8.0;
+  static const double matchingStrategyButtonHorizontalPadding = 12.0;
 }
