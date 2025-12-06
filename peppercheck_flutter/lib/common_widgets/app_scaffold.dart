@@ -37,7 +37,7 @@ class AppScaffold extends StatelessWidget {
     if (currentIndex == 0) {
       return FloatingActionButton(
         onPressed: () {
-          // TODO: Navigate to Create Task
+          context.push('/create_task');
         },
         backgroundColor: AppColors.accentYellow,
         foregroundColor: AppColors.textBlack,

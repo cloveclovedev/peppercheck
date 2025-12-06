@@ -3,6 +3,7 @@ import 'package:peppercheck_flutter/features/authentication/data/auth_state_prov
 import 'package:peppercheck_flutter/features/authentication/presentation/login_screen.dart';
 import 'package:peppercheck_flutter/features/home/presentation/home_screen.dart';
 import 'package:peppercheck_flutter/features/payment_dashboard/presentation/payment_dashboard_screen.dart';
+import 'package:peppercheck_flutter/features/task/presentation/task_creation_screen.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'app_router.g.dart';
@@ -19,6 +20,10 @@ GoRouter router(Ref ref) {
       GoRoute(
         path: '/payments',
         builder: (context, state) => const PaymentDashboardScreen(),
+      ),
+      GoRoute(
+        path: '/create_task',
+        builder: (context, state) => const TaskCreationScreen(),
       ),
     ],
     redirect: (context, state) {

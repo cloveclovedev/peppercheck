@@ -241,6 +241,7 @@ class TranslationsTaskJa {
 
 	// Translations
 	late final TranslationsTaskStatusJa status = TranslationsTaskStatusJa.internal(_root);
+	late final TranslationsTaskCreationJa creation = TranslationsTaskCreationJa.internal(_root);
 }
 
 // Path: task.status
@@ -254,8 +255,8 @@ class TranslationsTaskStatusJa {
 	/// ja: '下書き'
 	String get draft => '下書き';
 
-	/// ja: '募集中'
-	String get open => '募集中';
+	/// ja: 'マッチング開始'
+	String get open => 'マッチング開始';
 
 	/// ja: '判定中'
 	String get judging => '判定中';
@@ -277,6 +278,42 @@ class TranslationsTaskStatusJa {
 
 	/// ja: '完了'
 	String get done => '完了';
+}
+
+// Path: task.creation
+class TranslationsTaskCreationJa {
+	TranslationsTaskCreationJa.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// ja: 'Task Creation'
+	String get title => 'Task Creation';
+
+	/// ja: 'タスク情報'
+	String get sectionInfo => 'タスク情報';
+
+	/// ja: 'タイトル'
+	String get labelTitle => 'タイトル';
+
+	/// ja: '詳細 (任意)'
+	String get labelDescription => '詳細 (任意)';
+
+	/// ja: '完了条件'
+	String get labelCriteria => '完了条件';
+
+	/// ja: '期限'
+	String get labelDeadline => '期限';
+
+	/// ja: 'マッチングプラン'
+	String get sectionMatching => 'マッチングプラン';
+
+	/// ja: '追加'
+	String get buttonAdd => '追加';
+
+	/// ja: '作成'
+	String get buttonCreate => '作成';
 }
 
 /// The flat map containing all translations for locale <ja>.
@@ -328,7 +365,7 @@ extension on Translations {
 			'dashboard.requestPayout' => '出金を申請',
 			'dashboard.payoutRequested' => '出金申請済み',
 			'task.status.draft' => '下書き',
-			'task.status.open' => '募集中',
+			'task.status.open' => 'マッチング開始',
 			'task.status.judging' => '判定中',
 			'task.status.rejected' => '却下',
 			'task.status.completed' => '完了',
@@ -336,6 +373,15 @@ extension on Translations {
 			'task.status.self_completed' => '自己完結',
 			'task.status.expired' => '期限切れ',
 			'task.status.done' => '完了',
+			'task.creation.title' => 'Task Creation',
+			'task.creation.sectionInfo' => 'タスク情報',
+			'task.creation.labelTitle' => 'タイトル',
+			'task.creation.labelDescription' => '詳細 (任意)',
+			'task.creation.labelCriteria' => '完了条件',
+			'task.creation.labelDeadline' => '期限',
+			'task.creation.sectionMatching' => 'マッチングプラン',
+			'task.creation.buttonAdd' => '追加',
+			'task.creation.buttonCreate' => '作成',
 			_ => null,
 		};
 	}
