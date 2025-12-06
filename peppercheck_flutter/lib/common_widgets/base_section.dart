@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:peppercheck_flutter/app/theme/app_colors.dart';
+import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
 
 class BaseSection extends StatelessWidget {
   final String title;
@@ -15,22 +16,27 @@ class BaseSection extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       margin: EdgeInsets.zero,
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.only(
+          left: AppSizes.baseSectionHorizontalPadding,
+          right: AppSizes.baseSectionHorizontalPadding,
+          top: AppSizes.baseSectionTopPadding,
+          bottom: AppSizes.baseSectionBottomPadding,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               title,
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                color: AppColors.textBlack,
+                color: AppColors.textPrimary,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSizes.baseSectionTitleBodyGap),
             DefaultTextStyle.merge(
               style: Theme.of(
                 context,
-              ).textTheme.bodySmall?.copyWith(color: AppColors.textBlack),
+              ).textTheme.bodySmall?.copyWith(color: AppColors.textPrimary),
               child: child,
             ),
           ],

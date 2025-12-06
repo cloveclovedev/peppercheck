@@ -55,7 +55,7 @@ class _StatusButton extends StatelessWidget {
         backgroundColor: isSelected
             ? AppColors.accentYellow
             : AppColors.backgroundLight,
-        foregroundColor: AppColors.textBlack,
+        foregroundColor: AppColors.textPrimary,
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         padding: const EdgeInsets.symmetric(vertical: 12),
@@ -63,7 +63,7 @@ class _StatusButton extends StatelessWidget {
       child: Text(
         text,
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-          color: AppColors.textBlack,
+          color: AppColors.textPrimary,
           fontWeight: FontWeight.w500,
         ),
       ),

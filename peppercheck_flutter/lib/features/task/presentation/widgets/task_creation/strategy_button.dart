@@ -30,7 +30,7 @@ class StrategyButton extends StatelessWidget {
           child: Text(
             displayStrategy,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppColors.textBlack,
+              color: AppColors.textPrimary,
               fontWeight: FontWeight.w500,
             ),
           ),

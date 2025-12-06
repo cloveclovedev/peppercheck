@@ -66,7 +66,7 @@ class MatchingStrategySelectionSection extends StatelessWidget {
           Text(
             '¥$totalFee',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppColors.textBlack,
+              color: AppColors.textPrimary,
               fontWeight: FontWeight.w500,
             ),
           ),

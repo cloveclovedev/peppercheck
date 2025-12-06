@@ -36,7 +36,7 @@ class TaskCard extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
           child: Row(
             children: [
-              const Icon(Icons.person, color: AppColors.textBlack, size: 20),
+              const Icon(Icons.person, color: AppColors.textPrimary, size: 20),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -45,7 +45,7 @@ class TaskCard extends StatelessWidget {
                     Text(
                       task.title,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textBlack,
+                        color: AppColors.textPrimary,
                         fontWeight: FontWeight.bold,
                       ),
                       maxLines: 1,
@@ -55,7 +55,7 @@ class TaskCard extends StatelessWidget {
                     Text(
                       '$dueDateFormatted • ¥${task.feeAmount?.toInt() ?? 0}',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textBlack.withValues(alpha: 0.7),
+                        color: AppColors.textPrimary.withValues(alpha: 0.7),
                       ),
                     ),
                   ],
@@ -104,7 +104,7 @@ class TaskCard extends StatelessWidget {
   Color _getStatusColor(String status) {
     switch (status) {
       case 'draft':
-        return AppColors.textBlack.withValues(alpha: 0.6);
+        return AppColors.textPrimary.withValues(alpha: 0.6);
       case 'open':
         return AppColors.accentYellow;
       case 'judging':
@@ -118,11 +118,11 @@ class TaskCard extends StatelessWidget {
       case 'self_completed':
         return AppColors.accentGreen.withValues(alpha: 0.5);
       case 'expired':
-        return AppColors.textBlack.withValues(alpha: 0.4);
+        return AppColors.textPrimary.withValues(alpha: 0.4);
       case 'done':
         return AppColors.accentGreenLight;
       default:
-        return AppColors.textBlack;
+        return AppColors.textPrimary;
     }
   }
 }

@@ -65,7 +65,7 @@ class AppScaffold extends StatelessWidget {
           context.push('/create_task');
         },
         backgroundColor: AppColors.accentYellow,
-        foregroundColor: AppColors.textBlack,
+        foregroundColor: AppColors.textPrimary,
         child: const Icon(Icons.add),
       );
     }
@@ -89,7 +89,7 @@ class AppScaffold extends StatelessWidget {
                   title: Text(
                     title!,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: AppColors.textBlack,
+                      color: AppColors.textPrimary,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -100,26 +100,30 @@ class AppScaffold extends StatelessWidget {
       bottomNavigationBar: SafeArea(
         child: Padding(
           // Removed bottom padding as requested (was 8)
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSizes.screenHorizontalPadding,
+          ),
           child: Container(
             decoration: BoxDecoration(
               color: AppColors.backgroundDark,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(
+                AppSizes.bottomNavigationBarBorderRadius,
+              ),
             ),
             child: NavigationBar(
               backgroundColor: Colors.transparent,
               indicatorColor: AppColors.accentYellow,
               destinations: [
                 NavigationDestination(
-                  icon: Icon(Icons.home, color: AppColors.textBlack),
+                  icon: Icon(Icons.home, color: AppColors.textPrimary),
                   label: t.nav.home,
                 ),
                 NavigationDestination(
-                  icon: Icon(Icons.payments, color: AppColors.textBlack),
+                  icon: Icon(Icons.payments, color: AppColors.textPrimary),
                   label: t.nav.payments,
                 ),
                 NavigationDestination(
-                  icon: Icon(Icons.person, color: AppColors.textBlack),
+                  icon: Icon(Icons.person, color: AppColors.textPrimary),
                   label: t.nav.profile,
                 ),
               ],
