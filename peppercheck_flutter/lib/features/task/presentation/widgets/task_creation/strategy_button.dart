@@ -1,34 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:peppercheck_flutter/app/theme/app_colors.dart';
+import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
 
 class StrategyButton extends StatelessWidget {
-  final String strategy;
+  final String label;
   final VoidCallback onRemove;
 
   const StrategyButton({
     super.key,
-    required this.strategy,
+    required this.label,
     required this.onRemove,
   });
 
   @override
   Widget build(BuildContext context) {
-    // Capitalize first letter
-    final displayStrategy = strategy.isNotEmpty
-        ? strategy[0].toUpperCase() + strategy.substring(1)
-        : strategy;
-
     return Stack(
       clipBehavior: Clip.none,
       children: [
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSizes.strategyButtonHorizontalPadding,
+            vertical: AppSizes.strategyButtonVerticalPadding,
+          ),
           decoration: BoxDecoration(
             color: AppColors.accentYellow,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(
+              AppSizes.strategyButtonBorderRadius,
+            ),
           ),
           child: Text(
-            displayStrategy,
+            label,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: AppColors.textPrimary,
               fontWeight: FontWeight.w500,
