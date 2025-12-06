@@ -30,4 +30,13 @@ abstract class Task with _$Task {
   }) = _Task;
 
   factory Task.fromJson(Map<String, dynamic> json) => _$TaskFromJson(json);
+
+  const Task._();
+
+  // TODO: Implement complex status logic using referee_requests and judgement status
+  String get detailedStatus {
+    // For now, it just returns the basic status.
+    // Future implementation will check refereeRequests, etc.
+    return status;
+  }
 }
