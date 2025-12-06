@@ -31,12 +31,17 @@ class MatchingStrategySelectionSection extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               ...selectedStrategies.map((strategy) {
+                // TODO: Improve strategy localization mapping if we have many strategies
+                final label = strategy == 'standard'
+                    ? t.task.creation.strategy.standard
+                    : strategy;
+
                 return Padding(
                   padding: const EdgeInsets.only(
                     right: AppSizes.matchingStrategyButtonGap,
                   ),
                   child: StrategyButton(
-                    strategy: strategy,
+                    label: label,
                     onRemove: () {
                       final newList = List<String>.from(selectedStrategies);
                       newList.remove(strategy);

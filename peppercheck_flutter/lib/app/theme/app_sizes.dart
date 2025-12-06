@@ -48,4 +48,8 @@ class AppSizes {
   static const double matchingStrategyButtonIconSize = 16.0;
   static const double matchingStrategyButtonBorderRadius = 8.0;
   static const double matchingStrategyButtonHorizontalPadding = 12.0;
+
+  static const double strategyButtonHorizontalPadding = 12.0;
+  static const double strategyButtonVerticalPadding = 8.0;
+  static const double strategyButtonBorderRadius = 8.0;
 }

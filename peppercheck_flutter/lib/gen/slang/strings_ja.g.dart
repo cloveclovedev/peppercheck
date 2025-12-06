@@ -314,6 +314,20 @@ class TranslationsTaskCreationJa {
 
 	/// ja: '作成'
 	String get buttonCreate => '作成';
+
+	late final TranslationsTaskCreationStrategyJa strategy = TranslationsTaskCreationStrategyJa.internal(_root);
+}
+
+// Path: task.creation.strategy
+class TranslationsTaskCreationStrategyJa {
+	TranslationsTaskCreationStrategyJa.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// ja: 'スタンダード'
+	String get standard => 'スタンダード';
 }
 
 /// The flat map containing all translations for locale <ja>.
@@ -382,6 +396,7 @@ extension on Translations {
 			'task.creation.sectionMatching' => 'マッチングプラン',
 			'task.creation.buttonAdd' => '追加',
 			'task.creation.buttonCreate' => '作成',
+			'task.creation.strategy.standard' => 'スタンダード',
 			_ => null,
 		};
 	}

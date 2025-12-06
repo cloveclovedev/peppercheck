@@ -74,7 +74,10 @@
       "labelDeadline": "期限",
       "sectionMatching": "マッチングプラン",
       "buttonAdd": "追加",
-      "buttonCreate": "作成"
+      "buttonCreate": "作成",
+      "strategy": {
+        "standard": "スタンダード"
+      }
     }
   }
 }
