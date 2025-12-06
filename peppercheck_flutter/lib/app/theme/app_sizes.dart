@@ -52,4 +52,8 @@ class AppSizes {
   static const double strategyButtonHorizontalPadding = 12.0;
   static const double strategyButtonVerticalPadding = 8.0;
   static const double strategyButtonBorderRadius = 8.0;
+
+  static const double loginScreenHorizontalPadding = 32.0;
+  static const double loginPeppercheckIconHeight = 140.0;
+  static const double loginPeppercheckTitleFontSize = 48.0;
 }
