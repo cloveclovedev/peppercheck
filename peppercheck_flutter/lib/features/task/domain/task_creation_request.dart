@@ -10,7 +10,7 @@ abstract class TaskCreationRequest with _$TaskCreationRequest {
     @Default('') String description,
     @Default('') String criteria,
     DateTime? selectedDateTime,
-    @Default('open') String taskStatus,
+    @Default('draft') String taskStatus,
     @Default([]) List<String> selectedStrategies,
   }) = _TaskCreationRequest;
 
