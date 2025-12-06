@@ -10,11 +10,11 @@ class BaseSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: AppColors.backgroundLight,
-      elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      margin: EdgeInsets.zero,
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.backgroundLight,
+        borderRadius: BorderRadius.circular(AppSizes.baseSectionBorderRadius),
+      ),
       child: Padding(
         padding: const EdgeInsets.only(
           left: AppSizes.baseSectionHorizontalPadding,
