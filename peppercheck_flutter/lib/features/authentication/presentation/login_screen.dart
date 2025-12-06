@@ -6,6 +6,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:peppercheck_flutter/features/authentication/presentation/authentication_controller.dart';
 import 'package:peppercheck_flutter/gen/assets.gen.dart';
 import 'package:peppercheck_flutter/app/theme/app_colors.dart';
+import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
+import 'package:peppercheck_flutter/common_widgets/app_background.dart';
 
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 
@@ -27,30 +29,27 @@ class LoginScreen extends ConsumerWidget {
 
     final state = ref.watch(authenticationControllerProvider);
 
-    return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: BoxDecoration(
-          image: DecorationImage(
-            image: Assets.images.paperTexture.provider(),
-            fit: BoxFit.cover,
-          ),
-        ),
-        child: SafeArea(
+    return AppBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSizes.loginScreenHorizontalPadding,
+            ),
             child: SizedBox(
               width: double.infinity,
               child: Column(
                 children: [
                   const Spacer(flex: 30),
-                  Assets.images.peppercheckLogo.image(height: 140),
+                  Assets.images.peppercheckLogo.image(
+                    height: AppSizes.loginPeppercheckIconHeight,
+                  ),
                   const Spacer(flex: 2),
                   Text(
                     t.login.title,
                     style: GoogleFonts.luckiestGuy(
-                      fontSize: 48,
+                      fontSize: AppSizes.loginPeppercheckTitleFontSize,
                       color: AppColors.accentRed,
                     ),
                   ),
