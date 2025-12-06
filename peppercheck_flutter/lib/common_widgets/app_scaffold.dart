@@ -1,23 +1,48 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:peppercheck_flutter/app/theme/app_colors.dart';
+import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 
 class AppScaffold extends StatelessWidget {
-  final Widget body;
+  final Widget? _body;
+  final List<Widget>? _slivers;
+  final Future<void> Function()? _onRefresh;
+  final bool useDefaultPadding;
   final PreferredSizeWidget? appBar;
   final int currentIndex;
   final String? title;
   final List<Widget>? actions;
 
-  const AppScaffold({
+  /// Creates a scaffold with a fixed body.
+  /// Use this for screens that do not have a standard scrollable list layout,
+  /// or require custom scrolling behavior not covered by [AppScaffold.scrollable].
+  const AppScaffold.fixed({
     super.key,
-    required this.body,
+    required Widget body,
     this.appBar,
     this.currentIndex = 0,
     this.title,
     this.actions,
-  });
+  }) : _body = body,
+       _slivers = null,
+       _onRefresh = null,
+       useDefaultPadding = false;
+
+  /// Creates a scaffold with a scrollable list of slivers.
+  /// Automatically handles bottom padding for the navigation bar and refresh indicator.
+  const AppScaffold.scrollable({
+    super.key,
+    required List<Widget> slivers,
+    Future<void> Function()? onRefresh,
+    this.appBar,
+    this.currentIndex = 0,
+    this.title,
+    this.actions,
+    this.useDefaultPadding = true,
+  }) : _slivers = slivers,
+       _onRefresh = onRefresh,
+       _body = null;
 
   void _onItemTapped(int index, BuildContext context) {
     switch (index) {
@@ -52,6 +77,7 @@ class AppScaffold extends StatelessWidget {
     // The Scaffold itself is transparent to let AppBackground show through
     return Scaffold(
       backgroundColor: Colors.transparent,
+      extendBody: true,
       appBar:
           appBar ??
           (title != null
@@ -70,7 +96,7 @@ class AppScaffold extends StatelessWidget {
                   actions: actions,
                 )
               : null),
-      body: body,
+      body: _buildBody(),
       bottomNavigationBar: SafeArea(
         child: Padding(
           // Removed bottom padding as requested (was 8)
@@ -105,5 +131,41 @@ class AppScaffold extends StatelessWidget {
       ),
       floatingActionButton: _buildFloatingActionButton(context),
     );
+  }
+
+  Widget _buildBody() {
+    if (_slivers != null) {
+      List<Widget> contentSlivers = _slivers;
+
+      // Apply centralized padding if requested
+      if (useDefaultPadding) {
+        contentSlivers = [
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSizes.screenHorizontalPadding,
+              vertical: AppSizes.screenVerticalPadding,
+            ),
+            sliver: SliverMainAxisGroup(slivers: contentSlivers),
+          ),
+        ];
+      }
+
+      final scrollView = CustomScrollView(
+        slivers: [
+          ...contentSlivers,
+          const SliverPadding(
+            padding: EdgeInsets.only(
+              bottom: AppSizes.bottomNavigationBarHeight,
+            ),
+          ),
+        ],
+      );
+
+      if (_onRefresh != null) {
+        return RefreshIndicator(onRefresh: _onRefresh, child: scrollView);
+      }
+      return scrollView;
+    }
+    return _body ?? const SizedBox.shrink();
   }
 }
