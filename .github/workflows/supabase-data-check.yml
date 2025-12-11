@@ -35,6 +35,8 @@ jobs:
           queries["currencies"]="SELECT code, kind, exponent, description FROM public.currencies ORDER BY code"
           queries["billing_prices"]="SELECT currency_code, matching_strategy, amount_minor FROM public.billing_prices ORDER BY currency_code, matching_strategy"
           queries["billing_settings"]="SELECT id, max_retry_attempts FROM public.billing_settings ORDER BY id"
+          queries["subscription_plans"]="SELECT id, name, monthly_points, is_active FROM public.subscription_plans ORDER BY id"
+          queries["subscription_plan_prices"]="SELECT plan_id, currency_code, amount_minor, provider FROM public.subscription_plan_prices ORDER BY plan_id, provider"
 
           for name in "${!queries[@]}"; do
             out="/tmp/${name}_out.csv"
