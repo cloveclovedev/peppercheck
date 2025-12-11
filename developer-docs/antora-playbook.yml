@@ -1,6 +1,6 @@
 site:
   title: Peppercheck Developer Documentation
-  start_page: peppercheck-developer-docs::index.adoc
+  start_page: ROOT::index.adoc
 content:
   sources:
   - url: ..
