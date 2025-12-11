@@ -1,0 +1,134 @@
+= Pricing and Subscription Rules
+:toc:
+:sectnums:
+
+== Overview
+Peppercheck uses a subscription + point system.
+Taskers receive monthly points based on their subscription plan and consume points when requesting reviews.
+Referees receive monetary rewards for each completed review.
+
+This document describes the pricing rules, subscription behavior, and point usage.
+
+== Tasker Subscription Plans
+
+=== Web (Stripe Billing)
+Stripe is the primary subscription platform.
+
+[cols="1,1,1", options="header"]
+|===
+| Plan | Price (JPY / month) | Monthly Points
+
+| Light
+| 480
+| 5pt
+
+| Standard
+| 980
+| 10pt
+
+| Premium
+| 1,980
+| 20pt + premium features
+|===
+
+=== Mobile App (Google Play / Apple IAP)
+Due to platform fees, in-app prices are higher.
+
+[cols="1,1", options="header"]
+|===
+| Plan | Price (JPY / month)
+
+| Light
+| 650
+
+| Standard
+| 1,280
+
+| Premium
+| 2,580
+|===
+
+== Points
+
+=== Monthly Point Grant
+Points are granted at the start of each subscription billing cycle.
+
+[cols="1,1", options="header"]
+|===
+| Plan | Monthly Points
+
+| Light
+| 5pt
+
+| Standard
+| 10pt
+
+| Premium
+| 20pt
+|===
+
+=== Point Consumption
+* Standard review request: **1pt**
+* Premium match request (high-rated Referee): **2pt**
+
+=== Point Reset Policy
+* Unused points **do not carry over**.
+* Points are **reset at each new billing cycle**.
+* This ensures stable cost control and predictable system load.
+
+== Referee Rewards
+
+Referees earn a fixed reward per completed review.
+
+[cols="1,1", options="header"]
+|===
+| Review Type | Reward (JPY)
+
+| Standard Review (1pt)
+| 50円
+
+| Premium Review (2pt)
+| 100円
+|===
+
+=== Payout Timing
+* Rewards are aggregated monthly.
+* Payments are made at the end of each month via the payment provider (Stripe Connect or equivalent).
+* This model does not fall under money transfer regulations; Peppercheck pays Referees as contractors.
+
+== Platforms and Purchasing Rules
+
+=== Web (Recommended)
+* Users can subscribe or update plans via Stripe Billing.
+* Web prices are the lowest due to lower fees.
+
+=== Mobile Apps (iOS / Android)
+* Subscriptions may be purchased via IAP.
+* App prices are higher to absorb store platform fees.
+* App UI may include “Manage subscription on the Web” where allowed by platform guidelines.
+
+== Subscription State Endpoint
+Both the mobile app and Web use a unified subscription status interface.
+
+Implementation options:
+* Supabase RPC (`get_subscription_status`)
+* Supabase Edge Function (`/subscription-status`)
+
+Returned fields include:
+* plan
+* status
+* current_period_start / end
+* points balance
+* next point grant date
+* provider (stripe / google / apple)
+
+== Summary
+Peppercheck’s billing system is based on:
+* Fixed monthly subscriptions via Stripe or IAP
+* Monthly point grants
+* Point consumption for each task request
+* Simple and predictable Referee rewards
+* Unified subscription status management
+
+This structure ensures consistency across Web, Android, and future iOS platforms.
+
