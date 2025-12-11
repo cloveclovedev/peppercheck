@@ -111,10 +111,12 @@ Referees earn a fixed reward per completed review.
 Both the mobile app and Web use a unified subscription status interface.
 
 Implementation options:
+
 * Supabase RPC (`get_subscription_status`)
 * Supabase Edge Function (`/subscription-status`)
 
 Returned fields include:
+
 * plan
 * status
 * current_period_start / end
@@ -124,6 +126,7 @@ Returned fields include:
 
 == Summary
 Peppercheck’s billing system is based on:
+
 * Fixed monthly subscriptions via Stripe or IAP
 * Monthly point grants
 * Point consumption for each task request
