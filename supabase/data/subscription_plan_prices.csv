@@ -1,7 +1,7 @@
 plan_id,currency_code,amount_minor,provider
-light,JPY,650,google
 light,JPY,480,stripe
-premium,JPY,2580,google
+light,JPY,650,google
 premium,JPY,1980,stripe
-standard,JPY,1280,google
+premium,JPY,2580,google
 standard,JPY,980,stripe
+standard,JPY,1280,google
