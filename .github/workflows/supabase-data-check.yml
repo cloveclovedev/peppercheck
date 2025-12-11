@@ -30,6 +30,7 @@ jobs:
 
       - name: Check reference CSVs
         run: |
+          # TODO: Make this logic order-independent so that CSV row order doesn't cause failures
           set -euo pipefail
           declare -A queries
           queries["currencies"]="SELECT code, kind, exponent, description FROM public.currencies ORDER BY code"
