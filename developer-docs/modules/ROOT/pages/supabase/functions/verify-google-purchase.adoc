@@ -1,0 +1,37 @@
+= verify-google-purchase
+
+This Edge Function verifies Google Play In-App Purchases (IAP) serverside using the Google Play Developer API.
+
+== Endpoint
+
+`POST /requests/verify-google-purchase` (via `supabase.functions.invoke`)
+
+== Request Body
+
+[source,json]
+----
+{
+  "productId": "light_monthly",
+  "purchaseToken": "token_string_from_google_play...",
+  "type": "subscription"
+}
+----
+
+*   `productId`: The SKU ID of the product/subscription.
+*   `purchaseToken`: The purchase token returned by the Google Play Billing Library.
+*   `type`: currently `subscription` (consumable support planned).
+
+== Logic
+
+1.  **Authenticate**: Uses `GOOGLE_SERVICE_ACCOUNT_JSON` secret to authenticate with Google APIs.
+2.  **Verify**: Calls `androidpublisher.purchases.subscriptions.get`.
+3.  **Validate**: Checks `expiryTimeMillis` to ensure the subscription is active.
+4.  **Update DB**:
+    *   Upserts `user_subscriptions` table.
+    *   Sets `status` to `active` (or `canceled` if expired).
+    *   Sets `provider` to `google`.
+    *   Stores `google_purchase_token`.
+
+== Dependencies
+*   `googleapis` (npm)
+*   Supabase Service Role (for DB updates)

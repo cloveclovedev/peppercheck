@@ -1,0 +1,22 @@
+= Supabase Local Setup
+
+== Environment Variables & Secrets
+
+=== Google Service Account (for IAP Verification)
+
+To enable Google Play In-App Purchase verification, you must set the `GOOGLE_SERVICE_ACCOUNT_JSON` secret for the Edge Functions.
+
+1.  Obtain a Service Account Key (JSON) from Google Cloud Console with **Android Publisher** permissions.
+2.  Set the secret locally (or in your project dashboard):
+
+[source,bash]
+----
+# For local development (if using valid .env linked to secrets) or production
+supabase secrets set GOOGLE_SERVICE_ACCOUNT_JSON='{
+  "type": "service_account",
+  "project_id": "...",
+  ...
+}'
+----
+
+_Note: For purely local testing via `supabase start`, secrets are often managed via `.env` file in `supabase/functions/.env` if not using the vault._
