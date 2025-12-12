@@ -1,0 +1,4 @@
+id,name,monthly_points,is_active
+light,Light Plan,5,t
+premium,Premium Plan,20,t
+standard,Standard Plan,10,t
