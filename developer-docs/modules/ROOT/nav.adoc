@@ -3,3 +3,7 @@
 * Stripe
 ** Scripts
 *** xref:stripe/scripts/sync-prices.adoc[sync-prices]
+
+* Supabase
+** Functions
+*** xref:supabase/functions/create-stripe-checkout.adoc[create-stripe-checkout]

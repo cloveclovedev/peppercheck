@@ -1,0 +1,41 @@
+@startuml create-stripe-checkout
+actor User
+participant Frontend
+participant "Edge: create-stripe-checkout" as Edge
+participant "DB: stripe_accounts" as DB
+participant "Stripe API" as Stripe
+
+User -> Frontend: Click Subscribe
+Frontend -> Edge: POST /create-stripe-checkout\n{ price_id, success_url... }
+activate Edge
+
+Edge -> Edge: Verify Auth
+
+group Resolve Customer
+    Edge -> DB: Select stripe_customer_id by user.id
+    alt Not Found
+        Edge -> Stripe: users.create (email, metadata)
+        Stripe --> Edge: Customer Object
+        Edge -> DB: Upsert stripe_customer_id
+    end
+end
+
+
+group Resolve Price
+    alt price_id provided
+        Edge -> Edge: Use price_id
+    else plan_id + currency provided
+        Edge -> Stripe: prices.list(lookup_key)
+        Stripe --> Edge: Price Object
+    end
+end
+
+Edge -> Stripe: checkout.sessions.create
+Stripe --> Edge: Session URL
+
+Edge --> Frontend: { url }
+deactivate Edge
+
+Frontend -> User: Redirect to Stripe Checkout
+
+@enduml

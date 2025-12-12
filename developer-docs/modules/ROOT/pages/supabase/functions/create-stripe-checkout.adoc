@@ -1,0 +1,49 @@
+= Create Stripe Checkout
+:example-caption!:
+
+This function creates a Stripe Checkout Session for subscriptions or one-time payments.
+
+== Features
+
+* **Automatic Customer Resolution**:
+** Checks `stripe_accounts` table for an existing customer ID.
+** Creates a new Stripe Customer if one doesn't exist and saves it.
+* **Price Resolution**:
+** Accepts direct `price_id`.
+** Or resolves price via `plan_id` + `currency` using `lookup_key` (e.g., `premium_jpy_stripe`).
+* **Metadata Tracking**: Adds `supabase_uid` and `plan_id` to Stripe metadata for webhook processing.
+
+== API Reference
+
+=== Request
+
+`POST /functions/v1/create-stripe-checkout`
+
+headers::
+* `Authorization`: Bearer <USER_JWT>
+
+body::
+* `price_id` (optional): The exact Stripe Price ID.
+* `plan_id` (optional): If `price_id` is missing, use this + `currency` to lookup price.
+* `currency` (optional): Required if `plan_id` is used (e.g., 'JPY').
+* `success_url`: Redirect URL after success.
+* `cancel_url`: Redirect URL after cancellation.
+* `mode` (optional): 'subscription' (default) or 'payment'.
+
+=== Response
+
+`200 OK`
+
+[source,json]
+----
+{
+  "url": "https://checkout.stripe.com/c/pay/..."
+}
+----
+
+== Sequence Diagram
+
+[plantuml, target=sequence, format=svg]
+....
+include::example$supabase/functions/create-stripe-checkout/sequence.pu[]
+....
