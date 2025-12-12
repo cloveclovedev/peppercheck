@@ -1,3 +1,7 @@
+* Overview
+** Payment
+*** xref:overview/payment/subscription.adoc[Subscription]
+
 * xref:pricing.adoc[Pricing]
 
 * Stripe

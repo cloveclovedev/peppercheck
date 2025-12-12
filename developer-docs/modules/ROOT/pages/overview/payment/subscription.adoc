@@ -1,0 +1,26 @@
+= Subscription
+
+This document describes the overall architecture of the subscription system, covering both Web (Stripe) and Mobile (IAP) flows.
+
+== Architecture
+
+The system unifies subscription status management in the backend database.
+Regardless of the payment provider (Stripe or Google Play), the frontend always queries the same `user_subscriptions` table via the `SubscriptionRepository` (Flutter) or direct Supabase client (Web).
+
+== Sequence Diagram
+
+The following diagram illustrates the lifecycle of subscriptions and point consumption across different platforms.
+
+[plantuml]
+----
+include::example$overview/payment/subscription/sequence.pu[]
+----
+
+== Key Components
+
+*   **Flutter App**: Handles IAP purchase and status display.
+*   **Web App**: Handles Stripe Checkout and management dashboard.
+*   **Backend (Supabase)**:
+**   `user_subscriptions`: Source of truth for active plans.
+**   `point_wallets`: Manages point balances.
+**   Edge Functions: Verify receipts and handle webhooks.
