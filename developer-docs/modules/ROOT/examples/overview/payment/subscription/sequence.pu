@@ -1,0 +1,50 @@
+@startuml
+
+actor User
+participant FlutterApp
+participant Backend
+participant DB
+participant Stripe
+participant GooglePlay
+
+== Subscription Purchase (Stripe) ==
+User -> FlutterApp: Select Plan (Web)
+FlutterApp -> Backend: Create Checkout Session
+Backend -> Stripe: Create Session
+Stripe --> Backend: Session URL
+Backend --> FlutterApp: Redirect URL
+FlutterApp -> User: Open Web Browser
+User -> Stripe: Complete Payment
+Stripe -> Backend: Webhook (checkout.session.completed)
+Backend -> DB: Update Subscription (Active)
+Backend -> DB: Grant Initial Points
+Backend --> FlutterApp: (via polling/socket) Updated Status
+
+== Subscription Purchase (Google Play) ==
+User -> FlutterApp: Select Plan (App)
+FlutterApp -> GooglePlay: Purchase Flow
+GooglePlay --> FlutterApp: Purchase Token
+FlutterApp -> Backend: Confirm Purchase (token)
+Backend -> GooglePlay: Verify Token
+GooglePlay --> Backend: Valid
+Backend -> DB: Update Subscription (Active)
+Backend -> DB: Grant Initial Points
+Backend --> FlutterApp: Success
+
+== Point Consumption ==
+User -> FlutterApp: Request Task (1pt)
+FlutterApp -> Backend: Create Request
+Backend -> DB: Check Point Balance
+alt Sufficient Points
+    Backend -> DB: Deduct 1pt
+    Backend -> DB: Create Task Request
+    Backend --> FlutterApp: Success
+else Insufficient Points
+    Backend --> FlutterApp: Error (Need Upgrade)
+end
+
+== Monthly Renewal (Stripe) ==
+Stripe -> Backend: Webhook (invoice.paid)
+Backend -> DB: Extend Period
+Backend -> DB: Reset/Grant Points
+@enduml
