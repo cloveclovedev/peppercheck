@@ -59,7 +59,6 @@ schema_paths = [
   "./schemas/05_views.sql",
   "./schemas/06_functions/*.sql",
   "./schemas/point/functions/*.sql",
-  "./schemas/subscription/functions/*.sql",
   "./schemas/matching/functions/*.sql",
   "./schemas/07_triggers.sql",
   "./schemas/08_policies.sql",
