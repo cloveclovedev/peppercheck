@@ -126,6 +126,21 @@ class TranslationsBillingJa {
 
 	/// ja: '支払い方法を追加しました'
 	String get paymentMethodAdded => '支払い方法を追加しました';
+
+	/// ja: 'サブスクリプション'
+	String get subscription => 'サブスクリプション';
+
+	/// ja: 'プラン'
+	String get plan => 'プラン';
+
+	/// ja: 'ステータス'
+	String get status => 'ステータス';
+
+	/// ja: '更新日'
+	String get renews => '更新日';
+
+	/// ja: 'サブスクリプション管理'
+	String get manageSubscription => 'サブスクリプション管理';
 }
 
 // Path: common
@@ -352,6 +367,11 @@ extension on Translations {
 			'billing.changePaymentMethod' => '支払い方法を変更',
 			'billing.noPaymentMethod' => '支払い方法が設定されていません',
 			'billing.paymentMethodAdded' => '支払い方法を追加しました',
+			'billing.subscription' => 'サブスクリプション',
+			'billing.plan' => 'プラン',
+			'billing.status' => 'ステータス',
+			'billing.renews' => '更新日',
+			'billing.manageSubscription' => 'サブスクリプション管理',
 			'common.cancel' => 'キャンセル',
 			'common.confirm' => '確認',
 			'payout.title' => '出金設定',

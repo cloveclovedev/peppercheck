@@ -19,7 +19,12 @@
     "addPaymentMethod": "支払い方法を追加",
     "changePaymentMethod": "支払い方法を変更",
     "noPaymentMethod": "支払い方法が設定されていません",
-    "paymentMethodAdded": "支払い方法を追加しました"
+    "paymentMethodAdded": "支払い方法を追加しました",
+    "subscription": "サブスクリプション",
+    "plan": "プラン",
+    "status": "ステータス",
+    "renews": "更新日",
+    "manageSubscription": "サブスクリプション管理"
   },
   "common": {
     "cancel": "キャンセル",

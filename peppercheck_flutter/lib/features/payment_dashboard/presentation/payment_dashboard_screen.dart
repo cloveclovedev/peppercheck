@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
 import 'package:peppercheck_flutter/common_widgets/app_background.dart';
 import 'package:peppercheck_flutter/common_widgets/app_scaffold.dart';
-import 'package:peppercheck_flutter/features/billing/presentation/widgets/billing_setup_section.dart';
+import 'package:peppercheck_flutter/features/billing/presentation/widgets/subscription_section.dart';
 import 'package:peppercheck_flutter/features/payout/presentation/widgets/payout_setup_section.dart';
 import 'package:peppercheck_flutter/features/payout/presentation/widgets/reward_summary_section.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
@@ -20,7 +20,7 @@ class PaymentDashboardScreen extends ConsumerWidget {
         slivers: [
           SliverList(
             delegate: SliverChildListDelegate([
-              const BillingSetupSection(),
+              const SubscriptionSection(),
               const SizedBox(height: AppSizes.sectionGap),
               const PayoutSetupSection(),
               const SizedBox(height: AppSizes.sectionGap),
