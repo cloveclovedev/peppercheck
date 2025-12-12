@@ -1,0 +1,59 @@
+= Google Play Console Setup for IAP
+
+To test In-App Purchases (IAP) on Android, you must configure the Google Play Console. You cannot test IAP with a pure debug build running on an emulator without these steps.
+
+== 1. Google Play Developer Account
+*   Register at https://play.google.com/console
+*   Registration fee: $25 (one-time).
+
+== 2. Create Application
+*   Create a new app in the console.
+*   **Package Name**: Must match `dev.cloveclove.peppercheck` (as defined in `build.gradle.kts`).
+
+== 3. Initial Artifact Upload (Internal Testing)
+IAP features are not active until you upload a signed build.
+
+1.  **Build Signed App Bundle**:
+    `flutter build appbundle` (Configure signing key first)
+2.  **Upload to Internal Testing**:
+    Go to **Testing > Internal testing** and create a new release with the `.aab` file.
+    _Note: You don't need to pass review for Internal Testing, but the app object must exist._
+
+== 4. Configure Products (Subscriptions)
+Go to **Monetize > Products > Subscriptions**.
+
+Create the following Product IDs (must match `InAppPurchaseController.dart`):
+
+*   `light_monthly`
+*   `standard_monthly`
+*   `premium_monthly`
+
+_Note: You may need to "Activate" the subscriptions._
+
+== 5. API Access & Service Account
+This is required for the backend (`verify-google-purchase`) to validate receipts.
+
+1.  Go to **Setup > API access**.
+2.  Link a **Google Cloud Project**.
+3.  Create a **Service Account** in that GCP project.
+4.  **Grant Permissions**:
+    *   In GCP: No specific roles needed (or Editor).
+    *   **Crucial**: Back in Play Console **Users & permissions**, invite the Service Account email.
+    *   Role: **View app information** & **Manage orders and subscriptions**.
+5.  Generate **JSON Key** for this Service Account.
+    *   Use this JSON for `GOOGLE_SERVICE_ACCOUNT_JSON` in Supabase Secrets.
+
+== 6. License Testing (Tester Setup)
+To test for free (without actual credit card charges):
+
+1.  Go to **Setup > License testing**.
+2.  Add the Gmail addresses of your testers (e.g., your own account on the emulator/device).
+3.  **Opt-in**: Testers must accept the Internal Testing invitation link (under **Testing > Internal testing > Testers**).
+
+== Summary checklist
+- [ ] Console Account created
+- [ ] App created (`dev.cloveclove.peppercheck`)
+- [ ] Signed AAB uploaded to Internal Track
+- [ ] Subscriptions created (`light_monthly`...)
+- [ ] Service Account linked & granted permissions in Play Console
+- [ ] Tester email added to License Testing & Internal Track
