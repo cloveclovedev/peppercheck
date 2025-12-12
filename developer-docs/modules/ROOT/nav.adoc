@@ -9,9 +9,11 @@
 *** xref:stripe/scripts/sync-prices.adoc[sync-prices]
 
 * Supabase
+** xref:supabase/initial-local-setup.adoc[Initial Local Setup]
 ** Functions
 *** xref:supabase/functions/create-stripe-checkout.adoc[create-stripe-checkout]
 *** xref:supabase/functions/handle-stripe-webhook.adoc[handle-stripe-webhook]
+*** xref:supabase/functions/verify-google-purchase.adoc[verify-google-purchase]
 * Web App
 ** xref:web/initial-local-setup.adoc[Initial Local Setup]
 
