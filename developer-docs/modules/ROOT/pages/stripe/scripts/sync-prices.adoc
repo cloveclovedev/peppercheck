@@ -1,0 +1,36 @@
+= Sync prices
+:sectnums:
+
+== Overview
+This script synchronizes subscription plans and prices defined in `supabase/data/*.csv` to the Stripe environment (Test/Prod).
+
+It ensures that the CSV files remain the Single Source of Truth (SSOT) for pricing data.
+
+== Prerequisites
+* **Deno** installed (v1.37+ recommended).
+* **Stripe Secret Key** (`STRIPE_SECRET_KEY`) set in `.env` or `stripe/.env`.
+
+== Usage
+
+Run the script using `deno run` from the project root.
+
+[source,bash]
+----
+# Run with local .env configuration
+deno run --allow-all stripe/scripts/sync-prices.ts
+----
+
+== Logic
+
+1.  **Sync Products**: Reads `subscription_plans.csv` and creates/updates Stripe Products.
+    *   Matches Products using `metadata['app_plan_id']`.
+2.  **Sync Prices**: Reads `subscription_plan_prices.csv` and creates Stripe Prices.
+    *   Matches Prices using `lookup_key` (Format: `\{plan_id\}_\{currency\}_stripe`).
+    *   Updates are idempotent: If a Price with the same amount exists, it skips. If the amount differs, it archives the old Price and creates a new one.
+
+=== Sequence Diagram
+
+[plantuml, target=sequence, format=svg]
+....
+include::partial$stripe/scripts/sync-prices/sequence.pu[]
+....

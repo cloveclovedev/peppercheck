@@ -1,0 +1,69 @@
+@startuml sync_prices_sequence
+title Stripe Sync Script Execution
+
+actor "User / CI" as User
+participant "sync-prices.ts" as Script
+database "CSV Files" as CSV
+participant "Stripe API" as Stripe
+
+User -> Script: Execute `deno run`
+activate Script
+
+Script -> CSV: Read `subscription_plans.csv`
+activate CSV
+CSV --> Script: Return Plans
+deactivate CSV
+
+Script -> Script: Initialize Product Cache (Map)
+
+loop For each Plan
+    Script -> Stripe: Search Product\n(query: `metadata['app_plan_id']`)
+    activate Stripe
+    Stripe --> Script: Search Result
+    deactivate Stripe
+
+    alt Product Found
+        alt Name changed
+            Script -> Stripe: Update Product Name
+        end
+    else Product Not Found
+        Script -> Stripe: Create Product\n(metadata: {app_plan_id})
+    end
+    
+    Script -> Script: Cache Product ID
+end
+
+Script -> CSV: Read `subscription_plan_prices.csv`
+activate CSV
+CSV --> Script: Return Prices
+deactivate CSV
+
+loop For each Price (provider='stripe')
+    Script -> Script: Get Product ID from Cache
+    
+    opt Product ID not found
+        Script -> Script: Log Error & Skip
+    end
+
+    Script -> Stripe: List Prices\n(lookup_keys: [`{plan}_{currency}_stripe`])
+    activate Stripe
+    Stripe --> Script: Price List
+    deactivate Stripe
+
+    alt Price Found (Active)
+        alt Amount/Currency Match
+            Script -> Script: Skip (Already exists)
+        else Mismatch
+            Script -> Stripe: Archive Old Price\n(active: false, lookup_key: null)
+        end
+    end
+
+    opt Price needs creation
+        Script -> Stripe: Create Price\n(lookup_key, transfer_lookup_key: true)
+    end
+end
+
+Script --> User: Sync Complete
+deactivate Script
+
+@enduml
