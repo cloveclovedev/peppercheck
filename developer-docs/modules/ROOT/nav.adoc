@@ -1,2 +1,5 @@
 * xref:pricing.adoc[Pricing]
 
+* Stripe
+** Scripts
+*** xref:stripe/scripts/sync-prices.adoc[sync-prices]

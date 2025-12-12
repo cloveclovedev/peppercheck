@@ -1,5 +1,8 @@
 {
   "devDependencies": {
     "antora": "3.1.14"
+  },
+  "dependencies": {
+    "asciidoctor-kroki": "^0.18.1"
   }
 }
