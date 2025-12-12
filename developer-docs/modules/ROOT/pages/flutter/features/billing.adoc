@@ -1,0 +1,71 @@
+= Billing
+
+The Billing feature handles subscription status display and navigation to the web-based management dashboard.
+
+== Domain Models
+
+Located in `lib/features/billing/domain/`. Managed using `freezed`.
+
+=== Subscription
+
+[cols="1,1,2"]
+|===
+| Name | Type | Description
+
+| `status`
+| String
+| e.g., `active`, `trialing`
+
+| `plan_id`
+| String
+| e.g., `light`, `standard`
+
+| `current_period_end`
+| String
+| ISO8601 Date
+
+| `cancel_at_period_end`
+| bool
+| 
+|===
+
+=== PointWallet
+
+[cols="1,1,2"]
+|===
+| Name | Type | Description
+
+| `balance`
+| int
+| Current point balance
+|===
+
+== Architecture
+
+We use Riverpod for state management and the Repository pattern for data access.
+
+=== Repository & Providers
+*   **BillingRepository**: Fetches data directly from Supabase tables (`user_subscriptions`, `point_wallets`).
+*   **BillingProviders**: Exposes functionality via `subscriptionProvider` and `pointWalletProvider`.
+
+=== Sequence Diagram
+
+[plantuml]
+----
+include::example$flutter/features/billing/sequence.pu[]
+----
+
+== Presentation
+
+=== SubscriptionSection
+
+Located in `lib/features/billing/presentation/widgets/subscription_section.dart`.
+
+*   **Displays**:
+**   Current Plan Name
+**   Subscription Status (localized)
+**   Renewal Date
+*   **Actions**:
+**   **Manage Subscription**: Opens the Web Dashboard (`WEB_DASHBOARD_URL`) in the external browser.
+
+This component is embedded in the `PaymentDashboardScreen`.
