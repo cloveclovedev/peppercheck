@@ -1,0 +1,112 @@
+= Web Application Initial Local Setup
+
+The web application serves as the landing page, pricing page, and user dashboard. It is built with Next.js and integrates with Supabase Auth and Stripe.
+
+== Prerequisites
+
+* Node.js & npm
+* Supabase CLI
+* Local Supabase instance running (`supabase start`)
+
+== Project Structure
+
+The web application is located in the `web/` directory at the project root.
+
+[source,bash]
+----
+web/
+├── src/
+│   ├── app/          # App Router pages (Login, Dashboard, Pricing)
+│   ├── components/   # React components
+│   └── utils/        # Supabase clients
+├── public/           # Static assets
+└── .env.local        # Local environment variables
+----
+
+== Setup Steps
+
+=== 1. Environment Variables
+
+Create `.env.local` in the `web/` directory and configure your Supabase credentials.
+
+[source,bash]
+----
+cd web
+cp .env.template .env.local
+----
+
+.web/.env.local
+[source,ini]
+----
+NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-local-anon-key>
+----
+_get the anon key via `supabase status`_
+
+=== 2. Supabase Auth Configuration (Local)
+
+Verify that `supabase/config.toml` includes the redirect URL for the local Next.js app.
+
+.supabase/config.toml
+[source,toml]
+----
+[auth]
+additional_redirect_urls = [
+  "https://127.0.0.1:3000",
+  "http://localhost:3000/auth/callback" # Required for Next.js Auth Callback
+]
+----
+
+Ensure your local Supabase instance is running with these settings.
+
+=== 3. Google OAuth Configuration
+
+To enable "Sign in with Google" locally:
+
+1.  Go to **Google Cloud Console** > **APIs & Services** > **Credentials**.
+2.  Edit your Web application OAuth 2.0 Client ID (used by Supabase).
+3.  Add the Supabase Auth Callback URL to **Authorized redirect URIs**:
+    *   `http://127.0.0.1:54321/auth/v1/callback`
+
+=== 4. Stripe Webhook Testing (Local)
+
+To test the subscription flow locally, you must forward Stripe events to your local Supabase Edge Function.
+
+1.  Start the Stripe CLI listener:
++
+[source,bash]
+----
+stripe listen --forward-to http://127.0.0.1:54321/functions/v1/handle-stripe-webhook
+----
+
+2.  Copy the **Webhook Signing Secret** (`whsec_...`) printed by the CLI.
+
+3.  Update your local Supabase functions environment variables in `supabase/functions/.env` (create if missing):
++
+.supabase/functions/.env
+[source,ini]
+----
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SIGNING_SECRET=whsec_...
+----
+
+4.  Restart Supabase to apply the secrets:
++
+[source,bash]
+----
+supabase stop && supabase start
+----
+
+== Running the App
+
+[source,bash]
+----
+cd web
+npm run dev
+----
+
+Access the app at http://localhost:3000
+
+* **Login**: http://localhost:3000/login
+* **Pricing**: http://localhost:3000/pricing
+* **Dashboard**: http://localhost:3000/dashboard

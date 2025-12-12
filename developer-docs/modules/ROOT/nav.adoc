@@ -8,3 +8,5 @@
 ** Functions
 *** xref:supabase/functions/create-stripe-checkout.adoc[create-stripe-checkout]
 *** xref:supabase/functions/handle-stripe-webhook.adoc[handle-stripe-webhook]
+* Web App
+** xref:web/initial-local-setup.adoc[Initial Local Setup]
