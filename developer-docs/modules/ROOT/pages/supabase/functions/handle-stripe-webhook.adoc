@@ -1,0 +1,35 @@
+= Handle Stripe Webhook
+:example-caption!:
+
+This function handles webhooks from Stripe to synchronize subscription status with the Supabase database.
+
+== Features
+
+* **Event Handling**:
+** `checkout.session.completed`: Processing new subscriptions.
+** `customer.subscription.updated`: Handling renewals, plan changes, and cancellations.
+** `customer.subscription.deleted`: Handling subscription expiration.
+* **Security**:
+** Verifies Stripe signatures using `STRIPE_WEBHOOK_SIGNING_SECRET`.
+* **Database Updates**:
+** Updates `user_subscriptions` table with `status`, `current_period_end`, etc.
+** Uses Service Role key for secure database access.
+
+== API Reference
+
+`POST /functions/v1/handle-stripe-webhook`
+
+headers::
+* `Stripe-Signature`: Required. Stripe event signature.
+
+body::
+* Raw JSON body from Stripe.
+
+== Configuration
+
+Required Environment Variables:
+
+* `STRIPE_SECRET_KEY`
+* `STRIPE_WEBHOOK_SIGNING_SECRET`
+* `SUPABASE_URL`
+* `SUPABASE_SERVICE_ROLE_KEY`
