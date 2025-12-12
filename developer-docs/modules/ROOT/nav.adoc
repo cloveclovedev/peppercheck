@@ -10,3 +10,8 @@
 *** xref:supabase/functions/handle-stripe-webhook.adoc[handle-stripe-webhook]
 * Web App
 ** xref:web/initial-local-setup.adoc[Initial Local Setup]
+
+* Flutter App
+** xref:flutter/initial-local-setup.adoc[Initial Local Setup]
+** Features
+*** xref:flutter/features/billing.adoc[Billing]

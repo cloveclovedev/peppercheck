@@ -1,0 +1,37 @@
+= Flutter App Initial Local Setup
+
+== Environment Configuration
+
+Per-environment configuration is managed via `.env` files in `assets/env/`.
+
+=== Debug Environment (`.env.debug`)
+
+For local development, configure `assets/env/.env.debug`.
+
+Important: For Android Emulator, use `10.0.2.2` to access the host machine's localhost.
+
+.assets/env/.env.debug
+[source,properties]
+----
+# Supabase Configuration
+# Use 10.0.2.2 for Android Emulator to access local Supabase
+SUPABASE_URL=http://10.0.2.2:54321
+SUPABASE_ANON_KEY=<your-local-anon-key>
+
+# Stripe
+STRIPE_PUBLISHABLE_KEY=<your-stripe-publishable-key>
+
+# Web Dashboard URL
+# Used by "Manage Subscription" button to open the web dashboard
+# Use 10.0.2.2 for Android Emulator
+WEB_DASHBOARD_URL=http://10.0.2.2:3000/dashboard
+----
+
+== Running the App
+
+[source,bash]
+----
+flutter run
+----
+
+By default, this runs in `debug` mode using `main_debug.dart` and loads `.env.debug`.

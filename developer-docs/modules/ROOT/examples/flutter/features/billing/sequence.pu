@@ -1,0 +1,21 @@
+@startuml
+participant UI as "SubscriptionSection"
+participant Provider as "subscriptionProvider"
+participant Repo as "BillingRepository"
+participant DB as "Supabase (Table)"
+
+UI -> Provider: ref.watch(subscriptionProvider)
+activate Provider
+Provider -> Repo: fetchSubscription()
+activate Repo
+Repo -> DB: Select from user_subscriptions (RLS)
+activate DB
+DB --> Repo: JSON Data
+deactivate DB
+Repo --> Provider: Subscription (Domain Model)
+deactivate Repo
+Provider --> UI: AsyncValue<Subscription>
+deactivate Provider
+
+UI -> UI: Render Status & Plan
+@enduml
