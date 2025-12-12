@@ -45,8 +45,17 @@ Located in `lib/features/billing/domain/`. Managed using `freezed`.
 We use Riverpod for state management and the Repository pattern for data access.
 
 === Repository & Providers
+
 *   **BillingRepository**: Fetches data directly from Supabase tables (`user_subscriptions`, `point_wallets`).
-*   **BillingProviders**: Exposes functionality via `subscriptionProvider` and `pointWalletProvider`.
+*   **InAppPurchaseRepository**: Wraps `in_app_purchase` package. Handles purchase stream, restoration, and backend verification call.
+*   **BillingProviders**: Exposes functionality via `subscriptionProvider`, `pointWalletProvider`, and `availableProductsProvider`.
+
+=== Controllers
+
+*   **InAppPurchaseController**:
+**   Listens to `InAppPurchaseRepository.purchaseStream`.
+**   Handles purchase lifecycle: Pending -> Purchased -> Verify (Backend) -> Complete (Acknowledge).
+**   Updates local subscription state on success.
 
 === Sequence Diagram
 
