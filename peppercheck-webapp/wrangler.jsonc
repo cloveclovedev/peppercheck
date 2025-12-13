@@ -15,6 +15,14 @@
 		"nodejs_compat",
 		"global_fetch_strictly_public"
 	],
+	"workers_dev": true,
+	"preview_urls": true,
+	"routes": [
+		{
+			"pattern": "peppercheck.dev",
+			"custom_domain": true
+		}
+	],
 	"assets": {
 		"binding": "ASSETS",
 		"directory": ".open-next/assets"
