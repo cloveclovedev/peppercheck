@@ -10,36 +10,37 @@ The web application serves as the landing page, pricing page, and user dashboard
 
 == Project Structure
 
-The web application is located in the `web/` directory at the project root.
+The web application is located in the `peppercheck-webapp/` directory at the project root.
 
 [source,bash]
 ----
-web/
+peppercheck-webapp/
 ├── src/
 │   ├── app/          # App Router pages (Login, Dashboard, Pricing)
 │   ├── components/   # React components
-│   └── utils/        # Supabase clients
+│   └── lib/          # Supabase clients (@/lib/supabase)
 ├── public/           # Static assets
-└── .env.local        # Local environment variables
+├── .env.development  # Local environment variables
+└── .env.example      # Example environment variables
 ----
 
 == Setup Steps
 
 === 1. Environment Variables
 
-Create `.env.local` in the `web/` directory and configure your Supabase credentials.
+Create `.env.development` in the `peppercheck-webapp/` directory and configure your Supabase credentials.
 
 [source,bash]
 ----
-cd web
-cp .env.template .env.local
+cd peppercheck-webapp
+cp .env.example .env.development
 ----
 
-.web/.env.local
+.peppercheck-webapp/.env.development
 [source,ini]
 ----
 NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
-NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-local-anon-key>
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<your-local-anon-key>
 ----
 _get the anon key via `supabase status`_
 
@@ -101,7 +102,7 @@ supabase stop && supabase start
 
 [source,bash]
 ----
-cd web
+cd peppercheck-webapp
 npm run dev
 ----
 
