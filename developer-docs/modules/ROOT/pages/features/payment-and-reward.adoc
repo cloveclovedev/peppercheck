@@ -1,0 +1,122 @@
+= Payment & Reward Flow
+:sectnums:
+
+This document describes how subscriptions, points, and referee rewards are handled in Peppercheck, focusing on Stripe Connect integration and operational best practices in Japan.
+
+== Overview
+
+* **Tasker** purchases subscriptions and points from Peppercheck.
+* **Tasker** consumes points to request reviews.
+* **Referee** completes reviews and earns rewards.
+* **Peppercheck** handles payments as a marketplace platform using Stripe Connect.
+
+[NOTE]
+.Perspective difference
+====
+**UX perspective**: It appears as if Taskers pay Referees directly. +
+**Legal/Technical perspective**: Peppercheck collects payments first and pays Referees as contractors.
+====
+
+== Conceptual Roles
+
+|===
+|Role |Description
+
+|Tasker
+|Purchases subscriptions and points, requests reviews
+
+|Referee
+|Completes reviews and earns rewards
+
+|Peppercheck
+|Marketplace platform and payment operator
+|===
+
+== Key Design Principles
+
+* Subscriptions and points break direct Tasker → Referee payment relationships.
+* Peppercheck acts as the payment intermediary (marketplace model).
+* Referee rewards are treated as **contractor payments**.
+* UX and wording emphasize "Tasker paying Referee", while the backend remains compliant.
+
+== Stripe Connect Strategy
+
+* **Account Type**: Stripe Connect (Express or Custom accounts)
+* **Charge Model**: Separate Charges & Transfers
+* **Payouts**: Referee payouts handled via Stripe balances
+
+== Reward Timing Design
+
+=== Reward Transfer Timing (Peppercheck → Referee Stripe balance)
+
+==== Chosen approach: Review-based (per completed review)
+
+* When a review is completed:
+** Reward is finalized in Peppercheck DB
+** Funds are immediately transferred to the Referee’s Stripe balance
+** This does **not** trigger a bank payout yet
+
+==== Reasons
+
+* Immediate visibility of earnings for Referees
+* Small, isolated transactions reduce failure impact
+* Aligns with standard marketplace / gig-economy patterns
+* Simplifies monthly settlement logic
+
+=== Payout Timing (Referee Stripe balance → Bank account)
+
+==== Chosen approach: Monthly automatic payout
+
+* Stripe handles payouts automatically on a monthly schedule
+* No payout API call required per review
+* Minimum payout thresholds can be applied (e.g. ¥1,000)
+
+== Fees
+
+* **Transfer (Peppercheck → Referee Stripe balance)**: No fee
+* **Standard payout (Stripe → Japanese bank account)**: No fee
+* **Fees apply only to**:
+** Card payments
+** Platform fees
+** Instant payouts (generally unavailable in Japan)
+
+== Platform Balance Management
+
+* Transfers require sufficient Peppercheck Stripe balance
+* Peppercheck must maintain a safety buffer
+* Recommended safeguards:
+** Balance threshold checks before transfers
+** Temporary `pending` state if balance is insufficient
+** Admin alerts for low balance
+
+== Operational Flow
+
+The following diagram illustrates the lifecycle of purchases, point consumption, review rewards, and final payouts.
+
+[plantuml]
+----
+include::example$features/payment-and-reward/flow.pu[]
+----
+
+== UX vs Legal Separation
+
+* **UI and copy**:
+** "Your points are paid to the Referee"
+** "You earned ¥X from this Tasker’s request"
+* **Backend reality**:
+** Peppercheck pays Referees as contractors
+** Stripe Connect manages compliance and payouts
+
+== What This Design Optimizes For
+
+* Clean Stripe Connect integration
+* Predictable payouts for Referees
+* Low operational overhead
+* Scalability
+* Compliance with Japanese payment constraints
+
+== Out of Scope (Handled Separately)
+
+* Tax handling and withholding
+* Invoice system considerations
+* Annual payment reports

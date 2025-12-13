@@ -1,0 +1,51 @@
+@startuml
+skinparam boxPadding 10
+
+actor "Tasker" as Tasker
+participant "Peppercheck\nPlatform" as Platform
+database "DB\n(Supabase)" as DB
+participant "Stripe\n(Platform Account)" as Stripe
+actor "Referee" as Referee
+participant "Stripe\n(Referee Connect Account)" as RefereeStripe
+participant "Bank" as Bank
+
+== 1. Purchase Sequence ==
+Tasker -> Platform: Subscribe / Buy Points
+Platform -> Stripe: Charge Tasker
+Stripe --> Platform: Success
+Platform -> DB: Update User Subscription / Point Wallet
+DB --> Platform: Updated
+Platform --> Tasker: Purchase Confirmed
+
+== 2. Review Request & Reward Sequence ==
+Tasker -> Platform: Request Review (Consume Points)
+Platform -> DB: Deduct Points, Create Request
+DB --> Platform: Created
+Platform --> Tasker: Request Sent
+
+... Referee performs review ...
+
+Referee -> Platform: Complete Review
+Platform -> DB: Update Request Status
+Platform -> DB: Calculate Reward Amount
+Platform -> Stripe: Transfer Reward (Amount)\nfrom Platform to Referee Connect Account
+note right
+  **Reward Transfer**
+  - Triggered immediately upon review completion
+  - Moves funds to Referee's Stripe Balance
+  - Not yet a bank payout
+end note
+Stripe -> RefereeStripe: Credit Balance
+Stripe --> Platform: Transfer Success
+Platform --> Referee: Review Completed & Reward Credited
+
+== 3. Payout Sequence (Monthly) ==
+note over RefereeStripe, Bank
+  **Automatic Payout**
+  - Scheduled monthly
+  - Handled by Stripe automatically
+end note
+RefereeStripe -> Bank: Payout (Balance -> Bank Account)
+Bank --> Referee: Funds Received
+
+@enduml

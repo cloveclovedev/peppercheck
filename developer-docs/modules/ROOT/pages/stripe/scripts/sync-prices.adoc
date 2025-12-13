@@ -32,5 +32,5 @@ deno run --allow-all stripe/scripts/sync-prices.ts
 
 [plantuml, target=sequence, format=svg]
 ....
-include::partial$stripe/scripts/sync-prices/sequence.pu[]
+include::example$stripe/scripts/sync-prices/sequence.pu[]
 ....
