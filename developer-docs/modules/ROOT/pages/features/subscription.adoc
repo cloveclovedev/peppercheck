@@ -13,7 +13,7 @@ The following diagram illustrates the lifecycle of subscriptions and point consu
 
 [plantuml]
 ----
-include::example$overview/payment/subscription/sequence.pu[]
+include::example$features/subscription/sequence.pu[]
 ----
 
 == Key Components

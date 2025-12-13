@@ -1,8 +1,9 @@
 * Overview
-** Payment
-*** xref:overview/payment/subscription.adoc[Subscription]
+** xref:overview/pricing.adoc[Pricing]
 
-* xref:pricing.adoc[Pricing]
+* Features
+** xref:features/payment-and-reward.adoc[Payment & Reward Flow]
+*** xref:features/subscription.adoc[Subscription]
 
 * Stripe
 ** Scripts
