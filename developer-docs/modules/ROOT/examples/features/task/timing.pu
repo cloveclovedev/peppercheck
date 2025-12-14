@@ -1,0 +1,63 @@
+@startuml timing
+title Task Timing & Notifications
+
+actor Tasker
+participant System
+actor Referee
+
+note left of System
+  **Time Parameters:**
+  * Evidence Warning: Due Date - 10min
+  * Judgement Timeout Threshold: Due Date + 3h
+  * Auto-Confirm Grace Period: N days (e.g., 3 days)
+end note
+
+== Task Creation ==
+Tasker -> System: Open Task
+System -> System: State: Request Pending
+
+== Matching (Auto) ==
+System -> Referee: Notification: Assigned to Task (Matched)
+System -> System: State: Request Matched -> Accepted (Auto)
+
+== Evidence Phase ==
+group Evidence Deadline Warning
+    System -> System: Check Due Date - 10min
+    System -> Tasker: Notification: "Deadline in 10 mins"
+end
+
+group Evidence Submitted
+    Tasker -> System: Submit Evidence
+    System -> System: State: Judgement In Review
+    System -> Referee: Notification: Review Requested
+end
+
+group Evidence Timeout (No Submission)
+    System -> System: Check Due Date < Now
+    System -> System: State: Judgement Evidence Timeout
+    System -> System: Billing Trigger (Points Consumed / Paid)
+    System -> Referee: Notification: Evidence Timeout (One-sided Win)
+    System -> Tasker: Notification: "Evidence deadline passed. Payment processed."
+end
+
+== Judgement Phase ==
+group Judgement Deadline Warning
+    System -> System: Check (Due Date + 3h) - 10min ?
+    System -> Referee: Notification: "Judgement Deadline Approaching"
+end
+
+group Referee Timeout (Judgement Timeout)
+    note right of System
+      If Evidence was submitted but Referee didn't judge
+      by Timeout Threshold
+    end note
+    System -> System: Check Threshold < Now
+    System -> System: State: Judgement Timeout
+    System -> Tasker: Notification: Referee Timeout
+    System -> Referee: Notification: Timeout penalty applied
+    
+    Tasker -> System: Confirm
+    System -> System: State: Judgement Confirmed (Refund/Penalty)
+end
+
+@enduml

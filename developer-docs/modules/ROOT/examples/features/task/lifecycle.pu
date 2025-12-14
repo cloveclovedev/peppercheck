@@ -1,0 +1,57 @@
+@startuml lifecycle
+title Task Lifecycle
+
+state "Task: Draft" as TaskDraft
+state "Task: Open" as TaskOpen {
+    state "Request: Pending" as RequestPending
+    state "Request: Matched" as RequestMatched
+    state "Request: Accepted" as RequestAccepted {
+        
+        state "Judgement: Awaiting Evidence" as JudgementAwaitingEvidence
+        state "Judgement: In Review" as JudgementInReview
+        state "Judgement: Approved" as JudgementApproved
+        state "Judgement: Rejected" as JudgementRejected
+        
+        state "Judgement: Confirmed" as JudgementConfirmed
+        
+        state "Judgement: Timeout" as JudgementTimeout
+        state "Judgement: Evidence Timeout" as EvidenceTimeout
+
+        [*] --> JudgementAwaitingEvidence
+
+        JudgementAwaitingEvidence --> JudgementInReview : Tasker Submit Evidence\n[Notification] Referee
+        JudgementAwaitingEvidence --> EvidenceTimeout : System Detect Tasker Timeout\n(DueDate < Now)\n[Billing Trigger]\n[Notification] Referee
+        
+        JudgementInReview --> JudgementApproved : Referee Approve\n[Notification] Tasker
+        JudgementInReview --> JudgementRejected : Referee Reject\n[Notification] Tasker
+        
+        JudgementInReview --> JudgementTimeout : System Detect Referee Timeout\n(DueDate + 3h < Now)\n[Notification] Tasker
+        
+        JudgementApproved --> JudgementConfirmed : Tasker Confirm & Rate\nSystem Auto-Confirm (Now > DueDate + N days)\n[Billing Trigger]
+        
+        JudgementRejected --> JudgementInReview : Tasker Update Evidence\n(Reopen Count < 1 && Now < DueDate)
+        JudgementRejected --> JudgementConfirmed : Tasker Confirm & Rate\nSystem Auto-Confirm (Now > DueDate + N days)\n[Billing Trigger]
+        
+        JudgementTimeout --> JudgementConfirmed : Tasker Confirm\nSystem Auto-Confirm (Now > DueDate + N days)
+        
+        EvidenceTimeout --> JudgementConfirmed : Tasker Confirm (Optional)\nSystem Auto-Confirm (Now > DueDate + N days)
+    }
+
+    state "Request: Closed" as RequestClosed
+
+    [*] --> RequestPending
+    RequestPending --> RequestMatched : System Match\n[Notification] Referee
+    
+    RequestMatched --> RequestAccepted : System Auto-Accept (MVP)\n[Notification] Tasker
+    RequestMatched --> RequestPending : Referee Decline (Optional Cancellation)
+    
+    RequestAccepted --> RequestPending : Referee Decline (Optional Cancellation)
+    RequestAccepted --> RequestClosed : System Detect Judgement Confirmed\nOR Evidence Timeout
+}
+state "Task: Closed" as TaskClosed
+
+[*] --> TaskDraft
+TaskDraft --> TaskOpen : Tasker Open Task
+TaskOpen --> TaskClosed : All Judgements Confirmed
+
+@enduml

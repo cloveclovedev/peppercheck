@@ -1,0 +1,69 @@
+= Task Lifecycle
+:sectnums:
+
+This document describes the lifecycle of a Task, including its interactions with Referee Requests and Judgements.
+
+== Overview
+
+The Task status moves primarily through three stages: `Draft`, `Open`, and `Closed` (or `Completed`).
+Within the `Open` state, the `Referee Request` and `Judgement` lifecycles operate.
+
+== State Transition Diagram
+
+The following diagram illustrates the state transitions for Tasks, Referee Requests, and Judgements.
+
+[plantuml]
+----
+include::example$features/task/lifecycle.pu[]
+----
+
+=== State Descriptions
+
+==== Task Status
+* **Draft**: Task is being created. No points consumed yet.
+* **Open**: Task is published. Referees can be matched.
+* **Closed**: All process finished.
+
+==== Request Status
+* **Pending**: Waiting for a referee to be matched.
+* **Matched**: System found a referee. (Auto-transits to Accepted in MVP).
+* **Accepted**: Referee accepted the request. Points reserved.
+* **Closed**: Request finished (either Judgement Confirmed or Evidence Timeout).
+
+==== Judgement Status
+* **Awaiting Evidence**: Initial state. Waiting for Tasker to submit evidence.
+* **In Review**: Evidence submitted. Referee is reviewing.
+* **Approved**: Referee approved the task. Tasker confirmation required.
+* **Rejected**: Referee rejected. Tasker can update evidence.
+* **Judgement Timeout**: Referee failed to make a judgement in time.
+* **Evidence Timeout**: Tasker failed to submit evidence in time. (Triggers billing).
+* **Confirmed**: Final state. Points are consumed/transferred.
+
+== Timeline and Notifications
+
+Notifications and state changes occur based on time limits (timeouts).
+
+[plantuml]
+----
+include::example$features/task/timing.pu[]
+----
+
+== Point System Considerations
+
+With the introduction of the Point System, the following logic applies to state transitions:
+
+* **Point Consumption (Reservation)**:
+** When `Request` enters `Accepted` state, points equivalent to the task fee are reserved.
+** If the Request is `Declined` or `Expired`, the reserved points are released.
+
+* **Point Finalization**:
+** Points are permanently consumed (and transferred to Referee) when the state transitions to `Confirmed` or `Evidence Timeout`.
+
+* **Refunds/Penalties**:
+** If `Judgement Timeout` occurs, reserved points are refunded.
+
+* **System Auto-Confirm**:
+** To prevent tasks from hanging indefinitely in `Approved`, `Rejected`, or `Timeout` states, the system will automatically transition to `Confirmed` if the Tasker takes no action.
+** Condition: `Now > Due Date + N days` (where N is a grace period, e.g., 3 days).
+** **Rating**: In case of Auto-Confirm, no rating is applied (treated as NULL) to be neutral.
+** **History**: The system records that the confirmation was performed automatically due to inactivity.
