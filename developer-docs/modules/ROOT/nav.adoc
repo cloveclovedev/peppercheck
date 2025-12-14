@@ -2,6 +2,7 @@
 ** xref:overview/pricing.adoc[Pricing]
 
 * Features
+** xref:features/task.adoc[Task Lifecycle]
 ** xref:features/payment-and-reward.adoc[Payment & Reward Flow]
 *** xref:features/subscription.adoc[Subscription]
 
