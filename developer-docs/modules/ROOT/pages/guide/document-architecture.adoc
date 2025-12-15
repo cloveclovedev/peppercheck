@@ -1,0 +1,53 @@
+= Documentation Architecture
+
+This document defines the structure, naming conventions, and templates for the `developer-docs`.
+
+== Directory Structure
+
+The documentation content is primarily located in `pages/`. Source codes for diagrams (e.g., PlantUML) and other included resources are placed in `examples/`.
+
+[source]
+----
+pages/
+├── overview/       # Product-level info (Background, Requirements, Pricing)
+├── features/       # Functional specifications, cross-cutting features (Task, Matching, Payment)
+├── guide/          # Meta-docs (Writing Guide, Architecture)
+└── [tech-stack]/   # Specific stack docs (stripe, supabase, flutter, web)
+
+examples/           # Diagram sources (PlantUML), code snippets
+├── features/
+└── ...
+----
+
+== Templates & Guidelines
+
+=== Overview Guidelines
+
+`pages/overview/` contains product-level context. There is no rigid template, but documents should generally cover:
+
+* *Background/Purpose*: Why this product exists.
+* *Requirements/Scope*: Detailed requirements and out-of-scope items.
+* *Pricing*: Price structure and plans.
+* *Domain/Concept*: High-level domain model if needed.
+
+=== Feature Page Template
+
+`pages/features/` describes a user-facing feature (e.g., Task, Payment) that spans multiple technologies.
+
+* *Title*: [Feature Name]
+* *User Story*: "As a [Role], I want to [Action], so that [Benefit]." (The "Why" & "Goal")
+* *Architecture/Flow*: Sequence Diagrams / State Diagrams (The "System Behavior").
+* *Technical Components*: Brief list of involved components (Flutter, Supabase, Stripe, etc.).
+* *Data Model*: Table Schema / ER Diagram (Physical tables involved).
+* *Configuration*: Env vars, settings.
+* *Related Links*: Links to specific tech stack docs (e.g., `xref:stripe/scripts/sync-prices.adoc[sync-prices]`, `xref:flutter/features/billing.adoc[Billing]`).
+
+=== Tech Stack Template
+
+`pages/[tech-stack]/` details implementation specifics for a technology (e.g., a specific script or function).
+
+* *Title*: [Component/Script Name]
+* *Purpose*: What does this specific script/function do?
+* *Usage*: Command or trigger.
+* *Inputs/Outputs*: Parameters, return values.
+* *Dependencies*: What does it rely on?

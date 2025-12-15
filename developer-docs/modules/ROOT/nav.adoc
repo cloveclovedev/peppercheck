@@ -24,3 +24,6 @@
 ** xref:flutter/google-play-setup.adoc[Google Play Setup]
 ** Features
 *** xref:flutter/features/billing.adoc[Billing]
+
+* Guide
+** xref:guide/document-architecture.adoc[Documentation Architecture]
