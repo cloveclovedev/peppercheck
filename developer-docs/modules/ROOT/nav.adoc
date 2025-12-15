@@ -1,4 +1,5 @@
 * Overview
+** xref:overview/background.adoc[Background & Purpose]
 ** xref:overview/pricing.adoc[Pricing]
 
 * Features
