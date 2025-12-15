@@ -1,0 +1,26 @@
+= Background & Purpose
+
+xref:overview/background.ja.adoc[日本語]
+
+== Background
+
+Many people struggle to maintain motivation and complete daily tasks relying solely on "willpower."
+
+While having "someone else check your task progress" is effective for maintaining motivation, asking family or friends to check daily tasks comes with psychological hurdles due to concerns about burdening them.
+
+As a result, many people fall into the dilemma of "it doesn't last when alone" but "it's hard to ask for checks," leaving them without a sustainable environment for task execution.
+
+== Purpose of PepperCheck
+
+PepperCheck solves this dilemma by providing a reviewer matching function mediated by a reward system.
+
+The Tasker pays a fee, sets the task completion criteria and deadline, and sends a reviewer matching request.
+The system assigns a Referee to the task.
+By the deadline, the Tasker submits evidence, and the Referee reviews the task completion status.
+Upon completion of the review, the system pays a portion of the fee received from the Tasker to the Referee as a reward.
+
+Through this mechanism:
+The Tasker gains powerful motivation from "Social Accountability" (the eyes of others).
+Also, paying appropriate rewards builds a sustainable reviewer matching environment.
+
+PepperCheck is not just a task management tool, but an execution support platform designed to ensure tasks are actually "completed."
