@@ -1,4 +1,6 @@
+import 'package:peppercheck_flutter/features/task/data/task_repository.dart';
 import 'package:peppercheck_flutter/features/task/domain/task_creation_request.dart';
+
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'task_creation_controller.g.dart';
@@ -22,29 +24,29 @@ class TaskCreationController extends _$TaskCreationController {
     state = AsyncData(state.value!.copyWith(criteria: criteria));
   }
 
-  void updateSelectedDateTime(DateTime dateTime) {
-    state = AsyncData(state.value!.copyWith(selectedDateTime: dateTime));
+  void updateDueDate(DateTime date) {
+    state = AsyncData(state.value!.copyWith(dueDate: date));
   }
 
   void updateTaskStatus(String status) {
     state = AsyncData(state.value!.copyWith(taskStatus: status));
   }
 
-  void updateSelectedStrategies(List<String> strategies) {
-    state = AsyncData(state.value!.copyWith(selectedStrategies: strategies));
+  void updateMatchingStrategies(List<String> strategies) {
+    state = AsyncData(state.value!.copyWith(matchingStrategies: strategies));
   }
 
   Future<void> createTask() async {
     state = const AsyncLoading();
     try {
-      // Mock RPC call
-      await Future.delayed(const Duration(seconds: 1));
+      final taskRepository = ref.read(taskRepositoryProvider);
+      final request = state
+          .value!; // state.value is definitely not null here as per logic flow usually, but good to be safe.
+      // Actually state.when in UI ensures data is loaded, but here in async method we check.
 
-      // Success - in a real app we might return the created task ID or similar
-      // For now, we just reset the state or handle navigation in the UI
+      await taskRepository.createTask(request);
 
-      // Reset state to initial after success if needed, or keep it for the UI to react
-      // state = AsyncData(const TaskCreationRequest());
+      // state = AsyncData(const TaskCreationRequest()); // Optional: reset state
     } catch (e, st) {
       state = AsyncError(e, st);
     }
@@ -56,6 +58,6 @@ class TaskCreationController extends _$TaskCreationController {
     return current.title.isNotEmpty &&
         current.description.isNotEmpty &&
         current.criteria.isNotEmpty &&
-        current.selectedDateTime != null;
+        current.dueDate != null;
   }
 }

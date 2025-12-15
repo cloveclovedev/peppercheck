@@ -43,9 +43,9 @@ class TaskFormSection extends ConsumerWidget {
                 label: t.task.creation.labelCriteria,
               ),
               BaseTextField(
-                key: ValueKey(request.selectedDateTime),
-                value: request.selectedDateTime != null
-                    ? dateFormatter.format(request.selectedDateTime!)
+                key: ValueKey(request.dueDate),
+                value: request.dueDate != null
+                    ? dateFormatter.format(request.dueDate!)
                     : '',
                 onValueChange: (_) {},
                 label: t.task.creation.labelDeadline,
@@ -98,7 +98,7 @@ class TaskFormSection extends ConsumerWidget {
           time.hour,
           time.minute,
         );
-        controller.updateSelectedDateTime(dateTime);
+        controller.updateDueDate(dateTime);
       }
     }
   }

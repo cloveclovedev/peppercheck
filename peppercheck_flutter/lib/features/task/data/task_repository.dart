@@ -1,5 +1,7 @@
 import 'package:peppercheck_flutter/app/app_logger.dart';
 import 'package:peppercheck_flutter/features/task/domain/task.dart';
+import 'package:peppercheck_flutter/features/task/domain/task_creation_request.dart';
+
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:logger/logger.dart';
@@ -11,6 +13,29 @@ class TaskRepository {
   final Logger _logger;
 
   TaskRepository(this._client, this._logger);
+
+  Future<String> createTask(TaskCreationRequest request) async {
+    try {
+      final refereeRequests = request.matchingStrategies.map((strategy) {
+        return {'matching_strategy': strategy};
+      }).toList();
+
+      final params = {
+        'title': request.title,
+        'description': request.description,
+        'criteria': request.criteria,
+        'due_date': request.dueDate?.toIso8601String(),
+        'status': request.taskStatus,
+        'referee_requests': refereeRequests,
+      };
+
+      final taskId = await _client.rpc('create_task', params: params);
+      return taskId as String;
+    } catch (e, st) {
+      _logger.e('createTask failed', error: e, stackTrace: st);
+      rethrow;
+    }
+  }
 
   Future<List<Task>> fetchActiveUserTasks() async {
     try {
