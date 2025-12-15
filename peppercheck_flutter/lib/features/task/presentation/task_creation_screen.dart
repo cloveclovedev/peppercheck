@@ -35,8 +35,8 @@ class TaskCreationScreen extends ConsumerWidget {
                     if (request.taskStatus == 'open') ...[
                       const SizedBox(height: AppSizes.sectionGap),
                       MatchingStrategySelectionSection(
-                        selectedStrategies: request.selectedStrategies,
-                        onStrategiesChange: controller.updateSelectedStrategies,
+                        selectedStrategies: request.matchingStrategies,
+                        onStrategiesChange: controller.updateMatchingStrategies,
                       ),
                     ],
                     const SizedBox(height: AppSizes.buttonGap),

@@ -35,7 +35,7 @@ final class TaskCreationControllerProvider
 }
 
 String _$taskCreationControllerHash() =>
-    r'8417f8b918276480e6b5ff3985123b448da58d41';
+    r'f9636614c43c0a20966866bd53e852f20fcc5a96';
 
 abstract class _$TaskCreationController
     extends $AsyncNotifier<TaskCreationRequest> {

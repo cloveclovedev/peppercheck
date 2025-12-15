@@ -9,9 +9,9 @@ abstract class TaskCreationRequest with _$TaskCreationRequest {
     @Default('') String title,
     @Default('') String description,
     @Default('') String criteria,
-    DateTime? selectedDateTime,
+    DateTime? dueDate,
     @Default('draft') String taskStatus,
-    @Default([]) List<String> selectedStrategies,
+    @Default([]) List<String> matchingStrategies,
   }) = _TaskCreationRequest;
 
   factory TaskCreationRequest.fromJson(Map<String, dynamic> json) =>
