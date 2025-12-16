@@ -1,16 +1,18 @@
-import Link from 'next/link'
+import { Link } from '@/i18n/routing'
+import { useTranslations } from 'next-intl'
 
 export function Footer() {
+  const t = useTranslations('Footer')
   return (
     <footer className="relative z-50 w-full border-t border-[var(--color-text)] bg-[var(--color-background-light)] py-12 text-sm font-semibold tracking-wide">
       <div className="mx-auto flex max-w-[var(--max-content-width)] flex-col items-start justify-between gap-6 px-6 md:flex-row md:items-center">
         {/* Left: Terms & Privacy */}
         <div className="flex flex-col gap-2">
           <Link href="#" className="decoration-2 hover:underline">
-            Terms of Service
+            {t('terms')}
           </Link>
           <Link href="#" className="decoration-2 hover:underline">
-            Privacy Policy
+            {t('privacy')}
           </Link>
         </div>
 
@@ -33,7 +35,7 @@ export function Footer() {
           </Link>
 
           <div className="font-normal text-[var(--color-text)] opacity-80">
-            © 2024 CloveClove, Inc.
+            {t('copyright')}
           </div>
         </div>
       </div>

@@ -1,0 +1,48 @@
+{
+  "HomePage": {
+    "title": "タスクのための<br></br>ピア・レフリー プラットフォーム",
+    "placeholder": "(コンテンツ準備中)"
+  },
+  "Header": {
+    "login": "ログイン"
+  },
+  "Footer": {
+    "terms": "利用規約",
+    "privacy": "プライバシーポリシー",
+    "copyright": "© 2024 CloveClove, Inc."
+  },
+  "Dashboard": {
+    "title": "ダッシュボード",
+    "userProfile": "ユーザープロフィール",
+    "subscriptionStatus": "サブスクリプションステータス",
+    "noSubscription": "有効なサブスクリプションはありません",
+    "currentPlan": "現在のプラン",
+    "currentPeriodEnd": "有効期限",
+    "cancelSubscription": "サブスクリプションをキャンセル (準備中)",
+    "upgradePlan": "プランをアップグレード"
+  },
+  "Auth": {
+    "login": "ログイン",
+    "logout": "ログアウト"
+  },
+  "Pricing": {
+    "title": "料金プラン",
+    "subtitle": "あなたに最適なプランを選んでください。",
+    "month": "/月",
+    "subscribe": "{plan} に登録する",
+    "plans": {
+      "light_plan": {
+        "name": "ライトプラン",
+        "description": "毎月 {points} ポイント付与"
+      },
+      "standard_plan": {
+        "name": "スタンダードプラン",
+        "description": "毎月 {points} ポイント付与"
+      },
+      "premium_plan": {
+        "name": "プレミアムプラン",
+        "description": "毎月 {points} ポイント付与"
+      }
+    }
+  }
+}

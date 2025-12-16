@@ -19,6 +19,7 @@
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.87.1",
     "next": "15.5.9",
+    "next-intl": "^4.6.0",
     "react": "19.1.4",
     "react-dom": "19.1.4"
   },

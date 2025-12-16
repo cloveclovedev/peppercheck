@@ -1,7 +1,11 @@
 import { Header } from '@/components/Header'
 import { Footer } from '@/components/Footer'
 
+import { useTranslations } from 'next-intl'
+
 export default function Home() {
+  const t = useTranslations('HomePage')
+
   return (
     <div className="flex min-h-screen flex-col font-sans">
       <Header />
@@ -10,12 +14,12 @@ export default function Home() {
         {/* Placeholder for content sections */}
         <div className="flex min-h-[40vh] flex-col items-center justify-center gap-12 text-center">
           <h1 className="text-4xl font-extrabold tracking-tight text-[var(--color-heading)] sm:text-5xl md:text-6xl">
-            Peer Referee Platform
-            <br />
-            for Tasks
+            {t.rich('title', {
+              br: () => <br />,
+            })}
           </h1>
           <p className="max-w-xl text-lg text-[var(--color-text)] opacity-80">
-            (Content placeholder)
+            {t('placeholder')}
           </p>
         </div>
       </main>
