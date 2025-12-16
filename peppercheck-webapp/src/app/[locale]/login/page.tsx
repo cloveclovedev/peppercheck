@@ -2,10 +2,13 @@
 
 import { createClient } from '@/lib/supabase/client'
 import { useState } from 'react'
+import { Link } from '@/i18n/routing'
+import { useLocale } from 'next-intl';
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const supabase = createClient()
+  const locale = useLocale();
 
   const handleGoogleLogin = async () => {
     setLoading(true)
@@ -13,7 +16,7 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: `${window.location.origin}/${locale}/auth/callback`,
         },
       })
       if (error) throw error
@@ -34,12 +37,12 @@ export default function LoginPage() {
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             Or{' '}
-            <a
+            <Link
               href="/pricing"
               className="font-medium text-indigo-600 hover:text-indigo-500"
             >
               check our pricing
-            </a>
+            </Link>
           </p>
         </div>
         <div className="mt-8 space-y-6">

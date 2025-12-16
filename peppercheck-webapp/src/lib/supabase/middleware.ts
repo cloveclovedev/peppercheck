@@ -1,10 +1,15 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-export async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({
-    request,
-  })
+export async function updateSession(
+  request: NextRequest,
+  response?: NextResponse,
+) {
+  let supabaseResponse =
+    response ||
+    NextResponse.next({
+      request,
+    })
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -18,9 +23,11 @@ export async function updateSession(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value),
           )
-          supabaseResponse = NextResponse.next({
-            request,
-          })
+          supabaseResponse =
+            response ||
+            NextResponse.next({
+              request,
+            })
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options),
           )
@@ -33,19 +40,27 @@ export async function updateSession(request: NextRequest) {
   // supabase.auth.getUser(). A simple mistake could make it very hard to debug
   // issues with users being randomly logged out.
 
+  // Check if we have a session
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
+  // Normalize path by removing locale
+  const pathname = request.nextUrl.pathname
+  // Matches /en, /ja, /en/..., /ja/...
+  const localeMatch = pathname.match(/^\/(en|ja)(\/|$)/)
+  const locale = localeMatch ? localeMatch[1] : 'en' // Default to en if missing
+  const pathnameWithoutLocale = pathname.replace(/^\/(en|ja)/, '') || '/'
+
   if (
     !user &&
-    !request.nextUrl.pathname.startsWith('/login') &&
-    !request.nextUrl.pathname.startsWith('/auth') &&
-    request.nextUrl.pathname.startsWith('/dashboard')
+    !pathnameWithoutLocale.startsWith('/login') &&
+    !pathnameWithoutLocale.startsWith('/auth') &&
+    pathnameWithoutLocale.startsWith('/dashboard')
   ) {
     // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone()
-    url.pathname = '/login'
+    url.pathname = `/${locale}/login`
     return NextResponse.redirect(url)
   }
 

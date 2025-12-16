@@ -7,9 +7,11 @@ import { useRouter } from 'next/navigation'
 export default function SubscribeButton({
   planId,
   currency,
+  label,
 }: {
   planId: string
   currency: string
+  label?: string
 }) {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
@@ -65,7 +67,7 @@ export default function SubscribeButton({
       disabled={loading}
       className={`w-full rounded-md px-4 py-2 font-semibold text-white transition-colors ${loading ? 'cursor-not-allowed bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'}`}
     >
-      {loading ? 'Processing...' : `Subscribe to ${planId}`}
+      {loading ? 'Processing...' : label || `Subscribe to ${planId}`}
     </button>
   )
 }

@@ -1,0 +1,48 @@
+{
+  "HomePage": {
+    "title": "Peer Referee Platform<br></br>for Tasks",
+    "placeholder": "(Content placeholder)"
+  },
+  "Header": {
+    "login": "Login"
+  },
+  "Footer": {
+    "terms": "Terms of Service",
+    "privacy": "Privacy Policy",
+    "copyright": "© 2024 CloveClove, Inc."
+  },
+  "Dashboard": {
+    "title": "Dashboard",
+    "userProfile": "User Profile",
+    "subscriptionStatus": "Subscription Status",
+    "noSubscription": "No Active Subscription",
+    "currentPlan": "Current Plan",
+    "currentPeriodEnd": "Current Period End",
+    "cancelSubscription": "Cancel Subscription (Coming Soon)",
+    "upgradePlan": "Upgrade Plan"
+  },
+  "Auth": {
+    "login": "Login",
+    "logout": "Logout"
+  },
+  "Pricing": {
+    "title": "Pricing Plans",
+    "subtitle": "Choose the plan that fits your needs.",
+    "month": "/mo",
+    "subscribe": "Subscribe to {plan}",
+    "plans": {
+      "light_plan": {
+        "name": "Light Plan",
+        "description": "Includes {points} points / month"
+      },
+      "standard_plan": {
+        "name": "Standard Plan",
+        "description": "Includes {points} points / month"
+      },
+      "premium_plan": {
+        "name": "Premium Plan",
+        "description": "Includes {points} points / month"
+      }
+    }
+  }
+}
