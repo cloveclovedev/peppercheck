@@ -10,8 +10,8 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser()
 
   if (!user) {
-    // Basic protection
-    redirect('/pricing') // Ideally login page
+    // This should be handled by middleware, but kept for type narrowing
+    redirect('/login')
   }
 
   // Fetch subscription
