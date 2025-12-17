@@ -19,6 +19,7 @@ class RefereeAvailabilitySection extends ConsumerWidget {
     return BaseSection(
       title: t.matching.referee_availability.title,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           availabilityState.when(
             data: (slots) {
