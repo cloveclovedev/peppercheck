@@ -1,3 +1,4 @@
+import 'package:peppercheck_flutter/app/app_logger.dart';
 import 'package:peppercheck_flutter/features/authentication/data/authentication_repository.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -15,5 +16,10 @@ class AuthenticationController extends _$AuthenticationController {
     state = await AsyncValue.guard(() async {
       await ref.read(authenticationRepositoryProvider).signInWithGoogle();
     });
+    if (state.hasError) {
+      ref
+          .read(loggerProvider)
+          .e('Sign-in error', error: state.error, stackTrace: state.stackTrace);
+    }
   }
 }

@@ -277,7 +277,7 @@ skip_nonce_check = false
 enabled = true
 client_id = "env(GOOGLE_CLIENT_ID)"
 secret = "env(GOOGLE_CLIENT_SECRET)"
-skip_nonce_check = false
+skip_nonce_check = true
 
 # Use Firebase Auth as a third-party provider alongside Supabase Auth.
 [auth.third_party.firebase]
