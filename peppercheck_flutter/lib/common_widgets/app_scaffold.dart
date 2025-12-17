@@ -102,6 +102,7 @@ class AppScaffold extends StatelessWidget {
           // Removed bottom padding as requested (was 8)
           padding: const EdgeInsets.symmetric(
             horizontal: AppSizes.screenHorizontalPadding,
+            vertical: AppSizes.screenVerticalPadding,
           ),
           child: Container(
             decoration: BoxDecoration(
