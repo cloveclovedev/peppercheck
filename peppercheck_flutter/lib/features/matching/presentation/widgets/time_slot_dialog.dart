@@ -81,7 +81,7 @@ class _TimeSlotDialogState extends State<TimeSlotDialog> {
             ),
             const SizedBox(height: 4),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
                 border: Border.all(color: AppColors.border),
                 borderRadius: BorderRadius.circular(8),
@@ -89,6 +89,7 @@ class _TimeSlotDialogState extends State<TimeSlotDialog> {
               child: DropdownButton<int>(
                 value: _dow,
                 isExpanded: true,
+                isDense: true,
                 underline: const SizedBox(),
                 dropdownColor: AppColors.backgroundWhite,
                 style: const TextStyle(
