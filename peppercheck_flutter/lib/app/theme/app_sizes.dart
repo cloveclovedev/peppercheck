@@ -56,4 +56,13 @@ class AppSizes {
   static const double loginScreenHorizontalPadding = 32.0;
   static const double loginPeppercheckIconHeight = 140.0;
   static const double loginPeppercheckTitleFontSize = 48.0;
+
+  // Referee Availability Section
+  static const double timeSlotCardGap = 4.0;
+  static const double timeSlotCardBorderRadius = 12.0;
+  static const double timeSlotCardHorizontalPadding = 12.0;
+  static const double timeSlotCardVerticalPadding = 4.0;
+  static const double timeSlotCardAddButtonGap = 8.0;
+  static const double timeSlotCardIconSize = 18.0;
+  static const double timeSlotCardIconPadding = 6.0;
 }

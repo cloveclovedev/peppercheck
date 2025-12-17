@@ -48,6 +48,8 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final TranslationsPayoutJa payout = TranslationsPayoutJa.internal(_root);
 	late final TranslationsDashboardJa dashboard = TranslationsDashboardJa.internal(_root);
 	late final TranslationsTaskJa task = TranslationsTaskJa.internal(_root);
+	late final TranslationsProfileJa profile = TranslationsProfileJa.internal(_root);
+	late final TranslationsMatchingJa matching = TranslationsMatchingJa.internal(_root);
 }
 
 // Path: login
@@ -156,6 +158,14 @@ class TranslationsCommonJa {
 
 	/// ja: '確認'
 	String get confirm => '確認';
+
+	/// ja: '保存'
+	String get save => '保存';
+
+	late final TranslationsCommonDaysJa days = TranslationsCommonDaysJa.internal(_root);
+
+	/// ja: 'エラー: $message'
+	String error({required Object message}) => 'エラー: ${message}';
 }
 
 // Path: payout
@@ -259,6 +269,58 @@ class TranslationsTaskJa {
 	late final TranslationsTaskCreationJa creation = TranslationsTaskCreationJa.internal(_root);
 }
 
+// Path: profile
+class TranslationsProfileJa {
+	TranslationsProfileJa.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// ja: 'プロフィール'
+	String get title => 'プロフィール';
+}
+
+// Path: matching
+class TranslationsMatchingJa {
+	TranslationsMatchingJa.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+	late final TranslationsMatchingRefereeAvailabilityJa referee_availability = TranslationsMatchingRefereeAvailabilityJa.internal(_root);
+}
+
+// Path: common.days
+class TranslationsCommonDaysJa {
+	TranslationsCommonDaysJa.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// ja: '日曜日'
+	String get sunday => '日曜日';
+
+	/// ja: '月曜日'
+	String get monday => '月曜日';
+
+	/// ja: '火曜日'
+	String get tuesday => '火曜日';
+
+	/// ja: '水曜日'
+	String get wednesday => '水曜日';
+
+	/// ja: '木曜日'
+	String get thursday => '木曜日';
+
+	/// ja: '金曜日'
+	String get friday => '金曜日';
+
+	/// ja: '土曜日'
+	String get saturday => '土曜日';
+}
+
 // Path: task.status
 class TranslationsTaskStatusJa {
 	TranslationsTaskStatusJa.internal(this._root);
@@ -333,6 +395,39 @@ class TranslationsTaskCreationJa {
 	late final TranslationsTaskCreationStrategyJa strategy = TranslationsTaskCreationStrategyJa.internal(_root);
 }
 
+// Path: matching.referee_availability
+class TranslationsMatchingRefereeAvailabilityJa {
+	TranslationsMatchingRefereeAvailabilityJa.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// ja: '受付可能時間'
+	String get title => '受付可能時間';
+
+	/// ja: '受付可能時間が設定されていません'
+	String get no_slots => '受付可能時間が設定されていません';
+
+	/// ja: '受付時間を追加'
+	String get add_slot => '受付時間を追加';
+
+	/// ja: '受付時間を編集'
+	String get edit_slot => '受付時間を編集';
+
+	/// ja: '開始時間'
+	String get dialog_start_time => '開始時間';
+
+	/// ja: '終了時間'
+	String get dialog_end_time => '終了時間';
+
+	/// ja: '曜日'
+	String get dialog_dow => '曜日';
+
+	/// ja: '終了時間は開始時間より後である必要があります'
+	String get invalid_time_range => '終了時間は開始時間より後である必要があります';
+}
+
 // Path: task.creation.strategy
 class TranslationsTaskCreationStrategyJa {
 	TranslationsTaskCreationStrategyJa.internal(this._root);
@@ -374,6 +469,15 @@ extension on Translations {
 			'billing.manageSubscription' => 'サブスクリプション管理',
 			'common.cancel' => 'キャンセル',
 			'common.confirm' => '確認',
+			'common.save' => '保存',
+			'common.days.sunday' => '日曜日',
+			'common.days.monday' => '月曜日',
+			'common.days.tuesday' => '火曜日',
+			'common.days.wednesday' => '水曜日',
+			'common.days.thursday' => '木曜日',
+			'common.days.friday' => '金曜日',
+			'common.days.saturday' => '土曜日',
+			'common.error' => ({required Object message}) => 'エラー: ${message}',
 			'payout.title' => '出金設定',
 			'payout.setupPayout' => '出金設定を行う',
 			'payout.payoutSetupDescription' => '報酬を受け取るには出金設定が必要です',
@@ -417,6 +521,15 @@ extension on Translations {
 			'task.creation.buttonAdd' => '追加',
 			'task.creation.buttonCreate' => '作成',
 			'task.creation.strategy.standard' => 'スタンダード',
+			'profile.title' => 'プロフィール',
+			'matching.referee_availability.title' => '受付可能時間',
+			'matching.referee_availability.no_slots' => '受付可能時間が設定されていません',
+			'matching.referee_availability.add_slot' => '受付時間を追加',
+			'matching.referee_availability.edit_slot' => '受付時間を編集',
+			'matching.referee_availability.dialog_start_time' => '開始時間',
+			'matching.referee_availability.dialog_end_time' => '終了時間',
+			'matching.referee_availability.dialog_dow' => '曜日',
+			'matching.referee_availability.invalid_time_range' => '終了時間は開始時間より後である必要があります',
 			_ => null,
 		};
 	}
