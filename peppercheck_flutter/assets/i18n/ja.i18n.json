@@ -28,7 +28,18 @@
   },
   "common": {
     "cancel": "キャンセル",
-    "confirm": "確認"
+    "confirm": "確認",
+    "save": "保存",
+    "days": {
+      "sunday": "日曜日",
+      "monday": "月曜日",
+      "tuesday": "火曜日",
+      "wednesday": "水曜日",
+      "thursday": "木曜日",
+      "friday": "金曜日",
+      "saturday": "土曜日"
+    },
+    "error": "エラー: $message"
   },
   "payout": {
     "title": "出金設定",
@@ -83,6 +94,21 @@
       "strategy": {
         "standard": "スタンダード"
       }
+    }
+  },
+  "profile": {
+    "title": "プロフィール"
+  },
+  "matching": {
+    "referee_availability": {
+      "title": "受付可能時間",
+      "no_slots": "受付可能時間が設定されていません",
+      "add_slot": "受付時間を追加",
+      "edit_slot": "受付時間を編集",
+      "dialog_start_time": "開始時間",
+      "dialog_end_time": "終了時間",
+      "dialog_dow": "曜日",
+      "invalid_time_range": "終了時間は開始時間より後である必要があります"
     }
   }
 }

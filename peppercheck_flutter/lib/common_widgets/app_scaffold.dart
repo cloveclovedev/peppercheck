@@ -53,7 +53,7 @@ class AppScaffold extends StatelessWidget {
         context.go('/payments');
         break;
       case 2:
-        // TODO: Navigate to Profile
+        context.go('/profile');
         break;
     }
   }
