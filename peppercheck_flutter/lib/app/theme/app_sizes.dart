@@ -20,16 +20,16 @@ class AppSizes {
   static const double bottomNavigationBarBorderRadius = 16.0;
 
   // BaseSection
-  static const double baseSectionHorizontalPadding = 16.0;
+  static const double baseSectionHorizontalPadding = 12.0;
   static const double baseSectionTopPadding = 12.0;
-  static const double baseSectionBottomPadding = 16.0;
+  static const double baseSectionBottomPadding = 12.0;
   static const double baseSectionTitleBodyGap = 8.0;
   static const double baseSectionBorderRadius = 16.0;
 
   static const double taskCardGap = 4.0;
   static const double taskCardBorderRadius = 12.0;
-  static const double taskCardHorizontalPadding = 16.0;
-  static const double taskCardVerticalPadding = 8.0;
+  static const double taskCardHorizontalPadding = 12.0;
+  static const double taskCardVerticalPadding = 4.0;
   static const double taskCardIconGap = 12.0;
   static const double taskCardTitleInfoGap = 2.0;
   static const double taskCardStatusGap = 8.0;
