@@ -23,6 +23,7 @@
 * Flutter App
 ** xref:flutter/initial-local-setup.adoc[Initial Local Setup]
 ** xref:flutter/google-play-setup.adoc[Google Play Setup]
+** xref:flutter/iOS-setup.adoc[iOS Setup]
 ** Features
 *** xref:flutter/features/billing.adoc[Billing]
 

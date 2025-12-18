@@ -1,0 +1,73 @@
+= iOS Physical Device Setup
+:sectnums:
+
+This guide explains how to deploy the PepperCheck Flutter app to a physical iPhone for testing.
+It specifically covers the workflow using a **Free Apple Developer Account (Personal Team)** connected to the **Production Backend**.
+
+For general iOS deployment information, refer to the https://docs.flutter.dev/deployment/ios[Official Flutter Documentation].
+
+== Prerequisites
+
+* [x] Xcode installed on your Mac
+* [x] iPhone connected via USB cable
+* [x] Apple ID (Free Personal Account is sufficient)
+
+== Xcode Signing Configuration (Project Specific)
+
+The project requires specific signing settings to match the registered Bundle ID.
+
+=== Open the iOS workspace
+
+[source,bash]
+----
+open ios/Runner.xcworkspace
+----
+
+=== Configure Signing in Xcode
+. Select **Runner** (Project) -> **TARGETS Runner** -> **Signing & Capabilities**.
+. **Team**: Select your **Personal Team** (e.g., `Your Name (Personal Team)`).
+. **Bundle Identifier**: Verify it shows `dev.cloveclove.peppercheck` (this is pre-configured in project files).
+
+== iPhone Configuration
+
+. **Enable Developer Mode**:
+.. Go to **Settings > Privacy & Security > Developer Mode**.
+.. Toggle **ON** and follow the restart prompts (Required for iOS 16+).
+. **Unlock Device**: Ensure the device is unlocked and on the home screen.
+. **Trust Computer**: If prompted, tap **Trust** on the "Trust This Computer?" dialog.
+
+== Running with Production Backend
+
+To test on a physical device without complex local network configuration, we use the **Production Backend** (`.env.production`).
+
+[IMPORTANT]
+====
+This build connects to the live production database. Be careful with data manipulation.
+====
+
+=== Identify Device ID
+
+[source,bash]
+----
+flutter devices
+----
+
+Copy the Device ID (e.g., `00008110-001234567890`) from the output.
+
+=== Run Release Build
+
+[source,bash]
+----
+flutter run --release -t lib/main_production.dart -d <Device ID>
+----
+
+* **`--release`**: Installs an optimized build that runs without a debugger attached.
+* **`-t lib/main_production.dart`**: Point to the production entry point.
+
+== Troubleshooting "Untrusted Developer"
+
+On the first install, the app will not launch immediately.
+
+. On your iPhone, go to **Settings > General > VPN & Device Management**.
+. Tap the **Developer App** entry (your email address).
+. Tap **Trust** to allow the application to run.
