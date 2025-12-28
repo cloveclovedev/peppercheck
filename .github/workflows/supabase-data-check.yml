@@ -38,6 +38,7 @@ jobs:
           queries["billing_settings"]="SELECT id, max_retry_attempts FROM public.billing_settings ORDER BY id"
           queries["subscription_plans"]="SELECT id, name, monthly_points, is_active FROM public.subscription_plans ORDER BY id"
           queries["subscription_plan_prices"]="SELECT plan_id, currency_code, amount_minor, provider FROM public.subscription_plan_prices ORDER BY plan_id, provider"
+          queries["matching_config"]="SELECT key, value, description FROM public.matching_config ORDER BY key"
 
           for name in "${!queries[@]}"; do
             out="/tmp/${name}_out.csv"

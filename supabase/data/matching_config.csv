@@ -1,0 +1,2 @@
+key,value,description
+min_due_date_interval_hours,1,Minimum hours between now and due date for open tasks
