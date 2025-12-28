@@ -266,6 +266,7 @@ class TranslationsTaskJa {
 
 	// Translations
 	late final TranslationsTaskStatusJa status = TranslationsTaskStatusJa.internal(_root);
+	late final TranslationsTaskDetailJa detail = TranslationsTaskDetailJa.internal(_root);
 	late final TranslationsTaskCreationJa creation = TranslationsTaskCreationJa.internal(_root);
 }
 
@@ -357,6 +358,24 @@ class TranslationsTaskStatusJa {
 	String get done => '完了';
 }
 
+// Path: task.detail
+class TranslationsTaskDetailJa {
+	TranslationsTaskDetailJa.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// ja: 'タスク詳細'
+	String get title => 'タスク詳細';
+
+	/// ja: 'リクエスト'
+	String get sectionRequests => 'リクエスト';
+
+	/// ja: 'ステータス'
+	String get labelStatus => 'ステータス';
+}
+
 // Path: task.creation
 class TranslationsTaskCreationJa {
 	TranslationsTaskCreationJa.internal(this._root);
@@ -365,8 +384,11 @@ class TranslationsTaskCreationJa {
 
 	// Translations
 
-	/// ja: 'Task Creation'
-	String get title => 'Task Creation';
+	/// ja: 'タスク作成'
+	String get title => 'タスク作成';
+
+	/// ja: 'タスク編集'
+	String get titleEdit => 'タスク編集';
 
 	/// ja: 'タスク情報'
 	String get sectionInfo => 'タスク情報';
@@ -391,6 +413,9 @@ class TranslationsTaskCreationJa {
 
 	/// ja: '作成'
 	String get buttonCreate => '作成';
+
+	/// ja: '更新'
+	String get buttonUpdate => '更新';
 
 	late final TranslationsTaskCreationStrategyJa strategy = TranslationsTaskCreationStrategyJa.internal(_root);
 }
@@ -511,7 +536,11 @@ extension on Translations {
 			'task.status.self_completed' => '自己完結',
 			'task.status.expired' => '期限切れ',
 			'task.status.done' => '完了',
-			'task.creation.title' => 'Task Creation',
+			'task.detail.title' => 'タスク詳細',
+			'task.detail.sectionRequests' => 'リクエスト',
+			'task.detail.labelStatus' => 'ステータス',
+			'task.creation.title' => 'タスク作成',
+			'task.creation.titleEdit' => 'タスク編集',
 			'task.creation.sectionInfo' => 'タスク情報',
 			'task.creation.labelTitle' => 'タイトル',
 			'task.creation.labelDescription' => '詳細 (任意)',
@@ -520,6 +549,7 @@ extension on Translations {
 			'task.creation.sectionMatching' => 'マッチングプラン',
 			'task.creation.buttonAdd' => '追加',
 			'task.creation.buttonCreate' => '作成',
+			'task.creation.buttonUpdate' => '更新',
 			'task.creation.strategy.standard' => 'スタンダード',
 			'profile.title' => 'プロフィール',
 			'matching.referee_availability.title' => '受付可能時間',

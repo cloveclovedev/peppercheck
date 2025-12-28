@@ -1,0 +1,102 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'package:peppercheck_flutter/app/theme/app_colors.dart';
+import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
+import 'package:peppercheck_flutter/common_widgets/app_background.dart';
+import 'package:peppercheck_flutter/common_widgets/app_scaffold.dart';
+import 'package:peppercheck_flutter/common_widgets/base_section.dart';
+import 'package:peppercheck_flutter/features/task/domain/task.dart';
+import 'package:peppercheck_flutter/features/task/presentation/widgets/task_detail/task_detail_info_section.dart';
+import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
+
+import 'package:peppercheck_flutter/features/task/presentation/providers/task_provider.dart';
+
+class TaskDetailScreen extends ConsumerWidget {
+  final Task task;
+
+  const TaskDetailScreen({super.key, required this.task});
+
+  static const route = '/task_detail';
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Watch the latest task data from the server
+    final asyncTask = ref.watch(taskProvider(task.id));
+
+    // Use the latest data if available, otherwise fallback to the passed task (optimistic UI)
+    // This ensures no flickering on initial load while ensuring we show the latest status after updates.
+    final displayTask = asyncTask.asData?.value ?? task;
+
+    return AppBackground(
+      child: AppScaffold.scrollable(
+        title: t.task.detail.title,
+        currentIndex: -1, // No bottom nav item selected
+        onRefresh: () async {
+          // Invalidate to force a re-fetch
+          return ref.refresh(taskProvider(task.id).future);
+        },
+        slivers: [
+          SliverToBoxAdapter(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TaskDetailInfoSection(task: displayTask),
+                const SizedBox(height: AppSizes.sectionGap),
+                _buildRequestsSection(context, displayTask),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRequestsSection(BuildContext context, Task currentTask) {
+    if (currentTask.refereeRequests.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return BaseSection(
+      title: t.task.detail.sectionRequests,
+      child: Column(
+        children: currentTask.refereeRequests.map((req) {
+          return Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.backgroundWhite,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        req.matchingStrategy,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        '${t.task.detail.labelStatus}: ${req.status}',
+                        style: const TextStyle(color: AppColors.textMuted),
+                      ),
+                    ],
+                  ),
+                ),
+                // Point/Fee display could go here
+                if (currentTask.feeAmount != null)
+                  Text(
+                    '${currentTask.feeAmount} ${currentTask.feeCurrency ?? ''}',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+              ],
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+}

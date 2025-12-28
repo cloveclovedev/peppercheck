@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:peppercheck_flutter/app/theme/app_colors.dart';
 import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
@@ -32,7 +33,7 @@ class TaskCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(AppSizes.taskCardBorderRadius),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: onTap,
+        onTap: onTap ?? () => context.push('/task_detail', extra: task),
         child: Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppSizes.taskCardHorizontalPadding,

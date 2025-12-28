@@ -81,8 +81,14 @@
       "expired": "期限切れ",
       "done": "完了"
     },
+    "detail": {
+      "title": "タスク詳細",
+      "sectionRequests": "リクエスト",
+      "labelStatus": "ステータス"
+    },
     "creation": {
-      "title": "Task Creation",
+      "title": "タスク作成",
+      "titleEdit": "タスク編集",
       "sectionInfo": "タスク情報",
       "labelTitle": "タイトル",
       "labelDescription": "詳細 (任意)",
@@ -91,6 +97,7 @@
       "sectionMatching": "マッチングプラン",
       "buttonAdd": "追加",
       "buttonCreate": "作成",
+      "buttonUpdate": "更新",
       "strategy": {
         "standard": "スタンダード"
       }
