@@ -10,47 +10,98 @@ part of 'task_creation_controller.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(TaskCreationController)
-const taskCreationControllerProvider = TaskCreationControllerProvider._();
+const taskCreationControllerProvider = TaskCreationControllerFamily._();
 
 final class TaskCreationControllerProvider
-    extends
-        $AsyncNotifierProvider<TaskCreationController, TaskCreationRequest> {
-  const TaskCreationControllerProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'taskCreationControllerProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
+    extends $NotifierProvider<TaskCreationController, TaskCreationRequest> {
+  const TaskCreationControllerProvider._({
+    required TaskCreationControllerFamily super.from,
+    required Task? super.argument,
+  }) : super(
+         retry: null,
+         name: r'taskCreationControllerProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
 
   @override
   String debugGetCreateSourceHash() => _$taskCreationControllerHash();
 
+  @override
+  String toString() {
+    return r'taskCreationControllerProvider'
+        ''
+        '($argument)';
+  }
+
   @$internal
   @override
   TaskCreationController create() => TaskCreationController();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(TaskCreationRequest value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<TaskCreationRequest>(value),
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is TaskCreationControllerProvider &&
+        other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
 }
 
 String _$taskCreationControllerHash() =>
-    r'f9636614c43c0a20966866bd53e852f20fcc5a96';
+    r'395c284bdcd73cf9e9040e392360ce2bc84c3b00';
 
-abstract class _$TaskCreationController
-    extends $AsyncNotifier<TaskCreationRequest> {
-  FutureOr<TaskCreationRequest> build();
+final class TaskCreationControllerFamily extends $Family
+    with
+        $ClassFamilyOverride<
+          TaskCreationController,
+          TaskCreationRequest,
+          TaskCreationRequest,
+          TaskCreationRequest,
+          Task?
+        > {
+  const TaskCreationControllerFamily._()
+    : super(
+        retry: null,
+        name: r'taskCreationControllerProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  TaskCreationControllerProvider call(Task? initialTask) =>
+      TaskCreationControllerProvider._(argument: initialTask, from: this);
+
+  @override
+  String toString() => r'taskCreationControllerProvider';
+}
+
+abstract class _$TaskCreationController extends $Notifier<TaskCreationRequest> {
+  late final _$args = ref.$arg as Task?;
+  Task? get initialTask => _$args;
+
+  TaskCreationRequest build(Task? initialTask);
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
-    final ref =
-        this.ref as $Ref<AsyncValue<TaskCreationRequest>, TaskCreationRequest>;
+    final created = build(_$args);
+    final ref = this.ref as $Ref<TaskCreationRequest, TaskCreationRequest>;
     final element =
         ref.element
             as $ClassProviderElement<
-              AnyNotifier<AsyncValue<TaskCreationRequest>, TaskCreationRequest>,
-              AsyncValue<TaskCreationRequest>,
+              AnyNotifier<TaskCreationRequest, TaskCreationRequest>,
+              TaskCreationRequest,
               Object?,
               Object?
             >;

@@ -5,68 +5,109 @@ import 'package:peppercheck_flutter/app/theme/app_colors.dart';
 import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
 import 'package:peppercheck_flutter/common_widgets/base_section.dart';
 import 'package:peppercheck_flutter/common_widgets/base_text_field.dart';
+import 'package:peppercheck_flutter/features/task/domain/task.dart';
+import 'package:peppercheck_flutter/features/task/domain/task_creation_request.dart';
 import 'package:peppercheck_flutter/features/task/presentation/task_creation_controller.dart';
 import 'package:peppercheck_flutter/features/task/presentation/widgets/task_creation/task_status_selector.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 
-class TaskFormSection extends ConsumerWidget {
-  const TaskFormSection({super.key});
+class TaskFormSection extends ConsumerStatefulWidget {
+  const TaskFormSection({
+    super.key,
+    required this.initialData,
+    required this.task,
+  });
+
+  final TaskCreationRequest initialData;
+  final Task? task;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // Only watch the specific part if possible, or the whole state.
-    // For simplicity, watch the whole state as it's a form.
-    final state = ref.watch(taskCreationControllerProvider);
-    final controller = ref.read(taskCreationControllerProvider.notifier);
-    final dateFormatter = DateFormat('yyyy/MM/dd H:mm');
+  ConsumerState<TaskFormSection> createState() => _TaskFormSectionState();
+}
 
-    return state.when(
-      data: (request) {
-        return BaseSection(
-          title: t.task.creation.sectionInfo,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              BaseTextField(
-                value: request.title,
-                onValueChange: controller.updateTitle,
-                label: t.task.creation.labelTitle,
-              ),
-              BaseTextField(
-                value: request.description,
-                onValueChange: controller.updateDescription,
-                label: t.task.creation.labelDescription,
-              ),
-              BaseTextField(
-                value: request.criteria,
-                onValueChange: controller.updateCriteria,
-                label: t.task.creation.labelCriteria,
-              ),
-              BaseTextField(
-                key: ValueKey(request.dueDate),
-                value: request.dueDate != null
-                    ? dateFormatter.format(request.dueDate!)
-                    : '',
-                onValueChange: (_) {},
-                label: t.task.creation.labelDeadline,
-                readOnly: true,
-                onClick: () => _pickDateTime(context, controller),
-                trailingIcon: const Icon(
-                  Icons.access_time,
-                  color: AppColors.accentBlueLight,
-                ),
-              ),
-              const SizedBox(height: AppSizes.gapTaskStatusSelector),
-              TaskStatusSelector(
-                selectedStatus: request.taskStatus,
-                onStatusChange: controller.updateTaskStatus,
-              ),
-            ],
+class _TaskFormSectionState extends ConsumerState<TaskFormSection> {
+  late TextEditingController _titleController;
+  late TextEditingController _descController;
+  late TextEditingController _criteriaController;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController = TextEditingController(text: widget.initialData.title);
+    _descController = TextEditingController(
+      text: widget.initialData.description,
+    );
+    _criteriaController = TextEditingController(
+      text: widget.initialData.criteria,
+    );
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _descController.dispose();
+    _criteriaController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Access the specific provider family using the passed task (key)
+    final controller = ref.read(
+      taskCreationControllerProvider(widget.task).notifier,
+    );
+    final dateFormatter = DateFormat('yyyy/MM/dd H:mm');
+    // Watch current state for updates not managed by local controllers (like date/status)
+    // Note: Text fields are managed by local controllers, but we might want to watch for external changes?
+    // For now, simple initialization is enough as per requirements.
+    // However, status and date ARE managed by provider state.
+    final state = ref.watch(taskCreationControllerProvider(widget.task));
+
+    return BaseSection(
+      title: t.task.creation.sectionInfo,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          BaseTextField(
+            controller: _titleController,
+            value: state
+                .title, // Keep value for initial sync if needed, but controller handles it
+            onValueChange: controller.updateTitle,
+            label: t.task.creation.labelTitle,
           ),
-        );
-      },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Text('Error: $e'),
+          BaseTextField(
+            controller: _descController,
+            value: state.description,
+            onValueChange: controller.updateDescription,
+            label: t.task.creation.labelDescription,
+          ),
+          BaseTextField(
+            controller: _criteriaController,
+            value: state.criteria,
+            onValueChange: controller.updateCriteria,
+            label: t.task.creation.labelCriteria,
+          ),
+          BaseTextField(
+            key: ValueKey(state.dueDate),
+            value: state.dueDate != null
+                ? dateFormatter.format(state.dueDate!)
+                : '',
+            onValueChange: (_) {},
+            label: t.task.creation.labelDeadline,
+            readOnly: true,
+            onClick: () => _pickDateTime(context, controller),
+            trailingIcon: const Icon(
+              Icons.access_time,
+              color: AppColors.accentBlueLight,
+            ),
+          ),
+          const SizedBox(height: AppSizes.gapTaskStatusSelector),
+          TaskStatusSelector(
+            selectedStatus: state.taskStatus,
+            onStatusChange: controller.updateTaskStatus,
+          ),
+        ],
+      ),
     );
   }
 

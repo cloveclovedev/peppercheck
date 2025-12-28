@@ -5,6 +5,8 @@ import 'package:peppercheck_flutter/features/home/presentation/home_screen.dart'
 import 'package:peppercheck_flutter/features/payment_dashboard/presentation/payment_dashboard_screen.dart';
 import 'package:peppercheck_flutter/features/profile/presentation/profile_screen.dart';
 import 'package:peppercheck_flutter/features/task/presentation/task_creation_screen.dart';
+import 'package:peppercheck_flutter/features/task/presentation/task_detail_screen.dart';
+import 'package:peppercheck_flutter/features/task/domain/task.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'app_router.g.dart';
@@ -25,6 +27,13 @@ GoRouter router(Ref ref) {
       GoRoute(
         path: '/create_task',
         builder: (context, state) => const TaskCreationScreen(),
+      ),
+      GoRoute(
+        path: '/task_detail',
+        builder: (context, state) {
+          final task = state.extra as Task;
+          return TaskDetailScreen(task: task);
+        },
       ),
       GoRoute(
         path: '/profile',

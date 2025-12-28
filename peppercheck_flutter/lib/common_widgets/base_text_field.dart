@@ -12,6 +12,7 @@ class BaseTextField extends StatelessWidget {
   final VoidCallback? onClick;
   final Widget? trailingIcon;
   final TextInputType? keyboardType;
+  final TextEditingController? controller;
 
   const BaseTextField({
     super.key,
@@ -25,6 +26,7 @@ class BaseTextField extends StatelessWidget {
     this.onClick,
     this.trailingIcon,
     this.keyboardType,
+    this.controller,
   });
 
   @override
@@ -46,7 +48,8 @@ class BaseTextField extends StatelessWidget {
             onClick !=
             null, // If onClick is provided, ignore pointer events on TextField so InkWell handles them
         child: TextFormField(
-          initialValue: value,
+          controller: controller,
+          initialValue: controller != null ? null : value,
           onChanged: onValueChange,
           readOnly: readOnly,
           enabled: enabled,

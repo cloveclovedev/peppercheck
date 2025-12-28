@@ -1,5 +1,8 @@
 import 'package:peppercheck_flutter/features/task/data/task_repository.dart';
+import 'package:peppercheck_flutter/features/task/domain/task.dart';
 import 'package:peppercheck_flutter/features/task/domain/task_creation_request.dart';
+import 'package:peppercheck_flutter/features/home/presentation/home_controller.dart';
+import 'package:peppercheck_flutter/features/task/presentation/providers/task_provider.dart';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -7,54 +10,70 @@ part 'task_creation_controller.g.dart';
 
 @riverpod
 class TaskCreationController extends _$TaskCreationController {
+  String? _taskId;
+
   @override
-  FutureOr<TaskCreationRequest> build() {
+  TaskCreationRequest build(Task? initialTask) {
+    if (initialTask != null) {
+      _taskId = initialTask.id;
+      return TaskCreationRequest(
+        title: initialTask.title,
+        description: initialTask.description ?? '',
+        criteria: initialTask.criteria ?? '',
+        dueDate: initialTask.dueDate != null
+            ? DateTime.tryParse(initialTask.dueDate!)
+            : null,
+        taskStatus: initialTask.status,
+        matchingStrategies: initialTask.refereeRequests
+            .map((r) => r.matchingStrategy)
+            .toList(),
+      );
+    }
+    _taskId = null;
     return const TaskCreationRequest();
   }
 
   void updateTitle(String title) {
-    state = AsyncData(state.value!.copyWith(title: title));
+    state = state.copyWith(title: title);
   }
 
   void updateDescription(String description) {
-    state = AsyncData(state.value!.copyWith(description: description));
+    state = state.copyWith(description: description);
   }
 
   void updateCriteria(String criteria) {
-    state = AsyncData(state.value!.copyWith(criteria: criteria));
+    state = state.copyWith(criteria: criteria);
   }
 
   void updateDueDate(DateTime date) {
-    state = AsyncData(state.value!.copyWith(dueDate: date));
+    state = state.copyWith(dueDate: date);
   }
 
   void updateTaskStatus(String status) {
-    state = AsyncData(state.value!.copyWith(taskStatus: status));
+    state = state.copyWith(taskStatus: status);
   }
 
   void updateMatchingStrategies(List<String> strategies) {
-    state = AsyncData(state.value!.copyWith(matchingStrategies: strategies));
+    state = state.copyWith(matchingStrategies: strategies);
   }
 
   Future<void> createTask() async {
-    state = const AsyncLoading();
-    try {
-      final taskRepository = ref.read(taskRepositoryProvider);
-      final request = state
-          .value!; // state.value is definitely not null here as per logic flow usually, but good to be safe.
-      // Actually state.when in UI ensures data is loaded, but here in async method we check.
+    final taskRepository = ref.read(taskRepositoryProvider);
+    final request = state;
 
+    if (_taskId != null) {
+      await taskRepository.updateTask(_taskId!, request);
+      ref.invalidate(taskProvider(_taskId!));
+    } else {
       await taskRepository.createTask(request);
-
-      // state = AsyncData(const TaskCreationRequest()); // Optional: reset state
-    } catch (e, st) {
-      state = AsyncError(e, st);
     }
+
+    // Refresh the home screen lists
+    ref.invalidate(activeUserTasksProvider);
   }
 
   bool get isFormValid {
-    final current = state.value;
-    if (current == null) return false;
+    final current = state;
     return current.title.isNotEmpty &&
         current.description.isNotEmpty &&
         current.criteria.isNotEmpty &&

@@ -37,6 +37,29 @@ class TaskRepository {
     }
   }
 
+  Future<void> updateTask(String taskId, TaskCreationRequest request) async {
+    try {
+      final refereeRequests = request.matchingStrategies.map((strategy) {
+        return {'matching_strategy': strategy};
+      }).toList();
+
+      final params = {
+        'p_task_id': taskId,
+        'p_title': request.title,
+        'p_description': request.description,
+        'p_criteria': request.criteria,
+        'p_due_date': request.dueDate?.toIso8601String(),
+        'p_status': request.taskStatus,
+        'p_referee_requests': refereeRequests,
+      };
+
+      await _client.rpc('update_task', params: params);
+    } catch (e, st) {
+      _logger.e('updateTask failed', error: e, stackTrace: st);
+      rethrow;
+    }
+  }
+
   Future<List<Task>> fetchActiveUserTasks() async {
     try {
       final userId = _client.auth.currentUser?.id;
@@ -143,6 +166,49 @@ class TaskRepository {
       }).toList();
     } catch (e, st) {
       _logger.e('fetchActiveRefereeTasks failed', error: e, stackTrace: st);
+      rethrow;
+    }
+  }
+
+  Future<Task> getTask(String id) async {
+    try {
+      final data = await _client
+          .from('tasks')
+          .select('''
+            *,
+            task_referee_requests (
+              *,
+              judgements (*),
+              profiles:matched_referee_id (*)
+            )
+          ''')
+          .eq('id', id)
+          .single();
+
+      final Map<String, dynamic> taskJson = Map<String, dynamic>.from(data);
+
+      if (taskJson['task_referee_requests'] is List) {
+        final requests = taskJson['task_referee_requests'] as List;
+
+        taskJson['task_referee_requests'] = requests.map((req) {
+          final Map<String, dynamic> reqJson = Map<String, dynamic>.from(req);
+
+          if (reqJson['judgements'] is List &&
+              (reqJson['judgements'] as List).isNotEmpty) {
+            reqJson['judgement'] = (reqJson['judgements'] as List).first;
+          }
+
+          if (reqJson['profiles'] != null) {
+            reqJson['referee'] = reqJson['profiles'];
+          }
+
+          return reqJson;
+        }).toList();
+      }
+
+      return Task.fromJson(taskJson);
+    } catch (e, st) {
+      _logger.e('getTask failed for id: $id', error: e, stackTrace: st);
       rethrow;
     }
   }
