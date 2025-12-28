@@ -24,7 +24,7 @@ class TaskRepository {
         'title': request.title,
         'description': request.description,
         'criteria': request.criteria,
-        'due_date': request.dueDate?.toIso8601String(),
+        'due_date': request.dueDate?.toUtc().toIso8601String(),
         'status': request.taskStatus,
         'referee_requests': refereeRequests,
       };
@@ -48,7 +48,7 @@ class TaskRepository {
         'p_title': request.title,
         'p_description': request.description,
         'p_criteria': request.criteria,
-        'p_due_date': request.dueDate?.toIso8601String(),
+        'p_due_date': request.dueDate?.toUtc().toIso8601String(),
         'p_status': request.taskStatus,
         'p_referee_requests': refereeRequests,
       };
