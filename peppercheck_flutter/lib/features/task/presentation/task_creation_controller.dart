@@ -74,8 +74,10 @@ class TaskCreationController extends _$TaskCreationController {
 
   bool get isFormValid {
     final current = state;
+    if (current.taskStatus == 'draft') {
+      return current.title.isNotEmpty;
+    }
     return current.title.isNotEmpty &&
-        current.description.isNotEmpty &&
         current.criteria.isNotEmpty &&
         current.dueDate != null;
   }
