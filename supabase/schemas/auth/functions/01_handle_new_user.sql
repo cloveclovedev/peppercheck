@@ -1,4 +1,4 @@
--- Functions grouped in 006_user_bootstrap.sql
+-- Functions
 CREATE OR REPLACE FUNCTION public.handle_new_user() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO ''
@@ -10,9 +10,12 @@ BEGIN
   INSERT INTO public.user_ratings (user_id)
   VALUES (NEW.id);
 
+  -- Create point wallet with default balance (0)
+  INSERT INTO public.point_wallets (user_id)
+  VALUES (NEW.id);
+
   RETURN NEW;
 END;
 $$;
 
 ALTER FUNCTION public.handle_new_user() OWNER TO postgres;
-

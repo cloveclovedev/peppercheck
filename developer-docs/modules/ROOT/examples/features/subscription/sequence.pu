@@ -7,6 +7,10 @@ participant DB
 participant Stripe
 participant GooglePlay
 
+== User Signup ==
+User -> Backend: Sign Up
+Backend -> DB: Create Point Wallet (Balance: 0)
+
 == Subscription Purchase (Stripe) ==
 User -> FlutterApp: Select Plan (Web)
 FlutterApp -> Backend: Create Checkout Session
