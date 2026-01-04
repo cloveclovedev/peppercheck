@@ -1,0 +1,17 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "ADB Reverse All",
+            "type": "shell",
+            // Lists all connected devices, extracts their IDs, and runs 'adb reverse' for each one.
+            "command": "adb devices | grep \"\\tdevice\" | cut -f 1 | xargs -I {} sh -c 'adb -s {} reverse tcp:3000 tcp:3000; adb -s {} reverse tcp:54321 tcp:54321'",
+            "presentation": {
+                "reveal": "silent",
+                "panel": "shared",
+                "close": true
+            },
+            "problemMatcher": []
+        }
+    ]
+}

@@ -7,11 +7,7 @@
             "type": "dart",
             "program": "lib/main_debug.dart",
             "cwd": "${workspaceFolder}/peppercheck_flutter",
-            "args": [
-                // For Android Emulator (10.0.2.2) or iOS Simulator (127.0.0.1)
-                "--dart-define=SUPABASE_URL=http://10.0.2.2:54321",
-                "--dart-define=SUPABASE_ANON_KEY=YOUR_LOCAL_ANON_KEY"
-            ]
+            "preLaunchTask": "ADB Reverse All"
         },
         {
             "name": "Flutter: Staging (Debug)",
