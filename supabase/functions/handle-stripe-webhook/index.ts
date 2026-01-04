@@ -21,7 +21,7 @@ export const handler = async (req: Request, dependencies?: {
   }
 
   const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY') ?? ''
-  const stripeWebhookSigningSecret = Deno.env.get('STRIPE_WEBHOOK_SIGNING_SECRET') ?? ''
+  const stripeWebhookSigningSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET') ?? ''
   const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
   const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 
@@ -69,6 +69,23 @@ export const handler = async (req: Request, dependencies?: {
         await handleSubscriptionChange(subscription.id, stripe, supabaseAdmin)
         break
       }
+      case 'invoice.payment_succeeded': {
+        const invoice = event.data.object as Stripe.Invoice
+        const invoiceAny = invoice as any
+        // Check for subscription ID in both standard and nested locations
+        const subscriptionId = invoiceAny.subscription ||
+          invoiceAny.parent?.subscription_details?.subscription
+
+        console.log(`Debug: Invoice Subscription ID found: ${subscriptionId}`)
+
+        // Only handle subscription invoices
+        if (subscriptionId) {
+          await handleInvoicePaymentSucceeded(invoice, stripe, supabaseAdmin)
+        } else {
+          console.log('Debug: Invoice has no subscription ID, skipping.')
+        }
+        break
+      }
       default:
         console.log(`Unhandled event type: ${event.type}`)
     }
@@ -114,8 +131,12 @@ async function handleSubscriptionChange(
   const status = subscription.status
   // Use any cast to bypass type definition issues if fields are missing in the referenced version
   const subAny = subscription as any
-  const currentPeriodStart = new Date(subAny.current_period_start * 1000).toISOString()
-  const currentPeriodEnd = new Date(subAny.current_period_end * 1000).toISOString()
+  const currentPeriodStart = subAny.current_period_start
+    ? new Date(subAny.current_period_start * 1000).toISOString()
+    : new Date().toISOString()
+  const currentPeriodEnd = subAny.current_period_end
+    ? new Date(subAny.current_period_end * 1000).toISOString()
+    : new Date().toISOString()
   const cancelAtPeriodEnd = subscription.cancel_at_period_end
 
   // Upsert into user_subscriptions
@@ -137,6 +158,86 @@ async function handleSubscriptionChange(
   if (error) {
     console.error('Failed to upsert user_subscription:', error)
     throw error
+  }
+}
+
+async function handleInvoicePaymentSucceeded(
+  invoice: Stripe.Invoice,
+  stripe: Stripe,
+  supabaseAdmin: ReturnType<typeof createClient>,
+) {
+  const invoiceAny = invoice as any
+  const subscriptionId =
+    (invoiceAny.subscription || invoiceAny.parent?.subscription_details?.subscription) as string
+  const userId = invoiceAny.subscription_details?.metadata?.supabase_uid ??
+    invoiceAny.metadata?.supabase_uid ??
+    invoiceAny.parent?.subscription_details?.metadata?.supabase_uid
+  // removing unused userId check if we don't use it, but actually we might want to use it as fallback if subscription retrieval fails?
+  // But strictly we use subscription metadata below.
+  // So I will just ignore userId variable or remove it.
+
+  // NOTE: invoice object might not have metadata if it's a renewal.
+  // We should fetch subscription to be sure, or check if we can rely on invoice.
+  // Actually, retrieving subscription is safer to get the plan ID and user ID reliably.
+
+  console.log(`Processing invoice ${invoice.id} for subscription ${subscriptionId}`)
+
+  const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
+    expand: ['items.data.price'],
+  })
+
+  const uid = subscription.metadata.supabase_uid
+  if (!uid) {
+    console.error(`No supabase_uid found in subscription ${subscriptionId}`)
+    return
+  }
+
+  // Identify the plan from subscription items
+  // Assuming 1 active plan per subscription for now
+  const price = subscription.items.data[0].price as Stripe.Price
+  const planId = price.metadata?.app_plan_id
+
+  if (!planId) {
+    console.error(`No app_plan_id found for price ${price.id}`)
+    return
+  }
+
+  // 1. Get monthly points for the plan
+  const { data: planData, error: planError } = await (supabaseAdmin
+    .from('subscription_plans') as any)
+    .select('monthly_points')
+    .eq('id', planId)
+    .single()
+
+  if (planError || !planData) {
+    console.error(`Failed to fetch plan data for ${planId}: ${planError?.message}`)
+    throw new Error(`Plan not found: ${planId}`)
+  }
+
+  const monthlyPoints = planData.monthly_points
+  if (monthlyPoints <= 0) {
+    console.log(`Plan ${planId} has 0 points, skipping point grant.`)
+    return
+  }
+
+  // 2. Grant points via idempotent RPC
+  const { data: granted, error: rpcError } = await supabaseAdmin.rpc('grant_subscription_points', {
+    p_user_id: uid,
+    p_amount: monthlyPoints,
+    p_invoice_id: invoice.id,
+  })
+
+  if (rpcError) {
+    console.error(`RPC grant_subscription_points failed: ${rpcError.message}`)
+    throw rpcError
+  }
+
+  if (granted) {
+    console.log(`Granting ${monthlyPoints} points to user ${uid} for plan ${planId}`)
+  } else {
+    console.log(
+      `Invoice ${invoice.id} already processed (idempotency check), skipping point grant.`,
+    )
   }
 }
 
