@@ -24,7 +24,13 @@
     "plan": "プラン",
     "status": "ステータス",
     "renews": "更新日",
-    "manageSubscription": "サブスクリプション管理"
+    "manageSubscription": "サブスクリプション管理",
+    "plans": {
+      "light": "ライトプラン",
+      "standard": "スタンダードプラン",
+      "premium": "プレミアムプラン"
+    },
+    "noPlan": "未加入"
   },
   "common": {
     "cancel": "キャンセル",

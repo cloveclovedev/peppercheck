@@ -143,6 +143,11 @@ class TranslationsBillingJa {
 
 	/// ja: 'サブスクリプション管理'
 	String get manageSubscription => 'サブスクリプション管理';
+
+	late final TranslationsBillingPlansJa plans = TranslationsBillingPlansJa.internal(_root);
+
+	/// ja: '未加入'
+	String get noPlan => '未加入';
 }
 
 // Path: common
@@ -290,6 +295,24 @@ class TranslationsMatchingJa {
 
 	// Translations
 	late final TranslationsMatchingRefereeAvailabilityJa referee_availability = TranslationsMatchingRefereeAvailabilityJa.internal(_root);
+}
+
+// Path: billing.plans
+class TranslationsBillingPlansJa {
+	TranslationsBillingPlansJa.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// ja: 'ライトプラン'
+	String get light => 'ライトプラン';
+
+	/// ja: 'スタンダードプラン'
+	String get standard => 'スタンダードプラン';
+
+	/// ja: 'プレミアムプラン'
+	String get premium => 'プレミアムプラン';
 }
 
 // Path: common.days
@@ -492,6 +515,10 @@ extension on Translations {
 			'billing.status' => 'ステータス',
 			'billing.renews' => '更新日',
 			'billing.manageSubscription' => 'サブスクリプション管理',
+			'billing.plans.light' => 'ライトプラン',
+			'billing.plans.standard' => 'スタンダードプラン',
+			'billing.plans.premium' => 'プレミアムプラン',
+			'billing.noPlan' => '未加入',
 			'common.cancel' => 'キャンセル',
 			'common.confirm' => '確認',
 			'common.save' => '保存',
