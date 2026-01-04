@@ -7,6 +7,7 @@ import 'package:peppercheck_flutter/common_widgets/action_button.dart';
 import 'package:peppercheck_flutter/common_widgets/base_section.dart';
 import 'package:peppercheck_flutter/features/billing/data/billing_providers.dart';
 import 'package:peppercheck_flutter/features/billing/presentation/in_app_purchase_controller.dart';
+import 'package:peppercheck_flutter/app/utils/date_time_utils.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -20,6 +21,20 @@ class SubscriptionSection extends ConsumerWidget {
     if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
       throw Exception('Could not launch $url');
     }
+  }
+
+  String _getPlanName(String? planId) {
+    if (planId == 'light') return t.billing.plans.light;
+    if (planId == 'standard') return t.billing.plans.standard;
+    if (planId == 'premium') return t.billing.plans.premium;
+    return t.billing.noPlan;
+  }
+
+  Color _getPlanColor(String? planId) {
+    if (planId == 'light') return AppColors.accentGreen;
+    if (planId == 'standard') return AppColors.accentBlue;
+    if (planId == 'premium') return AppColors.accentYellow;
+    return AppColors.textMuted;
   }
 
   @override
@@ -36,10 +51,10 @@ class SubscriptionSection extends ConsumerWidget {
           title: t.billing.subscription,
           child: state.when(
             data: (subscription) {
-              final status = subscription?.status ?? 'Free';
-              final planId = subscription?.planId ?? 'No Plan';
+              final status = subscription?.status;
+              final planId = subscription?.planId;
               final expiry = subscription?.currentPeriodEnd;
-              final bool isActive = status == 'active' || status == 'trialing';
+              final bool isActive = status == 'active';
 
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -57,9 +72,9 @@ class SubscriptionSection extends ConsumerWidget {
                     ),
                     child: Row(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.star,
-                          color: AppColors.accentYellow,
+                          color: _getPlanColor(planId),
                           size: 32,
                         ),
                         const SizedBox(width: AppSizes.spacingMedium),
@@ -68,25 +83,37 @@ class SubscriptionSection extends ConsumerWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                planId,
+                                _getPlanName(planId),
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              Text(
-                                '${t.billing.status}: $status',
-                                style: const TextStyle(
-                                  color: AppColors.textSecondary,
+                              if ((status != null && !isActive) ||
+                                  expiry != null) ...[
+                                const SizedBox(height: 4),
+                                Wrap(
+                                  crossAxisAlignment: WrapCrossAlignment.center,
+                                  spacing: 8,
+                                  children: [
+                                    if (status != null && !isActive)
+                                      Text(
+                                        status,
+                                        style: const TextStyle(
+                                          color: AppColors.textSecondary,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    if (expiry != null)
+                                      Text(
+                                        '${t.billing.renews}: ${formatDate(DateTime.parse(expiry).toLocal())}',
+                                        style: const TextStyle(
+                                          color: AppColors.textSecondary,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                  ],
                                 ),
-                              ),
-                              if (expiry != null)
-                                Text(
-                                  '${t.billing.renews}: ${DateTime.parse(expiry).toLocal().toString().split(' ')[0]}',
-                                  style: const TextStyle(
-                                    color: AppColors.textSecondary,
-                                    fontSize: 12,
-                                  ),
-                                ),
+                              ],
                             ],
                           ),
                         ),

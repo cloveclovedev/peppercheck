@@ -36,3 +36,7 @@ String formatMinutes(int minutes) {
   final m = minutes % 60;
   return '${h.toString()}:${m.toString().padLeft(2, '0')}';
 }
+
+String formatDate(DateTime date) {
+  return '${date.year}/${date.month}/${date.day}';
+}
