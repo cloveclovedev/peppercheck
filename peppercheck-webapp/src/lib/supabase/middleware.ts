@@ -1,12 +1,11 @@
 import { createServerClient } from '@supabase/ssr'
-import { NextResponse, type NextRequest } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 
 export async function updateSession(
   request: NextRequest,
   response?: NextResponse,
 ) {
-  let supabaseResponse =
-    response ||
+  let supabaseResponse = response ||
     NextResponse.next({
       request,
     })
@@ -20,16 +19,13 @@ export async function updateSession(
           return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value),
-          )
-          supabaseResponse =
-            response ||
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+          supabaseResponse = response ||
             NextResponse.next({
               request,
             })
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options),
+            supabaseResponse.cookies.set(name, value, options)
           )
         },
       },
@@ -61,6 +57,7 @@ export async function updateSession(
     // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone()
     url.pathname = `/${locale}/login`
+    url.searchParams.set('next', pathnameWithoutLocale)
     return NextResponse.redirect(url)
   }
 
