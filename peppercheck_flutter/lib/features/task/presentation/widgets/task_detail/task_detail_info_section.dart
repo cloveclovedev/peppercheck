@@ -26,14 +26,14 @@ class TaskDetailInfoSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildInfoRow(t.task.creation.labelTitle, task.title, isTitle: true),
-          const SizedBox(height: AppSizes.spacingStandard),
+          const SizedBox(height: AppSizes.spacingTiny),
           _buildInfoRow(
             t.task.creation.labelDescription,
             task.description ?? '-',
           ),
-          const SizedBox(height: AppSizes.spacingStandard),
+          const SizedBox(height: AppSizes.spacingTiny),
           _buildInfoRow(t.task.creation.labelCriteria, task.criteria ?? '-'),
-          const SizedBox(height: AppSizes.spacingStandard),
+          const SizedBox(height: AppSizes.spacingTiny),
 
           _buildInfoRow(t.task.creation.labelDeadline, formattedDate),
           if (task.status == 'draft') ...[
@@ -65,7 +65,7 @@ class TaskDetailInfoSection extends StatelessWidget {
             fontWeight: FontWeight.w500,
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: AppSizes.spacingMicro),
         Text(
           value,
           style: TextStyle(
