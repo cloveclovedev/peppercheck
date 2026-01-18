@@ -30,14 +30,14 @@ class TaskCard extends StatelessWidget {
 
     return Material(
       color: AppColors.backgroundWhite,
-      borderRadius: BorderRadius.circular(AppSizes.taskCardBorderRadius),
+      borderRadius: BorderRadius.circular(AppSizes.cardBorderRadius),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap ?? () => context.push('/task_detail', extra: task),
         child: Padding(
           padding: const EdgeInsets.symmetric(
-            horizontal: AppSizes.taskCardHorizontalPadding,
-            vertical: AppSizes.taskCardVerticalPadding,
+            horizontal: AppSizes.cardPaddingHorizontal,
+            vertical: AppSizes.cardPaddingVertical,
           ),
           child: Row(
             children: [
@@ -46,7 +46,7 @@ class TaskCard extends StatelessWidget {
                 color: AppColors.textSecondary,
                 size: AppSizes.taskCardIconSize,
               ),
-              const SizedBox(width: AppSizes.taskCardIconGap),
+              const SizedBox(width: AppSizes.cardIconGap),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

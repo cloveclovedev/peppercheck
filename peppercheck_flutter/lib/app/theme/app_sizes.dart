@@ -26,11 +26,14 @@ class AppSizes {
   static const double baseSectionTitleBodyGap = 8.0;
   static const double baseSectionBorderRadius = 16.0;
 
-  static const double taskCardGap = 4.0;
-  static const double taskCardBorderRadius = 12.0;
-  static const double taskCardHorizontalPadding = 12.0;
-  static const double taskCardVerticalPadding = 4.0;
-  static const double taskCardIconGap = 12.0;
+  // Card (General)
+  static const double cardGap = 4.0;
+  static const double cardBorderRadius = 12.0;
+  static const double cardPaddingHorizontal = 12.0;
+  static const double cardPaddingVertical = 4.0;
+  static const double cardIconGap = 12.0;
+
+  // Task Card specific
   static const double taskCardTitleInfoGap = 2.0;
   static const double taskCardStatusGap = 8.0;
   static const double taskCardIconSize = 20.0;

@@ -77,7 +77,7 @@ class _TaskSection extends StatelessWidget {
           return Column(
             children: [
               for (int i = 0; i < tasks.length; i++) ...[
-                if (i > 0) const SizedBox(height: AppSizes.taskCardGap),
+                if (i > 0) const SizedBox(height: AppSizes.cardGap),
                 TaskCard(task: tasks[i], isMyTask: isMyTask),
               ],
             ],
