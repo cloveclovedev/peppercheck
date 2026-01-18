@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notification_request_matched_title">マッチング成立！</string>
+    <string name="notification_request_matched_body">あなたのタスク「%1$s」のレフリーが見つかりました。</string>
+    <string name="notification_referee_assigned_title">新しい担当タスク</string>
+    <string name="notification_referee_assigned_body">タスク「%1$s」の担当レフリーに選ばれました。</string>
+    <string name="notification_request_accepted_title">リクエスト承認</string>
+    <string name="notification_request_accepted_body">リクエストが承認されました。</string>
+</resources>

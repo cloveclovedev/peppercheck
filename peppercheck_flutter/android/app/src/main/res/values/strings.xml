@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notification_request_matched_title">Match Found!</string>
+    <string name="notification_request_matched_body">A referee has been found for your task "%1$s".</string>
+    <string name="notification_referee_assigned_title">New Assignment</string>
+    <string name="notification_referee_assigned_body">You have been assigned to judge task "%1$s".</string>
+    <string name="notification_request_accepted_title">Request Accepted</string>
+    <string name="notification_request_accepted_body">Your request has been accepted.</string>
+</resources>
