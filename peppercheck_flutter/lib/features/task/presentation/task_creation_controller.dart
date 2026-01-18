@@ -79,6 +79,7 @@ class TaskCreationController extends _$TaskCreationController {
     }
     return current.title.isNotEmpty &&
         current.criteria.isNotEmpty &&
-        current.dueDate != null;
+        current.dueDate != null &&
+        current.matchingStrategies.isNotEmpty;
   }
 }

@@ -29,8 +29,12 @@ void main() {
     controller.updateCriteria('Some criteria');
     expect(controller.isFormValid, false);
 
-    // 5. Open with Title + Criteria + DueDate -> Valid
+    // 5. Open with Title + Criteria + DueDate -> Invalid (Missing strategies)
     controller.updateDueDate(DateTime.now());
+    expect(controller.isFormValid, false);
+
+    // 5b. Open with Title + Criteria + DueDate + Strategies -> Valid
+    controller.updateMatchingStrategies(['some_strategy']);
     expect(controller.isFormValid, true);
 
     // 6. Open Description is Optional (Check with empty description)
