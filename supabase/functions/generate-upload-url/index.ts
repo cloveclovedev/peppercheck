@@ -1,8 +1,8 @@
 // Setup type definitions for built-in Supabase Runtime APIs
-import "jsr:@supabase/functions-js/edge-runtime.d.ts"
+import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
-import { S3Client, PutObjectCommand } from "npm:@aws-sdk/client-s3@3"
-import { getSignedUrl } from "npm:@aws-sdk/s3-request-presigner@3"
+import { PutObjectCommand, S3Client } from 'npm:@aws-sdk/client-s3@3'
+import { getSignedUrl } from 'npm:@aws-sdk/s3-request-presigner@3'
 
 interface UploadRequest {
   task_id: string
@@ -16,6 +16,7 @@ interface UploadResponse {
   upload_url: string
   r2_key: string
   expires_in: number
+  public_url: string
 }
 
 const ALLOWED_CONTENT_TYPES = [
@@ -24,7 +25,7 @@ const ALLOWED_CONTENT_TYPES = [
   'image/webp',
   'image/gif',
   'image/heic',
-  'image/heif'
+  'image/heif',
 ]
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
@@ -39,7 +40,7 @@ function validateContentType(filename: string, contentType: string): boolean {
     'image/webp': ['webp'],
     'image/gif': ['gif'],
     'image/heic': ['heic'],
-    'image/heif': ['heif']
+    'image/heif': ['heif'],
   }
 
   const allowedExts = typeMap[contentType]
@@ -81,11 +82,11 @@ Deno.serve(async (req: Request) => {
   try {
     // Get JWT token from Authorization header
     const authHeader = req.headers.get('Authorization')
-    
+
     if (!authHeader) {
       return new Response(
         JSON.stringify({ error: 'Missing authorization header' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
     }
 
@@ -97,19 +98,19 @@ Deno.serve(async (req: Request) => {
         global: {
           headers: { Authorization: authHeader },
         },
-      }
+      },
     )
 
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser()
-    
+
     if (authError || !user) {
       console.error('Authentication failed:', authError?.message || 'No user found')
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           error: 'Unauthorized: Invalid or expired token',
-          debug: authError?.message || 'No user found'
+          debug: authError?.message || 'No user found',
         }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
     }
 
@@ -121,7 +122,7 @@ Deno.serve(async (req: Request) => {
       console.error('JSON parse error:', parseError)
       return new Response(
         JSON.stringify({ error: 'Invalid JSON format in request body' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
     }
 
@@ -135,14 +136,14 @@ Deno.serve(async (req: Request) => {
       if (!content_type) missingFields.push('content_type')
       if (!file_size_bytes) missingFields.push('file_size_bytes')
       if (!kind) missingFields.push('kind')
-      
+
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           error: `Missing required fields: ${missingFields.join(', ')}`,
           received_fields: Object.keys(body),
-          missing_fields: missingFields
+          missing_fields: missingFields,
         }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
     }
 
@@ -150,7 +151,7 @@ Deno.serve(async (req: Request) => {
     if (!ALLOWED_CONTENT_TYPES.includes(content_type)) {
       return new Response(
         JSON.stringify({ error: `Content type ${content_type} not allowed` }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
     }
 
@@ -158,15 +159,17 @@ Deno.serve(async (req: Request) => {
     if (!validateContentType(filename, content_type)) {
       return new Response(
         JSON.stringify({ error: `File extension does not match content type ${content_type}` }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
     }
 
     // Validate file size
     if (file_size_bytes > MAX_FILE_SIZE) {
       return new Response(
-        JSON.stringify({ error: `File size ${file_size_bytes} bytes exceeds maximum ${MAX_FILE_SIZE} bytes` }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({
+          error: `File size ${file_size_bytes} bytes exceeds maximum ${MAX_FILE_SIZE} bytes`,
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
     }
 
@@ -181,17 +184,22 @@ Deno.serve(async (req: Request) => {
     if (taskError || !task) {
       console.error('Task verification error:', taskError)
       return new Response(
-        JSON.stringify({ error: 'Task not found or you do not have permission to upload evidence for this task' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({
+          error: 'Task not found or you do not have permission to upload evidence for this task',
+        }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
     }
 
     // due_dateが存在するかチェック
     if (!task.due_date) {
-        return new Response(
-            JSON.stringify({ error: `Task with id ${task_id} does not have a due_date, which is required for file uploads.` }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
+      return new Response(
+        JSON.stringify({
+          error:
+            `Task with id ${task_id} does not have a due_date, which is required for file uploads.`,
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      )
     }
 
     // Check R2 environment variables
@@ -205,11 +213,13 @@ Deno.serve(async (req: Request) => {
         hasAccountId: !!cloudflareAccountId,
         hasAccessKeyId: !!r2AccessKeyId,
         hasSecretAccessKey: !!r2SecretAccessKey,
-        hasBucketName: !!r2BucketName
+        hasBucketName: !!r2BucketName,
       })
       return new Response(
-        JSON.stringify({ error: 'Server configuration error: R2 credentials not properly configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({
+          error: 'Server configuration error: R2 credentials not properly configured',
+        }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
     }
 
@@ -244,39 +254,52 @@ Deno.serve(async (req: Request) => {
       console.error('Failed to generate presigned URL:', r2Error)
       return new Response(
         JSON.stringify({ error: 'Failed to generate upload URL. Please check R2 configuration.' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
     }
+
+    // Generate Public URL
+    const publicDomain = Deno.env.get('R2_PUBLIC_DOMAIN')
+
+    if (!publicDomain) {
+      console.error('Missing R2_PUBLIC_DOMAIN environment variable')
+      return new Response(
+        JSON.stringify({ error: 'Server configuration error: R2 public domain not configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      )
+    }
+
+    const publicUrl = `https://${publicDomain}/${r2Key}`
 
     const response: UploadResponse = {
       upload_url: uploadUrl,
       r2_key: r2Key,
       expires_in: URL_EXPIRES_IN,
+      public_url: publicUrl,
     }
 
     return new Response(
       JSON.stringify(response),
       {
         status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      },
     )
-
   } catch (error) {
     console.error('Unexpected error in generate-upload-url:', error)
-    
+
     // Check if error has specific message for better debugging
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
-    
+
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         error: 'Internal server error',
-        debug: `Unexpected error: ${errorMessage}` 
+        debug: `Unexpected error: ${errorMessage}`,
       }),
       {
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      },
     )
   }
 })
