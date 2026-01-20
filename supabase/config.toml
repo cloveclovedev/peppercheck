@@ -67,6 +67,7 @@ schema_paths = [
   "./schemas/task/functions/utils/*.sql",
   "./schemas/point/functions/*.sql",
   "./schemas/matching/functions/*.sql",
+  "./schemas/evidence/functions/*.sql",
   "./schemas/notification/functions/*.sql",
 # triggers
   "./schemas/auth/triggers/*.sql",

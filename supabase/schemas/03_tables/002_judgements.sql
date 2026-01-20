@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS public.judgements (
     task_id uuid NOT NULL,
     referee_id uuid NOT NULL,
     comment text,
-    status text DEFAULT 'open'::text NOT NULL,
+    status text DEFAULT 'awaiting_evidence'::text NOT NULL,
     created_at timestamp with time zone DEFAULT now(),
     updated_at timestamp with time zone DEFAULT now(),
     is_confirmed boolean DEFAULT false,
