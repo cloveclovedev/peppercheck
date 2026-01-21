@@ -1,0 +1,52 @@
+@startuml upload_sequence
+actor "Tasker" as User
+participant "Flutter App" as App
+participant "Image Picker" as Picker
+participant "TaskRepository" as Repo
+participant "Edge Function\n(generate-upload-url)" as Edge
+participant "R2 Storage" as R2
+database "Supabase DB" as DB
+
+User -> App: Opens Task Detail
+App -> Repo: getTask(id)
+Repo -> DB: Select Task + Evidence
+DB --> Repo: Task Data
+Repo --> App: Task Object
+App --> User: Show Task Detail
+
+alt Request Accepted & User is Tasker
+    App --> User: Show Evidence Upload Section
+end
+
+User -> App: Click "Add Image"
+App -> Picker: Pick Image
+Picker --> App: File Path
+App --> User: Show Image Preview
+
+User -> App: Enter Description
+User -> App: Click "Submit"
+
+App -> Repo: uploadEvidence(taskId, desc, images)
+
+loop For Each Image
+    Repo -> Edge: POST /generate-upload-url
+    Edge --> Repo: { upload_url, r2_key, public_url }
+    Repo -> R2: PUT file to upload_url
+    R2 --> Repo: 200 OK
+end
+
+Repo -> DB: RPC submit_evidence(taskId, desc, assets[])
+note right
+    RPC Transaction:
+    1. Validate Tasker & Status
+        (awaiting_evidence/in_review/rejected)
+    2. Insert task_evidences
+    3. Insert task_evidence_assets (w/ public_url)
+    4. Update judgements status -> 'in_review'
+end note
+DB --> Repo: void (or evidence_id)
+
+Repo --> App: Success
+App -> App: Refresh Task Data
+App --> User: Show Submitted Evidence (Read Only)
+@enduml
