@@ -82,6 +82,10 @@ class TaskRepository {
               *,
               judgements (*),
               profiles:matched_referee_id (*)
+            ),
+            task_evidences (
+              *,
+              task_evidence_assets (*)
             )
           ''')
           .eq('tasker_id', userId)
@@ -111,6 +115,18 @@ class TaskRepository {
 
             return reqJson;
           }).toList();
+        }
+
+        // Handle task evidences
+        if (taskJson['task_evidences'] is List) {
+          final evidences = taskJson['task_evidences'] as List;
+          if (evidences.isNotEmpty) {
+            final eMap = Map<String, dynamic>.from(evidences.first);
+            // Map task_evidence_assets if needed, assuming already available in eMap or needing explicit mapping
+            // In original code: tasks -> task_evidences -> task_evidence_assets (*)
+            // evidences.first will contain 'task_evidence_assets' list.
+            taskJson['evidence'] = eMap;
+          }
         }
 
         return Task.fromJson(taskJson);
@@ -180,6 +196,10 @@ class TaskRepository {
               *,
               judgements (*),
               profiles:matched_referee_id (*)
+            ),
+            task_evidences (
+              *,
+              task_evidence_assets (*)
             )
           ''')
           .eq('id', id)
@@ -204,6 +224,14 @@ class TaskRepository {
 
           return reqJson;
         }).toList();
+      }
+
+      // Handle task evidences
+      if (taskJson['task_evidences'] is List) {
+        final evidences = taskJson['task_evidences'] as List;
+        if (evidences.isNotEmpty) {
+          taskJson['evidence'] = Map<String, dynamic>.from(evidences.first);
+        }
       }
 
       return Task.fromJson(taskJson);

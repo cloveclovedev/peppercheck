@@ -273,6 +273,7 @@ class TranslationsTaskJa {
 	late final TranslationsTaskStatusJa status = TranslationsTaskStatusJa.internal(_root);
 	late final TranslationsTaskDetailJa detail = TranslationsTaskDetailJa.internal(_root);
 	late final TranslationsTaskCreationJa creation = TranslationsTaskCreationJa.internal(_root);
+	late final TranslationsTaskEvidenceJa evidence = TranslationsTaskEvidenceJa.internal(_root);
 }
 
 // Path: profile
@@ -443,6 +444,39 @@ class TranslationsTaskCreationJa {
 	late final TranslationsTaskCreationStrategyJa strategy = TranslationsTaskCreationStrategyJa.internal(_root);
 }
 
+// Path: task.evidence
+class TranslationsTaskEvidenceJa {
+	TranslationsTaskEvidenceJa.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// ja: 'エビデンス'
+	String get title => 'エビデンス';
+
+	/// ja: 'エビデンスを提出'
+	String get submit => 'エビデンスを提出';
+
+	/// ja: '提出済みエビデンス'
+	String get submitted => '提出済みエビデンス';
+
+	/// ja: '説明'
+	String get description => '説明';
+
+	/// ja: 'タスクの完了を証明する内容を記述してください'
+	String get descriptionPlaceholder => 'タスクの完了を証明する内容を記述してください';
+
+	/// ja: '画像は最大5枚までです'
+	String get maxImages => '画像は最大5枚までです';
+
+	/// ja: 'エビデンスを提出しました'
+	String get success => 'エビデンスを提出しました';
+
+	/// ja: 'エラーが発生しました: $message'
+	String error({required Object message}) => 'エラーが発生しました: ${message}';
+}
+
 // Path: matching.referee_availability
 class TranslationsMatchingRefereeAvailabilityJa {
 	TranslationsMatchingRefereeAvailabilityJa.internal(this._root);
@@ -578,6 +612,14 @@ extension on Translations {
 			'task.creation.buttonCreate' => '作成',
 			'task.creation.buttonUpdate' => '更新',
 			'task.creation.strategy.standard' => 'スタンダード',
+			'task.evidence.title' => 'エビデンス',
+			'task.evidence.submit' => 'エビデンスを提出',
+			'task.evidence.submitted' => '提出済みエビデンス',
+			'task.evidence.description' => '説明',
+			'task.evidence.descriptionPlaceholder' => 'タスクの完了を証明する内容を記述してください',
+			'task.evidence.maxImages' => '画像は最大5枚までです',
+			'task.evidence.success' => 'エビデンスを提出しました',
+			'task.evidence.error' => ({required Object message}) => 'エラーが発生しました: ${message}',
 			'profile.title' => 'プロフィール',
 			'matching.referee_availability.title' => '受付可能時間',
 			'matching.referee_availability.no_slots' => '受付可能時間が設定されていません',

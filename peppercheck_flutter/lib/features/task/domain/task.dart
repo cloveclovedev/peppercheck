@@ -1,4 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:peppercheck_flutter/features/evidence/domain/task_evidence.dart';
 import 'package:peppercheck_flutter/features/matching/domain/referee_request.dart';
 import 'package:peppercheck_flutter/features/profile/domain/profile.dart';
 
@@ -26,6 +27,9 @@ abstract class Task with _$Task {
     @JsonKey(name: 'task_referee_requests')
     @Default([])
     List<RefereeRequest> refereeRequests,
+
+    TaskEvidence? evidence,
+
     @JsonKey(name: 'tasker_profile') Profile? tasker,
   }) = _Task;
 

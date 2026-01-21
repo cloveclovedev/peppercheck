@@ -16,7 +16,7 @@ T _$identity<T>(T value) => value;
 mixin _$Task {
 
  String get id;@JsonKey(name: 'tasker_id') String get taskerId; String get title; String? get description; String? get criteria;@JsonKey(name: 'due_date') String? get dueDate;@JsonKey(name: 'fee_amount') double? get feeAmount;@JsonKey(name: 'fee_currency') String? get feeCurrency; String get status;@JsonKey(name: 'created_at') String? get createdAt;@JsonKey(name: 'updated_at') String? get updatedAt;// Aggregated fields
-@JsonKey(name: 'task_referee_requests') List<RefereeRequest> get refereeRequests;@JsonKey(name: 'tasker_profile') Profile? get tasker;
+@JsonKey(name: 'task_referee_requests') List<RefereeRequest> get refereeRequests; TaskEvidence? get evidence;@JsonKey(name: 'tasker_profile') Profile? get tasker;
 /// Create a copy of Task
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -29,16 +29,16 @@ $TaskCopyWith<Task> get copyWith => _$TaskCopyWithImpl<Task>(this as Task, _$ide
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Task&&(identical(other.id, id) || other.id == id)&&(identical(other.taskerId, taskerId) || other.taskerId == taskerId)&&(identical(other.title, title) || other.title == title)&&(identical(other.description, description) || other.description == description)&&(identical(other.criteria, criteria) || other.criteria == criteria)&&(identical(other.dueDate, dueDate) || other.dueDate == dueDate)&&(identical(other.feeAmount, feeAmount) || other.feeAmount == feeAmount)&&(identical(other.feeCurrency, feeCurrency) || other.feeCurrency == feeCurrency)&&(identical(other.status, status) || other.status == status)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&const DeepCollectionEquality().equals(other.refereeRequests, refereeRequests)&&(identical(other.tasker, tasker) || other.tasker == tasker));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Task&&(identical(other.id, id) || other.id == id)&&(identical(other.taskerId, taskerId) || other.taskerId == taskerId)&&(identical(other.title, title) || other.title == title)&&(identical(other.description, description) || other.description == description)&&(identical(other.criteria, criteria) || other.criteria == criteria)&&(identical(other.dueDate, dueDate) || other.dueDate == dueDate)&&(identical(other.feeAmount, feeAmount) || other.feeAmount == feeAmount)&&(identical(other.feeCurrency, feeCurrency) || other.feeCurrency == feeCurrency)&&(identical(other.status, status) || other.status == status)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&const DeepCollectionEquality().equals(other.refereeRequests, refereeRequests)&&(identical(other.evidence, evidence) || other.evidence == evidence)&&(identical(other.tasker, tasker) || other.tasker == tasker));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,taskerId,title,description,criteria,dueDate,feeAmount,feeCurrency,status,createdAt,updatedAt,const DeepCollectionEquality().hash(refereeRequests),tasker);
+int get hashCode => Object.hash(runtimeType,id,taskerId,title,description,criteria,dueDate,feeAmount,feeCurrency,status,createdAt,updatedAt,const DeepCollectionEquality().hash(refereeRequests),evidence,tasker);
 
 @override
 String toString() {
-  return 'Task(id: $id, taskerId: $taskerId, title: $title, description: $description, criteria: $criteria, dueDate: $dueDate, feeAmount: $feeAmount, feeCurrency: $feeCurrency, status: $status, createdAt: $createdAt, updatedAt: $updatedAt, refereeRequests: $refereeRequests, tasker: $tasker)';
+  return 'Task(id: $id, taskerId: $taskerId, title: $title, description: $description, criteria: $criteria, dueDate: $dueDate, feeAmount: $feeAmount, feeCurrency: $feeCurrency, status: $status, createdAt: $createdAt, updatedAt: $updatedAt, refereeRequests: $refereeRequests, evidence: $evidence, tasker: $tasker)';
 }
 
 
@@ -49,11 +49,11 @@ abstract mixin class $TaskCopyWith<$Res>  {
   factory $TaskCopyWith(Task value, $Res Function(Task) _then) = _$TaskCopyWithImpl;
 @useResult
 $Res call({
- String id,@JsonKey(name: 'tasker_id') String taskerId, String title, String? description, String? criteria,@JsonKey(name: 'due_date') String? dueDate,@JsonKey(name: 'fee_amount') double? feeAmount,@JsonKey(name: 'fee_currency') String? feeCurrency, String status,@JsonKey(name: 'created_at') String? createdAt,@JsonKey(name: 'updated_at') String? updatedAt,@JsonKey(name: 'task_referee_requests') List<RefereeRequest> refereeRequests,@JsonKey(name: 'tasker_profile') Profile? tasker
+ String id,@JsonKey(name: 'tasker_id') String taskerId, String title, String? description, String? criteria,@JsonKey(name: 'due_date') String? dueDate,@JsonKey(name: 'fee_amount') double? feeAmount,@JsonKey(name: 'fee_currency') String? feeCurrency, String status,@JsonKey(name: 'created_at') String? createdAt,@JsonKey(name: 'updated_at') String? updatedAt,@JsonKey(name: 'task_referee_requests') List<RefereeRequest> refereeRequests, TaskEvidence? evidence,@JsonKey(name: 'tasker_profile') Profile? tasker
 });
 
 
-$ProfileCopyWith<$Res>? get tasker;
+$TaskEvidenceCopyWith<$Res>? get evidence;$ProfileCopyWith<$Res>? get tasker;
 
 }
 /// @nodoc
@@ -66,7 +66,7 @@ class _$TaskCopyWithImpl<$Res>
 
 /// Create a copy of Task
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? taskerId = null,Object? title = null,Object? description = freezed,Object? criteria = freezed,Object? dueDate = freezed,Object? feeAmount = freezed,Object? feeCurrency = freezed,Object? status = null,Object? createdAt = freezed,Object? updatedAt = freezed,Object? refereeRequests = null,Object? tasker = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? taskerId = null,Object? title = null,Object? description = freezed,Object? criteria = freezed,Object? dueDate = freezed,Object? feeAmount = freezed,Object? feeCurrency = freezed,Object? status = null,Object? createdAt = freezed,Object? updatedAt = freezed,Object? refereeRequests = null,Object? evidence = freezed,Object? tasker = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,taskerId: null == taskerId ? _self.taskerId : taskerId // ignore: cast_nullable_to_non_nullable
@@ -80,11 +80,24 @@ as String?,status: null == status ? _self.status : status // ignore: cast_nullab
 as String,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as String?,updatedAt: freezed == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
 as String?,refereeRequests: null == refereeRequests ? _self.refereeRequests : refereeRequests // ignore: cast_nullable_to_non_nullable
-as List<RefereeRequest>,tasker: freezed == tasker ? _self.tasker : tasker // ignore: cast_nullable_to_non_nullable
+as List<RefereeRequest>,evidence: freezed == evidence ? _self.evidence : evidence // ignore: cast_nullable_to_non_nullable
+as TaskEvidence?,tasker: freezed == tasker ? _self.tasker : tasker // ignore: cast_nullable_to_non_nullable
 as Profile?,
   ));
 }
 /// Create a copy of Task
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$TaskEvidenceCopyWith<$Res>? get evidence {
+    if (_self.evidence == null) {
+    return null;
+  }
+
+  return $TaskEvidenceCopyWith<$Res>(_self.evidence!, (value) {
+    return _then(_self.copyWith(evidence: value));
+  });
+}/// Create a copy of Task
 /// with the given fields replaced by the non-null parameter values.
 @override
 @pragma('vm:prefer-inline')
@@ -178,10 +191,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id, @JsonKey(name: 'tasker_id')  String taskerId,  String title,  String? description,  String? criteria, @JsonKey(name: 'due_date')  String? dueDate, @JsonKey(name: 'fee_amount')  double? feeAmount, @JsonKey(name: 'fee_currency')  String? feeCurrency,  String status, @JsonKey(name: 'created_at')  String? createdAt, @JsonKey(name: 'updated_at')  String? updatedAt, @JsonKey(name: 'task_referee_requests')  List<RefereeRequest> refereeRequests, @JsonKey(name: 'tasker_profile')  Profile? tasker)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id, @JsonKey(name: 'tasker_id')  String taskerId,  String title,  String? description,  String? criteria, @JsonKey(name: 'due_date')  String? dueDate, @JsonKey(name: 'fee_amount')  double? feeAmount, @JsonKey(name: 'fee_currency')  String? feeCurrency,  String status, @JsonKey(name: 'created_at')  String? createdAt, @JsonKey(name: 'updated_at')  String? updatedAt, @JsonKey(name: 'task_referee_requests')  List<RefereeRequest> refereeRequests,  TaskEvidence? evidence, @JsonKey(name: 'tasker_profile')  Profile? tasker)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Task() when $default != null:
-return $default(_that.id,_that.taskerId,_that.title,_that.description,_that.criteria,_that.dueDate,_that.feeAmount,_that.feeCurrency,_that.status,_that.createdAt,_that.updatedAt,_that.refereeRequests,_that.tasker);case _:
+return $default(_that.id,_that.taskerId,_that.title,_that.description,_that.criteria,_that.dueDate,_that.feeAmount,_that.feeCurrency,_that.status,_that.createdAt,_that.updatedAt,_that.refereeRequests,_that.evidence,_that.tasker);case _:
   return orElse();
 
 }
@@ -199,10 +212,10 @@ return $default(_that.id,_that.taskerId,_that.title,_that.description,_that.crit
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id, @JsonKey(name: 'tasker_id')  String taskerId,  String title,  String? description,  String? criteria, @JsonKey(name: 'due_date')  String? dueDate, @JsonKey(name: 'fee_amount')  double? feeAmount, @JsonKey(name: 'fee_currency')  String? feeCurrency,  String status, @JsonKey(name: 'created_at')  String? createdAt, @JsonKey(name: 'updated_at')  String? updatedAt, @JsonKey(name: 'task_referee_requests')  List<RefereeRequest> refereeRequests, @JsonKey(name: 'tasker_profile')  Profile? tasker)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id, @JsonKey(name: 'tasker_id')  String taskerId,  String title,  String? description,  String? criteria, @JsonKey(name: 'due_date')  String? dueDate, @JsonKey(name: 'fee_amount')  double? feeAmount, @JsonKey(name: 'fee_currency')  String? feeCurrency,  String status, @JsonKey(name: 'created_at')  String? createdAt, @JsonKey(name: 'updated_at')  String? updatedAt, @JsonKey(name: 'task_referee_requests')  List<RefereeRequest> refereeRequests,  TaskEvidence? evidence, @JsonKey(name: 'tasker_profile')  Profile? tasker)  $default,) {final _that = this;
 switch (_that) {
 case _Task():
-return $default(_that.id,_that.taskerId,_that.title,_that.description,_that.criteria,_that.dueDate,_that.feeAmount,_that.feeCurrency,_that.status,_that.createdAt,_that.updatedAt,_that.refereeRequests,_that.tasker);case _:
+return $default(_that.id,_that.taskerId,_that.title,_that.description,_that.criteria,_that.dueDate,_that.feeAmount,_that.feeCurrency,_that.status,_that.createdAt,_that.updatedAt,_that.refereeRequests,_that.evidence,_that.tasker);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -219,10 +232,10 @@ return $default(_that.id,_that.taskerId,_that.title,_that.description,_that.crit
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id, @JsonKey(name: 'tasker_id')  String taskerId,  String title,  String? description,  String? criteria, @JsonKey(name: 'due_date')  String? dueDate, @JsonKey(name: 'fee_amount')  double? feeAmount, @JsonKey(name: 'fee_currency')  String? feeCurrency,  String status, @JsonKey(name: 'created_at')  String? createdAt, @JsonKey(name: 'updated_at')  String? updatedAt, @JsonKey(name: 'task_referee_requests')  List<RefereeRequest> refereeRequests, @JsonKey(name: 'tasker_profile')  Profile? tasker)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id, @JsonKey(name: 'tasker_id')  String taskerId,  String title,  String? description,  String? criteria, @JsonKey(name: 'due_date')  String? dueDate, @JsonKey(name: 'fee_amount')  double? feeAmount, @JsonKey(name: 'fee_currency')  String? feeCurrency,  String status, @JsonKey(name: 'created_at')  String? createdAt, @JsonKey(name: 'updated_at')  String? updatedAt, @JsonKey(name: 'task_referee_requests')  List<RefereeRequest> refereeRequests,  TaskEvidence? evidence, @JsonKey(name: 'tasker_profile')  Profile? tasker)?  $default,) {final _that = this;
 switch (_that) {
 case _Task() when $default != null:
-return $default(_that.id,_that.taskerId,_that.title,_that.description,_that.criteria,_that.dueDate,_that.feeAmount,_that.feeCurrency,_that.status,_that.createdAt,_that.updatedAt,_that.refereeRequests,_that.tasker);case _:
+return $default(_that.id,_that.taskerId,_that.title,_that.description,_that.criteria,_that.dueDate,_that.feeAmount,_that.feeCurrency,_that.status,_that.createdAt,_that.updatedAt,_that.refereeRequests,_that.evidence,_that.tasker);case _:
   return null;
 
 }
@@ -234,7 +247,7 @@ return $default(_that.id,_that.taskerId,_that.title,_that.description,_that.crit
 @JsonSerializable()
 
 class _Task extends Task {
-  const _Task({required this.id, @JsonKey(name: 'tasker_id') required this.taskerId, required this.title, this.description, this.criteria, @JsonKey(name: 'due_date') this.dueDate, @JsonKey(name: 'fee_amount') this.feeAmount, @JsonKey(name: 'fee_currency') this.feeCurrency, required this.status, @JsonKey(name: 'created_at') this.createdAt, @JsonKey(name: 'updated_at') this.updatedAt, @JsonKey(name: 'task_referee_requests') final  List<RefereeRequest> refereeRequests = const [], @JsonKey(name: 'tasker_profile') this.tasker}): _refereeRequests = refereeRequests,super._();
+  const _Task({required this.id, @JsonKey(name: 'tasker_id') required this.taskerId, required this.title, this.description, this.criteria, @JsonKey(name: 'due_date') this.dueDate, @JsonKey(name: 'fee_amount') this.feeAmount, @JsonKey(name: 'fee_currency') this.feeCurrency, required this.status, @JsonKey(name: 'created_at') this.createdAt, @JsonKey(name: 'updated_at') this.updatedAt, @JsonKey(name: 'task_referee_requests') final  List<RefereeRequest> refereeRequests = const [], this.evidence, @JsonKey(name: 'tasker_profile') this.tasker}): _refereeRequests = refereeRequests,super._();
   factory _Task.fromJson(Map<String, dynamic> json) => _$TaskFromJson(json);
 
 @override final  String id;
@@ -257,6 +270,7 @@ class _Task extends Task {
   return EqualUnmodifiableListView(_refereeRequests);
 }
 
+@override final  TaskEvidence? evidence;
 @override@JsonKey(name: 'tasker_profile') final  Profile? tasker;
 
 /// Create a copy of Task
@@ -272,16 +286,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Task&&(identical(other.id, id) || other.id == id)&&(identical(other.taskerId, taskerId) || other.taskerId == taskerId)&&(identical(other.title, title) || other.title == title)&&(identical(other.description, description) || other.description == description)&&(identical(other.criteria, criteria) || other.criteria == criteria)&&(identical(other.dueDate, dueDate) || other.dueDate == dueDate)&&(identical(other.feeAmount, feeAmount) || other.feeAmount == feeAmount)&&(identical(other.feeCurrency, feeCurrency) || other.feeCurrency == feeCurrency)&&(identical(other.status, status) || other.status == status)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&const DeepCollectionEquality().equals(other._refereeRequests, _refereeRequests)&&(identical(other.tasker, tasker) || other.tasker == tasker));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Task&&(identical(other.id, id) || other.id == id)&&(identical(other.taskerId, taskerId) || other.taskerId == taskerId)&&(identical(other.title, title) || other.title == title)&&(identical(other.description, description) || other.description == description)&&(identical(other.criteria, criteria) || other.criteria == criteria)&&(identical(other.dueDate, dueDate) || other.dueDate == dueDate)&&(identical(other.feeAmount, feeAmount) || other.feeAmount == feeAmount)&&(identical(other.feeCurrency, feeCurrency) || other.feeCurrency == feeCurrency)&&(identical(other.status, status) || other.status == status)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&const DeepCollectionEquality().equals(other._refereeRequests, _refereeRequests)&&(identical(other.evidence, evidence) || other.evidence == evidence)&&(identical(other.tasker, tasker) || other.tasker == tasker));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,taskerId,title,description,criteria,dueDate,feeAmount,feeCurrency,status,createdAt,updatedAt,const DeepCollectionEquality().hash(_refereeRequests),tasker);
+int get hashCode => Object.hash(runtimeType,id,taskerId,title,description,criteria,dueDate,feeAmount,feeCurrency,status,createdAt,updatedAt,const DeepCollectionEquality().hash(_refereeRequests),evidence,tasker);
 
 @override
 String toString() {
-  return 'Task(id: $id, taskerId: $taskerId, title: $title, description: $description, criteria: $criteria, dueDate: $dueDate, feeAmount: $feeAmount, feeCurrency: $feeCurrency, status: $status, createdAt: $createdAt, updatedAt: $updatedAt, refereeRequests: $refereeRequests, tasker: $tasker)';
+  return 'Task(id: $id, taskerId: $taskerId, title: $title, description: $description, criteria: $criteria, dueDate: $dueDate, feeAmount: $feeAmount, feeCurrency: $feeCurrency, status: $status, createdAt: $createdAt, updatedAt: $updatedAt, refereeRequests: $refereeRequests, evidence: $evidence, tasker: $tasker)';
 }
 
 
@@ -292,11 +306,11 @@ abstract mixin class _$TaskCopyWith<$Res> implements $TaskCopyWith<$Res> {
   factory _$TaskCopyWith(_Task value, $Res Function(_Task) _then) = __$TaskCopyWithImpl;
 @override @useResult
 $Res call({
- String id,@JsonKey(name: 'tasker_id') String taskerId, String title, String? description, String? criteria,@JsonKey(name: 'due_date') String? dueDate,@JsonKey(name: 'fee_amount') double? feeAmount,@JsonKey(name: 'fee_currency') String? feeCurrency, String status,@JsonKey(name: 'created_at') String? createdAt,@JsonKey(name: 'updated_at') String? updatedAt,@JsonKey(name: 'task_referee_requests') List<RefereeRequest> refereeRequests,@JsonKey(name: 'tasker_profile') Profile? tasker
+ String id,@JsonKey(name: 'tasker_id') String taskerId, String title, String? description, String? criteria,@JsonKey(name: 'due_date') String? dueDate,@JsonKey(name: 'fee_amount') double? feeAmount,@JsonKey(name: 'fee_currency') String? feeCurrency, String status,@JsonKey(name: 'created_at') String? createdAt,@JsonKey(name: 'updated_at') String? updatedAt,@JsonKey(name: 'task_referee_requests') List<RefereeRequest> refereeRequests, TaskEvidence? evidence,@JsonKey(name: 'tasker_profile') Profile? tasker
 });
 
 
-@override $ProfileCopyWith<$Res>? get tasker;
+@override $TaskEvidenceCopyWith<$Res>? get evidence;@override $ProfileCopyWith<$Res>? get tasker;
 
 }
 /// @nodoc
@@ -309,7 +323,7 @@ class __$TaskCopyWithImpl<$Res>
 
 /// Create a copy of Task
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? taskerId = null,Object? title = null,Object? description = freezed,Object? criteria = freezed,Object? dueDate = freezed,Object? feeAmount = freezed,Object? feeCurrency = freezed,Object? status = null,Object? createdAt = freezed,Object? updatedAt = freezed,Object? refereeRequests = null,Object? tasker = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? taskerId = null,Object? title = null,Object? description = freezed,Object? criteria = freezed,Object? dueDate = freezed,Object? feeAmount = freezed,Object? feeCurrency = freezed,Object? status = null,Object? createdAt = freezed,Object? updatedAt = freezed,Object? refereeRequests = null,Object? evidence = freezed,Object? tasker = freezed,}) {
   return _then(_Task(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,taskerId: null == taskerId ? _self.taskerId : taskerId // ignore: cast_nullable_to_non_nullable
@@ -323,12 +337,25 @@ as String?,status: null == status ? _self.status : status // ignore: cast_nullab
 as String,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as String?,updatedAt: freezed == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
 as String?,refereeRequests: null == refereeRequests ? _self._refereeRequests : refereeRequests // ignore: cast_nullable_to_non_nullable
-as List<RefereeRequest>,tasker: freezed == tasker ? _self.tasker : tasker // ignore: cast_nullable_to_non_nullable
+as List<RefereeRequest>,evidence: freezed == evidence ? _self.evidence : evidence // ignore: cast_nullable_to_non_nullable
+as TaskEvidence?,tasker: freezed == tasker ? _self.tasker : tasker // ignore: cast_nullable_to_non_nullable
 as Profile?,
   ));
 }
 
 /// Create a copy of Task
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$TaskEvidenceCopyWith<$Res>? get evidence {
+    if (_self.evidence == null) {
+    return null;
+  }
+
+  return $TaskEvidenceCopyWith<$Res>(_self.evidence!, (value) {
+    return _then(_self.copyWith(evidence: value));
+  });
+}/// Create a copy of Task
 /// with the given fields replaced by the non-null parameter values.
 @override
 @pragma('vm:prefer-inline')
