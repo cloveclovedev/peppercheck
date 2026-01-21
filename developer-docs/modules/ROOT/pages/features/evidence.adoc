@@ -13,10 +13,11 @@ The submission process uses **Cloudflare R2** for image storage and **Supabase**
 == Upload Sequence
 
 The following sequence diagram illustrates the secure upload flow, including:
-1.  Fetching Task details (to verify permissions).
-2.  Generating a presigned URL via Edge Function (which securely holds R2 credentials and public domain logic).
-3.  Direct upload to R2 (bypassing the application server for heavy lifting).
-4.  Submitting metadata (including R2 keys and public URLs) to the database via a secure RPC.
+
+.  Fetching Task details (to verify permissions).
+.  Generating a presigned URL via Edge Function (which securely holds R2 credentials and public domain logic).
+.  Direct upload to R2 (bypassing the application server for heavy lifting).
+.  Submitting metadata (including R2 keys and public URLs) to the database via a secure RPC.
 
 [plantuml]
 ----
@@ -26,21 +27,21 @@ include::example$features/evidence/upload_sequence.pu[]
 == Key Components
 
 === Edge Function: `generate-upload-url`
-*   **Responsibility**:
-    ** Validates user authentication and Task ownership.
-    ** Generates a unique R2 Object Key (`evidence/...`).
-    ** Generates a recursive 10-minute Presigned PUT URL.
-    ** Constructs the `public_url` using the `R2_PUBLIC_DOMAIN` environment variable.
-*   **Security**: Ensures only the Tasker can upload files for their specific task.
+* **Responsibility**:
+** Validates user authentication and Task ownership.
+** Generates a unique R2 Object Key (`evidence/...`).
+** Generates a recursive 10-minute Presigned PUT URL.
+** Constructs the `public_url` using the `R2_PUBLIC_DOMAIN` environment variable.
+* **Security**: Ensures only the Tasker can upload files for their specific task.
 
 === RPC: `submit_evidence`
-*   **Responsibility**:
-    ** Validates that the Judgement status is `awaiting_evidence` or `in_review`.
-    ** Atomically transitions the Judgement status to `in_review`.
-    ** Inserts records into `task_evidences` and `task_evidence_assets`.
-*   **Concurrency**: Uses database transactions to ensure data consistency.
+* **Responsibility**:
+** Validates that the Judgement status is `awaiting_evidence` or `in_review`.
+** Atomically transitions the Judgement status to `in_review`.
+** Inserts records into `task_evidences` and `task_evidence_assets`.
+* **Concurrency**: Uses database transactions to ensure data consistency.
 
 === Client: `EvidenceRepository`
-*   **Responsibility**:
-    ** Orchestrates the flow: `Pick Images` -> `Get URL` -> `Upload to R2` -> `Submit Metadata`.
-    ** Handles connection to the Edge Function using the Supabase SDK (ensuring correct environment routing).
+* **Responsibility**:
+** Orchestrates the flow: `Pick Images` -> `Get URL` -> `Upload to R2` -> `Submit Metadata`.
+** Handles connection to the Edge Function using the Supabase SDK (ensuring correct environment routing).
