@@ -23,6 +23,9 @@ _Task _$TaskFromJson(Map<String, dynamic> json) => _Task(
           ?.map((e) => RefereeRequest.fromJson(e as Map<String, dynamic>))
           .toList() ??
       const [],
+  evidence: json['evidence'] == null
+      ? null
+      : TaskEvidence.fromJson(json['evidence'] as Map<String, dynamic>),
   tasker: json['tasker_profile'] == null
       ? null
       : Profile.fromJson(json['tasker_profile'] as Map<String, dynamic>),
@@ -41,5 +44,6 @@ Map<String, dynamic> _$TaskToJson(_Task instance) => <String, dynamic>{
   'created_at': instance.createdAt,
   'updated_at': instance.updatedAt,
   'task_referee_requests': instance.refereeRequests,
+  'evidence': instance.evidence,
   'tasker_profile': instance.tasker,
 };
