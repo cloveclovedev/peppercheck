@@ -1,15 +1,10 @@
-CREATE OR REPLACE FUNCTION public.validate_task_inputs(
-    p_status text,
-    p_title text,
-    p_description text DEFAULT NULL,
-    p_criteria text DEFAULT NULL,
-    p_due_date timestamp with time zone DEFAULT NULL,
-    p_referee_requests jsonb[] DEFAULT NULL
-)
-RETURNS void
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
+set check_function_bodies = off;
+
+CREATE OR REPLACE FUNCTION public.validate_task_inputs(p_status text, p_title text, p_description text DEFAULT NULL::text, p_criteria text DEFAULT NULL::text, p_due_date timestamp with time zone DEFAULT NULL::timestamp with time zone, p_referee_requests jsonb[] DEFAULT NULL::jsonb[])
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
 BEGIN
     IF p_status = 'draft' THEN
         IF p_title IS NULL OR length(trim(p_title)) = 0 THEN
@@ -31,6 +26,7 @@ BEGIN
         END IF;
     END IF;
 END;
-$$;
+$function$
+;
 
-ALTER FUNCTION public.validate_task_inputs(text, text, text, text, timestamp with time zone, jsonb[]) OWNER TO postgres;
+
