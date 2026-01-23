@@ -6,9 +6,10 @@ CREATE OR REPLACE FUNCTION public.is_task_referee(task_uuid uuid, user_uuid uuid
     AS $$
   SELECT EXISTS (
     SELECT 1
-      FROM public.judgements
-     WHERE task_id   = task_uuid
-       AND referee_id = user_uuid
+      FROM public.task_referee_requests
+     WHERE task_id = task_uuid
+       AND matched_referee_id = user_uuid
+       AND status = 'accepted'
   );
 $$;
 

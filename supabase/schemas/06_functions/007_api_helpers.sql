@@ -3,16 +3,25 @@ CREATE OR REPLACE FUNCTION public.close_task_if_all_judgements_confirmed() RETUR
     LANGUAGE plpgsql
     SET search_path = ''
     AS $$
+DECLARE
+    v_task_id uuid;
 BEGIN
+  -- Get task_id from trr
+  SELECT task_id INTO v_task_id 
+  FROM public.task_referee_requests 
+  WHERE id = NEW.id;
+
   -- Concurrency protection: lock the task row to prevent race conditions
-  PERFORM * FROM public.tasks WHERE id = NEW.task_id FOR UPDATE;
+  PERFORM * FROM public.tasks WHERE id = v_task_id FOR UPDATE;
   
   -- Check if all judgements for this task are confirmed
+  -- We need to check all requests that are 'accepted' or have a judgement
   IF NOT EXISTS (
-    SELECT 1 FROM public.judgements 
-    WHERE task_id = NEW.task_id AND is_confirmed = FALSE
+    SELECT 1 FROM public.judgements j
+    JOIN public.task_referee_requests trr ON j.id = trr.id
+    WHERE trr.task_id = v_task_id AND j.is_confirmed = FALSE
   ) THEN
-    UPDATE public.tasks SET status = 'closed' WHERE id = NEW.task_id;
+    UPDATE public.tasks SET status = 'closed' WHERE id = v_task_id;
   END IF;
   
   RETURN NEW;
@@ -40,7 +49,7 @@ CREATE OR REPLACE FUNCTION public.get_active_referee_tasks() RETURNS jsonb
   INNER JOIN
     public.tasks AS t ON trr.task_id = t.id
   LEFT JOIN
-    public.judgements_ext AS j ON t.id = j.task_id AND trr.matched_referee_id = j.referee_id -- Changed to judgements_ext
+    public.judgements_view AS j ON trr.id = j.id -- Use view and join by ID
   INNER JOIN
     public.profiles AS p ON t.tasker_id = p.id
   WHERE
@@ -54,16 +63,19 @@ CREATE OR REPLACE FUNCTION public.handle_judgement_confirmation() RETURNS trigge
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path = ''
     AS $$
+DECLARE
+    v_request RECORD;
 BEGIN
   -- Only execute when is_confirmed changes from FALSE to TRUE
   IF NEW.is_confirmed = TRUE AND (OLD.is_confirmed IS NULL OR OLD.is_confirmed = FALSE) THEN
     
+    -- Get request details for billing
+    SELECT * INTO v_request
+    FROM public.task_referee_requests
+    WHERE id = NEW.id;
+
     -- Trigger billing (function handles non-billable cases by closing)
-    PERFORM public.start_billing(trr.id)
-    FROM public.task_referee_requests trr
-    WHERE trr.task_id = NEW.task_id
-      AND trr.matched_referee_id = NEW.referee_id
-    LIMIT 1;
+    PERFORM public.start_billing(v_request.id);
       
   END IF;
 
@@ -84,7 +96,7 @@ BEGIN
   -- Get judgement details and can_reopen status from the view
   SELECT task_id, can_reopen
   INTO v_task_id, v_can_reopen
-  FROM public.judgements_ext
+  FROM public.judgements_view
   WHERE id = p_judgement_id;
 
   -- Check if judgement exists
@@ -97,7 +109,7 @@ BEGIN
     RAISE EXCEPTION 'Only the task owner can request judgement reopening';
   END IF;
 
-  -- Validation: Use the can_reopen logic from judgements_ext view
+  -- Validation: Use the can_reopen logic from judgements_view view
   IF NOT v_can_reopen THEN
     RAISE EXCEPTION 'Judgement cannot be reopened. Check: status must be rejected, reopen count < 1, task not past due date, and evidence updated after judgement.';
   END IF;
@@ -105,7 +117,7 @@ BEGIN
   -- All validations passed - reopen the judgement
   UPDATE public.judgements 
   SET 
-    status = 'open',
+    status = 'awaiting_evidence',
     reopen_count = reopen_count + 1
   WHERE id = p_judgement_id;
 

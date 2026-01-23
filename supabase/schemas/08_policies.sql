@@ -1,19 +1,7 @@
 -- Row level security and policies
 
 -- judgements ------------------------------------------------------
-ALTER TABLE public.judgements ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Judgements: insert if referee" ON public.judgements
-FOR INSERT
-WITH CHECK ((referee_id = (SELECT auth.uid() AS uid)));
-
-CREATE POLICY "Judgements: select if tasker or referee" ON public.judgements
-FOR SELECT
-USING (((referee_id = (SELECT auth.uid() AS uid)) OR public.is_task_tasker(task_id, (SELECT auth.uid() AS uid))));
-
-CREATE POLICY "Judgements: update if referee or tasker" ON public.judgements
-FOR UPDATE
-USING (((referee_id = (SELECT auth.uid() AS uid)) OR public.is_task_tasker(task_id, (SELECT auth.uid() AS uid))));
+-- Policies moved to schemas/judgement/tables/judgements.sql
 
 -- judgement_threads -----------------------------------------------
 ALTER TABLE public.judgement_threads ENABLE ROW LEVEL SECURITY;
@@ -22,15 +10,17 @@ CREATE POLICY "Threads: insert if participant" ON public.judgement_threads
 FOR INSERT
 WITH CHECK ((EXISTS (SELECT 1
    FROM (public.judgements j
-     JOIN public.tasks t ON ((j.task_id = t.id)))
-  WHERE ((j.id = judgement_threads.judgement_id) AND ((t.tasker_id = (SELECT auth.uid() AS uid)) OR (j.referee_id = (SELECT auth.uid() AS uid)))))));
+     JOIN public.task_referee_requests trr ON j.id = trr.id
+     JOIN public.tasks t ON trr.task_id = t.id)
+  WHERE ((j.id = judgement_threads.judgement_id) AND ((t.tasker_id = (SELECT auth.uid() AS uid)) OR (trr.matched_referee_id = (SELECT auth.uid() AS uid)))))));
 
 CREATE POLICY "Threads: select if participant" ON public.judgement_threads
 FOR SELECT
 USING ((EXISTS (SELECT 1
    FROM (public.judgements j
-     JOIN public.tasks t ON ((j.task_id = t.id)))
-  WHERE ((j.id = judgement_threads.judgement_id) AND ((t.tasker_id = (SELECT auth.uid() AS uid)) OR (j.referee_id = (SELECT auth.uid() AS uid)))))));
+     JOIN public.task_referee_requests trr ON j.id = trr.id
+     JOIN public.tasks t ON trr.task_id = t.id)
+  WHERE ((j.id = judgement_threads.judgement_id) AND ((t.tasker_id = (SELECT auth.uid() AS uid)) OR (trr.matched_referee_id = (SELECT auth.uid() AS uid)))))));
 
 CREATE POLICY "Threads: update if sender" ON public.judgement_threads
 FOR UPDATE
@@ -48,16 +38,18 @@ FOR INSERT
 WITH CHECK ((EXISTS (SELECT 1
    FROM ((public.judgement_threads jt
      JOIN public.judgements j ON ((jt.judgement_id = j.id)))
-     JOIN public.tasks t ON ((j.task_id = t.id)))
-  WHERE ((jt.id = judgement_thread_assets.thread_id) AND ((t.tasker_id = (SELECT auth.uid() AS uid)) OR (j.referee_id = (SELECT auth.uid() AS uid)))))));
+     JOIN public.task_referee_requests trr ON ((j.id = trr.id))
+     JOIN public.tasks t ON ((trr.task_id = t.id)))
+  WHERE ((jt.id = judgement_thread_assets.thread_id) AND ((t.tasker_id = (SELECT auth.uid() AS uid)) OR (trr.matched_referee_id = (SELECT auth.uid() AS uid)))))));
 
 CREATE POLICY "Thread Assets: select if participant" ON public.judgement_thread_assets
 FOR SELECT
 USING ((EXISTS (SELECT 1
    FROM ((public.judgement_threads jt
      JOIN public.judgements j ON ((jt.judgement_id = j.id)))
-     JOIN public.tasks t ON ((j.task_id = t.id)))
-  WHERE ((jt.id = judgement_thread_assets.thread_id) AND ((t.tasker_id = (SELECT auth.uid() AS uid)) OR (j.referee_id = (SELECT auth.uid() AS uid)))))));
+     JOIN public.task_referee_requests trr ON ((j.id = trr.id))
+     JOIN public.tasks t ON ((trr.task_id = t.id)))
+  WHERE ((jt.id = judgement_thread_assets.thread_id) AND ((t.tasker_id = (SELECT auth.uid() AS uid)) OR (trr.matched_referee_id = (SELECT auth.uid() AS uid)))))));
 
 CREATE POLICY "Thread Assets: update if sender" ON public.judgement_thread_assets
 FOR UPDATE
@@ -107,7 +99,8 @@ USING (((EXISTS (SELECT 1
    FROM public.tasks t
   WHERE ((t.id = task_evidences.task_id) AND (t.tasker_id = (SELECT auth.uid() AS uid))))) OR (EXISTS (SELECT 1
    FROM public.judgements j
-  WHERE ((j.task_id = task_evidences.task_id) AND (j.referee_id = (SELECT auth.uid() AS uid)))))));
+     JOIN public.task_referee_requests trr ON j.id = trr.id
+  WHERE ((trr.task_id = task_evidences.task_id) AND (trr.matched_referee_id = (SELECT auth.uid() AS uid)))))));
 
 CREATE POLICY "Task Evidences: update if tasker" ON public.task_evidences
 FOR UPDATE
@@ -138,8 +131,10 @@ USING (((EXISTS (SELECT 1
      JOIN public.tasks t ON ((te.task_id = t.id)))
   WHERE ((te.id = task_evidence_assets.evidence_id) AND (t.tasker_id = (SELECT auth.uid() AS uid))))) OR (EXISTS (SELECT 1
    FROM (public.task_evidences te
-     JOIN public.judgements j ON ((te.task_id = j.task_id)))
-  WHERE ((te.id = task_evidence_assets.evidence_id) AND (j.referee_id = (SELECT auth.uid() AS uid)))))));
+     JOIN public.task_referee_requests trr ON ((trr.task_id = te.task_id))
+     JOIN public.judgements j ON ((j.id = trr.id)))
+  WHERE ((te.id = task_evidence_assets.evidence_id) 
+    AND (trr.matched_referee_id = (SELECT auth.uid() AS uid)))))));
 
 CREATE POLICY "Task Evidence Assets: update if tasker" ON public.task_evidence_assets
 FOR UPDATE
@@ -207,7 +202,8 @@ USING (((EXISTS (SELECT 1
    FROM public.tasks t
   WHERE ((t.id = rating_histories.task_id) AND (t.tasker_id = (SELECT auth.uid() AS uid))))) OR (EXISTS (SELECT 1
    FROM public.judgements j
-  WHERE ((j.task_id = rating_histories.task_id) AND (j.referee_id = (SELECT auth.uid() AS uid)))))));
+     JOIN public.task_referee_requests trr ON j.id = trr.id
+  WHERE ((trr.task_id = rating_histories.task_id) AND (trr.matched_referee_id = (SELECT auth.uid() AS uid)))))));
 
 -- profiles --------------------------------------------------------
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
