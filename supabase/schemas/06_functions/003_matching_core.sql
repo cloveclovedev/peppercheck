@@ -99,8 +99,10 @@ BEGIN
                     SELECT
                         COALESCE(COUNT(j.id), 0) as workload_count
                     FROM (SELECT unnest(v_available_referees) as referee_id) refs
-                    LEFT JOIN public.judgements j ON j.referee_id = refs.referee_id
-                        AND j.status IN ('awaiting_evidence', 'in_review', 'rejected', 'self_closed')
+                    LEFT JOIN public.task_referee_requests trr ON trr.matched_referee_id = refs.referee_id
+                    LEFT JOIN public.judgements j ON j.id = trr.id
+                        AND j.status IN ('awaiting_evidence', 'in_review', 'rejected', 'review_timeout')
+                    WHERE trr.status IN ('accepted', 'matched') 
                     GROUP BY refs.referee_id
                 ) workloads;
 
@@ -112,8 +114,10 @@ BEGIN
                         refs.referee_id,
                         COALESCE(COUNT(j.id), 0) as workload_count
                     FROM (SELECT unnest(v_available_referees) as referee_id) refs
-                    LEFT JOIN public.judgements j ON j.referee_id = refs.referee_id
-                        AND j.status IN ('awaiting_evidence', 'in_review', 'rejected', 'self_closed')
+                    LEFT JOIN public.task_referee_requests trr ON trr.matched_referee_id = refs.referee_id
+                    LEFT JOIN public.judgements j ON j.id = trr.id
+                        AND j.status IN ('awaiting_evidence', 'in_review', 'rejected', 'review_timeout')
+                    WHERE trr.status IN ('accepted', 'matched')
                     GROUP BY refs.referee_id
                     HAVING COALESCE(COUNT(j.id), 0) = v_min_workload
                 ) least_busy;
@@ -160,8 +164,8 @@ BEGIN
             responded_at = NOW()
         WHERE id = p_request_id;
 
-        INSERT INTO public.judgements (task_id, referee_id, status)
-        VALUES (v_request.task_id, v_matched_referee_id, 'awaiting_evidence');
+        INSERT INTO public.judgements (id, status)
+        VALUES (p_request_id, 'awaiting_evidence');
 
         -- Send notifications concurrently via pg_net (async)
         -- 1. Notify Referee (assigned)

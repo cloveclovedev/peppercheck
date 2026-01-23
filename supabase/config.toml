@@ -56,10 +56,12 @@ schema_paths = [
 # tables
   "./schemas/point/tables/*.sql",
   "./schemas/matching/tables/*.sql",
+  "./schemas/judgement/tables/*.sql",
   "./schemas/subscription/tables/*.sql",
   "./schemas/notification/tables/*.sql",
   "./schemas/04_foreign_keys.sql",
-  "./schemas/05_views.sql",
+# views
+  "./schemas/judgement/views/*.sql",
   "./schemas/06_functions/*.sql",
 # functions
   "./schemas/auth/functions/*.sql",

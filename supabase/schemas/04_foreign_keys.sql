@@ -14,11 +14,8 @@ ALTER TABLE ONLY public.judgement_threads
 ALTER TABLE ONLY public.judgement_threads
     ADD CONSTRAINT judgement_threads_sender_id_fkey FOREIGN KEY (sender_id) REFERENCES public.profiles(id) ON DELETE SET NULL;
 
-ALTER TABLE ONLY public.judgements
-    ADD CONSTRAINT judgements_referee_id_fkey FOREIGN KEY (referee_id) REFERENCES public.profiles(id) ON DELETE SET NULL;
-
-ALTER TABLE ONLY public.judgements
-    ADD CONSTRAINT judgements_task_id_fkey FOREIGN KEY (task_id) REFERENCES public.tasks(id) ON DELETE CASCADE;
+-- judgements
+-- Constraints moved to schemas/judgement/tables/judgements.sql (Primary Key FK)
 
 ALTER TABLE ONLY public.profiles
     ADD CONSTRAINT profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id);
@@ -71,9 +68,7 @@ ALTER TABLE ONLY public.payout_jobs
 ALTER TABLE ONLY public.payout_jobs
     ADD CONSTRAINT payout_jobs_currency_code_fkey FOREIGN KEY (currency_code) REFERENCES public.currencies(code);
 
--- judgements
-ALTER TABLE ONLY public.judgements
-    ADD CONSTRAINT judgements_referee_request_id_fkey FOREIGN KEY (referee_request_id) REFERENCES public.task_referee_requests(id);
+
 
 -- billing_prices
 ALTER TABLE ONLY public.billing_prices
