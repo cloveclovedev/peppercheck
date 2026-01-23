@@ -1,8 +1,31 @@
--- Functions grouped in 003_matching_core.sql
-CREATE OR REPLACE FUNCTION public.process_matching(p_request_id uuid) RETURNS json
-    LANGUAGE plpgsql SECURITY DEFINER
-    SET search_path = ''
-    AS $$
+drop view if exists "public"."judgements_view";
+
+set check_function_bodies = off;
+
+create or replace view "public"."judgements_view" as  SELECT j.id,
+    trr.task_id,
+    trr.matched_referee_id AS referee_id,
+    j.comment,
+    j.status,
+    j.created_at,
+    j.updated_at,
+    j.is_confirmed,
+    j.reopen_count,
+    j.is_evidence_timeout_confirmed,
+    ((j.status = 'rejected'::public.judgement_status) AND (j.reopen_count < 1) AND (t.due_date > now()) AND (EXISTS ( SELECT 1
+           FROM public.task_evidences te
+          WHERE ((te.task_id = trr.task_id) AND (te.updated_at > j.updated_at))))) AS can_reopen
+   FROM ((public.judgements j
+     JOIN public.task_referee_requests trr ON ((j.id = trr.id)))
+     JOIN public.tasks t ON ((trr.task_id = t.id)));
+
+
+CREATE OR REPLACE FUNCTION public.process_matching(p_request_id uuid)
+ RETURNS json
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
 DECLARE
     v_request RECORD;
     v_task RECORD;
@@ -210,34 +233,7 @@ EXCEPTION
             'debug', v_debug_info
         );
 END;
-$$;
+$function$
+;
 
-ALTER FUNCTION public.process_matching(p_request_id uuid) OWNER TO postgres;
 
-COMMENT ON FUNCTION public.process_matching(p_request_id uuid) IS 'Fixed version: Core function to process matching for a single task referee request. Fixes array_length NULL handling and replaces loop-based approach with efficient SQL query. Used by both trigger and batch processing.';
-
-CREATE OR REPLACE FUNCTION public.trigger_process_matching() RETURNS trigger
-    LANGUAGE plpgsql SECURITY DEFINER
-    SET search_path = ''
-    AS $$
-DECLARE
-    v_result JSON;
-BEGIN
-    -- Only process on INSERT or UPDATE to pending status
-    IF (TG_OP = 'INSERT' AND NEW.status = 'pending') OR 
-       (TG_OP = 'UPDATE' AND NEW.status = 'pending' AND OLD.status != 'pending') THEN
-        
-        -- Process the specific request directly
-        SELECT public.process_matching(NEW.id) INTO v_result;
-        
-        -- Log result if needed (optional)
-        -- Could add logging here if required for debugging
-    END IF;
-    
-    RETURN NEW;
-END;
-$$;
-
-ALTER FUNCTION public.trigger_process_matching() OWNER TO postgres;
-
-COMMENT ON FUNCTION public.trigger_process_matching() IS 'Main trigger function that processes matching in real-time when task_referee_requests are inserted or updated to pending status. This is the primary processing mechanism.';
