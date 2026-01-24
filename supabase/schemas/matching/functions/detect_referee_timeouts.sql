@@ -12,13 +12,14 @@ BEGIN
     
     -- Update judgements that have timed out (due_date + 3 hours)
     -- Only update judgements that are still 'open' and past the timeout threshold
-    UPDATE public.judgements 
+    UPDATE public.judgements j
     SET 
-        status = 'judgement_timeout',
+        status = 'review_timeout',
         updated_at = v_now
-    FROM public.tasks t
-    WHERE public.judgements.task_id = t.id
-    AND public.judgements.status = 'open'
+    FROM public.task_referee_requests trr
+    JOIN public.tasks t ON trr.task_id = t.id
+    WHERE j.id = trr.id
+    AND j.status = 'in_review' -- Assuming 'open' meant 'in_review' (referee has evidence and needs to judge)
     AND v_now > (t.due_date + INTERVAL '3 hours');
 
     GET DIAGNOSTICS v_timeout_count = ROW_COUNT;

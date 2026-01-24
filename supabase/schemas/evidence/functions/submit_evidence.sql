@@ -36,7 +36,8 @@ BEGIN
     IF NOT EXISTS (
         SELECT 1
         FROM public.tasks t
-        JOIN public.judgements j ON j.task_id = t.id
+        JOIN public.task_referee_requests trr ON trr.task_id = t.id
+        JOIN public.judgements j ON j.id = trr.id
         WHERE t.id = p_task_id
           AND t.tasker_id = auth.uid()
           AND (
@@ -87,16 +88,18 @@ BEGIN
 
     -- 3. Update Judgements
     -- Transition 'open' or 'rejected' to 'in_review'
-    UPDATE public.judgements
+    UPDATE public.judgements j
     SET 
         status = 'in_review',
         updated_at = v_now
+    FROM public.task_referee_requests trr
     WHERE 
-        task_id = p_task_id 
+        j.id = trr.id
+        AND trr.task_id = p_task_id
         AND (
-            status IN ('awaiting_evidence', 'in_review')
+            j.status IN ('awaiting_evidence', 'in_review')
             OR 
-            (status = 'rejected' AND reopen_count < 1) 
+            (j.status = 'rejected' AND j.reopen_count < 1) 
         );
 
     GET DIAGNOSTICS v_updated_count = ROW_COUNT;
