@@ -27,9 +27,3 @@ ALTER TABLE public.user_subscriptions OWNER TO postgres;
 CREATE INDEX idx_user_subscriptions_stripe_id ON public.user_subscriptions USING btree (stripe_subscription_id);
 CREATE INDEX idx_user_subscriptions_provider ON public.user_subscriptions USING btree (provider, status);
 
--- Policies
-ALTER TABLE public.user_subscriptions ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "user_subscriptions: select if self" ON public.user_subscriptions
-    FOR SELECT
-    USING (auth.uid() = user_id);
