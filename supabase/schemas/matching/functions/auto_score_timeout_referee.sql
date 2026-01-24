@@ -12,13 +12,14 @@ BEGIN
         -- Get the judgement details with task info
         SELECT 
             j.id,
-            j.task_id,
-            j.referee_id,
+            trr.task_id,
+            trr.matched_referee_id AS referee_id,
             j.status,
             t.tasker_id
         INTO v_judgement
         FROM public.judgements j
-        INNER JOIN public.tasks t ON j.task_id = t.id
+        JOIN public.task_referee_requests trr ON j.id = trr.id
+        JOIN public.tasks t ON trr.task_id = t.id
         WHERE j.id = NEW.id;
 
         -- If this is a judgement_timeout confirmation, automatically score referee as 0

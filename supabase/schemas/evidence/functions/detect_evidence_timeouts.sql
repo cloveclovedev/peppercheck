@@ -10,14 +10,15 @@ BEGIN
     
     -- Update judgements that have evidence timeout (due_date passed without evidence)
     -- Only update judgements that are still 'open' and past the due date with no evidence
-    UPDATE public.judgements 
+    UPDATE public.judgements j
     SET 
         status = 'evidence_timeout',
         updated_at = v_now
-    FROM public.tasks t
+    FROM public.task_referee_requests trr
+    JOIN public.tasks t ON trr.task_id = t.id
     LEFT JOIN public.task_evidences te ON t.id = te.task_id
-    WHERE public.judgements.task_id = t.id
-    AND public.judgements.status = 'open'
+    WHERE j.id = trr.id
+    AND j.status = 'awaiting_evidence' -- Changed from 'open' to 'awaiting_evidence' based on enum
     AND v_now > t.due_date
     AND te.id IS NULL; -- No evidence submitted
 
