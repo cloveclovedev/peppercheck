@@ -16,9 +16,3 @@ ALTER TABLE public.point_ledger OWNER TO postgres;
 CREATE INDEX idx_point_ledger_user_id ON public.point_ledger USING btree (user_id);
 CREATE INDEX idx_point_ledger_created_at ON public.point_ledger USING btree (created_at);
 
--- Policies (RLS)
-ALTER TABLE public.point_ledger ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "point_ledger: select if self" ON public.point_ledger
-    FOR SELECT
-    USING (user_id = (SELECT auth.uid()));

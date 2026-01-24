@@ -26,24 +26,6 @@ ALTER TABLE ONLY public.user_fcm_tokens
 CREATE INDEX idx_user_fcm_tokens_user_id ON public.user_fcm_tokens USING btree (user_id);
 CREATE INDEX idx_user_fcm_tokens_last_active ON public.user_fcm_tokens USING btree (last_active_at);
 
--- RLS
-ALTER TABLE public.user_fcm_tokens ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Users can view their own tokens" ON public.user_fcm_tokens
-    FOR SELECT
-    USING ((select auth.uid()) = user_id);
-
-CREATE POLICY "Users can insert their own tokens" ON public.user_fcm_tokens
-    FOR INSERT
-    WITH CHECK ((select auth.uid()) = user_id);
-
-CREATE POLICY "Users can update their own tokens" ON public.user_fcm_tokens
-    FOR UPDATE
-    USING ((select auth.uid()) = user_id);
-
-CREATE POLICY "Users can delete their own tokens" ON public.user_fcm_tokens
-    FOR DELETE
-    USING ((select auth.uid()) = user_id);
 
 
 
