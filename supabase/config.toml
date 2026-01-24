@@ -50,12 +50,11 @@ max_client_conn = 100
 # Supports glob patterns relative to supabase directory: "./schemas/*.sql"
 schema_paths = [
   "./schemas/00_extensions.sql",
-  "./schemas/01_schemas.sql",
-  "./schemas/02_types.sql",
+# tables
   "./schemas/common/tables/currencies.sql",
   "./schemas/profile/tables/profiles.sql",
   "./schemas/stripe/tables/stripe_accounts.sql",
-  
+
   # Point
   "./schemas/point/tables/00_enums.sql",
   "./schemas/point/tables/01_point_wallets.sql",
@@ -73,14 +72,14 @@ schema_paths = [
   "./schemas/matching/tables/referee_available_time_slots.sql",
   "./schemas/matching/tables/task_referee_requests.sql",
 
-  # Rating
-  "./schemas/rating/tables/rating_histories.sql",
-  "./schemas/rating/tables/user_ratings.sql",
-
-  # Judgement
+  # Judgement (Moved BEFORE Rating due to FK dependency)
   "./schemas/judgement/tables/judgements.sql",
   "./schemas/judgement/tables/judgement_threads.sql",
   "./schemas/judgement/tables/judgement_thread_assets.sql",
+
+  # Rating
+  "./schemas/rating/tables/rating_histories.sql",
+  "./schemas/rating/tables/user_ratings.sql",
 
   # Subscription
   "./schemas/subscription/tables/00_enums.sql",
@@ -90,12 +89,13 @@ schema_paths = [
 
   # Notification
   "./schemas/notification/tables/001_user_fcm_tokens.sql",
-  "./schemas/04_foreign_keys.sql",
+  "./schemas/notification/tables/001_user_fcm_tokens.sql",
+
 # views
   "./schemas/judgement/views/*.sql",
   # Common
   "./schemas/common/functions/handle_updated_at.sql",
-  
+
   # Profile
   "./schemas/profile/functions/auth_helpers.sql",
 
@@ -149,12 +149,24 @@ schema_paths = [
   
   # Notification
   "./schemas/notification/functions/001_notify_event.sql",
-# triggers
-  "./schemas/auth/triggers/*.sql",
+
+# triggers (Legacy file, to be refactored next)
+  "./schemas/auth/triggers/*.sql", # wildcard
   "./schemas/07_triggers.sql",
-  "./schemas/08_policies.sql",
-  "./schemas/09_grants.sql",
-  "./schemas/10_cron_jobs.sql",
+
+# policies
+  "./schemas/judgement/policies/judgement_threads_policies.sql",
+  "./schemas/judgement/policies/judgement_thread_assets_policies.sql",
+  "./schemas/task/policies/tasks_policies.sql",
+  "./schemas/evidence/policies/task_evidences_policies.sql",
+  "./schemas/evidence/policies/task_evidence_assets_policies.sql",
+  "./schemas/matching/policies/task_referee_requests_policies.sql",
+  "./schemas/matching/policies/referee_available_time_slots_policies.sql",
+  "./schemas/rating/policies/rating_histories_policies.sql",
+  "./schemas/rating/policies/user_ratings_policies.sql",
+  "./schemas/profile/policies/profiles_policies.sql",
+  "./schemas/stripe/policies/stripe_accounts_policies.sql",
+
 ]
 
 [db.seed]

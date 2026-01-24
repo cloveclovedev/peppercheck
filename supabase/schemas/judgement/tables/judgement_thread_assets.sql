@@ -14,3 +14,6 @@ ALTER TABLE ONLY public.judgement_thread_assets
 
 -- Indexes
 CREATE INDEX idx_judgement_thread_assets_thread_id ON public.judgement_thread_assets USING btree (thread_id);
+
+ALTER TABLE ONLY public.judgement_thread_assets
+    ADD CONSTRAINT judgement_thread_assets_thread_id_fkey FOREIGN KEY (thread_id) REFERENCES public.judgement_threads(id) ON DELETE CASCADE;

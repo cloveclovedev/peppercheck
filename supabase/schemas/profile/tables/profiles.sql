@@ -21,3 +21,6 @@ ALTER TABLE ONLY public.profiles
 CREATE INDEX idx_profiles_timezone ON public.profiles USING btree (timezone);
 
 COMMENT ON COLUMN public.profiles.timezone IS 'User timezone in IANA format (e.g., Asia/Tokyo, America/New_York, Europe/London)';
+
+ALTER TABLE ONLY public.profiles
+    ADD CONSTRAINT profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id);

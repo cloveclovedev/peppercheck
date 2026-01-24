@@ -28,3 +28,6 @@ COMMENT ON COLUMN public.tasks.due_date IS 'Due date for task completion. NULL a
 COMMENT ON COLUMN public.tasks.fee_amount IS 'Fee amount for the task. NULL allowed for draft status.';
 COMMENT ON COLUMN public.tasks.fee_currency IS 'Currency for fee amount. NULL allowed for draft status, defaults to JPY when published.';
 COMMENT ON COLUMN public.tasks.status IS 'Valid values: draft, open, judging, rejected, completed, closed, self_completed, expired. No constraints during MVP phase.';
+
+ALTER TABLE ONLY public.tasks
+    ADD CONSTRAINT tasks_tasker_id_fkey FOREIGN KEY (tasker_id) REFERENCES public.profiles(id) ON DELETE SET NULL;

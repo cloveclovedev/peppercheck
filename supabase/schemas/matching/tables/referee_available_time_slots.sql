@@ -30,3 +30,6 @@ COMMENT ON TABLE public.referee_available_time_slots IS 'Referee available time 
 COMMENT ON COLUMN public.referee_available_time_slots.dow IS 'Day of week: 0=Sunday, 6=Saturday';
 COMMENT ON COLUMN public.referee_available_time_slots.start_min IS 'Start time in minutes from midnight (0-1439)';
 COMMENT ON COLUMN public.referee_available_time_slots.end_min IS 'End time in minutes from midnight (1-1440, where 1440 = next day 00:00)';
+
+ALTER TABLE ONLY public.referee_available_time_slots
+    ADD CONSTRAINT referee_available_time_slots_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE;

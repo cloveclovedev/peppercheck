@@ -20,3 +20,6 @@ CREATE INDEX idx_task_evidences_task_id ON public.task_evidences USING btree (ta
 
 COMMENT ON TABLE public.task_evidences IS 'Task-level evidence records shared across all referees';
 COMMENT ON COLUMN public.task_evidences.status IS 'Upload status: pending_upload, ready';
+
+ALTER TABLE ONLY public.task_evidences
+    ADD CONSTRAINT task_evidences_task_id_fkey FOREIGN KEY (task_id) REFERENCES public.tasks(id) ON DELETE CASCADE;
