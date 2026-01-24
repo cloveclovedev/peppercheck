@@ -54,22 +54,4 @@ ALTER TABLE ONLY public.stripe_accounts
 ALTER TABLE ONLY public.user_ratings
     ADD CONSTRAINT user_ratings_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
 
--- billing_jobs
-ALTER TABLE ONLY public.billing_jobs
-    ADD CONSTRAINT billing_jobs_referee_request_id_fkey FOREIGN KEY (referee_request_id) REFERENCES public.task_referee_requests(id);
 
-ALTER TABLE ONLY public.billing_jobs
-    ADD CONSTRAINT billing_jobs_currency_code_fkey FOREIGN KEY (currency_code) REFERENCES public.currencies(code);
-
--- payout_jobs
-ALTER TABLE ONLY public.payout_jobs
-    ADD CONSTRAINT payout_jobs_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id);
-
-ALTER TABLE ONLY public.payout_jobs
-    ADD CONSTRAINT payout_jobs_currency_code_fkey FOREIGN KEY (currency_code) REFERENCES public.currencies(code);
-
-
-
--- billing_prices
-ALTER TABLE ONLY public.billing_prices
-    ADD CONSTRAINT billing_prices_currency_code_fkey FOREIGN KEY (currency_code) REFERENCES public.currencies(code);
