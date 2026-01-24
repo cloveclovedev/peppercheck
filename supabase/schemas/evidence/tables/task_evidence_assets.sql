@@ -25,3 +25,6 @@ COMMENT ON TABLE public.task_evidence_assets IS 'File assets associated with tas
 COMMENT ON COLUMN public.task_evidence_assets.content_type IS 'MIME type of the uploaded file (e.g., image/jpeg, image/png)';
 COMMENT ON COLUMN public.task_evidence_assets.public_url IS 'Public URL for accessing the file via file.peppercheck.com (MVP: same as file_url for direct upload)';
 COMMENT ON COLUMN public.task_evidence_assets.error_message IS 'Error message if processing failed (reserved for future image processing pipeline)';
+
+ALTER TABLE ONLY public.task_evidence_assets
+    ADD CONSTRAINT task_evidence_assets_evidence_id_fkey FOREIGN KEY (evidence_id) REFERENCES public.task_evidences(id) ON DELETE CASCADE;

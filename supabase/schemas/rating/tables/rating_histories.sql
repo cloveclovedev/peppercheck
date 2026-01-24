@@ -31,3 +31,15 @@ COMMENT ON COLUMN public.rating_histories.rating IS '0-5 rating scale: 0=system 
 COMMENT ON COLUMN public.rating_histories.rater_id IS 'ID of the user who gave the rating; if NULL on insert, trigger set_rater_id() sets auth.uid()';
 COMMENT ON COLUMN public.rating_histories.judgement_id IS 'ID of the specific judgement this rating is for (when rating_type is referee)';
 COMMENT ON CONSTRAINT unique_rating_per_judgement ON public.rating_histories IS 'Ensures that each rater can only rate each ratee once per judgement. This constraint enables ON CONFLICT functionality in the auto_score_timeout_referee trigger and prevents duplicate ratings.';
+
+ALTER TABLE ONLY public.rating_histories
+    ADD CONSTRAINT fk_rating_histories_judgement_id FOREIGN KEY (judgement_id) REFERENCES public.judgements(id);
+
+ALTER TABLE ONLY public.rating_histories
+    ADD CONSTRAINT fk_rating_histories_rater_id FOREIGN KEY (rater_id) REFERENCES public.profiles(id);
+
+ALTER TABLE ONLY public.rating_histories
+    ADD CONSTRAINT rating_histories_task_id_fkey FOREIGN KEY (task_id) REFERENCES public.tasks(id) ON DELETE SET NULL;
+
+ALTER TABLE ONLY public.rating_histories
+    ADD CONSTRAINT rating_histories_user_id_fkey FOREIGN KEY (ratee_id) REFERENCES public.profiles(id) ON DELETE SET NULL;

@@ -16,3 +16,9 @@ ALTER TABLE ONLY public.judgement_threads
 -- Indexes
 CREATE INDEX idx_judgement_threads_judgement_id ON public.judgement_threads USING btree (judgement_id);
 CREATE INDEX idx_judgement_threads_sender_id ON public.judgement_threads USING btree (sender_id);
+
+ALTER TABLE ONLY public.judgement_threads
+    ADD CONSTRAINT judgement_threads_judgement_id_fkey FOREIGN KEY (judgement_id) REFERENCES public.judgements(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY public.judgement_threads
+    ADD CONSTRAINT judgement_threads_sender_id_fkey FOREIGN KEY (sender_id) REFERENCES public.profiles(id) ON DELETE SET NULL;

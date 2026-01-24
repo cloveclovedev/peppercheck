@@ -31,3 +31,12 @@ COMMENT ON COLUMN public.task_referee_requests.status IS 'Request status: pendin
 COMMENT ON COLUMN public.task_referee_requests.matched_referee_id IS 'Referee assigned by matching algorithm';
 COMMENT ON COLUMN public.task_referee_requests.responded_at IS 'Timestamp when referee accepted or declined the request';
 COMMENT ON CONSTRAINT task_referee_requests_status_check ON public.task_referee_requests IS 'Updated constraint to include closed status for confirmed judgements';
+
+ALTER TABLE ONLY public.task_referee_requests
+    ADD CONSTRAINT task_referee_requests_matched_referee_id_fkey FOREIGN KEY (matched_referee_id) REFERENCES public.profiles(id);
+
+ALTER TABLE ONLY public.task_referee_requests
+    ADD CONSTRAINT task_referee_requests_preferred_referee_id_fkey FOREIGN KEY (preferred_referee_id) REFERENCES public.profiles(id);
+
+ALTER TABLE ONLY public.task_referee_requests
+    ADD CONSTRAINT task_referee_requests_task_id_fkey FOREIGN KEY (task_id) REFERENCES public.tasks(id) ON DELETE CASCADE;
