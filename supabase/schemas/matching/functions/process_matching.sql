@@ -1,4 +1,3 @@
--- Functions grouped in 003_matching_core.sql
 CREATE OR REPLACE FUNCTION public.process_matching(p_request_id uuid) RETURNS json
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path = ''

@@ -93,15 +93,62 @@ schema_paths = [
   "./schemas/04_foreign_keys.sql",
 # views
   "./schemas/judgement/views/*.sql",
-  "./schemas/06_functions/*.sql",
-# functions
-  "./schemas/auth/functions/*.sql",
-  "./schemas/task/functions/*.sql",
-  "./schemas/task/functions/utils/*.sql",
-  "./schemas/point/functions/*.sql",
-  "./schemas/matching/functions/*.sql",
-  "./schemas/evidence/functions/*.sql",
-  "./schemas/notification/functions/*.sql",
+  # Common
+  "./schemas/common/functions/handle_updated_at.sql",
+  
+  # Profile
+  "./schemas/profile/functions/auth_helpers.sql",
+
+  # task
+  "./schemas/task/functions/close_task_if_all_judgements_confirmed.sql",
+  # "./schemas/task/functions/*.sql", # keeping wildcard if there are others, or check first.
+  
+  # matching
+  "./schemas/matching/functions/01_create_matching_request.sql",
+  "./schemas/matching/functions/02_create_referee_available_time_slot.sql",
+  "./schemas/matching/functions/02_get_point_for_matching_strategy.sql",
+  "./schemas/matching/functions/03_update_referee_available_time_slot.sql",
+  "./schemas/matching/functions/04_delete_referee_available_time_slot.sql",
+  "./schemas/matching/functions/process_matching.sql",
+  "./schemas/matching/functions/auto_score_timeout_referee.sql",
+  "./schemas/matching/functions/detect_referee_timeouts.sql",
+  "./schemas/matching/functions/get_active_referee_tasks.sql",
+  
+  # evidence
+  "./schemas/evidence/functions/confirm_evidence_timeout.sql",
+  "./schemas/evidence/functions/detect_evidence_timeouts.sql",
+  "./schemas/evidence/functions/validate_evidence_due_date.sql",
+  "./schemas/evidence/functions/submit_evidence.sql",
+  
+  # rating
+  "./schemas/rating/functions/set_rater_id.sql",
+  "./schemas/rating/functions/update_user_ratings.sql",
+  
+  # judgement
+  "./schemas/judgement/functions/confirm_judgement_and_rate_referee.sql",
+  "./schemas/judgement/functions/handle_evidence_timeout_confirmation.sql",
+  "./schemas/judgement/functions/handle_judgement_confirmation.sql",
+  "./schemas/judgement/functions/reopen_judgement.sql",
+  
+  # existing wildcards (checking required)
+  "./schemas/auth/functions/01_handle_new_user.sql",
+  
+  # Task extra functions
+  "./schemas/task/functions/create_task.sql",
+  "./schemas/task/functions/update_task.sql",
+  
+  # Task Utils
+  "./schemas/task/functions/utils/validate_task_inputs.sql",
+  "./schemas/task/functions/utils/validate_task_open_requirements.sql",
+  "./schemas/task/functions/utils/create_task_referee_requests_from_json.sql",
+  
+  # Point
+  "./schemas/point/functions/01_consume_points.sql",
+  "./schemas/point/functions/02_calculate_locked_points_by_active_tasks.sql",
+  "./schemas/point/functions/02_grant_subscription_points.sql",
+  
+  # Notification
+  "./schemas/notification/functions/001_notify_event.sql",
 # triggers
   "./schemas/auth/triggers/*.sql",
   "./schemas/07_triggers.sql",

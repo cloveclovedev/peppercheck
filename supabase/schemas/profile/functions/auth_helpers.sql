@@ -1,4 +1,3 @@
--- Functions grouped in 002_auth_helpers.sql
 CREATE OR REPLACE FUNCTION public.is_task_referee(task_uuid uuid, user_uuid uuid) RETURNS boolean
     LANGUAGE sql STABLE STRICT SECURITY DEFINER
     SET row_security TO 'off'
@@ -48,4 +47,3 @@ $$;
 ALTER FUNCTION public.is_task_tasker(task_uuid uuid, user_uuid uuid) OWNER TO postgres;
 
 COMMENT ON FUNCTION public.is_task_tasker(task_uuid uuid, user_uuid uuid) IS 'Return true when user_uuid is the tasker of task_uuid. NULL or non‑existent task ⇒ NULL (STRICT).';
-
