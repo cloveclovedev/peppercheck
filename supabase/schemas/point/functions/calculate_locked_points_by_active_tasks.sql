@@ -16,8 +16,8 @@ BEGIN
     JOIN public.tasks t ON req.task_id = t.id
     WHERE t.tasker_id = p_user_id
     AND req.status IN ('pending', 'matched', 'accepted', 'payment_processing')
-    -- Filter out terminal task states just in case
-    AND t.status NOT IN ('closed', 'completed', 'expired', 'self_completed');
+    -- Filter out terminal task states
+    AND t.status != 'closed'::public.task_status;
 
     RETURN v_total_points;
 END;

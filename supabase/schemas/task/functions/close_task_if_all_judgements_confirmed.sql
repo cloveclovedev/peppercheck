@@ -20,7 +20,7 @@ BEGIN
     JOIN public.task_referee_requests trr ON j.id = trr.id
     WHERE trr.task_id = v_task_id AND j.is_confirmed = FALSE
   ) THEN
-    UPDATE public.tasks SET status = 'closed' WHERE id = v_task_id;
+    UPDATE public.tasks SET status = 'closed'::public.task_status WHERE id = v_task_id;
   END IF;
   
   RETURN NEW;

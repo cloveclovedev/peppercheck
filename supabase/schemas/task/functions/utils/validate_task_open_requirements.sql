@@ -13,7 +13,7 @@ DECLARE
     v_new_cost int := 0;
     v_wallet_balance int;
     v_req jsonb;
-    v_strategy text;
+    v_strategy public.matching_strategy;
 BEGIN
     -- 1. Due Date Validation
     SELECT (value::text)::int INTO v_min_hours
@@ -34,7 +34,7 @@ BEGIN
     IF p_referee_requests IS NOT NULL THEN
         FOREACH v_req IN ARRAY p_referee_requests
         LOOP
-            v_strategy := v_req->>'matching_strategy';
+            v_strategy := (v_req->>'matching_strategy')::public.matching_strategy;
             v_new_cost := v_new_cost + public.get_point_for_matching_strategy(v_strategy);
         END LOOP;
     END IF;

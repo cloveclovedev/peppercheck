@@ -3,7 +3,7 @@ CREATE OR REPLACE FUNCTION public.create_task(
     description text DEFAULT NULL::text,
     criteria text DEFAULT NULL::text,
     due_date timestamp with time zone DEFAULT NULL::timestamp with time zone,
-    status text DEFAULT 'draft'::text,
+    status public.task_status DEFAULT 'draft'::public.task_status,
     referee_requests jsonb[] DEFAULT NULL::jsonb[]
 )
 RETURNS uuid
@@ -12,9 +12,6 @@ SECURITY INVOKER
 AS $$
 DECLARE
     new_task_id uuid;
-    request_item jsonb;
-    request_strategy text;
-    request_preferred_referee_id uuid;
 BEGIN
     -- Validate inputs based on status
     PERFORM public.validate_task_inputs(status, title, description, criteria, due_date, referee_requests);

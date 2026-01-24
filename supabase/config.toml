@@ -68,6 +68,7 @@ schema_paths = [
   "./schemas/evidence/tables/task_evidence_assets.sql",
 
   # Matching
+  "./schemas/matching/tables/enums.sql",
   "./schemas/matching/tables/matching_config.sql",
   "./schemas/matching/tables/referee_available_time_slots.sql",
   "./schemas/matching/tables/task_referee_requests.sql",

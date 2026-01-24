@@ -59,7 +59,7 @@ BEGIN
     ) VALUES (
         p_task_id,
         p_description,
-        'ready', -- Mark as ready since assets are uploaded
+        'ready'::public.evidence_status, -- Mark as ready since assets are uploaded
         v_now,
         v_now
     ) RETURNING id INTO v_evidence_id;

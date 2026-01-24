@@ -1,5 +1,5 @@
 CREATE OR REPLACE FUNCTION public.validate_task_inputs(
-    p_status text,
+    p_status public.task_status,
     p_title text,
     p_description text DEFAULT NULL,
     p_criteria text DEFAULT NULL,
@@ -33,4 +33,4 @@ BEGIN
 END;
 $$;
 
-ALTER FUNCTION public.validate_task_inputs(text, text, text, text, timestamp with time zone, jsonb[]) OWNER TO postgres;
+ALTER FUNCTION public.validate_task_inputs(public.task_status, text, text, text, timestamp with time zone, jsonb[]) OWNER TO postgres;
