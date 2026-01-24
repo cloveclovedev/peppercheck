@@ -37,10 +37,7 @@ CREATE OR REPLACE TRIGGER on_tasks_update
 BEFORE UPDATE ON public.tasks
 FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 
--- Block task creation when unpaid billing exists
-CREATE OR REPLACE TRIGGER block_task_creation_if_unpaid
-BEFORE INSERT ON public.tasks
-FOR EACH ROW EXECUTE FUNCTION public.block_task_creation_if_unpaid();
+
 
 -- task_evidences --------------------------------------------------
 CREATE OR REPLACE TRIGGER validate_evidence_due_date_insert
@@ -93,30 +90,5 @@ CREATE OR REPLACE TRIGGER set_stripe_accounts_updated_at
 BEFORE UPDATE ON public.stripe_accounts
 FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 
--- billing_settings -------------------------------------------------
-CREATE OR REPLACE TRIGGER set_billing_settings_updated_at
-BEFORE UPDATE ON public.billing_settings
-FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 
--- billing_jobs ----------------------------------------------------
-CREATE OR REPLACE TRIGGER set_billing_jobs_updated_at
-BEFORE UPDATE ON public.billing_jobs
-FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
-
-CREATE OR REPLACE TRIGGER trigger_call_billing_worker
-AFTER INSERT ON public.billing_jobs
-FOR EACH ROW
-WHEN (NEW.status = 'pending')
-EXECUTE FUNCTION public.call_billing_worker();
-
--- payout_jobs ----------------------------------------------------
-CREATE OR REPLACE TRIGGER set_payout_jobs_updated_at
-BEFORE UPDATE ON public.payout_jobs
-FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
-
-CREATE OR REPLACE TRIGGER trigger_call_payout_worker
-AFTER INSERT ON public.payout_jobs
-FOR EACH ROW
-WHEN (NEW.status = 'pending')
-EXECUTE FUNCTION public.call_payout_worker();
 

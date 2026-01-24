@@ -52,13 +52,44 @@ schema_paths = [
   "./schemas/00_extensions.sql",
   "./schemas/01_schemas.sql",
   "./schemas/02_types.sql",
-  "./schemas/03_tables/*.sql",
-# tables
-  "./schemas/point/tables/*.sql",
-  "./schemas/matching/tables/*.sql",
-  "./schemas/judgement/tables/*.sql",
-  "./schemas/subscription/tables/*.sql",
-  "./schemas/notification/tables/*.sql",
+  "./schemas/common/tables/currencies.sql",
+  "./schemas/profile/tables/profiles.sql",
+  "./schemas/stripe/tables/stripe_accounts.sql",
+  
+  # Point
+  "./schemas/point/tables/00_enums.sql",
+  "./schemas/point/tables/01_point_wallets.sql",
+  "./schemas/point/tables/02_point_ledger.sql",
+
+  # Task
+  "./schemas/task/tables/tasks.sql",
+
+  # Evidence
+  "./schemas/evidence/tables/task_evidences.sql",
+  "./schemas/evidence/tables/task_evidence_assets.sql",
+
+  # Matching
+  "./schemas/matching/tables/01_matching_config.sql",
+  "./schemas/matching/tables/referee_available_time_slots.sql",
+  "./schemas/matching/tables/task_referee_requests.sql",
+
+  # Rating
+  "./schemas/rating/tables/rating_histories.sql",
+  "./schemas/rating/tables/user_ratings.sql",
+
+  # Judgement
+  "./schemas/judgement/tables/judgements.sql",
+  "./schemas/judgement/tables/judgement_threads.sql",
+  "./schemas/judgement/tables/judgement_thread_assets.sql",
+
+  # Subscription
+  "./schemas/subscription/tables/00_enums.sql",
+  "./schemas/subscription/tables/01_subscription_plans.sql",
+  "./schemas/subscription/tables/02_subscription_plan_prices.sql",
+  "./schemas/subscription/tables/03_user_subscriptions.sql",
+
+  # Notification
+  "./schemas/notification/tables/001_user_fcm_tokens.sql",
   "./schemas/04_foreign_keys.sql",
 # views
   "./schemas/judgement/views/*.sql",
