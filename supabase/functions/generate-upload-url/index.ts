@@ -61,7 +61,7 @@ function generateR2Key(kind: string, filename: string, dueDateString: string): s
 
   switch (kind) {
     case 'evidence':
-      return `${kind}/${year}/${month}/${day}/${cleanFilename}`
+      return `${kind}/${year}-${month}-${day}/${cleanFilename}`
     default:
       throw new Error(`Unsupported kind: ${kind}`)
   }
