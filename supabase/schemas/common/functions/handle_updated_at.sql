@@ -1,4 +1,3 @@
--- Functions grouped in 001_util_updated_at.sql
 CREATE OR REPLACE FUNCTION public.handle_updated_at() RETURNS trigger
     LANGUAGE plpgsql
     SET search_path TO ''
@@ -10,4 +9,3 @@ END;
 $$;
 
 ALTER FUNCTION public.handle_updated_at() OWNER TO postgres;
-
