@@ -1,7 +1,75 @@
-CREATE OR REPLACE FUNCTION public.process_matching(p_request_id uuid) RETURNS json
-    LANGUAGE plpgsql SECURITY DEFINER
-    SET search_path = ''
-    AS $$
+drop view if exists "public"."judgements_view";
+
+set check_function_bodies = off;
+
+CREATE OR REPLACE FUNCTION public.create_task(title text, description text DEFAULT NULL::text, criteria text DEFAULT NULL::text, due_date timestamp with time zone DEFAULT NULL::timestamp with time zone, status public.task_status DEFAULT 'draft'::public.task_status, referee_requests jsonb[] DEFAULT NULL::jsonb[])
+ RETURNS uuid
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+    new_task_id uuid;
+BEGIN
+    -- Validate inputs based on status
+    PERFORM public.validate_task_inputs(status, title, description, criteria, due_date, referee_requests);
+
+    -- Shared Logic Validation (Business Logic: Due Date, Points) for Open tasks
+    IF status = 'open' THEN
+        PERFORM public.validate_task_open_requirements(auth.uid(), due_date, referee_requests);
+    END IF;
+
+    -- Insert into tasks
+    INSERT INTO public.tasks (
+        title,
+        description,
+        criteria,
+        due_date,
+        status,
+        tasker_id
+    )
+    VALUES (
+        title,
+        description,
+        criteria,
+        due_date,
+        status,
+        auth.uid()
+    )
+    RETURNING id INTO new_task_id;
+
+    -- Handle Referee Requests if provided (Only for Open tasks)
+    IF status = 'open' THEN
+        PERFORM public.create_task_referee_requests_from_json(new_task_id, referee_requests);
+    END IF;
+
+    RETURN new_task_id;
+END;
+$function$
+;
+
+create or replace view "public"."judgements_view" as  SELECT j.id,
+    trr.task_id,
+    trr.matched_referee_id AS referee_id,
+    j.comment,
+    j.status,
+    j.created_at,
+    j.updated_at,
+    j.is_confirmed,
+    j.reopen_count,
+    j.is_evidence_timeout_confirmed,
+    ((j.status = 'rejected'::public.judgement_status) AND (j.reopen_count < 1) AND (t.due_date > now()) AND (EXISTS ( SELECT 1
+           FROM public.task_evidences te
+          WHERE ((te.task_id = trr.task_id) AND (te.updated_at > j.updated_at))))) AS can_reopen
+   FROM ((public.judgements j
+     JOIN public.task_referee_requests trr ON ((j.id = trr.id)))
+     JOIN public.tasks t ON ((trr.task_id = t.id)));
+
+
+CREATE OR REPLACE FUNCTION public.process_matching(p_request_id uuid)
+ RETURNS json
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
 DECLARE
     v_request RECORD;
     v_task RECORD;
@@ -209,34 +277,69 @@ EXCEPTION
             'debug', v_debug_info
         );
 END;
-$$;
+$function$
+;
 
-ALTER FUNCTION public.process_matching(p_request_id uuid) OWNER TO postgres;
-
-COMMENT ON FUNCTION public.process_matching(p_request_id uuid) IS 'Fixed version: Core function to process matching for a single task referee request. Fixes array_length NULL handling and replaces loop-based approach with efficient SQL query. Used by both trigger and batch processing.';
-
-CREATE OR REPLACE FUNCTION public.trigger_process_matching() RETURNS trigger
-    LANGUAGE plpgsql SECURITY DEFINER
-    SET search_path = ''
-    AS $$
+CREATE OR REPLACE FUNCTION public.update_task(p_task_id uuid, p_title text, p_description text DEFAULT NULL::text, p_criteria text DEFAULT NULL::text, p_due_date timestamp with time zone DEFAULT NULL::timestamp with time zone, p_status public.task_status DEFAULT 'draft'::public.task_status, p_referee_requests jsonb[] DEFAULT NULL::jsonb[])
+ RETURNS void
+ LANGUAGE plpgsql
+AS $function$
 DECLARE
-    v_result JSON;
+    v_current_status public.task_status;
+    v_tasker_id uuid;
 BEGIN
-    -- Only process on INSERT or UPDATE to pending status
-    IF (TG_OP = 'INSERT' AND NEW.status = 'pending') OR 
-       (TG_OP = 'UPDATE' AND NEW.status = 'pending' AND OLD.status != 'pending') THEN
-        
-        -- Process the specific request directly
-        SELECT public.process_matching(NEW.id) INTO v_result;
-        
-        -- Log result if needed (optional)
-        -- Could add logging here if required for debugging
+    -- 1. Check Existence, Ownership, and Current Status
+    SELECT status, tasker_id INTO v_current_status, v_tasker_id
+    FROM public.tasks
+    WHERE id = p_task_id;
+
+    IF v_current_status IS NULL THEN
+        RAISE EXCEPTION 'Task not found';
     END IF;
-    
-    RETURN NEW;
+
+    IF v_tasker_id != auth.uid() THEN
+        RAISE EXCEPTION 'Not authorized to update this task';
+    END IF;
+
+    IF v_current_status != 'draft' THEN
+        RAISE EXCEPTION 'Only draft tasks can be updated';
+    END IF;
+
+    -- 2. Validate Inputs based on Target Status
+    -- 2. Validate Inputs based on Target Status
+    IF p_status = 'draft' OR p_status = 'open' THEN
+        PERFORM public.validate_task_inputs(p_status, p_title, p_description, p_criteria, p_due_date, p_referee_requests);
+
+        -- Shared Logic Validation (Business Logic: Due Date, Points) for Open tasks
+        IF p_status = 'open' THEN
+            PERFORM public.validate_task_open_requirements(auth.uid(), p_due_date, p_referee_requests);
+        END IF;
+    ELSE
+        RAISE EXCEPTION 'Invalid status transition. Can only update to Draft or Open.';
+    END IF;
+
+    -- 3. Update Task
+    UPDATE public.tasks
+    SET title = p_title,
+        description = p_description,
+        criteria = p_criteria,
+        due_date = p_due_date,
+        status = p_status,
+        updated_at = now()
+    WHERE id = p_task_id;
+
+    -- 4. Handle Referee Requests (Only if transitioning to Open)
+    IF p_status = 'open' THEN
+        -- Theoretically a Draft task shouldn't have requests, but we clean up just in case
+        -- to ensure "Replacement" logic.
+        DELETE FROM public.task_referee_requests
+        WHERE task_id = p_task_id AND status = 'pending';
+
+        PERFORM public.create_task_referee_requests_from_json(p_task_id, p_referee_requests);
+    END IF;
+
 END;
-$$;
+$function$
+;
 
-ALTER FUNCTION public.trigger_process_matching() OWNER TO postgres;
 
-COMMENT ON FUNCTION public.trigger_process_matching() IS 'Main trigger function that processes matching in real-time when task_referee_requests are inserted or updated to pending status. This is the primary processing mechanism.';

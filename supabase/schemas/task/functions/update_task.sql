@@ -4,7 +4,7 @@ CREATE OR REPLACE FUNCTION public.update_task(
     p_description text DEFAULT NULL,
     p_criteria text DEFAULT NULL,
     p_due_date timestamp with time zone DEFAULT NULL,
-    p_status text DEFAULT 'draft'::text,
+    p_status public.task_status DEFAULT 'draft'::public.task_status,
     p_referee_requests jsonb[] DEFAULT NULL
 )
 RETURNS void
@@ -12,11 +12,8 @@ LANGUAGE plpgsql
 SECURITY INVOKER
 AS $$
 DECLARE
-    v_current_status text;
+    v_current_status public.task_status;
     v_tasker_id uuid;
-    v_req jsonb;
-    v_strategy text;
-    v_pref_referee uuid;
 BEGIN
     -- 1. Check Existence, Ownership, and Current Status
     SELECT status, tasker_id INTO v_current_status, v_tasker_id

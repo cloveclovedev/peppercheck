@@ -1,3 +1,10 @@
+-- Enum locally defined as it's tightly coupled to tasks table
+CREATE TYPE public.task_status AS ENUM (
+    'draft',
+    'open',
+    'closed'
+);
+
 -- Table: tasks
 CREATE TABLE IF NOT EXISTS public.tasks (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
@@ -8,7 +15,7 @@ CREATE TABLE IF NOT EXISTS public.tasks (
     due_date timestamp with time zone,
     fee_amount numeric(36,18),
     fee_currency text,
-    status text DEFAULT 'draft'::text NOT NULL,
+    status public.task_status DEFAULT 'draft'::public.task_status NOT NULL,
     created_at timestamp with time zone DEFAULT now(),
     updated_at timestamp with time zone DEFAULT now()
 );
@@ -27,7 +34,7 @@ COMMENT ON COLUMN public.tasks.criteria IS 'Evaluation criteria for the task. NU
 COMMENT ON COLUMN public.tasks.due_date IS 'Due date for task completion. NULL allowed for draft status.';
 COMMENT ON COLUMN public.tasks.fee_amount IS 'Fee amount for the task. NULL allowed for draft status.';
 COMMENT ON COLUMN public.tasks.fee_currency IS 'Currency for fee amount. NULL allowed for draft status, defaults to JPY when published.';
-COMMENT ON COLUMN public.tasks.status IS 'Valid values: draft, open, judging, rejected, completed, closed, self_completed, expired. No constraints during MVP phase.';
+COMMENT ON COLUMN public.tasks.status IS 'Task lifecycle status: draft, open, closed.';
 
 ALTER TABLE ONLY public.tasks
     ADD CONSTRAINT tasks_tasker_id_fkey FOREIGN KEY (tasker_id) REFERENCES public.profiles(id) ON DELETE SET NULL;

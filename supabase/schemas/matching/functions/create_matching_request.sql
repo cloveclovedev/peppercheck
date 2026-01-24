@@ -1,6 +1,6 @@
 CREATE OR REPLACE FUNCTION public.create_matching_request(
     p_task_id uuid,
-    p_matching_strategy text,
+    p_matching_strategy public.matching_strategy,
     p_preferred_referee_id uuid DEFAULT NULL
 ) RETURNS uuid
     LANGUAGE plpgsql
@@ -46,11 +46,11 @@ BEGIN
         p_task_id,
         p_matching_strategy,
         p_preferred_referee_id,
-        'pending'
+        'pending'::public.referee_request_status
     ) RETURNING id INTO v_request_id;
 
     RETURN v_request_id;
 END;
 $$;
 
-ALTER FUNCTION public.create_matching_request(uuid, text, uuid) OWNER TO postgres;
+ALTER FUNCTION public.create_matching_request(uuid, public.matching_strategy, uuid) OWNER TO postgres;

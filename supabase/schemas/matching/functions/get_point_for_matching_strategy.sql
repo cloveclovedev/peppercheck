@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION public.get_point_for_matching_strategy(p_strategy text)
+CREATE OR REPLACE FUNCTION public.get_point_for_matching_strategy(p_strategy public.matching_strategy)
 RETURNS integer
 LANGUAGE plpgsql
 AS $$
@@ -12,4 +12,4 @@ BEGIN
 END;
 $$;
 
-ALTER FUNCTION public.get_point_for_matching_strategy(text) OWNER TO postgres;
+ALTER FUNCTION public.get_point_for_matching_strategy(public.matching_strategy) OWNER TO postgres;

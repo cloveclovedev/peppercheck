@@ -8,13 +8,13 @@ SECURITY DEFINER
 AS $$
 DECLARE
     v_req jsonb;
-    v_strategy text;
+    v_strategy public.matching_strategy;
     v_pref_referee uuid;
 BEGIN
     IF p_requests IS NOT NULL THEN
         FOREACH v_req IN ARRAY p_requests
         LOOP
-            v_strategy := v_req->>'matching_strategy';
+            v_strategy := (v_req->>'matching_strategy')::public.matching_strategy;
             
             IF (v_req->>'preferred_referee_id') IS NOT NULL THEN
                 v_pref_referee := (v_req->>'preferred_referee_id')::uuid;
@@ -36,7 +36,7 @@ BEGIN
                 p_task_id,
                 v_strategy,
                 v_pref_referee,
-                'pending'
+                'pending'::public.referee_request_status
             );
         END LOOP;
     END IF;
