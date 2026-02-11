@@ -38,63 +38,69 @@ class TaskCreationController extends _$TaskCreationController {
   }
 
   void updateTitle(String title) {
-    state.whenData((currentState) {
-      state = AsyncData(
-        currentState.copyWith(
-          request: currentState.request.copyWith(title: title),
-        ),
-      );
-    });
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    state = AsyncData(
+      currentState.copyWith(
+        request: currentState.request.copyWith(title: title),
+      ),
+    );
   }
 
   void updateDescription(String description) {
-    state.whenData((currentState) {
-      state = AsyncData(
-        currentState.copyWith(
-          request: currentState.request.copyWith(description: description),
-        ),
-      );
-    });
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    state = AsyncData(
+      currentState.copyWith(
+        request: currentState.request.copyWith(description: description),
+      ),
+    );
   }
 
   void updateCriteria(String criteria) {
-    state.whenData((currentState) {
-      state = AsyncData(
-        currentState.copyWith(
-          request: currentState.request.copyWith(criteria: criteria),
-        ),
-      );
-    });
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    state = AsyncData(
+      currentState.copyWith(
+        request: currentState.request.copyWith(criteria: criteria),
+      ),
+    );
   }
 
   void updateDueDate(DateTime date) {
-    state.whenData((currentState) {
-      state = AsyncData(
-        currentState.copyWith(
-          request: currentState.request.copyWith(dueDate: date),
-        ),
-      );
-    });
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    state = AsyncData(
+      currentState.copyWith(
+        request: currentState.request.copyWith(dueDate: date),
+      ),
+    );
   }
 
   void updateTaskStatus(String status) {
-    state.whenData((currentState) {
-      state = AsyncData(
-        currentState.copyWith(
-          request: currentState.request.copyWith(taskStatus: status),
-        ),
-      );
-    });
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    state = AsyncData(
+      currentState.copyWith(
+        request: currentState.request.copyWith(taskStatus: status),
+      ),
+    );
   }
 
   void updateMatchingStrategies(List<String> strategies) {
-    state.whenData((currentState) {
-      state = AsyncData(
-        currentState.copyWith(
-          request: currentState.request.copyWith(matchingStrategies: strategies),
-        ),
-      );
-    });
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    state = AsyncData(
+      currentState.copyWith(
+        request: currentState.request.copyWith(matchingStrategies: strategies),
+      ),
+    );
   }
 
   Future<void> createTask() async {
