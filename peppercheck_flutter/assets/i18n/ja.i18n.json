@@ -110,13 +110,13 @@
       "error": {
         "title": "エラー",
         "insufficientPoints": "ポイントが不足しています",
-        "insufficientPointsDetail": "現在の残高: {balance} pt\nロック済み: {locked} pt\n必要なポイント: {required} pt",
+        "insufficientPointsDetail": "現在の残高: $balance pt\nロック済み: $locked pt\n必要なポイント: $required pt",
         "dueDateTooSoon": "期限が近すぎます",
-        "dueDateTooSoonDetail": "タスクの期限は現在時刻から最低 {minHours} 時間後である必要があります",
+        "dueDateTooSoonDetail": "タスクの期限は現在時刻から最低 $minHours 時間後である必要があります",
         "walletNotFound": "ポイントウォレットが見つかりません",
         "walletNotFoundDetail": "ポイントウォレットの初期化に問題が発生しています。サポートにお問い合わせください。",
         "unknown": "エラーが発生しました",
-        "unknownDetail": "{message}",
+        "unknownDetail": "$message",
         "buttonOk": "OK"
       }
     },
