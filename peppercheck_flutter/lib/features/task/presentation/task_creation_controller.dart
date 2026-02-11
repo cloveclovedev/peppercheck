@@ -1,5 +1,7 @@
+import 'package:peppercheck_flutter/app/app_logger.dart';
 import 'package:peppercheck_flutter/features/task/data/task_repository.dart';
 import 'package:peppercheck_flutter/features/task/domain/task.dart';
+import 'package:peppercheck_flutter/features/task/presentation/task_creation_state.dart';
 import 'package:peppercheck_flutter/features/task/domain/task_creation_request.dart';
 import 'package:peppercheck_flutter/features/home/presentation/home_controller.dart';
 import 'package:peppercheck_flutter/features/task/presentation/providers/task_provider.dart';
@@ -13,57 +15,97 @@ class TaskCreationController extends _$TaskCreationController {
   String? _taskId;
 
   @override
-  TaskCreationRequest build(Task? initialTask) {
+  FutureOr<TaskCreationState> build(Task? initialTask) {
     if (initialTask != null) {
       _taskId = initialTask.id;
-      return TaskCreationRequest(
-        title: initialTask.title,
-        description: initialTask.description ?? '',
-        criteria: initialTask.criteria ?? '',
-        dueDate: initialTask.dueDate != null
-            ? DateTime.tryParse(initialTask.dueDate!)
-            : null,
-        taskStatus: initialTask.status,
-        matchingStrategies: initialTask.refereeRequests
-            .map((r) => r.matchingStrategy)
-            .toList(),
+      return TaskCreationState(
+        request: TaskCreationRequest(
+          title: initialTask.title,
+          description: initialTask.description ?? '',
+          criteria: initialTask.criteria ?? '',
+          dueDate: initialTask.dueDate != null
+              ? DateTime.tryParse(initialTask.dueDate!)
+              : null,
+          taskStatus: initialTask.status,
+          matchingStrategies: initialTask.refereeRequests
+              .map((r) => r.matchingStrategy)
+              .toList(),
+        ),
       );
     }
     _taskId = null;
-    return const TaskCreationRequest();
+    return const TaskCreationState(request: TaskCreationRequest());
   }
 
   void updateTitle(String title) {
-    state = state.copyWith(title: title);
+    state.whenData((currentState) {
+      state = AsyncData(
+        currentState.copyWith(
+          request: currentState.request.copyWith(title: title),
+        ),
+      );
+    });
   }
 
   void updateDescription(String description) {
-    state = state.copyWith(description: description);
+    state.whenData((currentState) {
+      state = AsyncData(
+        currentState.copyWith(
+          request: currentState.request.copyWith(description: description),
+        ),
+      );
+    });
   }
 
   void updateCriteria(String criteria) {
-    state = state.copyWith(criteria: criteria);
+    state.whenData((currentState) {
+      state = AsyncData(
+        currentState.copyWith(
+          request: currentState.request.copyWith(criteria: criteria),
+        ),
+      );
+    });
   }
 
   void updateDueDate(DateTime date) {
-    state = state.copyWith(dueDate: date);
+    state.whenData((currentState) {
+      state = AsyncData(
+        currentState.copyWith(
+          request: currentState.request.copyWith(dueDate: date),
+        ),
+      );
+    });
   }
 
   void updateTaskStatus(String status) {
-    state = state.copyWith(taskStatus: status);
+    state.whenData((currentState) {
+      state = AsyncData(
+        currentState.copyWith(
+          request: currentState.request.copyWith(taskStatus: status),
+        ),
+      );
+    });
   }
 
   void updateMatchingStrategies(List<String> strategies) {
-    state = state.copyWith(matchingStrategies: strategies);
+    state.whenData((currentState) {
+      state = AsyncData(
+        currentState.copyWith(
+          request: currentState.request.copyWith(matchingStrategies: strategies),
+        ),
+      );
+    });
   }
 
-  Future<bool> createTask() async {
-    try {
-      // Clear any previous error
-      state = state.copyWith(errorMessage: null);
+  Future<void> createTask() async {
+    final currentState = state.value;
+    if (currentState == null) return;
 
+    state = const AsyncLoading();
+
+    state = await AsyncValue.guard(() async {
       final taskRepository = ref.read(taskRepositoryProvider);
-      final request = state;
+      final request = currentState.request;
 
       if (_taskId != null) {
         await taskRepository.updateTask(_taskId!, request);
@@ -75,22 +117,32 @@ class TaskCreationController extends _$TaskCreationController {
       // Refresh the home screen lists
       ref.invalidate(activeUserTasksProvider);
 
-      return true; // Success
-    } catch (e) {
-      // Store error in state
-      state = state.copyWith(errorMessage: e.toString());
-      return false; // Failure
+      return currentState;
+    });
+
+    if (state.hasError) {
+      ref.read(loggerProvider).e(
+        'Task creation failed',
+        error: state.error,
+        stackTrace: state.stackTrace,
+      );
     }
   }
 
   bool get isFormValid {
-    final current = state;
-    if (current.taskStatus == 'draft') {
-      return current.title.isNotEmpty;
-    }
-    return current.title.isNotEmpty &&
-        current.criteria.isNotEmpty &&
-        current.dueDate != null &&
-        current.matchingStrategies.isNotEmpty;
+    return state.when(
+      data: (currentState) {
+        final request = currentState.request;
+        if (request.taskStatus == 'draft') {
+          return request.title.isNotEmpty;
+        }
+        return request.title.isNotEmpty &&
+            request.criteria.isNotEmpty &&
+            request.dueDate != null &&
+            request.matchingStrategies.isNotEmpty;
+      },
+      loading: () => false,
+      error: (_, __) => false, // ignore: unnecessary_underscores
+    );
   }
 }

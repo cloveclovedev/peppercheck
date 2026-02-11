@@ -29,7 +29,7 @@ class _TaskCreationScreenState extends ConsumerState<TaskCreationScreen> {
     final task = extra is Task ? extra : null;
     final isEditing = task != null;
 
-    final state = ref.watch(taskCreationControllerProvider(task));
+    final asyncState = ref.watch(taskCreationControllerProvider(task));
     final controller = ref.read(taskCreationControllerProvider(task).notifier);
 
     // Determine texts
@@ -46,30 +46,36 @@ class _TaskCreationScreenState extends ConsumerState<TaskCreationScreen> {
         title: appBarTitle,
         slivers: [
           SliverToBoxAdapter(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TaskFormSection(initialData: state, task: task),
-                if (state.taskStatus == 'open') ...[
-                  const SizedBox(height: AppSizes.sectionGap),
-                  MatchingStrategySelectionSection(
-                    selectedStrategies: state.matchingStrategies,
-                    onStrategiesChange: controller.updateMatchingStrategies,
+            child: asyncState.when(
+              data: (state) => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TaskFormSection(initialData: state.request, task: task),
+                  if (state.request.taskStatus == 'open') ...[
+                    const SizedBox(height: AppSizes.sectionGap),
+                    MatchingStrategySelectionSection(
+                      selectedStrategies: state.request.matchingStrategies,
+                      onStrategiesChange: controller.updateMatchingStrategies,
+                    ),
+                  ],
+                  const SizedBox(height: AppSizes.buttonGap),
+                  PrimaryActionButton(
+                    text: buttonText,
+                    onPressed: controller.isFormValid
+                        ? () async {
+                            await controller.createTask();
+                            if (context.mounted && !asyncState.hasError) {
+                              Navigator.of(context).pop();
+                            }
+                          }
+                        : null,
                   ),
                 ],
-                const SizedBox(height: AppSizes.buttonGap),
-                PrimaryActionButton(
-                  text: buttonText,
-                  onPressed: controller.isFormValid
-                      ? () async {
-                          await controller.createTask();
-                          if (context.mounted) {
-                            Navigator.of(context).pop();
-                          }
-                        }
-                      : null,
-                ),
-              ],
+              ),
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, stack) => Center(
+                child: Text('Error: $error'),
+              ),
             ),
           ),
         ],
