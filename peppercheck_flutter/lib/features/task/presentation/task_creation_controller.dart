@@ -57,19 +57,30 @@ class TaskCreationController extends _$TaskCreationController {
     state = state.copyWith(matchingStrategies: strategies);
   }
 
-  Future<void> createTask() async {
-    final taskRepository = ref.read(taskRepositoryProvider);
-    final request = state;
+  Future<bool> createTask() async {
+    try {
+      // Clear any previous error
+      state = state.copyWith(errorMessage: null);
 
-    if (_taskId != null) {
-      await taskRepository.updateTask(_taskId!, request);
-      ref.invalidate(taskProvider(_taskId!));
-    } else {
-      await taskRepository.createTask(request);
+      final taskRepository = ref.read(taskRepositoryProvider);
+      final request = state;
+
+      if (_taskId != null) {
+        await taskRepository.updateTask(_taskId!, request);
+        ref.invalidate(taskProvider(_taskId!));
+      } else {
+        await taskRepository.createTask(request);
+      }
+
+      // Refresh the home screen lists
+      ref.invalidate(activeUserTasksProvider);
+
+      return true; // Success
+    } catch (e) {
+      // Store error in state
+      state = state.copyWith(errorMessage: e.toString());
+      return false; // Failure
     }
-
-    // Refresh the home screen lists
-    ref.invalidate(activeUserTasksProvider);
   }
 
   bool get isFormValid {

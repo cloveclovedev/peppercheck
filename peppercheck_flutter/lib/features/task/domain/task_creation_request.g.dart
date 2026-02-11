@@ -20,6 +20,7 @@ _TaskCreationRequest _$TaskCreationRequestFromJson(Map<String, dynamic> json) =>
               ?.map((e) => e as String)
               .toList() ??
           const [],
+      errorMessage: json['errorMessage'] as String?,
     );
 
 Map<String, dynamic> _$TaskCreationRequestToJson(
@@ -31,4 +32,5 @@ Map<String, dynamic> _$TaskCreationRequestToJson(
   'dueDate': instance.dueDate?.toIso8601String(),
   'taskStatus': instance.taskStatus,
   'matchingStrategies': instance.matchingStrategies,
+  'errorMessage': instance.errorMessage,
 };
