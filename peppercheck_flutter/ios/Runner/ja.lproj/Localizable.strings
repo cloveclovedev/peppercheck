@@ -1,0 +1,17 @@
+/* 
+  Localizable.strings
+  Runner
+
+  Created via Antigravity
+*/
+
+"notification_request_matched_title" = "マッチング成立！";
+"notification_request_matched_body" = "あなたのタスク「%@」のレフリーが見つかりました。";
+"notification_referee_assigned_title" = "新しい担当タスク";
+"notification_referee_assigned_body" = "タスク「%@」の担当レフリーに選ばれました。";
+"notification_request_accepted_title" = "リクエスト承認";
+"notification_request_accepted_body" = "リクエストが承認されました。";
+"notification_evidence_submitted_title" = "エビデンス提出";
+"notification_evidence_submitted_body" = "%@さんが新しいエビデンスを提出しました。";
+"notification_evidence_updated_title" = "エビデンス更新";
+"notification_evidence_updated_body" = "%@さんがエビデンスを更新しました。";
