@@ -1,0 +1,17 @@
+/* 
+  Localizable.strings
+  Runner
+
+  Created via Antigravity
+*/
+
+"notification_request_matched_title" = "Match Found!";
+"notification_request_matched_body" = "A referee has been found for your task \"%@\".";
+"notification_referee_assigned_title" = "New Assignment";
+"notification_referee_assigned_body" = "You have been assigned to judge task \"%@\".";
+"notification_request_accepted_title" = "Request Accepted";
+"notification_request_accepted_body" = "Your request has been accepted.";
+"notification_evidence_submitted_title" = "Evidence Submitted";
+"notification_evidence_submitted_body" = "%@ has submitted new evidence.";
+"notification_evidence_updated_title" = "Evidence Updated";
+"notification_evidence_updated_body" = "%@ has updated the evidence.";

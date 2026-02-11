@@ -6,4 +6,8 @@
     <string name="notification_referee_assigned_body">You have been assigned to judge task "%1$s".</string>
     <string name="notification_request_accepted_title">Request Accepted</string>
     <string name="notification_request_accepted_body">Your request has been accepted.</string>
+    <string name="notification_evidence_submitted_title">Evidence Submitted</string>
+    <string name="notification_evidence_submitted_body">%1$s has submitted new evidence.</string>
+    <string name="notification_evidence_updated_title">Evidence Updated</string>
+    <string name="notification_evidence_updated_body">%1$s has updated the evidence.</string>
 </resources>

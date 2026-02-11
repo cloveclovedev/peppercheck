@@ -6,4 +6,8 @@
     <string name="notification_referee_assigned_body">タスク「%1$s」の担当レフリーに選ばれました。</string>
     <string name="notification_request_accepted_title">リクエスト承認</string>
     <string name="notification_request_accepted_body">リクエストが承認されました。</string>
+    <string name="notification_evidence_submitted_title">エビデンス提出</string>
+    <string name="notification_evidence_submitted_body">%1$sさんが新しいエビデンスを提出しました。</string>
+    <string name="notification_evidence_updated_title">エビデンス更新</string>
+    <string name="notification_evidence_updated_body">%1$sさんがエビデンスを更新しました。</string>
 </resources>

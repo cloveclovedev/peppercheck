@@ -168,6 +168,7 @@ schema_paths = [
   "./schemas/evidence/triggers/on_task_evidences_insert_validate_due_date.sql",
   "./schemas/evidence/triggers/on_task_evidences_update_validate_due_date.sql",
   "./schemas/evidence/triggers/on_task_evidences_update_set_updated_at.sql",
+  "./schemas/evidence/triggers/on_task_evidences_upserted_notify_referee.sql",
 
   # Matching
   "./schemas/matching/triggers/on_task_referee_requests_update_set_updated_at.sql",
