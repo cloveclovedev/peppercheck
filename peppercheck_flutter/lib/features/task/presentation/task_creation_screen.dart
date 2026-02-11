@@ -11,6 +11,8 @@ import 'package:peppercheck_flutter/features/task/presentation/task_creation_con
 import 'package:peppercheck_flutter/features/task/presentation/widgets/task_creation/task_form_section.dart';
 import 'package:peppercheck_flutter/features/task/presentation/widgets/task_creation/matching_strategy_selection_section.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
+import 'package:peppercheck_flutter/features/task/domain/task_creation_error.dart';
+import 'package:peppercheck_flutter/features/task/presentation/widgets/task_creation/task_creation_error_dialog.dart';
 
 class TaskCreationScreen extends ConsumerStatefulWidget {
   const TaskCreationScreen({super.key});
@@ -64,8 +66,22 @@ class _TaskCreationScreenState extends ConsumerState<TaskCreationScreen> {
                     onPressed: controller.isFormValid
                         ? () async {
                             await controller.createTask();
-                            if (context.mounted && !asyncState.hasError) {
-                              Navigator.of(context).pop();
+                            if (context.mounted) {
+                              final currentState = ref.read(taskCreationControllerProvider(task));
+                              if (!currentState.hasError) {
+                                // Success: close the screen
+                                Navigator.of(context).pop();
+                              } else {
+                                // Error: show dialog
+                                final error = currentState.error;
+                                if (error != null) {
+                                  final parsedError = TaskCreationError.parse(error.toString());
+                                  await showDialog(
+                                    context: context,
+                                    builder: (context) => TaskCreationErrorDialog(error: parsedError),
+                                  );
+                                }
+                              }
                             }
                           }
                         : null,
