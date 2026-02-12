@@ -8,11 +8,9 @@ import 'package:peppercheck_flutter/common_widgets/app_background.dart';
 import 'package:peppercheck_flutter/common_widgets/app_scaffold.dart';
 import 'package:peppercheck_flutter/common_widgets/primary_action_button.dart';
 import 'package:peppercheck_flutter/features/task/presentation/task_creation_controller.dart';
-import 'package:peppercheck_flutter/features/task/presentation/task_creation_state.dart';
 import 'package:peppercheck_flutter/features/task/presentation/widgets/task_creation/task_form_section.dart';
 import 'package:peppercheck_flutter/features/task/presentation/widgets/task_creation/matching_strategy_selection_section.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
-import 'package:peppercheck_flutter/features/task/domain/task_creation_error.dart';
 import 'package:peppercheck_flutter/features/task/presentation/widgets/task_creation/task_creation_error_dialog.dart';
 
 class TaskCreationScreen extends ConsumerStatefulWidget {

@@ -5,7 +5,7 @@ import 'package:peppercheck_flutter/features/task/domain/task_creation_error.dar
 part 'task_creation_state.freezed.dart';
 
 @freezed
-class TaskCreationState with _$TaskCreationState {
+abstract class TaskCreationState with _$TaskCreationState {
   const factory TaskCreationState({
     required TaskCreationRequest request,
     TaskCreationError? creationError,
