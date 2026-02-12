@@ -31,10 +31,14 @@ class TaskCreationController extends _$TaskCreationController {
               .map((r) => r.matchingStrategy)
               .toList(),
         ),
+        creationError: null,
       );
     }
     _taskId = null;
-    return const TaskCreationState(request: TaskCreationRequest());
+    return const TaskCreationState(
+      request: TaskCreationRequest(),
+      creationError: null,
+    );
   }
 
   void updateTitle(String title) {
@@ -107,9 +111,11 @@ class TaskCreationController extends _$TaskCreationController {
     final currentState = state.value;
     if (currentState == null) return;
 
+    // Clear any previous creation error
+    state = AsyncData(currentState.copyWith(creationError: null));
     state = const AsyncLoading();
 
-    state = await AsyncValue.guard(() async {
+    try {
       final taskRepository = ref.read(taskRepositoryProvider);
       final request = currentState.request;
 
@@ -123,15 +129,25 @@ class TaskCreationController extends _$TaskCreationController {
       // Refresh the home screen lists
       ref.invalidate(activeUserTasksProvider);
 
-      return currentState;
-    });
-
-    if (state.hasError) {
+      // Success - return to data state with no error
+      state = AsyncData(currentState.copyWith(creationError: null));
+    } catch (error, stackTrace) {
       ref.read(loggerProvider).e(
         'Task creation failed',
-        error: state.error,
-        stackTrace: state.stackTrace,
+        error: error,
+        stackTrace: stackTrace,
       );
+
+      // Parse and store creation error, but keep state as AsyncData
+      final creationError = TaskCreationError.parse(error.toString());
+      state = AsyncData(currentState.copyWith(creationError: creationError));
+    }
+  }
+
+  void clearCreationError() {
+    final currentState = state.value;
+    if (currentState?.creationError != null) {
+      state = AsyncData(currentState!.copyWith(creationError: null));
     }
   }
 
