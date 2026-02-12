@@ -130,6 +130,7 @@ schema_paths = [
   "./schemas/judgement/functions/handle_evidence_timeout_confirmation.sql",
   "./schemas/judgement/functions/handle_judgement_confirmation.sql",
   "./schemas/judgement/functions/reopen_judgement.sql",
+  "./schemas/judgement/functions/judge_evidence.sql",
   
   # existing wildcards (checking required)
   "./schemas/auth/functions/handle_new_user.sql",
@@ -160,6 +161,7 @@ schema_paths = [
   "./schemas/judgement/triggers/on_judgements_confirmed_close_task.sql",
   "./schemas/judgement/triggers/on_judgements_evidence_timeout_close_referee_request.sql",
   "./schemas/judgement/triggers/on_judgement_threads_update_set_updated_at.sql",
+  "./schemas/judgement/triggers/on_judgements_status_changed.sql",
 
   # Task
   "./schemas/task/triggers/on_tasks_update_set_updated_at.sql",
@@ -487,7 +489,7 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 
 [functions.generate-upload-url]
 enabled = true
-verify_jwt = true
+verify_jwt = false
 import_map = "./functions/generate-upload-url/deno.json"
 # Uncomment to specify a custom file path to the entrypoint.
 # Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
