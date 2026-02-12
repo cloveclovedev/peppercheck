@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$TaskCreationState {
 
- TaskCreationRequest get request; bool get isSubmitting;
+ TaskCreationRequest get request; TaskCreationError? get creationError;
 /// Create a copy of TaskCreationState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $TaskCreationStateCopyWith<TaskCreationState> get copyWith => _$TaskCreationStat
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is TaskCreationState&&(identical(other.request, request) || other.request == request)&&(identical(other.isSubmitting, isSubmitting) || other.isSubmitting == isSubmitting));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is TaskCreationState&&(identical(other.request, request) || other.request == request)&&(identical(other.creationError, creationError) || other.creationError == creationError));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,request,isSubmitting);
+int get hashCode => Object.hash(runtimeType,request,creationError);
 
 @override
 String toString() {
-  return 'TaskCreationState(request: $request, isSubmitting: $isSubmitting)';
+  return 'TaskCreationState(request: $request, creationError: $creationError)';
 }
 
 
@@ -45,11 +45,11 @@ abstract mixin class $TaskCreationStateCopyWith<$Res>  {
   factory $TaskCreationStateCopyWith(TaskCreationState value, $Res Function(TaskCreationState) _then) = _$TaskCreationStateCopyWithImpl;
 @useResult
 $Res call({
- TaskCreationRequest request, bool isSubmitting
+ TaskCreationRequest request, TaskCreationError? creationError
 });
 
 
-$TaskCreationRequestCopyWith<$Res> get request;
+$TaskCreationRequestCopyWith<$Res> get request;$TaskCreationErrorCopyWith<$Res>? get creationError;
 
 }
 /// @nodoc
@@ -62,11 +62,11 @@ class _$TaskCreationStateCopyWithImpl<$Res>
 
 /// Create a copy of TaskCreationState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? request = null,Object? isSubmitting = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? request = null,Object? creationError = freezed,}) {
   return _then(_self.copyWith(
 request: null == request ? _self.request : request // ignore: cast_nullable_to_non_nullable
-as TaskCreationRequest,isSubmitting: null == isSubmitting ? _self.isSubmitting : isSubmitting // ignore: cast_nullable_to_non_nullable
-as bool,
+as TaskCreationRequest,creationError: freezed == creationError ? _self.creationError : creationError // ignore: cast_nullable_to_non_nullable
+as TaskCreationError?,
   ));
 }
 /// Create a copy of TaskCreationState
@@ -77,6 +77,18 @@ $TaskCreationRequestCopyWith<$Res> get request {
   
   return $TaskCreationRequestCopyWith<$Res>(_self.request, (value) {
     return _then(_self.copyWith(request: value));
+  });
+}/// Create a copy of TaskCreationState
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$TaskCreationErrorCopyWith<$Res>? get creationError {
+    if (_self.creationError == null) {
+    return null;
+  }
+
+  return $TaskCreationErrorCopyWith<$Res>(_self.creationError!, (value) {
+    return _then(_self.copyWith(creationError: value));
   });
 }
 }
@@ -160,10 +172,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( TaskCreationRequest request,  bool isSubmitting)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( TaskCreationRequest request,  TaskCreationError? creationError)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _TaskCreationState() when $default != null:
-return $default(_that.request,_that.isSubmitting);case _:
+return $default(_that.request,_that.creationError);case _:
   return orElse();
 
 }
@@ -181,10 +193,10 @@ return $default(_that.request,_that.isSubmitting);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( TaskCreationRequest request,  bool isSubmitting)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( TaskCreationRequest request,  TaskCreationError? creationError)  $default,) {final _that = this;
 switch (_that) {
 case _TaskCreationState():
-return $default(_that.request,_that.isSubmitting);case _:
+return $default(_that.request,_that.creationError);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -201,10 +213,10 @@ return $default(_that.request,_that.isSubmitting);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( TaskCreationRequest request,  bool isSubmitting)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( TaskCreationRequest request,  TaskCreationError? creationError)?  $default,) {final _that = this;
 switch (_that) {
 case _TaskCreationState() when $default != null:
-return $default(_that.request,_that.isSubmitting);case _:
+return $default(_that.request,_that.creationError);case _:
   return null;
 
 }
@@ -216,11 +228,11 @@ return $default(_that.request,_that.isSubmitting);case _:
 
 
 class _TaskCreationState implements TaskCreationState {
-  const _TaskCreationState({required this.request, this.isSubmitting = false});
+  const _TaskCreationState({required this.request, this.creationError});
   
 
 @override final  TaskCreationRequest request;
-@override@JsonKey() final  bool isSubmitting;
+@override final  TaskCreationError? creationError;
 
 /// Create a copy of TaskCreationState
 /// with the given fields replaced by the non-null parameter values.
@@ -232,16 +244,16 @@ _$TaskCreationStateCopyWith<_TaskCreationState> get copyWith => __$TaskCreationS
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _TaskCreationState&&(identical(other.request, request) || other.request == request)&&(identical(other.isSubmitting, isSubmitting) || other.isSubmitting == isSubmitting));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _TaskCreationState&&(identical(other.request, request) || other.request == request)&&(identical(other.creationError, creationError) || other.creationError == creationError));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,request,isSubmitting);
+int get hashCode => Object.hash(runtimeType,request,creationError);
 
 @override
 String toString() {
-  return 'TaskCreationState(request: $request, isSubmitting: $isSubmitting)';
+  return 'TaskCreationState(request: $request, creationError: $creationError)';
 }
 
 
@@ -252,11 +264,11 @@ abstract mixin class _$TaskCreationStateCopyWith<$Res> implements $TaskCreationS
   factory _$TaskCreationStateCopyWith(_TaskCreationState value, $Res Function(_TaskCreationState) _then) = __$TaskCreationStateCopyWithImpl;
 @override @useResult
 $Res call({
- TaskCreationRequest request, bool isSubmitting
+ TaskCreationRequest request, TaskCreationError? creationError
 });
 
 
-@override $TaskCreationRequestCopyWith<$Res> get request;
+@override $TaskCreationRequestCopyWith<$Res> get request;@override $TaskCreationErrorCopyWith<$Res>? get creationError;
 
 }
 /// @nodoc
@@ -269,11 +281,11 @@ class __$TaskCreationStateCopyWithImpl<$Res>
 
 /// Create a copy of TaskCreationState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? request = null,Object? isSubmitting = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? request = null,Object? creationError = freezed,}) {
   return _then(_TaskCreationState(
 request: null == request ? _self.request : request // ignore: cast_nullable_to_non_nullable
-as TaskCreationRequest,isSubmitting: null == isSubmitting ? _self.isSubmitting : isSubmitting // ignore: cast_nullable_to_non_nullable
-as bool,
+as TaskCreationRequest,creationError: freezed == creationError ? _self.creationError : creationError // ignore: cast_nullable_to_non_nullable
+as TaskCreationError?,
   ));
 }
 
@@ -285,6 +297,18 @@ $TaskCreationRequestCopyWith<$Res> get request {
   
   return $TaskCreationRequestCopyWith<$Res>(_self.request, (value) {
     return _then(_self.copyWith(request: value));
+  });
+}/// Create a copy of TaskCreationState
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$TaskCreationErrorCopyWith<$Res>? get creationError {
+    if (_self.creationError == null) {
+    return null;
+  }
+
+  return $TaskCreationErrorCopyWith<$Res>(_self.creationError!, (value) {
+    return _then(_self.copyWith(creationError: value));
   });
 }
 }
