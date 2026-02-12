@@ -1,5 +1,17 @@
 # Task Creation Error Handling Implementation Plan
 
+## Update (2026-02-11)
+
+**Refactoring completed:** Error state separation implemented to fix UX issue where form disappeared during error dialogs.
+
+- Created separate plan: `docs/plans/2026-02-11-refactor-error-state-separation.md`
+- **Key change:** Separated initialization errors (AsyncValue.error) from creation errors (TaskCreationState.creationError field)
+- **Result:** Error dialogs now show without affecting form rendering
+
+See refactoring plan for implementation details.
+
+---
+
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
 **Goal:** Add proper error handling to task creation flow, displaying user-friendly error dialogs when creation fails.
