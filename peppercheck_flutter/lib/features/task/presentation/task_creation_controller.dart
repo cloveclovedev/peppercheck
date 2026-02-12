@@ -111,8 +111,6 @@ class TaskCreationController extends _$TaskCreationController {
     final currentState = state.value;
     if (currentState == null) return;
 
-    // Clear any previous creation error
-    state = AsyncData(currentState.copyWith(creationError: null));
     state = const AsyncLoading();
 
     try {
@@ -129,7 +127,7 @@ class TaskCreationController extends _$TaskCreationController {
       // Refresh the home screen lists
       ref.invalidate(activeUserTasksProvider);
 
-      // Success - return to data state with no error
+      // Success - clear any error and return to data state
       state = AsyncData(currentState.copyWith(creationError: null));
     } catch (error, stackTrace) {
       ref.read(loggerProvider).e(
