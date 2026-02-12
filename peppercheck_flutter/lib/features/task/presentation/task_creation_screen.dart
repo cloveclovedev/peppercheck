@@ -8,6 +8,7 @@ import 'package:peppercheck_flutter/common_widgets/app_background.dart';
 import 'package:peppercheck_flutter/common_widgets/app_scaffold.dart';
 import 'package:peppercheck_flutter/common_widgets/primary_action_button.dart';
 import 'package:peppercheck_flutter/features/task/presentation/task_creation_controller.dart';
+import 'package:peppercheck_flutter/features/task/presentation/task_creation_state.dart';
 import 'package:peppercheck_flutter/features/task/presentation/widgets/task_creation/task_form_section.dart';
 import 'package:peppercheck_flutter/features/task/presentation/widgets/task_creation/matching_strategy_selection_section.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
@@ -33,6 +34,22 @@ class _TaskCreationScreenState extends ConsumerState<TaskCreationScreen> {
 
     final asyncState = ref.watch(taskCreationControllerProvider(task));
     final controller = ref.read(taskCreationControllerProvider(task).notifier);
+
+    // Listen for creation errors and show dialog
+    ref.listen(
+      taskCreationControllerProvider(task).select((state) => state.value?.creationError),
+      (previous, next) {
+        if (next != null) {
+          showDialog(
+            context: context,
+            builder: (context) => TaskCreationErrorDialog(error: next),
+          ).then((_) {
+            // Clear error after dialog is dismissed
+            controller.clearCreationError();
+          });
+        }
+      },
+    );
 
     // Determine texts
     final appBarTitle = isEditing
@@ -68,20 +85,11 @@ class _TaskCreationScreenState extends ConsumerState<TaskCreationScreen> {
                             await controller.createTask();
                             if (context.mounted) {
                               final currentState = ref.read(taskCreationControllerProvider(task));
-                              if (!currentState.hasError) {
-                                // Success: close the screen
+                              // Success check: if no creation error, close screen
+                              if (currentState.value?.creationError == null) {
                                 Navigator.of(context).pop();
-                              } else {
-                                // Error: show dialog
-                                final error = currentState.error;
-                                if (error != null) {
-                                  final parsedError = TaskCreationError.parse(error.toString());
-                                  await showDialog(
-                                    context: context,
-                                    builder: (context) => TaskCreationErrorDialog(error: parsedError),
-                                  );
-                                }
                               }
+                              // Error dialog is handled by ref.listen
                             }
                           }
                         : null,
@@ -90,7 +98,9 @@ class _TaskCreationScreenState extends ConsumerState<TaskCreationScreen> {
               ),
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (error, stack) => Center(
-                child: Text('Error: $error'),
+                // This error case is for initialization errors only
+                // Creation errors are handled via ref.listen and stored in state.creationError
+                child: Text('初期化エラーが発生しました'),
               ),
             ),
           ),
