@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:peppercheck_flutter/features/task/presentation/task_creation_controller.dart';
 
 void main() {
-  test('TaskCreationController validation logic', () {
+  test('TaskCreationController validation logic', () async {
     final container = ProviderContainer();
     addTearDown(container.dispose);
 
@@ -13,8 +13,11 @@ void main() {
       taskCreationControllerProvider(null).notifier,
     );
 
+    // Wait for initial state to load
+    await container.read(taskCreationControllerProvider(null).future);
+
     // 1. Initial Draft State (Empty) -> Invalid
-    expect(controller.state.taskStatus, 'draft');
+    expect(controller.state.value!.request.taskStatus, 'draft');
     expect(controller.isFormValid, false);
 
     // 2. Draft with Title -> Valid

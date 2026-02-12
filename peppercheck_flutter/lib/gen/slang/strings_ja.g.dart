@@ -442,6 +442,7 @@ class TranslationsTaskCreationJa {
 	String get buttonUpdate => '更新';
 
 	late final TranslationsTaskCreationStrategyJa strategy = TranslationsTaskCreationStrategyJa.internal(_root);
+	late final TranslationsTaskCreationErrorJa error = TranslationsTaskCreationErrorJa.internal(_root);
 }
 
 // Path: task.evidence
@@ -520,6 +521,45 @@ class TranslationsTaskCreationStrategyJa {
 
 	/// ja: 'スタンダード'
 	String get standard => 'スタンダード';
+}
+
+// Path: task.creation.error
+class TranslationsTaskCreationErrorJa {
+	TranslationsTaskCreationErrorJa.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// ja: 'エラー'
+	String get title => 'エラー';
+
+	/// ja: 'ポイントが不足しています'
+	String get insufficientPoints => 'ポイントが不足しています';
+
+	/// ja: '現在の残高: $balance pt ロック済み: $locked pt 必要なポイント: $required pt'
+	String insufficientPointsDetail({required Object balance, required Object locked, required Object required}) => '現在の残高: ${balance} pt\nロック済み: ${locked} pt\n必要なポイント: ${required} pt';
+
+	/// ja: '期限が近すぎます'
+	String get dueDateTooSoon => '期限が近すぎます';
+
+	/// ja: 'タスクの期限は現在時刻から最低 $minHours 時間後である必要があります'
+	String dueDateTooSoonDetail({required Object minHours}) => 'タスクの期限は現在時刻から最低 ${minHours} 時間後である必要があります';
+
+	/// ja: 'ポイントウォレットが見つかりません'
+	String get walletNotFound => 'ポイントウォレットが見つかりません';
+
+	/// ja: 'ポイントウォレットの初期化に問題が発生しています。サポートにお問い合わせください。'
+	String get walletNotFoundDetail => 'ポイントウォレットの初期化に問題が発生しています。サポートにお問い合わせください。';
+
+	/// ja: 'エラーが発生しました'
+	String get unknown => 'エラーが発生しました';
+
+	/// ja: '$message'
+	String unknownDetail({required Object message}) => '${message}';
+
+	/// ja: 'OK'
+	String get buttonOk => 'OK';
 }
 
 /// The flat map containing all translations for locale <ja>.
@@ -612,6 +652,16 @@ extension on Translations {
 			'task.creation.buttonCreate' => '作成',
 			'task.creation.buttonUpdate' => '更新',
 			'task.creation.strategy.standard' => 'スタンダード',
+			'task.creation.error.title' => 'エラー',
+			'task.creation.error.insufficientPoints' => 'ポイントが不足しています',
+			'task.creation.error.insufficientPointsDetail' => ({required Object balance, required Object locked, required Object required}) => '現在の残高: ${balance} pt\nロック済み: ${locked} pt\n必要なポイント: ${required} pt',
+			'task.creation.error.dueDateTooSoon' => '期限が近すぎます',
+			'task.creation.error.dueDateTooSoonDetail' => ({required Object minHours}) => 'タスクの期限は現在時刻から最低 ${minHours} 時間後である必要があります',
+			'task.creation.error.walletNotFound' => 'ポイントウォレットが見つかりません',
+			'task.creation.error.walletNotFoundDetail' => 'ポイントウォレットの初期化に問題が発生しています。サポートにお問い合わせください。',
+			'task.creation.error.unknown' => 'エラーが発生しました',
+			'task.creation.error.unknownDetail' => ({required Object message}) => '${message}',
+			'task.creation.error.buttonOk' => 'OK',
 			'task.evidence.title' => 'エビデンス',
 			'task.evidence.submit' => 'エビデンスを提出',
 			'task.evidence.submitted' => '提出済みエビデンス',

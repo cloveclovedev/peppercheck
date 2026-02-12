@@ -11,6 +11,7 @@ import 'package:peppercheck_flutter/features/task/presentation/task_creation_con
 import 'package:peppercheck_flutter/features/task/presentation/widgets/task_creation/task_form_section.dart';
 import 'package:peppercheck_flutter/features/task/presentation/widgets/task_creation/matching_strategy_selection_section.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
+import 'package:peppercheck_flutter/features/task/presentation/widgets/task_creation/task_creation_error_dialog.dart';
 
 class TaskCreationScreen extends ConsumerStatefulWidget {
   const TaskCreationScreen({super.key});
@@ -29,8 +30,24 @@ class _TaskCreationScreenState extends ConsumerState<TaskCreationScreen> {
     final task = extra is Task ? extra : null;
     final isEditing = task != null;
 
-    final state = ref.watch(taskCreationControllerProvider(task));
+    final asyncState = ref.watch(taskCreationControllerProvider(task));
     final controller = ref.read(taskCreationControllerProvider(task).notifier);
+
+    // Listen for creation errors and show dialog
+    ref.listen(
+      taskCreationControllerProvider(task).select((state) => state.value?.creationError),
+      (previous, next) {
+        if (next != null) {
+          showDialog(
+            context: context,
+            builder: (context) => TaskCreationErrorDialog(error: next),
+          ).then((_) {
+            // Clear error after dialog is dismissed
+            controller.clearCreationError();
+          });
+        }
+      },
+    );
 
     // Determine texts
     final appBarTitle = isEditing
@@ -46,30 +63,43 @@ class _TaskCreationScreenState extends ConsumerState<TaskCreationScreen> {
         title: appBarTitle,
         slivers: [
           SliverToBoxAdapter(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TaskFormSection(initialData: state, task: task),
-                if (state.taskStatus == 'open') ...[
-                  const SizedBox(height: AppSizes.sectionGap),
-                  MatchingStrategySelectionSection(
-                    selectedStrategies: state.matchingStrategies,
-                    onStrategiesChange: controller.updateMatchingStrategies,
+            child: asyncState.when(
+              data: (state) => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TaskFormSection(initialData: state.request, task: task),
+                  if (state.request.taskStatus == 'open') ...[
+                    const SizedBox(height: AppSizes.sectionGap),
+                    MatchingStrategySelectionSection(
+                      selectedStrategies: state.request.matchingStrategies,
+                      onStrategiesChange: controller.updateMatchingStrategies,
+                    ),
+                  ],
+                  const SizedBox(height: AppSizes.buttonGap),
+                  PrimaryActionButton(
+                    text: buttonText,
+                    onPressed: controller.isFormValid
+                        ? () async {
+                            await controller.createTask();
+                            if (context.mounted) {
+                              final currentState = ref.read(taskCreationControllerProvider(task));
+                              // Success check: if no creation error, close screen
+                              if (currentState.value?.creationError == null) {
+                                Navigator.of(context).pop();
+                              }
+                              // Error dialog is handled by ref.listen
+                            }
+                          }
+                        : null,
                   ),
                 ],
-                const SizedBox(height: AppSizes.buttonGap),
-                PrimaryActionButton(
-                  text: buttonText,
-                  onPressed: controller.isFormValid
-                      ? () async {
-                          await controller.createTask();
-                          if (context.mounted) {
-                            Navigator.of(context).pop();
-                          }
-                        }
-                      : null,
-                ),
-              ],
+              ),
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, stack) => Center(
+                // This error case is for initialization errors only
+                // Creation errors are handled via ref.listen and stored in state.creationError
+                child: Text('初期化エラーが発生しました'),
+              ),
             ),
           ),
         ],

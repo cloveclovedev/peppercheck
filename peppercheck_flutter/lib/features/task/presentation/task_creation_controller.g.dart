@@ -13,7 +13,7 @@ part of 'task_creation_controller.dart';
 const taskCreationControllerProvider = TaskCreationControllerFamily._();
 
 final class TaskCreationControllerProvider
-    extends $NotifierProvider<TaskCreationController, TaskCreationRequest> {
+    extends $AsyncNotifierProvider<TaskCreationController, TaskCreationState> {
   const TaskCreationControllerProvider._({
     required TaskCreationControllerFamily super.from,
     required Task? super.argument,
@@ -39,14 +39,6 @@ final class TaskCreationControllerProvider
   @override
   TaskCreationController create() => TaskCreationController();
 
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(TaskCreationRequest value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<TaskCreationRequest>(value),
-    );
-  }
-
   @override
   bool operator ==(Object other) {
     return other is TaskCreationControllerProvider &&
@@ -60,15 +52,15 @@ final class TaskCreationControllerProvider
 }
 
 String _$taskCreationControllerHash() =>
-    r'48745a77e8c83a94f376b729be769359253d63c4';
+    r'97aee80308e40480d5369e278269ca596eb4afa8';
 
 final class TaskCreationControllerFamily extends $Family
     with
         $ClassFamilyOverride<
           TaskCreationController,
-          TaskCreationRequest,
-          TaskCreationRequest,
-          TaskCreationRequest,
+          AsyncValue<TaskCreationState>,
+          TaskCreationState,
+          FutureOr<TaskCreationState>,
           Task?
         > {
   const TaskCreationControllerFamily._()
@@ -87,21 +79,23 @@ final class TaskCreationControllerFamily extends $Family
   String toString() => r'taskCreationControllerProvider';
 }
 
-abstract class _$TaskCreationController extends $Notifier<TaskCreationRequest> {
+abstract class _$TaskCreationController
+    extends $AsyncNotifier<TaskCreationState> {
   late final _$args = ref.$arg as Task?;
   Task? get initialTask => _$args;
 
-  TaskCreationRequest build(Task? initialTask);
+  FutureOr<TaskCreationState> build(Task? initialTask);
   @$mustCallSuper
   @override
   void runBuild() {
     final created = build(_$args);
-    final ref = this.ref as $Ref<TaskCreationRequest, TaskCreationRequest>;
+    final ref =
+        this.ref as $Ref<AsyncValue<TaskCreationState>, TaskCreationState>;
     final element =
         ref.element
             as $ClassProviderElement<
-              AnyNotifier<TaskCreationRequest, TaskCreationRequest>,
-              TaskCreationRequest,
+              AnyNotifier<AsyncValue<TaskCreationState>, TaskCreationState>,
+              AsyncValue<TaskCreationState>,
               Object?,
               Object?
             >;

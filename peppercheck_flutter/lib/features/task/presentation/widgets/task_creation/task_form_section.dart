@@ -61,52 +61,58 @@ class _TaskFormSectionState extends ConsumerState<TaskFormSection> {
     // Note: Text fields are managed by local controllers, but we might want to watch for external changes?
     // For now, simple initialization is enough as per requirements.
     // However, status and date ARE managed by provider state.
-    final state = ref.watch(taskCreationControllerProvider(widget.task));
+    final asyncState = ref.watch(taskCreationControllerProvider(widget.task));
 
-    return BaseSection(
-      title: t.task.creation.sectionInfo,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          BaseTextField(
-            controller: _titleController,
-            value: state
-                .title, // Keep value for initial sync if needed, but controller handles it
-            onValueChange: controller.updateTitle,
-            label: t.task.creation.labelTitle,
-          ),
-          BaseTextField(
-            controller: _descController,
-            value: state.description,
-            onValueChange: controller.updateDescription,
-            label: t.task.creation.labelDescription,
-          ),
-          BaseTextField(
-            controller: _criteriaController,
-            value: state.criteria,
-            onValueChange: controller.updateCriteria,
-            label: t.task.creation.labelCriteria,
-          ),
-          BaseTextField(
-            key: ValueKey(state.dueDate),
-            value: state.dueDate != null
-                ? dateFormatter.format(state.dueDate!)
-                : '',
-            onValueChange: (_) {},
-            label: t.task.creation.labelDeadline,
-            readOnly: true,
-            onClick: () => _pickDateTime(context, controller),
-            trailingIcon: const Icon(
-              Icons.access_time,
-              color: AppColors.accentBlueLight,
+    return asyncState.when(
+      data: (state) => BaseSection(
+        title: t.task.creation.sectionInfo,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            BaseTextField(
+              controller: _titleController,
+              value: state.request
+                  .title, // Keep value for initial sync if needed, but controller handles it
+              onValueChange: controller.updateTitle,
+              label: t.task.creation.labelTitle,
             ),
-          ),
-          const SizedBox(height: AppSizes.gapTaskStatusSelector),
-          TaskStatusSelector(
-            selectedStatus: state.taskStatus,
-            onStatusChange: controller.updateTaskStatus,
-          ),
-        ],
+            BaseTextField(
+              controller: _descController,
+              value: state.request.description,
+              onValueChange: controller.updateDescription,
+              label: t.task.creation.labelDescription,
+            ),
+            BaseTextField(
+              controller: _criteriaController,
+              value: state.request.criteria,
+              onValueChange: controller.updateCriteria,
+              label: t.task.creation.labelCriteria,
+            ),
+            BaseTextField(
+              key: ValueKey(state.request.dueDate),
+              value: state.request.dueDate != null
+                  ? dateFormatter.format(state.request.dueDate!)
+                  : '',
+              onValueChange: (_) {},
+              label: t.task.creation.labelDeadline,
+              readOnly: true,
+              onClick: () => _pickDateTime(context, controller),
+              trailingIcon: const Icon(
+                Icons.access_time,
+                color: AppColors.accentBlueLight,
+              ),
+            ),
+            const SizedBox(height: AppSizes.gapTaskStatusSelector),
+            TaskStatusSelector(
+              selectedStatus: state.request.taskStatus,
+              onStatusChange: controller.updateTaskStatus,
+            ),
+          ],
+        ),
+      ),
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stack) => Center(
+        child: Text('Error: $error'),
       ),
     );
   }
