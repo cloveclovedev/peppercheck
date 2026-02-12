@@ -10,3 +10,6 @@
 !.vscode/settings.json
 !.vscode/extensions.json
 !.vscode/tasks.json
+
+# slang i18n generated analysis files
+peppercheck_flutter/assets/i18n/_*.json
