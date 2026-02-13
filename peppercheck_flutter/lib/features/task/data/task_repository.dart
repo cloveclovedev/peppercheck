@@ -104,11 +104,8 @@ class TaskRepository {
 
             // Map judgement (1:1 relationship: PostgREST returns a single object, not a list)
             if (reqJson['judgements'] is Map) {
-              final judgementMap = Map<String, dynamic>.from(
+              reqJson['judgement'] = Map<String, dynamic>.from(
                   reqJson['judgements'] as Map);
-              judgementMap['task_id'] = reqJson['task_id'];
-              judgementMap['referee_id'] = reqJson['matched_referee_id'];
-              reqJson['judgement'] = judgementMap;
             }
 
             // Map referee profile
@@ -151,7 +148,7 @@ class TaskRepository {
       // RPC returns: { task: {...}, judgement: {...}, tasker_profile: {...} }
       return (data as List).map((json) {
         final taskJson = json['task'] as Map<String, dynamic>;
-        final judgementJson = json['judgement'] as Map<String, dynamic>;
+        final judgementJson = json['judgement'] as Map<String, dynamic>?;
         final taskerProfileJson =
             json['tasker_profile'] as Map<String, dynamic>;
 
@@ -218,11 +215,8 @@ class TaskRepository {
 
           // Map judgement (1:1 relationship: PostgREST returns a single object, not a list)
           if (reqJson['judgements'] is Map) {
-            final judgementMap = Map<String, dynamic>.from(
+            reqJson['judgement'] = Map<String, dynamic>.from(
                 reqJson['judgements'] as Map);
-            judgementMap['task_id'] = reqJson['task_id'];
-            judgementMap['referee_id'] = reqJson['matched_referee_id'];
-            reqJson['judgement'] = judgementMap;
           }
 
           if (reqJson['profiles'] != null) {

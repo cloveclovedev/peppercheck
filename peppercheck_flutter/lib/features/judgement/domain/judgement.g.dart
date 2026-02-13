@@ -8,8 +8,6 @@ part of 'judgement.dart';
 
 _Judgement _$JudgementFromJson(Map<String, dynamic> json) => _Judgement(
   id: json['id'] as String,
-  taskId: json['task_id'] as String,
-  refereeId: json['referee_id'] as String,
   status: json['status'] as String,
   comment: json['comment'] as String?,
   isConfirmed: json['is_confirmed'] as bool? ?? false,
@@ -24,8 +22,6 @@ _Judgement _$JudgementFromJson(Map<String, dynamic> json) => _Judgement(
 Map<String, dynamic> _$JudgementToJson(_Judgement instance) =>
     <String, dynamic>{
       'id': instance.id,
-      'task_id': instance.taskId,
-      'referee_id': instance.refereeId,
       'status': instance.status,
       'comment': instance.comment,
       'is_confirmed': instance.isConfirmed,

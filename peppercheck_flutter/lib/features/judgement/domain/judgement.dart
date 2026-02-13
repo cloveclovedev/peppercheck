@@ -9,8 +9,6 @@ part 'judgement.g.dart';
 abstract class Judgement with _$Judgement {
   const factory Judgement({
     required String id,
-    @JsonKey(name: 'task_id') required String taskId,
-    @JsonKey(name: 'referee_id') required String refereeId,
     required String status,
     String? comment,
     @JsonKey(name: 'is_confirmed') @Default(false) bool isConfirmed,
