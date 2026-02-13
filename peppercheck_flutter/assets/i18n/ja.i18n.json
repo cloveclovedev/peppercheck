@@ -129,6 +129,18 @@
       "maxImages": "画像は最大5枚までです",
       "success": "エビデンスを提出しました",
       "error": "エラーが発生しました: $message"
+    },
+    "judgement": {
+      "title": "判定",
+      "comment": "コメント",
+      "commentPlaceholder": "判定理由を記述してください",
+      "approve": "承認",
+      "reject": "却下",
+      "approved": "承認済み",
+      "rejected": "却下済み",
+      "success": "判定を送信しました",
+      "error": "エラーが発生しました: $message",
+      "commentRequired": "コメントを入力してください"
     }
   },
   "profile": {

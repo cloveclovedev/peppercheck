@@ -274,6 +274,7 @@ class TranslationsTaskJa {
 	late final TranslationsTaskDetailJa detail = TranslationsTaskDetailJa.internal(_root);
 	late final TranslationsTaskCreationJa creation = TranslationsTaskCreationJa.internal(_root);
 	late final TranslationsTaskEvidenceJa evidence = TranslationsTaskEvidenceJa.internal(_root);
+	late final TranslationsTaskJudgementJa judgement = TranslationsTaskJudgementJa.internal(_root);
 }
 
 // Path: profile
@@ -478,6 +479,45 @@ class TranslationsTaskEvidenceJa {
 	String error({required Object message}) => 'エラーが発生しました: ${message}';
 }
 
+// Path: task.judgement
+class TranslationsTaskJudgementJa {
+	TranslationsTaskJudgementJa.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// ja: '判定'
+	String get title => '判定';
+
+	/// ja: 'コメント'
+	String get comment => 'コメント';
+
+	/// ja: '判定理由を記述してください'
+	String get commentPlaceholder => '判定理由を記述してください';
+
+	/// ja: '承認'
+	String get approve => '承認';
+
+	/// ja: '却下'
+	String get reject => '却下';
+
+	/// ja: '承認済み'
+	String get approved => '承認済み';
+
+	/// ja: '却下済み'
+	String get rejected => '却下済み';
+
+	/// ja: '判定を送信しました'
+	String get success => '判定を送信しました';
+
+	/// ja: 'エラーが発生しました: $message'
+	String error({required Object message}) => 'エラーが発生しました: ${message}';
+
+	/// ja: 'コメントを入力してください'
+	String get commentRequired => 'コメントを入力してください';
+}
+
 // Path: matching.referee_availability
 class TranslationsMatchingRefereeAvailabilityJa {
 	TranslationsMatchingRefereeAvailabilityJa.internal(this._root);
@@ -670,6 +710,16 @@ extension on Translations {
 			'task.evidence.maxImages' => '画像は最大5枚までです',
 			'task.evidence.success' => 'エビデンスを提出しました',
 			'task.evidence.error' => ({required Object message}) => 'エラーが発生しました: ${message}',
+			'task.judgement.title' => '判定',
+			'task.judgement.comment' => 'コメント',
+			'task.judgement.commentPlaceholder' => '判定理由を記述してください',
+			'task.judgement.approve' => '承認',
+			'task.judgement.reject' => '却下',
+			'task.judgement.approved' => '承認済み',
+			'task.judgement.rejected' => '却下済み',
+			'task.judgement.success' => '判定を送信しました',
+			'task.judgement.error' => ({required Object message}) => 'エラーが発生しました: ${message}',
+			'task.judgement.commentRequired' => 'コメントを入力してください',
 			'profile.title' => 'プロフィール',
 			'matching.referee_availability.title' => '受付可能時間',
 			'matching.referee_availability.no_slots' => '受付可能時間が設定されていません',

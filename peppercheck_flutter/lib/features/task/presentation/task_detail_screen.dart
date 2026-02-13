@@ -9,6 +9,7 @@ import 'package:peppercheck_flutter/features/task/domain/task.dart';
 import 'package:peppercheck_flutter/features/task/presentation/widgets/task_detail/task_detail_info_section.dart';
 import 'package:peppercheck_flutter/features/task/presentation/widgets/task_detail/task_referees_section.dart';
 import 'package:peppercheck_flutter/features/evidence/presentation/widgets/evidence_submission_section.dart';
+import 'package:peppercheck_flutter/features/judgement/presentation/widgets/judgement_section.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -47,8 +48,11 @@ class TaskDetailScreen extends ConsumerWidget {
                 const SizedBox(height: AppSizes.sectionGap),
                 TaskRefereesSection(task: displayTask),
                 const SizedBox(height: AppSizes.sectionGap),
-                if (_shouldShowEvidenceSection(displayTask))
+                if (_shouldShowEvidenceSection(displayTask)) ...[
                   EvidenceSubmissionSection(task: displayTask),
+                  const SizedBox(height: AppSizes.sectionGap),
+                ],
+                JudgementSection(task: displayTask),
               ],
             ),
           ),
