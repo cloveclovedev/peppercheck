@@ -102,10 +102,13 @@ class TaskRepository {
           taskJson['task_referee_requests'] = requests.map((req) {
             final Map<String, dynamic> reqJson = Map<String, dynamic>.from(req);
 
-            // Map judgements (assuming 1:1 for a request usually, but DB might return list)
-            if (reqJson['judgements'] is List &&
-                (reqJson['judgements'] as List).isNotEmpty) {
-              reqJson['judgement'] = (reqJson['judgements'] as List).first;
+            // Map judgement (1:1 relationship: PostgREST returns a single object, not a list)
+            if (reqJson['judgements'] is Map) {
+              final judgementMap = Map<String, dynamic>.from(
+                  reqJson['judgements'] as Map);
+              judgementMap['task_id'] = reqJson['task_id'];
+              judgementMap['referee_id'] = reqJson['matched_referee_id'];
+              reqJson['judgement'] = judgementMap;
             }
 
             // Map referee profile
@@ -168,9 +171,9 @@ class TaskRepository {
           'task_id': taskJson['id'],
           'status': 'matched', // Implied
           'matching_strategy': 'unknown',
+          'matched_referee_id': _client.auth.currentUser?.id,
           'created_at': DateTime.now().toIso8601String(),
           'judgement': judgementJson,
-          // 'referee': current_user_profile // We could fetch this if needed, but maybe not strictly required for "My View"
         };
 
         final mergedJson = {
@@ -213,9 +216,13 @@ class TaskRepository {
         taskJson['task_referee_requests'] = requests.map((req) {
           final Map<String, dynamic> reqJson = Map<String, dynamic>.from(req);
 
-          if (reqJson['judgements'] is List &&
-              (reqJson['judgements'] as List).isNotEmpty) {
-            reqJson['judgement'] = (reqJson['judgements'] as List).first;
+          // Map judgement (1:1 relationship: PostgREST returns a single object, not a list)
+          if (reqJson['judgements'] is Map) {
+            final judgementMap = Map<String, dynamic>.from(
+                reqJson['judgements'] as Map);
+            judgementMap['task_id'] = reqJson['task_id'];
+            judgementMap['referee_id'] = reqJson['matched_referee_id'];
+            reqJson['judgement'] = judgementMap;
           }
 
           if (reqJson['profiles'] != null) {
