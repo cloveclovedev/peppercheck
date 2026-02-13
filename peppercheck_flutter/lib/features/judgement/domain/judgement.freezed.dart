@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$Judgement {
 
- String get id;@JsonKey(name: 'task_id') String get taskId;@JsonKey(name: 'referee_id') String get refereeId; String get status; String? get comment;@JsonKey(name: 'is_confirmed') bool get isConfirmed;@JsonKey(name: 'reopen_count') int get reopenCount;@JsonKey(name: 'can_reopen') bool get canReopen;@JsonKey(name: 'is_evidence_timeout_confirmed') bool get isEvidenceTimeoutConfirmed;@JsonKey(name: 'created_at') String get createdAt;@JsonKey(name: 'updated_at') String get updatedAt;
+ String get id; String get status; String? get comment;@JsonKey(name: 'is_confirmed') bool get isConfirmed;@JsonKey(name: 'reopen_count') int get reopenCount;@JsonKey(name: 'can_reopen') bool get canReopen;@JsonKey(name: 'is_evidence_timeout_confirmed') bool get isEvidenceTimeoutConfirmed;@JsonKey(name: 'created_at') String get createdAt;@JsonKey(name: 'updated_at') String get updatedAt;
 /// Create a copy of Judgement
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $JudgementCopyWith<Judgement> get copyWith => _$JudgementCopyWithImpl<Judgement>
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Judgement&&(identical(other.id, id) || other.id == id)&&(identical(other.taskId, taskId) || other.taskId == taskId)&&(identical(other.refereeId, refereeId) || other.refereeId == refereeId)&&(identical(other.status, status) || other.status == status)&&(identical(other.comment, comment) || other.comment == comment)&&(identical(other.isConfirmed, isConfirmed) || other.isConfirmed == isConfirmed)&&(identical(other.reopenCount, reopenCount) || other.reopenCount == reopenCount)&&(identical(other.canReopen, canReopen) || other.canReopen == canReopen)&&(identical(other.isEvidenceTimeoutConfirmed, isEvidenceTimeoutConfirmed) || other.isEvidenceTimeoutConfirmed == isEvidenceTimeoutConfirmed)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Judgement&&(identical(other.id, id) || other.id == id)&&(identical(other.status, status) || other.status == status)&&(identical(other.comment, comment) || other.comment == comment)&&(identical(other.isConfirmed, isConfirmed) || other.isConfirmed == isConfirmed)&&(identical(other.reopenCount, reopenCount) || other.reopenCount == reopenCount)&&(identical(other.canReopen, canReopen) || other.canReopen == canReopen)&&(identical(other.isEvidenceTimeoutConfirmed, isEvidenceTimeoutConfirmed) || other.isEvidenceTimeoutConfirmed == isEvidenceTimeoutConfirmed)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,taskId,refereeId,status,comment,isConfirmed,reopenCount,canReopen,isEvidenceTimeoutConfirmed,createdAt,updatedAt);
+int get hashCode => Object.hash(runtimeType,id,status,comment,isConfirmed,reopenCount,canReopen,isEvidenceTimeoutConfirmed,createdAt,updatedAt);
 
 @override
 String toString() {
-  return 'Judgement(id: $id, taskId: $taskId, refereeId: $refereeId, status: $status, comment: $comment, isConfirmed: $isConfirmed, reopenCount: $reopenCount, canReopen: $canReopen, isEvidenceTimeoutConfirmed: $isEvidenceTimeoutConfirmed, createdAt: $createdAt, updatedAt: $updatedAt)';
+  return 'Judgement(id: $id, status: $status, comment: $comment, isConfirmed: $isConfirmed, reopenCount: $reopenCount, canReopen: $canReopen, isEvidenceTimeoutConfirmed: $isEvidenceTimeoutConfirmed, createdAt: $createdAt, updatedAt: $updatedAt)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $JudgementCopyWith<$Res>  {
   factory $JudgementCopyWith(Judgement value, $Res Function(Judgement) _then) = _$JudgementCopyWithImpl;
 @useResult
 $Res call({
- String id,@JsonKey(name: 'task_id') String taskId,@JsonKey(name: 'referee_id') String refereeId, String status, String? comment,@JsonKey(name: 'is_confirmed') bool isConfirmed,@JsonKey(name: 'reopen_count') int reopenCount,@JsonKey(name: 'can_reopen') bool canReopen,@JsonKey(name: 'is_evidence_timeout_confirmed') bool isEvidenceTimeoutConfirmed,@JsonKey(name: 'created_at') String createdAt,@JsonKey(name: 'updated_at') String updatedAt
+ String id, String status, String? comment,@JsonKey(name: 'is_confirmed') bool isConfirmed,@JsonKey(name: 'reopen_count') int reopenCount,@JsonKey(name: 'can_reopen') bool canReopen,@JsonKey(name: 'is_evidence_timeout_confirmed') bool isEvidenceTimeoutConfirmed,@JsonKey(name: 'created_at') String createdAt,@JsonKey(name: 'updated_at') String updatedAt
 });
 
 
@@ -65,11 +65,9 @@ class _$JudgementCopyWithImpl<$Res>
 
 /// Create a copy of Judgement
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? taskId = null,Object? refereeId = null,Object? status = null,Object? comment = freezed,Object? isConfirmed = null,Object? reopenCount = null,Object? canReopen = null,Object? isEvidenceTimeoutConfirmed = null,Object? createdAt = null,Object? updatedAt = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? status = null,Object? comment = freezed,Object? isConfirmed = null,Object? reopenCount = null,Object? canReopen = null,Object? isEvidenceTimeoutConfirmed = null,Object? createdAt = null,Object? updatedAt = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
-as String,taskId: null == taskId ? _self.taskId : taskId // ignore: cast_nullable_to_non_nullable
-as String,refereeId: null == refereeId ? _self.refereeId : refereeId // ignore: cast_nullable_to_non_nullable
 as String,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as String,comment: freezed == comment ? _self.comment : comment // ignore: cast_nullable_to_non_nullable
 as String?,isConfirmed: null == isConfirmed ? _self.isConfirmed : isConfirmed // ignore: cast_nullable_to_non_nullable
@@ -163,10 +161,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id, @JsonKey(name: 'task_id')  String taskId, @JsonKey(name: 'referee_id')  String refereeId,  String status,  String? comment, @JsonKey(name: 'is_confirmed')  bool isConfirmed, @JsonKey(name: 'reopen_count')  int reopenCount, @JsonKey(name: 'can_reopen')  bool canReopen, @JsonKey(name: 'is_evidence_timeout_confirmed')  bool isEvidenceTimeoutConfirmed, @JsonKey(name: 'created_at')  String createdAt, @JsonKey(name: 'updated_at')  String updatedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String status,  String? comment, @JsonKey(name: 'is_confirmed')  bool isConfirmed, @JsonKey(name: 'reopen_count')  int reopenCount, @JsonKey(name: 'can_reopen')  bool canReopen, @JsonKey(name: 'is_evidence_timeout_confirmed')  bool isEvidenceTimeoutConfirmed, @JsonKey(name: 'created_at')  String createdAt, @JsonKey(name: 'updated_at')  String updatedAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Judgement() when $default != null:
-return $default(_that.id,_that.taskId,_that.refereeId,_that.status,_that.comment,_that.isConfirmed,_that.reopenCount,_that.canReopen,_that.isEvidenceTimeoutConfirmed,_that.createdAt,_that.updatedAt);case _:
+return $default(_that.id,_that.status,_that.comment,_that.isConfirmed,_that.reopenCount,_that.canReopen,_that.isEvidenceTimeoutConfirmed,_that.createdAt,_that.updatedAt);case _:
   return orElse();
 
 }
@@ -184,10 +182,10 @@ return $default(_that.id,_that.taskId,_that.refereeId,_that.status,_that.comment
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id, @JsonKey(name: 'task_id')  String taskId, @JsonKey(name: 'referee_id')  String refereeId,  String status,  String? comment, @JsonKey(name: 'is_confirmed')  bool isConfirmed, @JsonKey(name: 'reopen_count')  int reopenCount, @JsonKey(name: 'can_reopen')  bool canReopen, @JsonKey(name: 'is_evidence_timeout_confirmed')  bool isEvidenceTimeoutConfirmed, @JsonKey(name: 'created_at')  String createdAt, @JsonKey(name: 'updated_at')  String updatedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String status,  String? comment, @JsonKey(name: 'is_confirmed')  bool isConfirmed, @JsonKey(name: 'reopen_count')  int reopenCount, @JsonKey(name: 'can_reopen')  bool canReopen, @JsonKey(name: 'is_evidence_timeout_confirmed')  bool isEvidenceTimeoutConfirmed, @JsonKey(name: 'created_at')  String createdAt, @JsonKey(name: 'updated_at')  String updatedAt)  $default,) {final _that = this;
 switch (_that) {
 case _Judgement():
-return $default(_that.id,_that.taskId,_that.refereeId,_that.status,_that.comment,_that.isConfirmed,_that.reopenCount,_that.canReopen,_that.isEvidenceTimeoutConfirmed,_that.createdAt,_that.updatedAt);case _:
+return $default(_that.id,_that.status,_that.comment,_that.isConfirmed,_that.reopenCount,_that.canReopen,_that.isEvidenceTimeoutConfirmed,_that.createdAt,_that.updatedAt);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -204,10 +202,10 @@ return $default(_that.id,_that.taskId,_that.refereeId,_that.status,_that.comment
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id, @JsonKey(name: 'task_id')  String taskId, @JsonKey(name: 'referee_id')  String refereeId,  String status,  String? comment, @JsonKey(name: 'is_confirmed')  bool isConfirmed, @JsonKey(name: 'reopen_count')  int reopenCount, @JsonKey(name: 'can_reopen')  bool canReopen, @JsonKey(name: 'is_evidence_timeout_confirmed')  bool isEvidenceTimeoutConfirmed, @JsonKey(name: 'created_at')  String createdAt, @JsonKey(name: 'updated_at')  String updatedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String status,  String? comment, @JsonKey(name: 'is_confirmed')  bool isConfirmed, @JsonKey(name: 'reopen_count')  int reopenCount, @JsonKey(name: 'can_reopen')  bool canReopen, @JsonKey(name: 'is_evidence_timeout_confirmed')  bool isEvidenceTimeoutConfirmed, @JsonKey(name: 'created_at')  String createdAt, @JsonKey(name: 'updated_at')  String updatedAt)?  $default,) {final _that = this;
 switch (_that) {
 case _Judgement() when $default != null:
-return $default(_that.id,_that.taskId,_that.refereeId,_that.status,_that.comment,_that.isConfirmed,_that.reopenCount,_that.canReopen,_that.isEvidenceTimeoutConfirmed,_that.createdAt,_that.updatedAt);case _:
+return $default(_that.id,_that.status,_that.comment,_that.isConfirmed,_that.reopenCount,_that.canReopen,_that.isEvidenceTimeoutConfirmed,_that.createdAt,_that.updatedAt);case _:
   return null;
 
 }
@@ -219,12 +217,10 @@ return $default(_that.id,_that.taskId,_that.refereeId,_that.status,_that.comment
 @JsonSerializable()
 
 class _Judgement implements Judgement {
-  const _Judgement({required this.id, @JsonKey(name: 'task_id') required this.taskId, @JsonKey(name: 'referee_id') required this.refereeId, required this.status, this.comment, @JsonKey(name: 'is_confirmed') this.isConfirmed = false, @JsonKey(name: 'reopen_count') this.reopenCount = 0, @JsonKey(name: 'can_reopen') this.canReopen = false, @JsonKey(name: 'is_evidence_timeout_confirmed') this.isEvidenceTimeoutConfirmed = false, @JsonKey(name: 'created_at') required this.createdAt, @JsonKey(name: 'updated_at') required this.updatedAt});
+  const _Judgement({required this.id, required this.status, this.comment, @JsonKey(name: 'is_confirmed') this.isConfirmed = false, @JsonKey(name: 'reopen_count') this.reopenCount = 0, @JsonKey(name: 'can_reopen') this.canReopen = false, @JsonKey(name: 'is_evidence_timeout_confirmed') this.isEvidenceTimeoutConfirmed = false, @JsonKey(name: 'created_at') required this.createdAt, @JsonKey(name: 'updated_at') required this.updatedAt});
   factory _Judgement.fromJson(Map<String, dynamic> json) => _$JudgementFromJson(json);
 
 @override final  String id;
-@override@JsonKey(name: 'task_id') final  String taskId;
-@override@JsonKey(name: 'referee_id') final  String refereeId;
 @override final  String status;
 @override final  String? comment;
 @override@JsonKey(name: 'is_confirmed') final  bool isConfirmed;
@@ -247,16 +243,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Judgement&&(identical(other.id, id) || other.id == id)&&(identical(other.taskId, taskId) || other.taskId == taskId)&&(identical(other.refereeId, refereeId) || other.refereeId == refereeId)&&(identical(other.status, status) || other.status == status)&&(identical(other.comment, comment) || other.comment == comment)&&(identical(other.isConfirmed, isConfirmed) || other.isConfirmed == isConfirmed)&&(identical(other.reopenCount, reopenCount) || other.reopenCount == reopenCount)&&(identical(other.canReopen, canReopen) || other.canReopen == canReopen)&&(identical(other.isEvidenceTimeoutConfirmed, isEvidenceTimeoutConfirmed) || other.isEvidenceTimeoutConfirmed == isEvidenceTimeoutConfirmed)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Judgement&&(identical(other.id, id) || other.id == id)&&(identical(other.status, status) || other.status == status)&&(identical(other.comment, comment) || other.comment == comment)&&(identical(other.isConfirmed, isConfirmed) || other.isConfirmed == isConfirmed)&&(identical(other.reopenCount, reopenCount) || other.reopenCount == reopenCount)&&(identical(other.canReopen, canReopen) || other.canReopen == canReopen)&&(identical(other.isEvidenceTimeoutConfirmed, isEvidenceTimeoutConfirmed) || other.isEvidenceTimeoutConfirmed == isEvidenceTimeoutConfirmed)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,taskId,refereeId,status,comment,isConfirmed,reopenCount,canReopen,isEvidenceTimeoutConfirmed,createdAt,updatedAt);
+int get hashCode => Object.hash(runtimeType,id,status,comment,isConfirmed,reopenCount,canReopen,isEvidenceTimeoutConfirmed,createdAt,updatedAt);
 
 @override
 String toString() {
-  return 'Judgement(id: $id, taskId: $taskId, refereeId: $refereeId, status: $status, comment: $comment, isConfirmed: $isConfirmed, reopenCount: $reopenCount, canReopen: $canReopen, isEvidenceTimeoutConfirmed: $isEvidenceTimeoutConfirmed, createdAt: $createdAt, updatedAt: $updatedAt)';
+  return 'Judgement(id: $id, status: $status, comment: $comment, isConfirmed: $isConfirmed, reopenCount: $reopenCount, canReopen: $canReopen, isEvidenceTimeoutConfirmed: $isEvidenceTimeoutConfirmed, createdAt: $createdAt, updatedAt: $updatedAt)';
 }
 
 
@@ -267,7 +263,7 @@ abstract mixin class _$JudgementCopyWith<$Res> implements $JudgementCopyWith<$Re
   factory _$JudgementCopyWith(_Judgement value, $Res Function(_Judgement) _then) = __$JudgementCopyWithImpl;
 @override @useResult
 $Res call({
- String id,@JsonKey(name: 'task_id') String taskId,@JsonKey(name: 'referee_id') String refereeId, String status, String? comment,@JsonKey(name: 'is_confirmed') bool isConfirmed,@JsonKey(name: 'reopen_count') int reopenCount,@JsonKey(name: 'can_reopen') bool canReopen,@JsonKey(name: 'is_evidence_timeout_confirmed') bool isEvidenceTimeoutConfirmed,@JsonKey(name: 'created_at') String createdAt,@JsonKey(name: 'updated_at') String updatedAt
+ String id, String status, String? comment,@JsonKey(name: 'is_confirmed') bool isConfirmed,@JsonKey(name: 'reopen_count') int reopenCount,@JsonKey(name: 'can_reopen') bool canReopen,@JsonKey(name: 'is_evidence_timeout_confirmed') bool isEvidenceTimeoutConfirmed,@JsonKey(name: 'created_at') String createdAt,@JsonKey(name: 'updated_at') String updatedAt
 });
 
 
@@ -284,11 +280,9 @@ class __$JudgementCopyWithImpl<$Res>
 
 /// Create a copy of Judgement
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? taskId = null,Object? refereeId = null,Object? status = null,Object? comment = freezed,Object? isConfirmed = null,Object? reopenCount = null,Object? canReopen = null,Object? isEvidenceTimeoutConfirmed = null,Object? createdAt = null,Object? updatedAt = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? status = null,Object? comment = freezed,Object? isConfirmed = null,Object? reopenCount = null,Object? canReopen = null,Object? isEvidenceTimeoutConfirmed = null,Object? createdAt = null,Object? updatedAt = null,}) {
   return _then(_Judgement(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
-as String,taskId: null == taskId ? _self.taskId : taskId // ignore: cast_nullable_to_non_nullable
-as String,refereeId: null == refereeId ? _self.refereeId : refereeId // ignore: cast_nullable_to_non_nullable
 as String,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as String,comment: freezed == comment ? _self.comment : comment // ignore: cast_nullable_to_non_nullable
 as String?,isConfirmed: null == isConfirmed ? _self.isConfirmed : isConfirmed // ignore: cast_nullable_to_non_nullable

@@ -52,7 +52,7 @@ final class TaskCreationControllerProvider
 }
 
 String _$taskCreationControllerHash() =>
-    r'97aee80308e40480d5369e278269ca596eb4afa8';
+    r'f611bd92a117cd066db0ce05de5f04c7fe149e2c';
 
 final class TaskCreationControllerFamily extends $Family
     with

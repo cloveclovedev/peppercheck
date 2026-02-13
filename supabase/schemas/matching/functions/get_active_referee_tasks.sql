@@ -5,9 +5,30 @@ CREATE OR REPLACE FUNCTION public.get_active_referee_tasks() RETURNS jsonb
   SELECT COALESCE(
     jsonb_agg(
       jsonb_build_object(
-        'task', to_jsonb(t), -- Single task object
-        'judgement', to_jsonb(j), -- judgement information with can_reopen
-        'tasker_profile', to_jsonb(p) -- Full tasker profile
+        'task', to_jsonb(t),
+        'judgement', CASE WHEN j.id IS NOT NULL THEN
+          jsonb_build_object(
+            'id', j.id,
+            'comment', j.comment,
+            'status', j.status,
+            'created_at', j.created_at,
+            'updated_at', j.updated_at,
+            'is_confirmed', j.is_confirmed,
+            'reopen_count', j.reopen_count,
+            'is_evidence_timeout_confirmed', j.is_evidence_timeout_confirmed,
+            'can_reopen', (
+              j.status = 'rejected'
+              AND j.reopen_count < 1
+              AND t.due_date > now()
+              AND EXISTS (
+                SELECT 1 FROM public.task_evidences te
+                WHERE te.task_id = trr.task_id
+                  AND te.updated_at > j.updated_at
+              )
+            )
+          )
+        ELSE NULL END,
+        'tasker_profile', to_jsonb(p)
       )
     ),
     '[]'::jsonb
@@ -17,7 +38,7 @@ CREATE OR REPLACE FUNCTION public.get_active_referee_tasks() RETURNS jsonb
   INNER JOIN
     public.tasks AS t ON trr.task_id = t.id
   LEFT JOIN
-    public.judgements_view AS j ON trr.id = j.id -- Use view and join by ID
+    public.judgements AS j ON trr.id = j.id
   INNER JOIN
     public.profiles AS p ON t.tasker_id = p.id
   WHERE
