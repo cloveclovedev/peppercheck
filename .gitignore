@@ -13,3 +13,6 @@
 
 # slang i18n generated analysis files
 peppercheck_flutter/assets/i18n/_*.json
+
+# Git worktrees
+.worktrees/
