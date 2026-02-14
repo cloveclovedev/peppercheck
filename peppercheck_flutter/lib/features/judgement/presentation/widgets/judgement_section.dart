@@ -30,7 +30,6 @@ class _JudgementSectionState extends ConsumerState<JudgementSection> {
   void initState() {
     super.initState();
     _commentController.addListener(() => setState(() {}));
-    _confirmCommentController.addListener(() => setState(() {}));
   }
 
   @override
@@ -291,7 +290,7 @@ class _JudgementSectionState extends ConsumerState<JudgementSection> {
             children: [
               Expanded(
                 child: _RatingButton(
-                  icon: Icons.thumb_up,
+                  icon: Icons.thumb_up_outlined,
                   selectedIcon: Icons.thumb_up,
                   label: t.task.judgement.confirm.fair,
                   isSelected: _selectedIsPositive == true,
@@ -304,7 +303,7 @@ class _JudgementSectionState extends ConsumerState<JudgementSection> {
               const SizedBox(width: AppSizes.spacingSmall),
               Expanded(
                 child: _RatingButton(
-                  icon: Icons.thumb_down,
+                  icon: Icons.thumb_down_outlined,
                   selectedIcon: Icons.thumb_down,
                   label: t.task.judgement.confirm.unfair,
                   isSelected: _selectedIsPositive == false,
@@ -445,35 +444,41 @@ class _RatingButton extends StatelessWidget {
         ? color.withValues(alpha: 0.5)
         : AppColors.textPrimary.withValues(alpha: 0.2);
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSizes.spacingStandard,
-          vertical: AppSizes.spacingSmall,
-        ),
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(AppSizes.cardBorderRadius),
-          border: Border.all(color: borderColor, width: 2),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              isSelected ? selectedIcon : icon,
-              size: 20,
-              color: fgColor,
-            ),
-            const SizedBox(width: AppSizes.spacingSmall),
-            Text(
-              label,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+    final borderRadius = BorderRadius.circular(AppSizes.cardBorderRadius);
+
+    return Material(
+      color: bgColor,
+      borderRadius: borderRadius,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: borderRadius,
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSizes.spacingStandard,
+            vertical: AppSizes.spacingSmall,
+          ),
+          decoration: BoxDecoration(
+            borderRadius: borderRadius,
+            border: Border.all(color: borderColor, width: 2),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                isSelected ? selectedIcon : icon,
+                size: AppSizes.taskCardIconSize,
                 color: fgColor,
-                fontWeight: FontWeight.w500,
               ),
-            ),
-          ],
+              const SizedBox(width: AppSizes.spacingSmall),
+              Text(
+                label,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: fgColor,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
