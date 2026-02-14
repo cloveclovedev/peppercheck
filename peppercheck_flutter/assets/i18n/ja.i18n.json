@@ -142,7 +142,7 @@
       "error": "エラーが発生しました: $message",
       "commentRequired": "コメントを入力してください",
       "confirm": {
-        "question": "この判定は適切でしたか？",
+        "question": "適切な判定でしたか？",
         "fair": "適切",
         "unfair": "不適切",
         "comment": "コメント（任意）",

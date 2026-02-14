@@ -272,50 +272,45 @@ class _JudgementSectionState extends ConsumerState<JudgementSection> {
     final isLoading = state.isLoading;
 
     return Padding(
-      padding: const EdgeInsets.only(top: AppSizes.spacingSmall),
+      padding: const EdgeInsets.only(top: AppSizes.spacingTiny),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Divider(color: AppColors.border),
-          const SizedBox(height: AppSizes.spacingSmall),
-          Text(
-            t.task.judgement.confirm.question,
-            style: const TextStyle(
-              fontWeight: FontWeight.w500,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: AppSizes.spacingSmall),
+          Divider(color: AppColors.border, height: 1),
+          const SizedBox(height: AppSizes.spacingTiny),
           Row(
             children: [
               Expanded(
-                child: _RatingButton(
-                  icon: Icons.thumb_up_outlined,
-                  selectedIcon: Icons.thumb_up,
-                  label: t.task.judgement.confirm.fair,
-                  isSelected: _selectedIsPositive == true,
-                  color: AppColors.accentGreen,
-                  onTap: isLoading
-                      ? null
-                      : () => setState(() => _selectedIsPositive = true),
+                child: Text(
+                  t.task.judgement.confirm.question,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
               ),
               const SizedBox(width: AppSizes.spacingSmall),
-              Expanded(
-                child: _RatingButton(
-                  icon: Icons.thumb_down_outlined,
-                  selectedIcon: Icons.thumb_down,
-                  label: t.task.judgement.confirm.unfair,
-                  isSelected: _selectedIsPositive == false,
-                  color: AppColors.textError,
-                  onTap: isLoading
-                      ? null
-                      : () => setState(() => _selectedIsPositive = false),
-                ),
+              _RatingIconButton(
+                icon: Icons.thumb_up_outlined,
+                selectedIcon: Icons.thumb_up,
+                isSelected: _selectedIsPositive == true,
+                color: AppColors.accentGreen,
+                onTap: isLoading
+                    ? null
+                    : () => setState(() => _selectedIsPositive = true),
+              ),
+              const SizedBox(width: AppSizes.spacingSmall),
+              _RatingIconButton(
+                icon: Icons.thumb_down_outlined,
+                selectedIcon: Icons.thumb_down,
+                isSelected: _selectedIsPositive == false,
+                color: AppColors.textError,
+                onTap: isLoading
+                    ? null
+                    : () => setState(() => _selectedIsPositive = false),
               ),
             ],
           ),
-          const SizedBox(height: AppSizes.spacingSmall),
           BaseTextField(
             value: _confirmCommentController.text,
             onValueChange: (_) {},
@@ -415,18 +410,16 @@ class _RejectButton extends StatelessWidget {
   }
 }
 
-class _RatingButton extends StatelessWidget {
+class _RatingIconButton extends StatelessWidget {
   final IconData icon;
   final IconData selectedIcon;
-  final String label;
   final bool isSelected;
   final Color color;
   final VoidCallback? onTap;
 
-  const _RatingButton({
+  const _RatingIconButton({
     required this.icon,
     required this.selectedIcon,
-    required this.label,
     required this.isSelected,
     required this.color,
     this.onTap,
@@ -434,53 +427,26 @@ class _RatingButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = isSelected
-        ? color.withValues(alpha: 0.1)
-        : AppColors.textPrimary.withValues(alpha: 0.05);
     final fgColor = isSelected
         ? color
         : AppColors.textPrimary.withValues(alpha: 0.4);
-    final borderColor = isSelected
-        ? color.withValues(alpha: 0.5)
-        : AppColors.textPrimary.withValues(alpha: 0.2);
 
-    final borderRadius = BorderRadius.circular(AppSizes.cardBorderRadius);
-
-    return Material(
-      color: bgColor,
-      borderRadius: borderRadius,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: borderRadius,
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSizes.spacingStandard,
-            vertical: AppSizes.spacingSmall,
-          ),
-          decoration: BoxDecoration(
-            borderRadius: borderRadius,
-            border: Border.all(color: borderColor, width: 2),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                isSelected ? selectedIcon : icon,
-                size: AppSizes.taskCardIconSize,
-                color: fgColor,
-              ),
-              const SizedBox(width: AppSizes.spacingSmall),
-              Text(
-                label,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: fgColor,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
+    return IconButton(
+      onPressed: onTap,
+      icon: Icon(
+        isSelected ? selectedIcon : icon,
+        color: fgColor,
+        size: AppSizes.taskCardIconSize,
       ),
+      style: IconButton.styleFrom(
+        backgroundColor: isSelected
+            ? color.withValues(alpha: 0.1)
+            : Colors.transparent,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        minimumSize: Size.zero,
+      ),
+      constraints: const BoxConstraints(),
+      padding: const EdgeInsets.all(AppSizes.spacingTiny),
     );
   }
 }
