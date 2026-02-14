@@ -1,0 +1,115 @@
+= Judgement
+:sectnums:
+
+This document describes the Judgement feature, where Referees approve or reject evidence submitted by Taskers.
+
+== Prerequisites
+
+* xref:features/task.adoc[Task Lifecycle] — Judgements exist within the Task → Request → Judgement hierarchy.
+* xref:features/evidence.adoc[Evidence Submission] — Evidence must be submitted before a Referee can judge.
+
+== Overview
+
+After a Tasker submits evidence, the assigned Referee reviews it and either approves or rejects it with a comment, so that the Tasker receives feedback on their task completion.
+The judgement is performed via the `judge_evidence` RPC, which validates the caller, checks the current status, and updates the judgement record.
+
+== Judgement Flow
+
+The following sequence diagram illustrates the full judgement flow, including evidence submission notification, the judge action, and the optional rejection-resubmission cycle.
+
+[plantuml]
+----
+include::example$features/judgement/judge_sequence.pu[]
+----
+
+== State Transitions
+
+Judgement status values (PostgreSQL enum `judgement_status`):
+
+|===
+|Status |Description |Transitions To
+
+|`awaiting_evidence`
+|Initial state. Waiting for Tasker to submit.
+|`in_review`, `evidence_timeout`
+
+|`in_review`
+|Evidence submitted. Referee is reviewing.
+|`approved`, `rejected`, `review_timeout`
+
+|`approved`
+|Referee approved. Tasker can confirm & rate.
+|Confirmed (via `is_confirmed = true`)
+
+|`rejected`
+|Referee rejected. Tasker may resubmit (once, before due date).
+|`in_review` (resubmission), Confirmed
+
+|`review_timeout`
+|Referee failed to judge in time.
+|Confirmed
+
+|`evidence_timeout`
+|Tasker failed to submit evidence in time.
+|Confirmed
+|===
+
+NOTE: For the full state diagram including Task and Request lifecycles, see xref:features/task.adoc[Task Lifecycle].
+
+== Technical Components
+
+=== RPC: `judge_evidence`
+* **Parameters**: `p_judgement_id` (uuid), `p_status` (judgement_status: `approved` or `rejected`), `p_comment` (text)
+* **Validation**:
+** Caller must be the matched referee for this judgement.
+** Current judgement status must be `in_review`.
+** Comment must be non-empty.
+** Status must be `approved` or `rejected`.
+
+=== Flutter: `JudgementSection` widget
+* Displays an inline form for referees when status is `in_review`.
+* Shows read-only result cards (avatar, status, comment) for completed judgements.
+* Uses `JudgementController` (AsyncNotifier) and `JudgementRepository`.
+
+=== Triggers: Notifications
+* `on_task_evidences_upserted_notify_referee` — Notifies the referee when evidence is submitted or updated.
+* `on_judgements_status_changed` — Notifies the tasker when judgement is approved or rejected.
+
+Both triggers use the `notify_event()` function, which calls the `send-notification` Edge Function.
+
+== Data Model
+
+=== `judgements` table
+
+|===
+|Column |Type |Description
+
+|`id`
+|uuid (PK, FK → task_referee_requests)
+|Shares ID with its parent request
+
+|`status`
+|judgement_status (enum)
+|Current judgement state
+
+|`comment`
+|text
+|Referee's comment (required on approve/reject)
+
+|`is_confirmed`
+|boolean
+|Whether the judgement has been finalized
+
+|`reopen_count`
+|smallint
+|Number of times evidence was resubmitted (max 1)
+
+|`is_evidence_timeout_confirmed`
+|boolean
+|Whether evidence timeout was acknowledged
+|===
+
+== Related Links
+
+* xref:features/task.adoc[Task Lifecycle] — Full state diagram and point system
+* xref:features/evidence.adoc[Evidence Submission] — How evidence is uploaded and submitted

@@ -5,6 +5,7 @@
 * Features
 ** xref:features/task.adoc[Task Lifecycle]
 ** xref:features/evidence.adoc[Evidence]
+** xref:features/judgement.adoc[Judgement]
 ** xref:features/payment-and-reward.adoc[Payment & Reward Flow]
 *** xref:features/subscription.adoc[Subscription]
 
