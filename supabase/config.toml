@@ -125,8 +125,6 @@ schema_paths = [
   
   # judgement
   "./schemas/judgement/functions/confirm_judgement_and_rate_referee.sql",
-  "./schemas/judgement/functions/handle_evidence_timeout_confirmed.sql",
-  "./schemas/judgement/functions/handle_judgement_confirmed.sql",
   "./schemas/judgement/functions/reopen_judgement.sql",
   "./schemas/judgement/functions/judge_evidence.sql",
   
