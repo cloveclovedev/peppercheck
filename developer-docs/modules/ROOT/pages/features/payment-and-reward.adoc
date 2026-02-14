@@ -3,12 +3,32 @@
 
 This document describes how subscriptions, points, and referee rewards are handled in Peppercheck, focusing on Stripe Connect integration and operational best practices in Japan.
 
+== Prerequisites
+
+* xref:features/task.adoc[Task Lifecycle] — Point consumption occurs at task creation.
+* xref:features/subscription.adoc[Subscription] — Subscriptions grant monthly points.
+
+[NOTE]
+.Implementation Status
+====
+**Currently implemented:**
+
+* Subscription purchases (Web via Stripe Checkout, Mobile via Google IAP)
+* Point system (grant via subscription, consume via task creation, refund on failure)
+
+**Planned / Not yet implemented:**
+
+* Stripe Connect for Referee payouts
+* Reward transfers to Referee Stripe balance
+* Automatic monthly bank payouts
+====
+
 == Overview
 
-* **Tasker** purchases subscriptions and points from Peppercheck.
-* **Tasker** consumes points to request reviews.
+* **Tasker** purchases subscriptions, which grant monthly points.
+* **Tasker** consumes points when creating tasks (requesting reviews).
 * **Referee** completes reviews and earns rewards.
-* **Peppercheck** handles payments as a marketplace platform using Stripe Connect.
+* **Peppercheck** will handle referee payments as a marketplace platform using Stripe Connect (planned).
 
 [NOTE]
 .Perspective difference
