@@ -53,6 +53,7 @@ class TaskDetailScreen extends ConsumerWidget {
                   const SizedBox(height: AppSizes.sectionGap),
                 ],
                 JudgementSection(task: displayTask),
+                const SizedBox(height: AppSizes.sectionGap),
               ],
             ),
           ),

@@ -272,12 +272,12 @@ class _JudgementSectionState extends ConsumerState<JudgementSection> {
     final isLoading = state.isLoading;
 
     return Padding(
-      padding: const EdgeInsets.only(top: AppSizes.spacingSmall),
+      padding: const EdgeInsets.only(top: AppSizes.spacingTiny),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Divider(color: AppColors.border),
-          const SizedBox(height: AppSizes.spacingSmall),
+          Divider(color: AppColors.border, height: 1),
+          const SizedBox(height: AppSizes.spacingTiny),
           Row(
             children: [
               Expanded(
@@ -311,7 +311,6 @@ class _JudgementSectionState extends ConsumerState<JudgementSection> {
               ),
             ],
           ),
-          const SizedBox(height: AppSizes.spacingSmall),
           BaseTextField(
             value: _confirmCommentController.text,
             onValueChange: (_) {},
@@ -443,9 +442,11 @@ class _RatingIconButton extends StatelessWidget {
         backgroundColor: isSelected
             ? color.withValues(alpha: 0.1)
             : Colors.transparent,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        minimumSize: Size.zero,
       ),
       constraints: const BoxConstraints(),
-      padding: const EdgeInsets.all(AppSizes.spacingSmall),
+      padding: const EdgeInsets.all(AppSizes.spacingTiny),
     );
   }
 }
