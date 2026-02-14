@@ -10,12 +10,8 @@ This document describes the Judgement feature, where Referees approve or reject 
 
 == Overview
 
-After a Tasker submits evidence, the assigned Referee reviews it and either approves or rejects it.
+After a Tasker submits evidence, the assigned Referee reviews it and either approves or rejects it with a comment, so that the Tasker receives feedback on their task completion.
 The judgement is performed via the `judge_evidence` RPC, which validates the caller, checks the current status, and updates the judgement record.
-
-== User Story
-
-> As a **Referee**, I want to **approve or reject submitted evidence with a comment**, so that the **Tasker receives feedback on their task completion**.
 
 == Judgement Flow
 
