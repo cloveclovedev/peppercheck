@@ -149,7 +149,10 @@ schema_paths = [
   "./schemas/point/functions/unlock_points.sql",
   "./schemas/point/functions/calculate_locked_points_by_active_tasks.sql",
   "./schemas/point/functions/grant_subscription_points.sql",
-  
+
+  # Reward
+  "./schemas/reward/functions/grant_reward.sql",
+
   # Notification
   "./schemas/notification/functions/notify_event.sql",
 
