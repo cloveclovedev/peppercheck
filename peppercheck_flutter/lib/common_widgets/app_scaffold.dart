@@ -96,7 +96,7 @@ class AppScaffold extends StatelessWidget {
                   actions: actions,
                 )
               : null),
-      body: _buildBody(),
+      body: _buildBody(context),
       bottomNavigationBar: SafeArea(
         child: Padding(
           // Removed bottom padding as requested (was 8)
@@ -140,7 +140,7 @@ class AppScaffold extends StatelessWidget {
     );
   }
 
-  Widget _buildBody() {
+  Widget _buildBody(BuildContext context) {
     if (_slivers != null) {
       List<Widget> contentSlivers = _slivers;
 
@@ -157,13 +157,14 @@ class AppScaffold extends StatelessWidget {
         ];
       }
 
+      final bottomPadding = AppSizes.bottomNavigationBarHeight +
+          MediaQuery.paddingOf(context).bottom;
+
       final scrollView = CustomScrollView(
         slivers: [
           ...contentSlivers,
-          const SliverPadding(
-            padding: EdgeInsets.only(
-              bottom: AppSizes.bottomNavigationBarHeight,
-            ),
+          SliverPadding(
+            padding: EdgeInsets.only(bottom: bottomPadding),
           ),
         ],
       );

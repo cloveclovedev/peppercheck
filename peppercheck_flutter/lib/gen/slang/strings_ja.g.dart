@@ -612,8 +612,8 @@ class TranslationsTaskJudgementConfirmJa {
 
 	// Translations
 
-	/// ja: 'この判定は適切でしたか？'
-	String get question => 'この判定は適切でしたか？';
+	/// ja: '適切な判定でしたか？'
+	String get question => '適切な判定でしたか？';
 
 	/// ja: '適切'
 	String get fair => '適切';
@@ -749,7 +749,7 @@ extension on Translations {
 			'task.judgement.success' => '判定を送信しました',
 			'task.judgement.error' => ({required Object message}) => 'エラーが発生しました: ${message}',
 			'task.judgement.commentRequired' => 'コメントを入力してください',
-			'task.judgement.confirm.question' => 'この判定は適切でしたか？',
+			'task.judgement.confirm.question' => '適切な判定でしたか？',
 			'task.judgement.confirm.fair' => '適切',
 			'task.judgement.confirm.unfair' => '不適切',
 			'task.judgement.confirm.comment' => 'コメント（任意）',
