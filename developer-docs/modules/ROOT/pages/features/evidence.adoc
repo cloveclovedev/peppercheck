@@ -10,6 +10,10 @@ The evidence consists of a text description and up to 5 image assets.
 
 The submission process uses **Cloudflare R2** for image storage and **Supabase** for metadata and status management.
 
+== Prerequisites
+
+* xref:features/task.adoc[Task Lifecycle] — Evidence is submitted within the context of an accepted Task Request.
+
 == Upload Sequence
 
 The following sequence diagram illustrates the secure upload flow, including:
@@ -45,3 +49,17 @@ include::example$features/evidence/upload_sequence.pu[]
 * **Responsibility**:
 ** Orchestrates the flow: `Pick Images` -> `Get URL` -> `Upload to R2` -> `Submit Metadata`.
 ** Handles connection to the Edge Function using the Supabase SDK (ensuring correct environment routing).
+
+== Notifications
+
+When evidence is submitted or updated, a push notification is sent to the assigned Referee:
+
+* **Insert** (new submission) → `notification_evidence_submitted`
+* **Update** (resubmission after rejection) → `notification_evidence_updated`
+
+This is handled by the `on_task_evidences_upserted_notify_referee` database trigger, which calls `notify_event()`.
+
+== Related Links
+
+* xref:features/judgement.adoc[Judgement] — What happens after evidence is submitted (Referee approve/reject).
+* xref:features/task.adoc[Task Lifecycle] — Full lifecycle including evidence timeouts.
