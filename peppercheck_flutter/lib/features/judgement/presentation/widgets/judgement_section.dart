@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:peppercheck_flutter/app/theme/app_colors.dart';
 import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
-import 'package:peppercheck_flutter/common_widgets/action_button.dart';
 import 'package:peppercheck_flutter/common_widgets/base_section.dart';
 import 'package:peppercheck_flutter/common_widgets/base_text_field.dart';
-import 'package:peppercheck_flutter/features/judgement/domain/judgement.dart';
+import 'package:peppercheck_flutter/common_widgets/primary_action_button.dart';
+import 'package:peppercheck_flutter/features/matching/domain/referee_request.dart';
 import 'package:peppercheck_flutter/features/judgement/presentation/controllers/judgement_controller.dart';
 import 'package:peppercheck_flutter/features/task/domain/task.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
@@ -35,25 +35,17 @@ class _JudgementSectionState extends ConsumerState<JudgementSection> {
     super.dispose();
   }
 
-  Judgement? _getJudgement() {
-    for (final request in widget.task.refereeRequests) {
-      if (request.judgement != null) {
-        return request.judgement;
-      }
+  RefereeRequest? _getCurrentUserRequest() {
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return null;
+    for (final req in widget.task.refereeRequests) {
+      if (req.matchedRefereeId == userId) return req;
     }
     return null;
   }
 
-  bool _isCurrentUserReferee() {
-    final userId = Supabase.instance.client.auth.currentUser?.id;
-    if (userId == null) return false;
-    return widget.task.refereeRequests.any(
-      (req) => req.matchedRefereeId == userId,
-    );
-  }
-
   void _submit(String status) {
-    final judgement = _getJudgement();
+    final judgement = _getCurrentUserRequest()?.judgement;
     if (judgement == null) return;
 
     ref
@@ -73,60 +65,96 @@ class _JudgementSectionState extends ConsumerState<JudgementSection> {
 
   @override
   Widget build(BuildContext context) {
-    final judgement = _getJudgement();
-    if (judgement == null) return const SizedBox.shrink();
+    final completedRequests = widget.task.refereeRequests
+        .where((req) =>
+            req.judgement != null &&
+            (req.judgement!.status == 'approved' ||
+                req.judgement!.status == 'rejected'))
+        .toList();
 
-    final status = judgement.status;
+    final currentRequest = _getCurrentUserRequest();
+    final showForm = currentRequest?.judgement != null &&
+        currentRequest!.judgement!.status == 'in_review';
 
-    // Show result for approved/rejected (both tasker and referee)
-    if (status == 'approved' || status == 'rejected') {
-      return _buildResultView(judgement);
+    if (completedRequests.isEmpty && !showForm) {
+      return const SizedBox.shrink();
     }
 
-    // Show form only for in_review + referee
-    if (status == 'in_review' && _isCurrentUserReferee()) {
-      return _buildFormView();
-    }
-
-    return const SizedBox.shrink();
+    return Column(
+      children: [
+        if (completedRequests.isNotEmpty) _buildResultView(completedRequests),
+        if (showForm) _buildFormView(),
+      ],
+    );
   }
 
-  Widget _buildResultView(Judgement judgement) {
-    final isApproved = judgement.status == 'approved';
-    final statusText =
-        isApproved ? t.task.judgement.approved : t.task.judgement.rejected;
-    final statusColor = isApproved ? AppColors.accentGreen : AppColors.textError;
-
+  Widget _buildResultView(List<RefereeRequest> completedRequests) {
     return BaseSection(
       title: t.task.judgement.title,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSizes.spacingSmall,
-              vertical: AppSizes.spacingTiny,
-            ),
-            decoration: BoxDecoration(
-              color: statusColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
-              border: Border.all(color: statusColor.withValues(alpha: 0.3)),
-            ),
-            child: Text(
-              statusText,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: statusColor,
-                fontWeight: FontWeight.bold,
+          for (int i = 0; i < completedRequests.length; i++) ...[
+            if (i > 0) const SizedBox(height: AppSizes.cardGap),
+            _buildResultCard(completedRequests[i]),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildResultCard(RefereeRequest request) {
+    final judgement = request.judgement!;
+    final isApproved = judgement.status == 'approved';
+    final statusText =
+        isApproved ? t.task.judgement.approved : t.task.judgement.rejected;
+    final statusColor =
+        isApproved ? AppColors.accentGreen : AppColors.textError;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.cardPaddingHorizontal,
+        vertical: AppSizes.cardPaddingVertical,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.backgroundWhite,
+        borderRadius: BorderRadius.circular(AppSizes.cardBorderRadius),
+      ),
+      child: Row(
+        children: [
+          if (request.referee?.avatarUrl != null)
+            CircleAvatar(
+              radius: AppSizes.taskCardIconSize / 2,
+              backgroundImage: NetworkImage(
+                request.referee!.avatarUrl!,
               ),
+              backgroundColor: Colors.transparent,
+            )
+          else
+            const Icon(
+              Icons.person,
+              color: AppColors.textSecondary,
+              size: AppSizes.taskCardIconSize,
+            ),
+          const SizedBox(width: AppSizes.cardIconGap),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  statusText,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: statusColor,
+                  ),
+                ),
+                if (judgement.comment != null)
+                  Text(
+                    judgement.comment!,
+                    style: const TextStyle(color: AppColors.textMuted),
+                  ),
+              ],
             ),
           ),
-          if (judgement.comment != null) ...[
-            const SizedBox(height: AppSizes.spacingSmall),
-            Text(
-              judgement.comment!,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-          ],
         ],
       ),
     );
@@ -146,7 +174,7 @@ class _JudgementSectionState extends ConsumerState<JudgementSection> {
             onValueChange: (_) {},
             label: t.task.judgement.comment,
             maxLines: 5,
-            minLines: 3,
+            minLines: 1,
             controller: _commentController,
           ),
           const SizedBox(height: AppSizes.spacingSmall),
@@ -160,7 +188,7 @@ class _JudgementSectionState extends ConsumerState<JudgementSection> {
           Row(
             children: [
               Expanded(
-                child: ActionButton(
+                child: PrimaryActionButton(
                   text: t.task.judgement.approve,
                   icon: Icons.check,
                   onPressed:
@@ -223,7 +251,7 @@ class _RejectButton extends StatelessWidget {
           backgroundColor: containerColor,
           foregroundColor: contentColor,
           side: BorderSide(color: borderColor, width: 2),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           minimumSize: Size.zero,
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
