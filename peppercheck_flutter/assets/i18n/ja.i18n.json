@@ -140,7 +140,15 @@
       "rejected": "却下済み",
       "success": "判定を送信しました",
       "error": "エラーが発生しました: $message",
-      "commentRequired": "コメントを入力してください"
+      "commentRequired": "コメントを入力してください",
+      "confirm": {
+        "question": "この判定は適切でしたか？",
+        "fair": "適切",
+        "unfair": "不適切",
+        "comment": "コメント（任意）",
+        "submit": "確認する",
+        "success": "判定を確認しました"
+      }
     }
   },
   "profile": {
