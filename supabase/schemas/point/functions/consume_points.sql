@@ -11,9 +11,10 @@ CREATE OR REPLACE FUNCTION public.consume_points(
     AS $$
 DECLARE
     v_balance integer;
+    v_locked integer;
 BEGIN
-    -- Check balance (lock row)
-    SELECT balance INTO v_balance
+    -- Lock row and get current state
+    SELECT balance, locked INTO v_balance, v_locked
     FROM public.point_wallets
     WHERE user_id = p_user_id
     FOR UPDATE;
@@ -26,9 +27,14 @@ BEGIN
         RAISE EXCEPTION 'Insufficient points: required %, available %', p_amount, v_balance;
     END IF;
 
-    -- Update balance
+    IF v_locked < p_amount THEN
+        RAISE EXCEPTION 'Insufficient locked points: required %, locked %', p_amount, v_locked;
+    END IF;
+
+    -- Settle: deduct from both balance and locked
     UPDATE public.point_wallets
     SET balance = balance - p_amount,
+        locked = locked - p_amount,
         updated_at = now()
     WHERE user_id = p_user_id;
 
@@ -41,7 +47,7 @@ BEGIN
         related_id
     ) VALUES (
         p_user_id,
-        -p_amount, -- Ledger records net change
+        -p_amount,
         p_reason,
         p_description,
         p_related_id
