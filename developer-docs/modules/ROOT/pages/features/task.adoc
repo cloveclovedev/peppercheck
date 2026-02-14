@@ -8,6 +8,14 @@ This document describes the lifecycle of a Task, including its interactions with
 The Task status moves primarily through three stages: `Draft`, `Open`, and `Closed` (or `Completed`).
 Within the `Open` state, the `Referee Request` and `Judgement` lifecycles operate.
 
+== Prerequisites
+
+This is the foundational feature. Other features depend on this:
+
+* xref:features/evidence.adoc[Evidence Submission] — Evidence submission within the Judgement lifecycle.
+* xref:features/judgement.adoc[Judgement] — Referee approve/reject flow.
+* xref:features/payment-and-reward.adoc[Payment & Reward Flow] — Point consumption at task creation.
+
 == State Transition Diagram
 
 The following diagram illustrates the state transitions for Tasks, Referee Requests, and Judgements.
@@ -31,13 +39,13 @@ include::example$features/task/lifecycle.pu[]
 * **Closed**: Request finished (either Judgement Confirmed or Evidence Timeout).
 
 ==== Judgement Status
-* **Awaiting Evidence**: Initial state. Waiting for Tasker to submit evidence.
-* **In Review**: Evidence submitted. Referee is reviewing.
-* **Approved**: Referee approved the task. Tasker confirmation required.
-* **Rejected**: Referee rejected. Tasker can update evidence.
-* **Judgement Timeout**: Referee failed to make a judgement in time.
-* **Evidence Timeout**: Tasker failed to submit evidence in time. (Triggers billing).
-* **Confirmed**: Final state. Points are consumed/transferred.
+* **`awaiting_evidence`**: Initial state. Waiting for Tasker to submit evidence.
+* **`in_review`**: Evidence submitted. Referee is reviewing.
+* **`approved`**: Referee approved the task. Tasker confirmation required.
+* **`rejected`**: Referee rejected. Tasker can update evidence (once, before due date).
+* **`review_timeout`**: Referee failed to make a judgement in time.
+* **`evidence_timeout`**: Tasker failed to submit evidence in time.
+* **Confirmed**: (`is_confirmed = true`) Final state. Judgement is finalized.
 
 == Timeline and Notifications
 
@@ -50,20 +58,17 @@ include::example$features/task/timing.pu[]
 
 == Point System Considerations
 
-With the introduction of the Point System, the following logic applies to state transitions:
-
-* **Point Consumption (Reservation)**:
-** When `Request` enters `Accepted` state, points equivalent to the task fee are reserved.
-** If the Request is `Declined` or `Expired`, the reserved points are released.
+* **Point Consumption (at Task Creation)**:
+** When a Task is opened, points are consumed via `matching_request` ledger entry.
+** If the matching fails or task is cancelled, points are refunded via `matching_refund`.
 
 * **Point Finalization**:
-** Points are permanently consumed (and transferred to Referee) when the state transitions to `Confirmed` or `Evidence Timeout`.
+** Points consumed at task creation are final once the Task reaches `Closed` state.
 
-* **Refunds/Penalties**:
-** If `Judgement Timeout` occurs, reserved points are refunded.
+* **Refunds**:
+** If `review_timeout` occurs, reserved points may be refunded depending on policy.
 
 * **System Auto-Confirm**:
-** To prevent tasks from hanging indefinitely in `Approved`, `Rejected`, or `Timeout` states, the system will automatically transition to `Confirmed` if the Tasker takes no action.
+** To prevent tasks from hanging indefinitely in `approved`, `rejected`, or timeout states, the system will automatically transition to Confirmed if the Tasker takes no action.
 ** Condition: `Now > Due Date + N days` (where N is a grace period, e.g., 3 days).
 ** **Rating**: In case of Auto-Confirm, no rating is applied (treated as NULL) to be neutral.
-** **History**: The system records that the confirmation was performed automatically due to inactivity.

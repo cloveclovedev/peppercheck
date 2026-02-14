@@ -14,7 +14,7 @@ state "Task: Open" as TaskOpen {
         
         state "Judgement: Confirmed" as JudgementConfirmed
         
-        state "Judgement: Timeout" as JudgementTimeout
+        state "Judgement: Review Timeout" as JudgementTimeout
         state "Judgement: Evidence Timeout" as EvidenceTimeout
 
         [*] --> JudgementAwaitingEvidence
