@@ -35,6 +35,7 @@ examples/           # Diagram sources (PlantUML), code snippets
 `pages/features/` describes a user-facing feature (e.g., Task, Payment) that spans multiple technologies.
 
 * *Title*: [Feature Name]
+* *Prerequisites*: Features or components this depends on (e.g., "Requires xref:features/task.adoc[Task] and xref:features/evidence.adoc[Evidence]").
 * *User Story*: "As a [Role], I want to [Action], so that [Benefit]." (The "Why" & "Goal")
 * *Architecture/Flow*: Sequence Diagrams / State Diagrams (The "System Behavior").
 * *Technical Components*: Brief list of involved components (Flutter, Supabase, Stripe, etc.).
@@ -51,3 +52,4 @@ examples/           # Diagram sources (PlantUML), code snippets
 * *Usage*: Command or trigger.
 * *Inputs/Outputs*: Parameters, return values.
 * *Dependencies*: What does it rely on?
+* *Error Cases*: Possible errors and their causes (optional, recommended for RPCs and Edge Functions).
