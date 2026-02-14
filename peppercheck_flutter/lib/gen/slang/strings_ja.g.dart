@@ -516,6 +516,8 @@ class TranslationsTaskJudgementJa {
 
 	/// ja: 'コメントを入力してください'
 	String get commentRequired => 'コメントを入力してください';
+
+	late final TranslationsTaskJudgementConfirmJa confirm = TranslationsTaskJudgementConfirmJa.internal(_root);
 }
 
 // Path: matching.referee_availability
@@ -600,6 +602,33 @@ class TranslationsTaskCreationErrorJa {
 
 	/// ja: 'OK'
 	String get buttonOk => 'OK';
+}
+
+// Path: task.judgement.confirm
+class TranslationsTaskJudgementConfirmJa {
+	TranslationsTaskJudgementConfirmJa.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// ja: 'この判定は適切でしたか？'
+	String get question => 'この判定は適切でしたか？';
+
+	/// ja: '適切'
+	String get fair => '適切';
+
+	/// ja: '不適切'
+	String get unfair => '不適切';
+
+	/// ja: 'コメント（任意）'
+	String get comment => 'コメント（任意）';
+
+	/// ja: '確認する'
+	String get submit => '確認する';
+
+	/// ja: '判定を確認しました'
+	String get success => '判定を確認しました';
 }
 
 /// The flat map containing all translations for locale <ja>.
@@ -720,6 +749,12 @@ extension on Translations {
 			'task.judgement.success' => '判定を送信しました',
 			'task.judgement.error' => ({required Object message}) => 'エラーが発生しました: ${message}',
 			'task.judgement.commentRequired' => 'コメントを入力してください',
+			'task.judgement.confirm.question' => 'この判定は適切でしたか？',
+			'task.judgement.confirm.fair' => '適切',
+			'task.judgement.confirm.unfair' => '不適切',
+			'task.judgement.confirm.comment' => 'コメント（任意）',
+			'task.judgement.confirm.submit' => '確認する',
+			'task.judgement.confirm.success' => '判定を確認しました',
 			'profile.title' => 'プロフィール',
 			'matching.referee_availability.title' => '受付可能時間',
 			'matching.referee_availability.no_slots' => '受付可能時間が設定されていません',

@@ -30,6 +30,26 @@ class JudgementRepository {
       rethrow;
     }
   }
+
+  Future<void> confirmJudgement({
+    required String judgementId,
+    required bool isPositive,
+    String? comment,
+  }) async {
+    try {
+      await _client.rpc(
+        'confirm_judgement_and_rate_referee',
+        params: {
+          'p_judgement_id': judgementId,
+          'p_is_positive': isPositive,
+          if (comment != null && comment.isNotEmpty) 'p_comment': comment,
+        },
+      );
+    } catch (e, st) {
+      _logger.e('confirmJudgement failed', error: e, stackTrace: st);
+      rethrow;
+    }
+  }
 }
 
 @Riverpod(keepAlive: true)

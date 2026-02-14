@@ -5,6 +5,7 @@ import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
 import 'package:peppercheck_flutter/common_widgets/base_section.dart';
 import 'package:peppercheck_flutter/common_widgets/base_text_field.dart';
 import 'package:peppercheck_flutter/common_widgets/primary_action_button.dart';
+import 'package:peppercheck_flutter/features/judgement/domain/judgement.dart';
 import 'package:peppercheck_flutter/features/matching/domain/referee_request.dart';
 import 'package:peppercheck_flutter/features/judgement/presentation/controllers/judgement_controller.dart';
 import 'package:peppercheck_flutter/features/task/domain/task.dart';
@@ -22,6 +23,8 @@ class JudgementSection extends ConsumerStatefulWidget {
 
 class _JudgementSectionState extends ConsumerState<JudgementSection> {
   final _commentController = TextEditingController();
+  final _confirmCommentController = TextEditingController();
+  bool? _selectedIsPositive;
 
   @override
   void initState() {
@@ -32,6 +35,7 @@ class _JudgementSectionState extends ConsumerState<JudgementSection> {
   @override
   void dispose() {
     _commentController.dispose();
+    _confirmCommentController.dispose();
     super.dispose();
   }
 
@@ -42,6 +46,11 @@ class _JudgementSectionState extends ConsumerState<JudgementSection> {
       if (req.matchedRefereeId == userId) return req;
     }
     return null;
+  }
+
+  bool _isCurrentUserTasker() {
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    return userId != null && widget.task.taskerId == userId;
   }
 
   void _submit(String status) {
@@ -119,42 +128,60 @@ class _JudgementSectionState extends ConsumerState<JudgementSection> {
         color: AppColors.backgroundWhite,
         borderRadius: BorderRadius.circular(AppSizes.cardBorderRadius),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (request.referee?.avatarUrl != null)
-            CircleAvatar(
-              radius: AppSizes.taskCardIconSize / 2,
-              backgroundImage: NetworkImage(
-                request.referee!.avatarUrl!,
+          Row(
+            children: [
+              if (request.referee?.avatarUrl != null)
+                CircleAvatar(
+                  radius: AppSizes.taskCardIconSize / 2,
+                  backgroundImage: NetworkImage(
+                    request.referee!.avatarUrl!,
+                  ),
+                  backgroundColor: Colors.transparent,
+                )
+              else
+                const Icon(
+                  Icons.person,
+                  color: AppColors.textSecondary,
+                  size: AppSizes.taskCardIconSize,
+                ),
+              const SizedBox(width: AppSizes.cardIconGap),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      statusText,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: statusColor,
+                      ),
+                    ),
+                    if (judgement.comment != null)
+                      Text(
+                        judgement.comment!,
+                        style: const TextStyle(color: AppColors.textMuted),
+                      ),
+                  ],
+                ),
               ),
-              backgroundColor: Colors.transparent,
-            )
-          else
-            const Icon(
-              Icons.person,
-              color: AppColors.textSecondary,
-              size: AppSizes.taskCardIconSize,
-            ),
-          const SizedBox(width: AppSizes.cardIconGap),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  statusText,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: statusColor,
+              if (judgement.isConfirmed && _isCurrentUserTasker())
+                Padding(
+                  padding: const EdgeInsets.only(left: AppSizes.spacingSmall),
+                  child: Icon(
+                    Icons.check_circle,
+                    color: AppColors.accentGreen,
+                    size: AppSizes.taskCardIconSize,
                   ),
                 ),
-                if (judgement.comment != null)
-                  Text(
-                    judgement.comment!,
-                    style: const TextStyle(color: AppColors.textMuted),
-                  ),
-              ],
-            ),
+            ],
           ),
+          if (_isCurrentUserTasker() &&
+              !judgement.isConfirmed &&
+              (judgement.status == 'approved' || judgement.status == 'rejected'))
+            _buildConfirmArea(judgement),
         ],
       ),
     );
@@ -210,6 +237,108 @@ class _JudgementSectionState extends ConsumerState<JudgementSection> {
                 ),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _submitConfirm(Judgement judgement) {
+    if (_selectedIsPositive == null) return;
+
+    ref
+        .read(judgementControllerProvider.notifier)
+        .confirmJudgement(
+          taskId: widget.task.id,
+          judgementId: judgement.id,
+          isPositive: _selectedIsPositive!,
+          comment: _confirmCommentController.text.trim().isEmpty
+              ? null
+              : _confirmCommentController.text.trim(),
+          onSuccess: () {
+            setState(() {
+              _selectedIsPositive = null;
+              _confirmCommentController.clear();
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(t.task.judgement.confirm.success)),
+            );
+          },
+        );
+  }
+
+  Widget _buildConfirmArea(Judgement judgement) {
+    final state = ref.watch(judgementControllerProvider);
+    final isLoading = state.isLoading;
+
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSizes.spacingSmall),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Divider(color: AppColors.border),
+          const SizedBox(height: AppSizes.spacingSmall),
+          Text(
+            t.task.judgement.confirm.question,
+            style: const TextStyle(
+              fontWeight: FontWeight.w500,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: AppSizes.spacingSmall),
+          Row(
+            children: [
+              Expanded(
+                child: _RatingButton(
+                  icon: Icons.thumb_up_outlined,
+                  selectedIcon: Icons.thumb_up,
+                  label: t.task.judgement.confirm.fair,
+                  isSelected: _selectedIsPositive == true,
+                  color: AppColors.accentGreen,
+                  onTap: isLoading
+                      ? null
+                      : () => setState(() => _selectedIsPositive = true),
+                ),
+              ),
+              const SizedBox(width: AppSizes.spacingSmall),
+              Expanded(
+                child: _RatingButton(
+                  icon: Icons.thumb_down_outlined,
+                  selectedIcon: Icons.thumb_down,
+                  label: t.task.judgement.confirm.unfair,
+                  isSelected: _selectedIsPositive == false,
+                  color: AppColors.textError,
+                  onTap: isLoading
+                      ? null
+                      : () => setState(() => _selectedIsPositive = false),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSizes.spacingSmall),
+          BaseTextField(
+            value: _confirmCommentController.text,
+            onValueChange: (_) {},
+            label: t.task.judgement.confirm.comment,
+            maxLines: 3,
+            minLines: 1,
+            controller: _confirmCommentController,
+          ),
+          const SizedBox(height: AppSizes.spacingSmall),
+          if (state.hasError) ...[
+            Text(
+              state.error.toString(),
+              style: TextStyle(color: AppColors.textError),
+            ),
+            const SizedBox(height: AppSizes.spacingSmall),
+          ],
+          PrimaryActionButton(
+            text: t.task.judgement.confirm.submit,
+            icon: Icons.check,
+            onPressed: _selectedIsPositive != null && !isLoading
+                ? () => _submitConfirm(judgement)
+                : null,
+            isLoading: isLoading,
           ),
         ],
       ),
@@ -281,6 +410,76 @@ class _RejectButton extends StatelessWidget {
                   ),
                 ],
               ),
+      ),
+    );
+  }
+}
+
+class _RatingButton extends StatelessWidget {
+  final IconData icon;
+  final IconData selectedIcon;
+  final String label;
+  final bool isSelected;
+  final Color color;
+  final VoidCallback? onTap;
+
+  const _RatingButton({
+    required this.icon,
+    required this.selectedIcon,
+    required this.label,
+    required this.isSelected,
+    required this.color,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bgColor = isSelected
+        ? color.withValues(alpha: 0.1)
+        : AppColors.textPrimary.withValues(alpha: 0.05);
+    final fgColor = isSelected
+        ? color
+        : AppColors.textPrimary.withValues(alpha: 0.4);
+    final borderColor = isSelected
+        ? color.withValues(alpha: 0.5)
+        : AppColors.textPrimary.withValues(alpha: 0.2);
+
+    final borderRadius = BorderRadius.circular(AppSizes.cardBorderRadius);
+
+    return Material(
+      color: bgColor,
+      borderRadius: borderRadius,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: borderRadius,
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSizes.spacingStandard,
+            vertical: AppSizes.spacingSmall,
+          ),
+          decoration: BoxDecoration(
+            borderRadius: borderRadius,
+            border: Border.all(color: borderColor, width: 2),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                isSelected ? selectedIcon : icon,
+                size: AppSizes.taskCardIconSize,
+                color: fgColor,
+              ),
+              const SizedBox(width: AppSizes.spacingSmall),
+              Text(
+                label,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: fgColor,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
