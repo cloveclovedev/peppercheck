@@ -1,0 +1,37 @@
+@startuml judge_sequence
+title Judgement Flow (Approve/Reject)
+
+actor "Tasker" as Tasker
+participant "Flutter App" as App
+database "Supabase" as DB
+actor "Referee" as Referee
+
+== Evidence Submission ==
+Tasker -> App: Submit evidence\n(images + description)
+App -> DB: submit_evidence RPC
+DB --> App: Status → in_review
+DB -> DB: Trigger:\non_task_evidences_upserted\n_notify_referee
+DB --> Referee: Push notification\n(evidence_submitted)
+
+== Judgement ==
+Referee -> App: Review evidence
+Referee -> App: Approve / Reject\n(with comment)
+App -> DB: judge_evidence RPC\n(judgement_id, status, comment)
+note right of DB
+  Validates:
+  - caller is assigned referee
+  - current status is in_review
+  - comment is non-empty
+  - status is approved or rejected
+end note
+DB --> App: Status updated
+DB -> DB: Trigger:\non_judgements_status_changed
+DB --> Tasker: Push notification\n(judgement_approved / rejected)
+
+== Rejection & Resubmission (optional) ==
+Tasker -> App: Update evidence\n(if rejected, reopen_count < 1,\nand before due date)
+App -> DB: submit_evidence RPC
+DB --> App: Status → in_review (again)
+DB --> Referee: Push notification\n(evidence_updated)
+
+@enduml
