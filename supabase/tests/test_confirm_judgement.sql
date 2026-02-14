@@ -24,6 +24,12 @@ VALUES
   ('11111111-1111-1111-1111-111111111111', 'tasker@test.com', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', crypt('password123', gen_salt('bf')), now(), now(), now()),
   ('22222222-2222-2222-2222-222222222222', 'referee@test.com', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', crypt('password123', gen_salt('bf')), now(), now(), now());
 
+\echo '[Setup] Setting up point wallets...'
+
+UPDATE public.point_wallets
+SET balance = 100, locked = 10
+WHERE user_id = '11111111-1111-1111-1111-111111111111';
+
 \echo '[Setup] Creating task...'
 
 INSERT INTO public.tasks (id, tasker_id, title, description, criteria, due_date, status)
