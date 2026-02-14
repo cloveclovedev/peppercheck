@@ -101,7 +101,6 @@ schema_paths = [
   "./schemas/profile/functions/auth_helpers.sql",
 
   # task
-  "./schemas/task/functions/close_task_if_all_judgements_confirmed.sql",
   # "./schemas/task/functions/*.sql", # keeping wildcard if there are others, or check first.
   
   # matching
@@ -122,13 +121,12 @@ schema_paths = [
   "./schemas/evidence/functions/submit_evidence.sql",
   
   # rating
-  "./schemas/rating/functions/set_rater_id.sql",
   "./schemas/rating/functions/update_user_ratings.sql",
   
   # judgement
   "./schemas/judgement/functions/confirm_judgement_and_rate_referee.sql",
-  "./schemas/judgement/functions/handle_evidence_timeout_confirmation.sql",
-  "./schemas/judgement/functions/handle_judgement_confirmation.sql",
+  "./schemas/judgement/functions/handle_evidence_timeout_confirmed.sql",
+  "./schemas/judgement/functions/handle_judgement_confirmed.sql",
   "./schemas/judgement/functions/reopen_judgement.sql",
   "./schemas/judgement/functions/judge_evidence.sql",
   
@@ -158,13 +156,15 @@ schema_paths = [
   # Judgement
   "./schemas/judgement/triggers/on_judgements_update_set_updated_at.sql",
   "./schemas/judgement/triggers/on_judgements_timeout_score_referee.sql",
-  "./schemas/judgement/triggers/on_judgements_confirmed_close_task.sql",
+  "./schemas/judgement/triggers/on_judgement_confirmed_close_request.sql",
+  "./schemas/judgement/triggers/on_judgement_confirmed.sql",
   "./schemas/judgement/triggers/on_judgements_evidence_timeout_close_referee_request.sql",
   "./schemas/judgement/triggers/on_judgement_threads_update_set_updated_at.sql",
   "./schemas/judgement/triggers/on_judgements_status_changed.sql",
 
   # Task
   "./schemas/task/triggers/on_tasks_update_set_updated_at.sql",
+  "./schemas/task/triggers/on_all_requests_closed_close_task.sql",
 
   # Evidence
   "./schemas/evidence/triggers/on_task_evidences_insert_validate_due_date.sql",
@@ -192,7 +192,6 @@ schema_paths = [
   "./schemas/profile/triggers/on_profiles_update_set_updated_at.sql",
 
   # Rating
-  "./schemas/rating/triggers/on_rating_histories_insert_set_rater_id.sql",
   "./schemas/rating/triggers/on_rating_histories_change_update_user_ratings.sql",
   "./schemas/rating/triggers/on_user_ratings_update_set_updated_at.sql",
 
