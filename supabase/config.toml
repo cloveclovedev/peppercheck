@@ -56,7 +56,6 @@ schema_paths = [
   "./schemas/stripe/tables/stripe_accounts.sql",
 
   # Point
-  "./schemas/point/tables/enums.sql",
   "./schemas/point/tables/point_wallets.sql",
   "./schemas/point/tables/point_ledger.sql",
 
