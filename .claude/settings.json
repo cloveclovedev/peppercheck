@@ -1,0 +1,5 @@
+{
+  "enabledPlugins": {
+    "postgres-best-practices@supabase-agent-skills": true
+  }
+}
