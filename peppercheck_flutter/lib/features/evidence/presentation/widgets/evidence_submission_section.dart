@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:peppercheck_flutter/app/theme/app_colors.dart';
 import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
 import 'package:peppercheck_flutter/common_widgets/action_button.dart';
+import 'package:peppercheck_flutter/common_widgets/primary_action_button.dart';
 import 'package:peppercheck_flutter/common_widgets/base_text_field.dart';
 
 import 'package:peppercheck_flutter/features/evidence/presentation/controllers/evidence_controller.dart';
@@ -164,7 +165,7 @@ class _EvidenceSubmissionSectionState
       );
 
       return BaseSection(
-        title: t.task.evidence.timeout.title,
+        title: t.task.evidence.submit,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -190,8 +191,9 @@ class _EvidenceSubmissionSectionState
                 ),
                 const SizedBox(height: AppSizes.spacingSmall),
               ],
-              ActionButton(
+              PrimaryActionButton(
                 text: t.task.evidence.timeout.confirm,
+                icon: Icons.check,
                 onPressed: () => _confirmTimeout(),
                 isLoading: isLoading,
               ),
