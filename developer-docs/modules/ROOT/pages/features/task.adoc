@@ -58,17 +58,30 @@ include::example$features/task/timing.pu[]
 
 == Point System Considerations
 
-* **Point Consumption (at Task Creation)**:
-** When a Task is opened, points are consumed via `matching_request` ledger entry.
-** If the matching fails or task is cancelled, points are refunded via `matching_refund`.
+* **Point Lock (at Task Creation)**:
+** When a Task is opened, points are **locked** via `lock_points()` with reason `matching_lock`.
+** The Tasker's `point_wallets.locked` column increases; `balance` is unchanged.
+** Available balance = `balance - locked`.
 
-* **Point Finalization**:
-** Points consumed at task creation are final once the Task reaches `Closed` state.
+* **Point Settlement (at Judgement Confirmation)**:
+** When the Tasker confirms a judgement (via `confirm_judgement_and_rate_referee`), locked points are **settled** via `consume_points()` with reason `matching_settled`.
+** Both `balance` and `locked` decrease.
+** A reward is simultaneously granted to the Referee via `grant_reward()`.
 
-* **Refunds**:
-** If Review Timeout occurs, reserved points may be refunded depending on policy.
+* **Point Unlock (on Failure)**:
+** If matching fails or the task is cancelled before confirmation, locked points are **unlocked** via `unlock_points()` with reason `matching_unlock`.
+** The `locked` column decreases; `balance` remains unchanged (points return to available).
 
 * **System Auto-Confirm**:
 ** To prevent tasks from hanging indefinitely in Approved, Rejected, or Timeout states, the system will automatically transition to Confirmed if the Tasker takes no action.
 ** Condition: `Now > Due Date + N days` (where N is a grace period, e.g., 3 days).
 ** **Rating**: In case of Auto-Confirm, no rating is applied (treated as NULL) to be neutral.
+
+== Task Closure
+
+A Task transitions to `Closed` status when **all judgements are confirmed** (`is_confirmed = true`).
+
+* **Trigger**: `on_all_judgements_confirmed_close_task` — fires after a judgement's `is_confirmed` changes from `false` to `true`.
+* **Function**: `close_task_if_all_judgements_confirmed()` — locks the task row, checks if any judgement for this task still has `is_confirmed = false`, and sets the task status to `closed` if all are confirmed.
+
+This means the task does not close when requests are closed, but when the Tasker has confirmed every judgement outcome (either via `confirm_judgement_and_rate_referee` or `confirm_evidence_timeout`).
