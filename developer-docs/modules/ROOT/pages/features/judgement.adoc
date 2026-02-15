@@ -69,6 +69,9 @@ NOTE: For the full state diagram including Task and Request lifecycles, see xref
 === Flutter: `JudgementSection` widget
 * Displays an inline form for referees when status is `in_review`.
 * Shows read-only result cards (avatar, status, comment) for completed judgements.
+* Displays a confirmation form for the tasker when status is `approved` or `rejected` and `is_confirmed = false`:
+** Binary rating buttons (positive / negative) for the Referee.
+** Optional comment field.
 * Uses `JudgementController` (AsyncNotifier) and `JudgementRepository`.
 
 === Triggers: Notifications
@@ -76,6 +79,49 @@ NOTE: For the full state diagram including Task and Request lifecycles, see xref
 * `on_judgements_status_changed` — Notifies the tasker when judgement is approved or rejected.
 
 Both triggers use the `notify_event()` function, which calls the `send-notification` Edge Function.
+
+== Confirm Judgement
+
+After a Referee approves or rejects, the Tasker must confirm the judgement and rate the Referee.
+This triggers point settlement and reward distribution.
+
+=== RPC: `confirm_judgement_and_rate_referee`
+
+* **Parameters**: `p_judgement_id` (uuid), `p_is_positive` (boolean), `p_comment` (text, optional)
+* **Validation**:
+** Caller must be the tasker for this judgement's task.
+** Judgement status must be `approved` or `rejected`.
+** If already confirmed (`is_confirmed = true`), the call is a no-op (idempotent).
+* **Actions** (atomic):
+.. Determine point cost via `get_point_for_matching_strategy()`.
+.. Settle points: `consume_points(tasker, cost, 'matching_settled')`.
+.. Grant reward: `grant_reward(referee, cost, 'review_completed')`.
+.. Insert `rating_histories` entry with `is_positive` and optional `comment`.
+.. Set `judgements.is_confirmed = true`.
+
+=== Binary Rating
+
+The Tasker provides a simple positive/negative rating (`is_positive`) for the Referee.
+Ratings are stored in the `rating_histories` table with `rating_type = 'referee'`.
+
+== Confirm Evidence Timeout
+
+When evidence times out, settlement happens automatically via a trigger.
+The Tasker must still confirm the timeout to finalize the judgement.
+
+=== RPC: `confirm_evidence_timeout`
+
+* **Parameters**: `p_judgement_id` (uuid)
+* **Validation**:
+** Caller must be the tasker.
+** Judgement status must be `evidence_timeout`.
+** `is_evidence_timeout_confirmed` must be `true` (settlement already completed by trigger).
+** If already confirmed (`is_confirmed = true`), the call is a no-op (idempotent).
+* **Actions**:
+.. Set `judgements.is_confirmed = true`.
+.. This fires the `on_all_judgements_confirmed_close_task` trigger, potentially closing the task.
+
+NOTE: Unlike `confirm_judgement_and_rate_referee`, no point settlement or reward grant happens here — the `settle_evidence_timeout` trigger has already handled that when the status changed to `evidence_timeout`.
 
 == Data Model
 
