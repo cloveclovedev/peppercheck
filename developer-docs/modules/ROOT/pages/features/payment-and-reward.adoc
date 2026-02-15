@@ -1,11 +1,11 @@
 = Payment & Reward Flow
 :sectnums:
 
-This document describes how subscriptions, points, and referee rewards are handled in Peppercheck, focusing on Stripe Connect integration and operational best practices in Japan.
+This document describes how points and referee rewards are handled in Peppercheck.
 
 == Prerequisites
 
-* xref:features/task.adoc[Task Lifecycle] — Point consumption occurs at task creation.
+* xref:features/task.adoc[Task Lifecycle] — Point lock occurs at task creation, settlement at judgement confirmation.
 * xref:features/subscription.adoc[Subscription] — Subscriptions grant monthly points.
 
 [NOTE]
@@ -14,7 +14,8 @@ This document describes how subscriptions, points, and referee rewards are handl
 **Currently implemented:**
 
 * Subscription purchases (Web via Stripe Checkout, Mobile via Google IAP)
-* Point system (grant via subscription, consume via task creation, refund on failure)
+* Point system (grant via subscription, lock at task creation, settle on confirm)
+* Reward system — internal tracking (`reward_wallets`, `reward_ledger`)
 
 **Planned / Not yet implemented:**
 
@@ -26,117 +27,125 @@ This document describes how subscriptions, points, and referee rewards are handl
 == Overview
 
 * **Tasker** purchases subscriptions, which grant monthly points.
-* **Tasker** consumes points when creating tasks (requesting reviews).
-* **Referee** completes reviews and earns rewards.
-* **Peppercheck** will handle referee payments as a marketplace platform using Stripe Connect (planned).
+* **Tasker** locks points when creating tasks (requesting reviews); points are settled on judgement confirmation.
+* **Referee** completes reviews and earns rewards (tracked internally; Stripe Connect payouts planned).
 
-[NOTE]
-.Perspective difference
-====
-**UX perspective**: It appears as if Taskers pay Referees directly. +
-**Legal/Technical perspective**: Peppercheck collects payments first and pays Referees as contractors.
-====
-
-== Conceptual Roles
-
-|===
-|Role |Description
-
-|Tasker
-|Purchases subscriptions and points, requests reviews
-
-|Referee
-|Completes reviews and earns rewards
-
-|Peppercheck
-|Marketplace platform and payment operator
-|===
-
-== Key Design Principles
-
-* Subscriptions and points break direct Tasker → Referee payment relationships.
-* Peppercheck acts as the payment intermediary (marketplace model).
-* Referee rewards are treated as **contractor payments**.
-* UX and wording emphasize "Tasker paying Referee", while the backend remains compliant.
-
-== Stripe Connect Strategy
-
-* **Account Type**: Stripe Connect (Express or Custom accounts)
-* **Charge Model**: Separate Charges & Transfers
-* **Payouts**: Referee payouts handled via Stripe balances
-
-== Reward Timing Design
-
-=== Reward Transfer Timing (Peppercheck → Referee Stripe balance)
-
-==== Chosen approach: Review-based (per completed review)
-
-* When a review is completed:
-** Reward is finalized in Peppercheck DB
-** Funds are immediately transferred to the Referee’s Stripe balance
-** This does **not** trigger a bank payout yet
-
-==== Reasons
-
-* Immediate visibility of earnings for Referees
-* Small, isolated transactions reduce failure impact
-* Aligns with standard marketplace / gig-economy patterns
-* Simplifies monthly settlement logic
-
-=== Payout Timing (Referee Stripe balance → Bank account)
-
-==== Chosen approach: Monthly automatic payout
-
-* Stripe handles payouts automatically on a monthly schedule
-* No payout API call required per review
-* Minimum payout thresholds can be applied (e.g. ¥1,000)
-
-== Fees
-
-* **Transfer (Peppercheck → Referee Stripe balance)**: No fee
-* **Standard payout (Stripe → Japanese bank account)**: No fee
-* **Fees apply only to**:
-** Card payments
-** Platform fees
-** Instant payouts (generally unavailable in Japan)
-
-== Platform Balance Management
-
-* Transfers require sufficient Peppercheck Stripe balance
-* Peppercheck must maintain a safety buffer
-* Recommended safeguards:
-** Balance threshold checks before transfers
-** Temporary `pending` state if balance is insufficient
-** Admin alerts for low balance
+NOTE: UX copy shows "Tasker pays Referee directly", but legally Peppercheck collects payments first and pays Referees as contractors (marketplace model).
 
 == Operational Flow
-
-The following diagram illustrates the lifecycle of purchases, point consumption, review rewards, and final payouts.
 
 [plantuml]
 ----
 include::example$features/payment-and-reward/flow.pu[]
 ----
 
-== UX vs Legal Separation
+== Point Lock / Settle Mechanism
 
-* **UI and copy**:
-** "Your points are paid to the Referee"
-** "You earned ¥X from this Tasker’s request"
-* **Backend reality**:
-** Peppercheck pays Referees as contractors
-** Stripe Connect manages compliance and payouts
+Points follow a two-phase model to ensure funds are reserved but not consumed until the review process completes.
 
-== What This Design Optimizes For
+=== Phases
 
-* Clean Stripe Connect integration
-* Predictable payouts for Referees
-* Low operational overhead
-* Scalability
-* Compliance with Japanese payment constraints
+. **Lock** — When a Task is opened, points are locked in the Tasker's wallet via `lock_points()`. The `locked` column on `point_wallets` increases; the wallet `balance` is unchanged. Available balance = `balance - locked`.
+. **Settle** — When a Judgement is confirmed (or evidence times out), locked points are consumed via `consume_points()`. Both `balance` and `locked` decrease.
+. **Unlock** (failure path) — If a matching fails, locked points are returned via `unlock_points()`. The `locked` column decreases; balance remains unchanged.
 
-== Out of Scope (Handled Separately)
+=== Database Functions
 
-* Tax handling and withholding
-* Invoice system considerations
-* Annual payment reports
+|===
+|Function |Description
+
+|`lock_points(p_user_id, p_amount, p_reason, p_description, p_related_id)`
+|Lock points in the wallet. Raises exception if available (`balance - locked`) is insufficient.
+
+|`unlock_points(p_user_id, p_amount, p_reason, p_description, p_related_id)`
+|Release locked points back to available. Raises exception if locked amount is insufficient.
+
+|`consume_points(p_user_id, p_amount, p_reason, p_description, p_related_id)`
+|Settle: deduct from both `balance` and `locked`. Raises exception if either is insufficient.
+|===
+
+=== Point Reasons (`point_reason` enum)
+
+Relevant values for the lock/settle flow:
+
+* `matching_lock` — Points locked at task creation
+* `matching_unlock` — Points returned on failure
+* `matching_settled` — Points consumed at judgement confirmation
+
+== Reward System (Internal)
+
+Referee rewards are currently tracked internally. Stripe Connect payouts are planned but not yet implemented.
+
+=== `reward_wallets` Table
+
+|===
+|Column |Type |Description
+
+|`user_id`
+|uuid (PK, FK → auth.users)
+|Referee user ID
+
+|`balance`
+|integer
+|Current reward balance (≥ 0)
+
+|`created_at` / `updated_at`
+|timestamptz
+|Timestamps
+|===
+
+=== `reward_ledger` Table
+
+|===
+|Column |Type |Description
+
+|`id`
+|uuid (PK)
+|Ledger entry ID
+
+|`user_id`
+|uuid (FK → auth.users)
+|Referee user ID
+
+|`amount`
+|integer
+|Reward amount
+
+|`reason`
+|reward_reason (enum)
+|Reason for the entry
+
+|`description`
+|text
+|Optional description
+
+|`related_id`
+|uuid
+|Related entity ID (e.g. judgement ID)
+
+|`created_at`
+|timestamptz
+|Timestamp
+|===
+
+=== Reward Reasons (`reward_reason` enum)
+
+* `review_completed` — Reward for completing a review
+* `evidence_timeout` — Reward when tasker fails to submit evidence
+* `payout` — Stripe Connect payout (planned)
+* `manual_adjustment` — Manual adjustment by admin
+
+=== `grant_reward()` Function
+
+Upserts `reward_wallets` (creates if not exists) and inserts a `reward_ledger` entry.
+
+Parameters: `p_user_id`, `p_amount`, `p_reason`, `p_description`, `p_related_id`.
+
+== Stripe Connect (Planned)
+
+When implemented, Peppercheck will use Stripe Connect to pay Referees:
+
+* **Account Type**: Express or Custom accounts
+* **Charge Model**: Separate Charges & Transfers
+* **Reward Transfer**: Per completed review, from Platform to Referee Stripe balance
+* **Payouts**: Monthly automatic payout from Referee Stripe balance to bank account
