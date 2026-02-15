@@ -118,7 +118,6 @@ schema_paths = [
   "./schemas/matching/functions/get_active_referee_tasks.sql",
   
   # evidence
-  "./schemas/evidence/functions/confirm_evidence_timeout.sql",
   "./schemas/evidence/functions/detect_evidence_timeouts.sql",
   "./schemas/evidence/functions/validate_evidence_due_date.sql",
   "./schemas/evidence/functions/submit_evidence.sql",
@@ -128,6 +127,7 @@ schema_paths = [
   
   # judgement
   "./schemas/judgement/functions/confirm_judgement_and_rate_referee.sql",
+  "./schemas/judgement/functions/confirm_evidence_timeout.sql",
   "./schemas/judgement/functions/reopen_judgement.sql",
   "./schemas/judgement/functions/judge_evidence.sql",
   
@@ -164,12 +164,13 @@ schema_paths = [
   "./schemas/judgement/triggers/on_judgement_confirmed_close_request.sql",
   "./schemas/judgement/triggers/on_judgement_confirmed.sql",
   "./schemas/judgement/triggers/on_judgements_evidence_timeout_close_referee_request.sql",
+  "./schemas/judgement/triggers/on_evidence_timeout_settle.sql",
   "./schemas/judgement/triggers/on_judgement_threads_update_set_updated_at.sql",
   "./schemas/judgement/triggers/on_judgements_status_changed.sql",
 
   # Task
   "./schemas/task/triggers/on_tasks_update_set_updated_at.sql",
-  "./schemas/task/triggers/on_all_requests_closed_close_task.sql",
+  "./schemas/task/triggers/on_all_judgements_confirmed_close_task.sql",
 
   # Evidence
   "./schemas/evidence/triggers/on_task_evidences_insert_validate_due_date.sql",

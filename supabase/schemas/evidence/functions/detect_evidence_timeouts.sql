@@ -29,14 +29,6 @@ BEGIN
         'timeout_count', v_timeout_count,
         'processed_at', v_now
     );
-
-EXCEPTION
-    WHEN OTHERS THEN
-        RETURN json_build_object(
-            'success', false,
-            'error', SQLERRM,
-            'processed_at', v_now
-        );
 END;
 $$;
 
