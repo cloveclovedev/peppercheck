@@ -12,8 +12,8 @@ participant "Bank" as Bank
 note over Platform
   **Note:** Reward transfer and payout
   sequences are planned, not yet implemented.
-  Currently only Purchase and Point
-  consumption are active.
+  Currently Purchase, Point Lock/Settle,
+  and internal Reward tracking are active.
 end note
 
 == 1. Purchase Sequence ==
@@ -24,29 +24,53 @@ Platform -> DB: Update User Subscription / Point Wallet
 DB --> Platform: Updated
 Platform --> Tasker: Purchase Confirmed
 
-== 2. Review Request & Reward Sequence ==
-Tasker -> Platform: Request Review (Consume Points)
-Platform -> DB: Deduct Points, Create Request
+== 2. Review Request & Point Lock/Settle Sequence ==
+Tasker -> Platform: Open Task (Request Review)
+Platform -> DB: lock_points(tasker, cost, 'matching_lock')
+note right
+  **Point Lock**
+  - Points locked in wallet (balance unchanged)
+  - Available = balance − locked
+end note
+DB --> Platform: Locked
+Platform -> DB: Create Request & Judgement
 DB --> Platform: Created
-Platform --> Tasker: Request Sent
+Platform --> Tasker: Task Opened
 
 ... Referee performs review ...
 
-Referee -> Platform: Complete Review
-Platform -> DB: Update Request Status
-Platform -> DB: Calculate Reward Amount
-Platform -> Stripe: Transfer Reward (Amount)\nfrom Platform to Referee Connect Account
+Referee -> Platform: Complete Review (Approve/Reject)
+Platform -> DB: Update Judgement Status
+Platform --> Referee: Judgement Recorded
+
+... Tasker confirms judgement ...
+
+Tasker -> Platform: Confirm Judgement & Rate Referee
+Platform -> DB: consume_points(tasker, cost, 'matching_settled')
 note right
-  **Reward Transfer**
-  - Triggered immediately upon review completion
-  - Moves funds to Referee's Stripe Balance
-  - Not yet a bank payout
+  **Point Settlement**
+  - Deducts from both balance and locked
 end note
+Platform -> DB: grant_reward(referee, cost, 'review_completed')
+note right
+  **Internal Reward**
+  - Credited to reward_wallets
+  - Logged in reward_ledger
+end note
+DB --> Platform: Settled
+Platform --> Tasker: Judgement Confirmed
+
+== 3. Reward Transfer Sequence (Planned) ==
+note over Platform, Stripe
+  **Not yet implemented**
+  When Stripe Connect is integrated:
+end note
+Platform -> Stripe: Transfer Reward (Amount)\nfrom Platform to Referee Connect Account
 Stripe -> RefereeStripe: Credit Balance
 Stripe --> Platform: Transfer Success
-Platform --> Referee: Review Completed & Reward Credited
+Platform --> Referee: Reward Credited
 
-== 3. Payout Sequence (Monthly) ==
+== 4. Payout Sequence (Monthly, Planned) ==
 note over RefereeStripe, Bank
   **Automatic Payout**
   - Scheduled monthly

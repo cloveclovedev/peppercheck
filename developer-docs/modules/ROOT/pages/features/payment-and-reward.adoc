@@ -14,7 +14,8 @@ This document describes how subscriptions, points, and referee rewards are handl
 **Currently implemented:**
 
 * Subscription purchases (Web via Stripe Checkout, Mobile via Google IAP)
-* Point system (grant via subscription, consume via task creation, refund on failure)
+* Point system (grant via subscription, lock at task creation, settle on confirm)
+* Reward system — internal tracking (`reward_wallets`, `reward_ledger`)
 
 **Planned / Not yet implemented:**
 
@@ -58,6 +59,108 @@ This document describes how subscriptions, points, and referee rewards are handl
 * Peppercheck acts as the payment intermediary (marketplace model).
 * Referee rewards are treated as **contractor payments**.
 * UX and wording emphasize "Tasker paying Referee", while the backend remains compliant.
+
+== Point Lock / Settle Mechanism
+
+Points follow a two-phase model to ensure funds are reserved but not consumed until the review process completes.
+
+=== Phases
+
+. **Lock** — When a Task is opened, points are locked in the Tasker's wallet via `lock_points()`. The `locked` column on `point_wallets` increases; the wallet `balance` is unchanged. Available balance = `balance - locked`.
+. **Settle** — When a Judgement is confirmed (or evidence times out), locked points are consumed via `consume_points()`. Both `balance` and `locked` decrease.
+. **Unlock** (failure path) — If a matching fails, locked points are returned via `unlock_points()`. The `locked` column decreases; balance remains unchanged.
+
+=== Database Functions
+
+|===
+|Function |Description
+
+|`lock_points(p_user_id, p_amount, p_reason, p_description, p_related_id)`
+|Lock points in the wallet. Raises exception if available (`balance - locked`) is insufficient.
+
+|`unlock_points(p_user_id, p_amount, p_reason, p_description, p_related_id)`
+|Release locked points back to available. Raises exception if locked amount is insufficient.
+
+|`consume_points(p_user_id, p_amount, p_reason, p_description, p_related_id)`
+|Settle: deduct from both `balance` and `locked`. Raises exception if either is insufficient.
+|===
+
+=== Point Reasons (`point_reason` enum)
+
+Relevant values for the lock/settle flow:
+
+* `matching_lock` — Points locked at task creation
+* `matching_unlock` — Points returned on failure
+* `matching_settled` — Points consumed at judgement confirmation
+
+== Reward System (Internal)
+
+Referee rewards are currently tracked internally. Stripe Connect payouts are planned but not yet implemented.
+
+=== `reward_wallets` Table
+
+|===
+|Column |Type |Description
+
+|`user_id`
+|uuid (PK, FK → auth.users)
+|Referee user ID
+
+|`balance`
+|integer
+|Current reward balance (≥ 0)
+
+|`created_at` / `updated_at`
+|timestamptz
+|Timestamps
+|===
+
+=== `reward_ledger` Table
+
+|===
+|Column |Type |Description
+
+|`id`
+|uuid (PK)
+|Ledger entry ID
+
+|`user_id`
+|uuid (FK → auth.users)
+|Referee user ID
+
+|`amount`
+|integer
+|Reward amount
+
+|`reason`
+|reward_reason (enum)
+|Reason for the entry
+
+|`description`
+|text
+|Optional description
+
+|`related_id`
+|uuid
+|Related entity ID (e.g. judgement ID)
+
+|`created_at`
+|timestamptz
+|Timestamp
+|===
+
+=== Reward Reasons (`reward_reason` enum)
+
+* `review_completed` — Reward for completing a review
+* `evidence_timeout` — Reward when tasker fails to submit evidence
+* `payout` — Stripe Connect payout (planned)
+* `manual_adjustment` — Manual adjustment by admin
+
+=== `grant_reward()` Function
+
+Upserts `reward_wallets` (creates if not exists) and inserts a `reward_ledger` entry.
+
+Parameters: `p_user_id`, `p_amount`, `p_reason`, `p_description`, `p_related_id`.
 
 == Stripe Connect Strategy
 
