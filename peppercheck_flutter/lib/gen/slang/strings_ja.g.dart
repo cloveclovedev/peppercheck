@@ -614,14 +614,11 @@ class TranslationsTaskEvidenceTimeoutJa {
 
 	// Translations
 
-	/// ja: 'エビデンス未提出'
-	String get title => 'エビデンス未提出';
-
 	/// ja: '期限を過ぎました。ポイントが支払われました。'
 	String get description => '期限を過ぎました。ポイントが支払われました。';
 
-	/// ja: '確認する'
-	String get confirm => '確認する';
+	/// ja: '確認'
+	String get confirm => '確認';
 
 	/// ja: '確認済み'
 	String get confirmed => '確認済み';
@@ -765,9 +762,8 @@ extension on Translations {
 			'task.evidence.maxImages' => '画像は最大5枚までです',
 			'task.evidence.success' => 'エビデンスを提出しました',
 			'task.evidence.error' => ({required Object message}) => 'エラーが発生しました: ${message}',
-			'task.evidence.timeout.title' => 'エビデンス未提出',
 			'task.evidence.timeout.description' => '期限を過ぎました。ポイントが支払われました。',
-			'task.evidence.timeout.confirm' => '確認する',
+			'task.evidence.timeout.confirm' => '確認',
 			'task.evidence.timeout.confirmed' => '確認済み',
 			'task.evidence.timeout.success' => '確認しました',
 			'task.judgement.title' => '判定',

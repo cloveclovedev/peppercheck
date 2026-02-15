@@ -130,9 +130,8 @@
       "success": "エビデンスを提出しました",
       "error": "エラーが発生しました: $message",
       "timeout": {
-        "title": "エビデンス未提出",
         "description": "期限を過ぎました。ポイントが支払われました。",
-        "confirm": "確認する",
+        "confirm": "確認",
         "confirmed": "確認済み",
         "success": "確認しました"
       }
