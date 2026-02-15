@@ -15,6 +15,10 @@ if [ -z "$emulators" ]; then
 fi
 
 for device in $emulators; do
+  if ! adb -s "$device" shell pm list packages | grep -q "$PACKAGE_NAME"; then
+    echo "  $PACKAGE_NAME is not installed on $device. Skipping."
+    continue
+  fi
   echo "  Clearing $PACKAGE_NAME on $device..."
   adb -s "$device" shell pm clear "$PACKAGE_NAME"
 done
