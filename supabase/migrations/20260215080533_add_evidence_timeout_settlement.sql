@@ -53,7 +53,7 @@ DECLARE
     v_judgement RECORD;
 BEGIN
     -- Get judgement with task info
-    SELECT j.id, j.status, j.is_confirmed, t.tasker_id
+    SELECT j.id, j.status, j.is_confirmed, j.is_evidence_timeout_confirmed, t.tasker_id
     INTO v_judgement
     FROM public.judgements j
     JOIN public.task_referee_requests trr ON trr.id = j.id
@@ -72,6 +72,11 @@ BEGIN
     -- Validate status
     IF v_judgement.status != 'evidence_timeout' THEN
         RAISE EXCEPTION 'Judgement must be in evidence_timeout status to confirm';
+    END IF;
+
+    -- Ensure settlement has completed (is_evidence_timeout_confirmed is set by settle_evidence_timeout trigger)
+    IF v_judgement.is_evidence_timeout_confirmed != true THEN
+        RAISE EXCEPTION 'Settlement has not completed yet';
     END IF;
 
     -- Idempotency
@@ -99,11 +104,6 @@ DECLARE
     v_matching_strategy public.matching_strategy;
     v_cost integer;
 BEGIN
-    -- Only process when status changes TO evidence_timeout
-    IF NEW.status != 'evidence_timeout' OR OLD.status = 'evidence_timeout' THEN
-        RETURN NEW;
-    END IF;
-
     -- Get task and user details
     SELECT t.tasker_id, trr.matched_referee_id, trr.task_id, t.title, trr.matching_strategy
     INTO v_tasker_id, v_referee_id, v_task_id, v_task_title, v_matching_strategy
@@ -164,6 +164,43 @@ END;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.detect_and_handle_evidence_timeouts()
+ RETURNS json
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+DECLARE
+    v_timeout_count INTEGER := 0;
+    v_now TIMESTAMP WITH TIME ZONE;
+BEGIN
+    v_now := NOW();
+    
+    -- Update judgements that have evidence timeout (due_date passed without evidence)
+    -- Only update judgements that are still 'open' and past the due date with no evidence
+    UPDATE public.judgements j
+    SET 
+        status = 'evidence_timeout',
+        updated_at = v_now
+    FROM public.task_referee_requests trr
+    JOIN public.tasks t ON trr.task_id = t.id
+    LEFT JOIN public.task_evidences te ON t.id = te.task_id
+    WHERE j.id = trr.id
+    AND j.status = 'awaiting_evidence' -- Changed from 'open' to 'awaiting_evidence' based on enum
+    AND v_now > t.due_date
+    AND te.id IS NULL; -- No evidence submitted
+
+    GET DIAGNOSTICS v_timeout_count = ROW_COUNT;
+
+    RETURN json_build_object(
+        'success', true,
+        'timeout_count', v_timeout_count,
+        'processed_at', v_now
+    );
+END;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.handle_evidence_timeout_confirmed()
  RETURNS trigger
  LANGUAGE plpgsql
@@ -188,7 +225,7 @@ CREATE TRIGGER on_all_judgements_confirmed_close_task AFTER UPDATE ON public.jud
 
 CREATE TRIGGER on_evidence_timeout_settle AFTER UPDATE ON public.judgements FOR EACH ROW WHEN (((new.status = 'evidence_timeout'::public.judgement_status) AND (old.status IS DISTINCT FROM new.status))) EXECUTE FUNCTION public.settle_evidence_timeout();
 
--- Schedule evidence timeout detection every 5 minutes
+-- Schedule evidence timeout detection cron (DML, not detected by schema diff)
 SELECT cron.schedule(
     'detect-evidence-timeouts',
     '*/5 * * * *',

@@ -6,7 +6,7 @@ DECLARE
     v_judgement RECORD;
 BEGIN
     -- Get judgement with task info
-    SELECT j.id, j.status, j.is_confirmed, t.tasker_id
+    SELECT j.id, j.status, j.is_confirmed, j.is_evidence_timeout_confirmed, t.tasker_id
     INTO v_judgement
     FROM public.judgements j
     JOIN public.task_referee_requests trr ON trr.id = j.id
@@ -25,6 +25,11 @@ BEGIN
     -- Validate status
     IF v_judgement.status != 'evidence_timeout' THEN
         RAISE EXCEPTION 'Judgement must be in evidence_timeout status to confirm';
+    END IF;
+
+    -- Ensure settlement has completed (is_evidence_timeout_confirmed is set by settle_evidence_timeout trigger)
+    IF v_judgement.is_evidence_timeout_confirmed != true THEN
+        RAISE EXCEPTION 'Settlement has not completed yet';
     END IF;
 
     -- Idempotency

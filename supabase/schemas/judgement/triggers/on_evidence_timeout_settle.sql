@@ -11,11 +11,6 @@ DECLARE
     v_matching_strategy public.matching_strategy;
     v_cost integer;
 BEGIN
-    -- Only process when status changes TO evidence_timeout
-    IF NEW.status != 'evidence_timeout' OR OLD.status = 'evidence_timeout' THEN
-        RETURN NEW;
-    END IF;
-
     -- Get task and user details
     SELECT t.tasker_id, trr.matched_referee_id, trr.task_id, t.title, trr.matching_strategy
     INTO v_tasker_id, v_referee_id, v_task_id, v_task_title, v_matching_strategy
