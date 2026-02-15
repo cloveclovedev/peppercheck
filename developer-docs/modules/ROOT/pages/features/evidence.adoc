@@ -59,6 +59,14 @@ When evidence is submitted or updated, a push notification is sent to the assign
 
 This is handled by the `on_task_evidences_upserted_notify_referee` database trigger, which calls `notify_event()`.
 
+== Evidence Timeout
+
+If the Tasker fails to submit evidence before `due_date`, the system automatically handles detection and settlement:
+
+* **Detection**: A cron job (`detect-evidence-timeouts`, every 5 minutes) finds judgements in `awaiting_evidence` past the due date with no evidence, and sets their status to `evidence_timeout`.
+* **Settlement**: The `on_evidence_timeout_settle` trigger fires on status change, automatically settling points and granting the Referee a reward. See xref:features/payment-and-reward.adoc[Payment & Reward Flow] for settlement details.
+* **Confirmation**: The Tasker must still call `confirm_evidence_timeout` RPC to finalize. See xref:features/judgement.adoc[Judgement — Confirm Evidence Timeout].
+
 == Related Links
 
 * xref:features/judgement.adoc[Judgement] — What happens after evidence is submitted (Referee approve/reject).
