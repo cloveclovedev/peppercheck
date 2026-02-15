@@ -59,6 +59,40 @@ When evidence is submitted or updated, a push notification is sent to the assign
 
 This is handled by the `on_task_evidences_upserted_notify_referee` database trigger, which calls `notify_event()`.
 
+== Evidence Timeout Detection
+
+A cron job detects judgements where the Tasker failed to submit evidence before the due date.
+
+=== Cron Job: `detect-evidence-timeouts`
+
+* **Schedule**: Every 5 minutes (`*/5 * * * *`)
+* **Function**: `detect_and_handle_evidence_timeouts()`
+* **Condition**: Judgement status is `awaiting_evidence`, the task's `due_date` has passed, and no evidence exists (`task_evidences` has no matching row).
+* **Action**: Sets judgement status to `evidence_timeout`.
+* **Returns**: JSON with `success`, `timeout_count`, and `processed_at`.
+
+== Evidence Timeout Settlement
+
+When a judgement transitions to `evidence_timeout`, points are automatically settled and rewards granted.
+
+=== Trigger: `on_evidence_timeout_settle`
+
+* **Fires**: After update on `judgements` when `status` changes to `evidence_timeout`.
+* **Function**: `settle_evidence_timeout()`
+
+=== `settle_evidence_timeout()` Function
+
+Actions (all within the trigger, atomic):
+
+. Determine point cost via `get_point_for_matching_strategy()`.
+. Settle points: `consume_points(tasker, cost, 'matching_settled')`.
+. Grant reward: `grant_reward(referee, cost, 'evidence_timeout')`.
+. Set `is_evidence_timeout_confirmed = true` on the judgement.
+. Send notification to tasker (`notification_evidence_timeout`).
+. Send notification to referee (`notification_evidence_timeout_reward`).
+
+NOTE: The Tasker must still call `confirm_evidence_timeout()` RPC to set `is_confirmed = true`, which triggers the task closure check. See xref:features/judgement.adoc[Judgement — Confirm Evidence Timeout].
+
 == Related Links
 
 * xref:features/judgement.adoc[Judgement] — What happens after evidence is submitted (Referee approve/reject).
