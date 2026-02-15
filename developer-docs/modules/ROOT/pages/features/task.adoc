@@ -14,7 +14,7 @@ This is the foundational feature. Other features depend on this:
 
 * xref:features/evidence.adoc[Evidence Submission] — Evidence submission within the Judgement lifecycle.
 * xref:features/judgement.adoc[Judgement] — Referee approve/reject flow.
-* xref:features/payment-and-reward.adoc[Payment & Reward Flow] — Point consumption at task creation.
+* xref:features/payment-and-reward.adoc[Payment & Reward Flow] — Point lock/settle mechanism.
 
 == State Transition Diagram
 
@@ -56,19 +56,8 @@ Notifications and state changes occur based on time limits (timeouts).
 include::example$features/task/timing.pu[]
 ----
 
-== Point System Considerations
+== Points and Closure
 
-* **Point Consumption (at Task Creation)**:
-** When a Task is opened, points are consumed via `matching_request` ledger entry.
-** If the matching fails or task is cancelled, points are refunded via `matching_refund`.
-
-* **Point Finalization**:
-** Points consumed at task creation are final once the Task reaches `Closed` state.
-
-* **Refunds**:
-** If Review Timeout occurs, reserved points may be refunded depending on policy.
-
-* **System Auto-Confirm**:
-** To prevent tasks from hanging indefinitely in Approved, Rejected, or Timeout states, the system will automatically transition to Confirmed if the Tasker takes no action.
-** Condition: `Now > Due Date + N days` (where N is a grace period, e.g., 3 days).
-** **Rating**: In case of Auto-Confirm, no rating is applied (treated as NULL) to be neutral.
+* Points are **locked** when a Task is opened and **settled** when each judgement is confirmed. See xref:features/payment-and-reward.adoc[Payment & Reward Flow] for details.
+* A Task transitions to `Closed` when **all judgements are confirmed** (`is_confirmed = true`), not when requests are closed.
+* To prevent tasks from hanging indefinitely, the system auto-confirms if the Tasker takes no action within a grace period after the due date.
