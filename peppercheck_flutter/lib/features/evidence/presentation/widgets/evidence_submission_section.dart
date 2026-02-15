@@ -79,6 +79,26 @@ class _EvidenceSubmissionSectionState
         );
   }
 
+  void _confirmTimeout() {
+    final request = widget.task.refereeRequests.firstWhere(
+      (req) =>
+          req.judgement?.status == 'evidence_timeout' &&
+          req.judgement!.isConfirmed == false,
+    );
+
+    ref
+        .read(evidenceControllerProvider.notifier)
+        .confirmEvidenceTimeout(
+          taskId: widget.task.id,
+          judgementId: request.judgement!.id,
+          onSuccess: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(t.task.evidence.timeout.success)),
+            );
+          },
+        );
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(evidenceControllerProvider);
@@ -123,6 +143,69 @@ class _EvidenceSubmissionSectionState
                 }
               }).toList(),
             ),
+          ],
+        ),
+      );
+    }
+
+    // Check for evidence timeout state
+    final hasEvidenceTimeout = widget.task.refereeRequests.any(
+      (req) => req.judgement?.status == 'evidence_timeout',
+    );
+
+    if (hasEvidenceTimeout) {
+      final allConfirmed = widget.task.refereeRequests.every(
+        (req) =>
+            req.judgement?.status != 'evidence_timeout' ||
+            req.judgement!.isConfirmed,
+      );
+
+      return BaseSection(
+        title: t.task.evidence.timeout.title,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.warning_amber_rounded,
+                    color: AppColors.textError, size: 20),
+                const SizedBox(width: AppSizes.spacingTiny),
+                Expanded(
+                  child: Text(
+                    t.task.evidence.timeout.description,
+                    style: TextStyle(color: AppColors.textError),
+                  ),
+                ),
+              ],
+            ),
+            if (!allConfirmed) ...[
+              const SizedBox(height: AppSizes.spacingSmall),
+              if (state.hasError) ...[
+                Text(
+                  state.error.toString(),
+                  style: TextStyle(color: AppColors.textError),
+                ),
+                const SizedBox(height: AppSizes.spacingSmall),
+              ],
+              ActionButton(
+                text: t.task.evidence.timeout.confirm,
+                onPressed: () => _confirmTimeout(),
+                isLoading: isLoading,
+              ),
+            ] else ...[
+              const SizedBox(height: AppSizes.spacingSmall),
+              Row(
+                children: [
+                  Icon(Icons.check_circle,
+                      color: AppColors.accentGreen, size: 16),
+                  const SizedBox(width: AppSizes.spacingTiny),
+                  Text(
+                    t.task.evidence.timeout.confirmed,
+                    style: TextStyle(color: AppColors.accentGreen),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       );
