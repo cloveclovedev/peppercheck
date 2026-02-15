@@ -10,6 +10,7 @@ import 'package:peppercheck_flutter/common_widgets/base_text_field.dart';
 
 import 'package:peppercheck_flutter/features/evidence/presentation/controllers/evidence_controller.dart';
 import 'package:peppercheck_flutter/common_widgets/base_section.dart';
+import 'package:peppercheck_flutter/features/matching/domain/referee_request.dart';
 import 'package:peppercheck_flutter/features/task/domain/task.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 
@@ -80,11 +81,13 @@ class _EvidenceSubmissionSectionState
   }
 
   void _confirmTimeout() {
-    final request = widget.task.refereeRequests.firstWhere(
+    final request = widget.task.refereeRequests.cast<RefereeRequest?>().firstWhere(
       (req) =>
-          req.judgement?.status == 'evidence_timeout' &&
-          req.judgement!.isConfirmed == false,
+          req?.judgement?.status == 'evidence_timeout' &&
+          req!.judgement!.isConfirmed == false,
+      orElse: () => null,
     );
+    if (request == null) return;
 
     ref
         .read(evidenceControllerProvider.notifier)
