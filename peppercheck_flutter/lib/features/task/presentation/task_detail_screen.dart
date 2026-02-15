@@ -16,28 +16,40 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:peppercheck_flutter/features/task/presentation/providers/task_provider.dart';
 
 class TaskDetailScreen extends ConsumerWidget {
-  final Task task;
+  final String taskId;
+  final Task? initialTask;
 
-  const TaskDetailScreen({super.key, required this.task});
+  const TaskDetailScreen({super.key, required this.taskId, this.initialTask});
 
   static const route = '/task_detail';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Watch the latest task data from the server
-    final asyncTask = ref.watch(taskProvider(task.id));
+    final asyncTask = ref.watch(taskProvider(taskId));
 
-    // Use the latest data if available, otherwise fallback to the passed task (optimistic UI)
-    // This ensures no flickering on initial load while ensuring we show the latest status after updates.
-    final displayTask = asyncTask.asData?.value ?? task;
+    // Use latest data if available, then initialTask, then show loading
+    final displayTask = asyncTask.asData?.value ?? initialTask;
+
+    if (displayTask == null) {
+      return AppBackground(
+        child: AppScaffold.scrollable(
+          title: t.task.detail.title,
+          currentIndex: -1,
+          slivers: [
+            const SliverFillRemaining(
+              child: Center(child: CircularProgressIndicator()),
+            ),
+          ],
+        ),
+      );
+    }
 
     return AppBackground(
       child: AppScaffold.scrollable(
         title: t.task.detail.title,
-        currentIndex: -1, // No bottom nav item selected
+        currentIndex: -1,
         onRefresh: () async {
-          // Invalidate to force a re-fetch
-          return ref.refresh(taskProvider(task.id).future);
+          return ref.refresh(taskProvider(taskId).future);
         },
         slivers: [
           SliverToBoxAdapter(
@@ -69,16 +81,13 @@ class TaskDetailScreen extends ConsumerWidget {
       return false;
     }
 
-    // Tasker: show if evidence exists
     if (task.evidence != null) return true;
 
-    // Tasker: show if any judgement has evidence_timeout status
     final hasEvidenceTimeout = task.refereeRequests.any(
       (req) => req.judgement?.status == 'evidence_timeout',
     );
     if (hasEvidenceTimeout) return true;
 
-    // Tasker: show if any request is accepted (for submission form)
     final hasAcceptedRequest = task.refereeRequests.any(
       (req) => req.status == 'accepted',
     );
