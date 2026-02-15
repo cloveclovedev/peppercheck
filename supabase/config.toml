@@ -56,9 +56,12 @@ schema_paths = [
   "./schemas/stripe/tables/stripe_accounts.sql",
 
   # Point
-  "./schemas/point/tables/enums.sql",
   "./schemas/point/tables/point_wallets.sql",
   "./schemas/point/tables/point_ledger.sql",
+
+  # Reward
+  "./schemas/reward/tables/reward_wallets.sql",
+  "./schemas/reward/tables/reward_ledger.sql",
 
   # Task
   "./schemas/task/tables/tasks.sql",
@@ -142,9 +145,14 @@ schema_paths = [
   
   # Point
   "./schemas/point/functions/consume_points.sql",
+  "./schemas/point/functions/lock_points.sql",
+  "./schemas/point/functions/unlock_points.sql",
   "./schemas/point/functions/calculate_locked_points_by_active_tasks.sql",
   "./schemas/point/functions/grant_subscription_points.sql",
-  
+
+  # Reward
+  "./schemas/reward/functions/grant_reward.sql",
+
   # Notification
   "./schemas/notification/functions/notify_event.sql",
 
@@ -180,6 +188,9 @@ schema_paths = [
   # Point
   "./schemas/point/triggers/on_point_wallets_update_set_updated_at.sql",
 
+  # Reward
+  "./schemas/reward/triggers/on_reward_wallets_update_set_updated_at.sql",
+
   # Subscription
   "./schemas/subscription/triggers/on_user_subscriptions_update_set_updated_at.sql",
 
@@ -214,6 +225,8 @@ schema_paths = [
   "./schemas/subscription/policies/user_subscriptions_policies.sql",
   "./schemas/point/policies/point_wallets_policies.sql",
   "./schemas/point/policies/point_ledger_policies.sql",
+  "./schemas/reward/policies/reward_wallets_policies.sql",
+  "./schemas/reward/policies/reward_ledger_policies.sql",
   "./schemas/notification/policies/user_fcm_tokens_policies.sql",
 
 ]

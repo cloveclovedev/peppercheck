@@ -9,6 +9,7 @@ CREATE OR REPLACE FUNCTION public.confirm_judgement_and_rate_referee(
 DECLARE
     v_judgement RECORD;
     v_rows_affected integer;
+    v_cost integer;
 BEGIN
     -- Get judgement details with task and referee info
     SELECT
@@ -17,6 +18,7 @@ BEGIN
         j.is_confirmed,
         trr.task_id,
         trr.matched_referee_id AS referee_id,
+        trr.matching_strategy,
         t.tasker_id
     INTO v_judgement
     FROM public.judgements j
@@ -42,6 +44,27 @@ BEGIN
     IF v_judgement.is_confirmed = TRUE THEN
         RETURN;
     END IF;
+
+    -- Determine point cost from matching strategy
+    v_cost := public.get_point_for_matching_strategy(v_judgement.matching_strategy);
+
+    -- Settle points: consume locked points from tasker
+    PERFORM public.consume_points(
+        v_judgement.tasker_id,
+        v_cost,
+        'matching_settled'::public.point_reason,
+        'Review confirmed (judgement ' || p_judgement_id || ')',
+        p_judgement_id
+    );
+
+    -- Grant reward to referee
+    PERFORM public.grant_reward(
+        v_judgement.referee_id,
+        v_cost,
+        'review_completed'::public.reward_reason,
+        'Review completed (judgement ' || p_judgement_id || ')',
+        p_judgement_id
+    );
 
     -- Insert rating (tasker rates referee)
     INSERT INTO public.rating_histories (
@@ -73,4 +96,4 @@ $$;
 
 ALTER FUNCTION public.confirm_judgement_and_rate_referee(uuid, boolean, text) OWNER TO postgres;
 
-COMMENT ON FUNCTION public.confirm_judgement_and_rate_referee(uuid, boolean, text) IS 'Atomically confirms a judgement and records a binary rating for the referee. Called by the tasker after reviewing the referee''s judgement. Only valid for approved/rejected judgements.';
+COMMENT ON FUNCTION public.confirm_judgement_and_rate_referee(uuid, boolean, text) IS 'Atomically confirms a judgement, settles points (consumes from tasker, rewards referee), and records a binary rating. Called by the tasker after reviewing the referee''s judgement. Only valid for approved/rejected judgements.';

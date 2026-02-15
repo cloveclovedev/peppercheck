@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION public.consume_points(
+CREATE OR REPLACE FUNCTION public.lock_points(
     p_user_id uuid,
     p_amount integer,
     p_reason public.point_reason,
@@ -23,18 +23,14 @@ BEGIN
         RAISE EXCEPTION 'Wallet not found for user %', p_user_id;
     END IF;
 
-    IF v_balance < p_amount THEN
-        RAISE EXCEPTION 'Insufficient points: required %, available %', p_amount, v_balance;
+    -- Check available (unlocked) balance
+    IF (v_balance - v_locked) < p_amount THEN
+        RAISE EXCEPTION 'Insufficient available points: required %, available %', p_amount, (v_balance - v_locked);
     END IF;
 
-    IF v_locked < p_amount THEN
-        RAISE EXCEPTION 'Insufficient locked points: required %, locked %', p_amount, v_locked;
-    END IF;
-
-    -- Settle: deduct from both balance and locked
+    -- Increase locked amount (balance unchanged)
     UPDATE public.point_wallets
-    SET balance = balance - p_amount,
-        locked = locked - p_amount,
+    SET locked = locked + p_amount,
         updated_at = now()
     WHERE user_id = p_user_id;
 
@@ -55,4 +51,4 @@ BEGIN
 END;
 $$;
 
-ALTER FUNCTION public.consume_points(uuid, integer, public.point_reason, text, uuid) OWNER TO postgres;
+ALTER FUNCTION public.lock_points(uuid, integer, public.point_reason, text, uuid) OWNER TO postgres;

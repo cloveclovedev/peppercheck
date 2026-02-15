@@ -26,12 +26,11 @@ BEGIN
         RAISE EXCEPTION 'Invalid matching strategy: %', p_matching_strategy;
     END IF;
 
-    -- Consume Points (Atomic transaction)
-    -- Using 'matching_request' reason code
-    PERFORM public.consume_points(
+    -- Lock Points (reserved until Confirm settles them)
+    PERFORM public.lock_points(
         v_user_id,
         v_cost,
-        'matching_request'::public.point_reason,
+        'matching_lock'::public.point_reason,
         'Matching Request (' || p_matching_strategy || ')',
         p_task_id
     );
