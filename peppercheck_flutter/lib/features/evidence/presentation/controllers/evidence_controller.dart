@@ -41,4 +41,20 @@ class EvidenceController extends _$EvidenceController {
       onSuccess();
     });
   }
+
+  Future<void> confirmEvidenceTimeout({
+    required String taskId,
+    required String judgementId,
+    required VoidCallback onSuccess,
+  }) async {
+    state = const AsyncLoading();
+
+    state = await AsyncValue.guard(() async {
+      await ref
+          .read(evidenceRepositoryProvider)
+          .confirmEvidenceTimeout(judgementId: judgementId);
+      ref.invalidate(taskProvider(taskId));
+      onSuccess();
+    });
+  }
 }

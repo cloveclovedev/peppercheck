@@ -63,29 +63,22 @@ class TaskDetailScreen extends ConsumerWidget {
   }
 
   bool _shouldShowEvidenceSection(Task task) {
-    // 1. User must be logged in and be the tasker
     final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId == null || task.taskerId != userId) {
-      // If not tasker, we still might want to show submitted evidence?
-      // Requirement: Show section if User is Tasker and at least one Request is Accepted.
-      // Referees also need to see evidence.
-      // "Submitted Evidence" part of EvidenceSubmissionSection handles read-only view.
-      // So we should show it if evidence exists OR (isTasker && hasAcceptedRequest).
-      // Logic refined based on "EvidenceSubmissionSection" handling "Submitted View".
-
-      if (task.evidence != null) {
-        return true; // Always show if evidence exists (for referee/tasker)
-      }
+      if (task.evidence != null) return true;
       return false;
     }
 
-    // 2. If Tasker: Show if evidence exists OR if request accepted
-    if (task.evidence != null) {
-      return true;
-    }
+    // Tasker: show if evidence exists
+    if (task.evidence != null) return true;
 
-    // Check if any request is accepted
-    // RefereeRequest status: 'accepted'
+    // Tasker: show if any judgement has evidence_timeout status
+    final hasEvidenceTimeout = task.refereeRequests.any(
+      (req) => req.judgement?.status == 'evidence_timeout',
+    );
+    if (hasEvidenceTimeout) return true;
+
+    // Tasker: show if any request is accepted (for submission form)
     final hasAcceptedRequest = task.refereeRequests.any(
       (req) => req.status == 'accepted',
     );

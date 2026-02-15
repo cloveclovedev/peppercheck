@@ -82,6 +82,22 @@ class EvidenceRepository {
       rethrow;
     }
   }
+
+  Future<void> confirmEvidenceTimeout({
+    required String judgementId,
+  }) async {
+    try {
+      await _client.rpc(
+        'confirm_evidence_timeout',
+        params: {
+          'p_judgement_id': judgementId,
+        },
+      );
+    } catch (e, st) {
+      _logger.e('confirmEvidenceTimeout failed', error: e, stackTrace: st);
+      rethrow;
+    }
+  }
 }
 
 @Riverpod(keepAlive: true)

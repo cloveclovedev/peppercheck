@@ -477,6 +477,8 @@ class TranslationsTaskEvidenceJa {
 
 	/// ja: 'エラーが発生しました: $message'
 	String error({required Object message}) => 'エラーが発生しました: ${message}';
+
+	late final TranslationsTaskEvidenceTimeoutJa timeout = TranslationsTaskEvidenceTimeoutJa.internal(_root);
 }
 
 // Path: task.judgement
@@ -602,6 +604,30 @@ class TranslationsTaskCreationErrorJa {
 
 	/// ja: 'OK'
 	String get buttonOk => 'OK';
+}
+
+// Path: task.evidence.timeout
+class TranslationsTaskEvidenceTimeoutJa {
+	TranslationsTaskEvidenceTimeoutJa.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// ja: 'エビデンス未提出'
+	String get title => 'エビデンス未提出';
+
+	/// ja: '期限を過ぎました。ポイントが支払われました。'
+	String get description => '期限を過ぎました。ポイントが支払われました。';
+
+	/// ja: '確認する'
+	String get confirm => '確認する';
+
+	/// ja: '確認済み'
+	String get confirmed => '確認済み';
+
+	/// ja: '確認しました'
+	String get success => '確認しました';
 }
 
 // Path: task.judgement.confirm
@@ -739,6 +765,11 @@ extension on Translations {
 			'task.evidence.maxImages' => '画像は最大5枚までです',
 			'task.evidence.success' => 'エビデンスを提出しました',
 			'task.evidence.error' => ({required Object message}) => 'エラーが発生しました: ${message}',
+			'task.evidence.timeout.title' => 'エビデンス未提出',
+			'task.evidence.timeout.description' => '期限を過ぎました。ポイントが支払われました。',
+			'task.evidence.timeout.confirm' => '確認する',
+			'task.evidence.timeout.confirmed' => '確認済み',
+			'task.evidence.timeout.success' => '確認しました',
 			'task.judgement.title' => '判定',
 			'task.judgement.comment' => 'コメント',
 			'task.judgement.commentPlaceholder' => '判定理由を記述してください',

@@ -34,7 +34,7 @@ final class EvidenceControllerProvider
 }
 
 String _$evidenceControllerHash() =>
-    r'c1d209f1f04b6ff2e6a3a600baf8612f44129536';
+    r'24411392215624b1fcd8a47fe04bdcd41ef0e9c5';
 
 abstract class _$EvidenceController extends $AsyncNotifier<void> {
   FutureOr<void> build();
