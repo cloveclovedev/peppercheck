@@ -331,6 +331,40 @@ BEGIN
 END $$;
 
 
+-- ===== Test 10: create_task_referee_requests_from_json locks points =====
+\echo ''
+\echo '=========================================='
+\echo ' Test 10: create_task_referee_requests_from_json locks points'
+\echo '=========================================='
+
+-- Reset state
+UPDATE public.point_wallets SET balance = 5, locked = 0 WHERE user_id = '11111111-1111-1111-1111-111111111111';
+
+-- Create a fresh task (inserted directly, not via RPC, to isolate the helper)
+INSERT INTO public.tasks (id, tasker_id, title, description, criteria, due_date, status)
+VALUES ('dddddddd-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '11111111-1111-1111-1111-111111111111', 'Lock Test Task', 'Desc', 'Criteria', now() + interval '7 days', 'open');
+
+-- Call the helper that should now lock points
+SELECT public.create_task_referee_requests_from_json(
+  'dddddddd-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+  ARRAY['{"matching_strategy": "standard"}'::jsonb]
+);
+
+DO $$
+BEGIN
+  ASSERT (SELECT locked FROM public.point_wallets WHERE user_id = '11111111-1111-1111-1111-111111111111') = 1,
+    'Test 10 FAILED: locked should be 1 after create_task_referee_requests_from_json';
+  ASSERT (SELECT balance FROM public.point_wallets WHERE user_id = '11111111-1111-1111-1111-111111111111') = 5,
+    'Test 10 FAILED: balance should remain 5 (lock does not deduct balance)';
+  ASSERT (SELECT COUNT(*) FROM public.point_ledger
+    WHERE user_id = '11111111-1111-1111-1111-111111111111'
+    AND reason = 'matching_lock'
+    AND related_id = 'dddddddd-aaaa-aaaa-aaaa-aaaaaaaaaaaa') >= 1,
+    'Test 10 FAILED: should have matching_lock ledger entry for this task';
+  RAISE NOTICE 'Test 10 PASSED: create_task_referee_requests_from_json locks points correctly';
+END $$;
+
+
 -- ===== Cleanup =====
 \echo ''
 \echo '=========================================='
