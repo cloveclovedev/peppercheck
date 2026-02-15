@@ -56,7 +56,7 @@ BEGIN
     PERFORM public.lock_points(
         v_tasker_id,
         public.get_point_for_matching_strategy('standard'::public.matching_strategy),
-        'matching_locked'::public.point_reason,
+        'matching_lock'::public.point_reason,
         'Test lock for expired task',
         v_request_id
     );
