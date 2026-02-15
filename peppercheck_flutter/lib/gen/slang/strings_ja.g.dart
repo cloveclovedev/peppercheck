@@ -50,6 +50,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final TranslationsTaskJa task = TranslationsTaskJa.internal(_root);
 	late final TranslationsProfileJa profile = TranslationsProfileJa.internal(_root);
 	late final TranslationsMatchingJa matching = TranslationsMatchingJa.internal(_root);
+	late final TranslationsNotificationJa notification = TranslationsNotificationJa.internal(_root);
 }
 
 // Path: login
@@ -297,6 +298,63 @@ class TranslationsMatchingJa {
 
 	// Translations
 	late final TranslationsMatchingRefereeAvailabilityJa referee_availability = TranslationsMatchingRefereeAvailabilityJa.internal(_root);
+}
+
+// Path: notification
+class TranslationsNotificationJa {
+	TranslationsNotificationJa.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// ja: 'エビデンス期限切れ'
+	String get evidence_timeout_title => 'エビデンス期限切れ';
+
+	/// ja: 'タスク「${taskTitle}」のエビデンス提出期限が過ぎました。ポイントが消費されました。'
+	String evidence_timeout_body({required Object taskTitle}) => 'タスク「${taskTitle}」のエビデンス提出期限が過ぎました。ポイントが消費されました。';
+
+	/// ja: '報酬獲得'
+	String get evidence_timeout_reward_title => '報酬獲得';
+
+	/// ja: 'タスク「${taskTitle}」のエビデンス期限切れにより報酬を獲得しました。'
+	String evidence_timeout_reward_body({required Object taskTitle}) => 'タスク「${taskTitle}」のエビデンス期限切れにより報酬を獲得しました。';
+
+	/// ja: 'マッチング成立！'
+	String get request_matched_title => 'マッチング成立！';
+
+	/// ja: 'あなたのタスク「${taskTitle}」のレフリーが見つかりました。'
+	String request_matched_body({required Object taskTitle}) => 'あなたのタスク「${taskTitle}」のレフリーが見つかりました。';
+
+	/// ja: '新しい担当タスク'
+	String get referee_assigned_title => '新しい担当タスク';
+
+	/// ja: 'タスク「${taskTitle}」の担当レフリーに選ばれました。'
+	String referee_assigned_body({required Object taskTitle}) => 'タスク「${taskTitle}」の担当レフリーに選ばれました。';
+
+	/// ja: 'リクエスト承認'
+	String get request_accepted_title => 'リクエスト承認';
+
+	/// ja: 'リクエストが承認されました。'
+	String get request_accepted_body => 'リクエストが承認されました。';
+
+	/// ja: 'エビデンス提出'
+	String get evidence_submitted_title => 'エビデンス提出';
+
+	/// ja: '${taskTitle}さんが新しいエビデンスを提出しました。'
+	String evidence_submitted_body({required Object taskTitle}) => '${taskTitle}さんが新しいエビデンスを提出しました。';
+
+	/// ja: 'エビデンス更新'
+	String get evidence_updated_title => 'エビデンス更新';
+
+	/// ja: '${taskTitle}さんがエビデンスを更新しました。'
+	String evidence_updated_body({required Object taskTitle}) => '${taskTitle}さんがエビデンスを更新しました。';
+
+	/// ja: 'お知らせ'
+	String get fallback_title => 'お知らせ';
+
+	/// ja: '新しい通知があります。'
+	String get fallback_body => '新しい通知があります。';
 }
 
 // Path: billing.plans
@@ -791,6 +849,22 @@ extension on Translations {
 			'matching.referee_availability.dialog_end_time' => '終了時間',
 			'matching.referee_availability.dialog_dow' => '曜日',
 			'matching.referee_availability.invalid_time_range' => '終了時間は開始時間より後である必要があります',
+			'notification.evidence_timeout_title' => 'エビデンス期限切れ',
+			'notification.evidence_timeout_body' => ({required Object taskTitle}) => 'タスク「${taskTitle}」のエビデンス提出期限が過ぎました。ポイントが消費されました。',
+			'notification.evidence_timeout_reward_title' => '報酬獲得',
+			'notification.evidence_timeout_reward_body' => ({required Object taskTitle}) => 'タスク「${taskTitle}」のエビデンス期限切れにより報酬を獲得しました。',
+			'notification.request_matched_title' => 'マッチング成立！',
+			'notification.request_matched_body' => ({required Object taskTitle}) => 'あなたのタスク「${taskTitle}」のレフリーが見つかりました。',
+			'notification.referee_assigned_title' => '新しい担当タスク',
+			'notification.referee_assigned_body' => ({required Object taskTitle}) => 'タスク「${taskTitle}」の担当レフリーに選ばれました。',
+			'notification.request_accepted_title' => 'リクエスト承認',
+			'notification.request_accepted_body' => 'リクエストが承認されました。',
+			'notification.evidence_submitted_title' => 'エビデンス提出',
+			'notification.evidence_submitted_body' => ({required Object taskTitle}) => '${taskTitle}さんが新しいエビデンスを提出しました。',
+			'notification.evidence_updated_title' => 'エビデンス更新',
+			'notification.evidence_updated_body' => ({required Object taskTitle}) => '${taskTitle}さんがエビデンスを更新しました。',
+			'notification.fallback_title' => 'お知らせ',
+			'notification.fallback_body' => '新しい通知があります。',
 			_ => null,
 		};
 	}

@@ -171,5 +171,23 @@
       "dialog_dow": "曜日",
       "invalid_time_range": "終了時間は開始時間より後である必要があります"
     }
+  },
+  "notification": {
+    "evidence_timeout_title": "エビデンス期限切れ",
+    "evidence_timeout_body": "タスク「${taskTitle}」のエビデンス提出期限が過ぎました。ポイントが消費されました。",
+    "evidence_timeout_reward_title": "報酬獲得",
+    "evidence_timeout_reward_body": "タスク「${taskTitle}」のエビデンス期限切れにより報酬を獲得しました。",
+    "request_matched_title": "マッチング成立！",
+    "request_matched_body": "あなたのタスク「${taskTitle}」のレフリーが見つかりました。",
+    "referee_assigned_title": "新しい担当タスク",
+    "referee_assigned_body": "タスク「${taskTitle}」の担当レフリーに選ばれました。",
+    "request_accepted_title": "リクエスト承認",
+    "request_accepted_body": "リクエストが承認されました。",
+    "evidence_submitted_title": "エビデンス提出",
+    "evidence_submitted_body": "${taskTitle}さんが新しいエビデンスを提出しました。",
+    "evidence_updated_title": "エビデンス更新",
+    "evidence_updated_body": "${taskTitle}さんがエビデンスを更新しました。",
+    "fallback_title": "お知らせ",
+    "fallback_body": "新しい通知があります。"
   }
 }
