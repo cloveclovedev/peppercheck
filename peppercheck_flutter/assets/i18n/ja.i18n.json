@@ -128,7 +128,14 @@
       "descriptionPlaceholder": "タスクの完了を証明する内容を記述してください",
       "maxImages": "画像は最大5枚までです",
       "success": "エビデンスを提出しました",
-      "error": "エラーが発生しました: $message"
+      "error": "エラーが発生しました: $message",
+      "timeout": {
+        "title": "エビデンス未提出",
+        "description": "期限を過ぎました。ポイントが支払われました。",
+        "confirm": "確認する",
+        "confirmed": "確認済み",
+        "success": "確認しました"
+      }
     },
     "judgement": {
       "title": "判定",
