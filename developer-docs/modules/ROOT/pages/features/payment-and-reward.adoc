@@ -5,7 +5,7 @@ This document describes how subscriptions, points, and referee rewards are handl
 
 == Prerequisites
 
-* xref:features/task.adoc[Task Lifecycle] — Point consumption occurs at task creation.
+* xref:features/task.adoc[Task Lifecycle] — Point lock occurs at task creation, settlement at judgement confirmation.
 * xref:features/subscription.adoc[Subscription] — Subscriptions grant monthly points.
 
 [NOTE]
@@ -27,7 +27,7 @@ This document describes how subscriptions, points, and referee rewards are handl
 == Overview
 
 * **Tasker** purchases subscriptions, which grant monthly points.
-* **Tasker** consumes points when creating tasks (requesting reviews).
+* **Tasker** locks points when creating tasks (requesting reviews); points are settled on judgement confirmation.
 * **Referee** completes reviews and earns rewards.
 * **Peppercheck** will handle referee payments as a marketplace platform using Stripe Connect (planned).
 
