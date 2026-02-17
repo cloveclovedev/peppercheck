@@ -244,6 +244,38 @@ BEGIN
 END $$;
 
 
+-- ===== Test 9: Referee can still read task after evidence timeout (RLS) =====
+\echo ''
+\echo '=========================================='
+\echo ' Test 9: Referee RLS access after evidence timeout'
+\echo '=========================================='
+
+-- The task from Test 1 (aaaaaaaa-...) has been through evidence timeout:
+--   - task_referee_requests.status = 'closed' (verified in Test 3)
+--   - task.status = 'closed' (verified in Test 5)
+-- Verify that the referee can still SELECT this task via RLS.
+
+SET LOCAL role = 'authenticated';
+SELECT set_config('request.jwt.claims', '{"sub": "22222222-2222-2222-2222-222222222222", "role": "authenticated"}', true);
+
+DO $$
+DECLARE
+  v_count int;
+BEGIN
+  SELECT COUNT(*) INTO v_count
+    FROM public.tasks
+   WHERE id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+
+  ASSERT v_count = 1,
+    'Test 9 FAILED: referee should be able to read the task after evidence timeout (request closed)';
+  RAISE NOTICE 'Test 9 PASSED: referee can read task via RLS after request status is closed';
+END $$;
+
+-- Reset role back to postgres for cleanup
+RESET role;
+SELECT set_config('request.jwt.claims', NULL, true);
+
+
 -- ===== Cleanup =====
 \echo ''
 \echo '=========================================='

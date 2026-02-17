@@ -58,6 +58,7 @@ dependencies:
   in_app_purchase: ^3.2.3
   flutter_timezone: ^3.0.1
   firebase_messaging: ^16.1.0
+  flutter_local_notifications:
   dio: ^5.9.0
   image_picker: ^1.2.1
   mime: ^2.0.0

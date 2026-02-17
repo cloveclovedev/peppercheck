@@ -8,7 +8,7 @@ CREATE OR REPLACE FUNCTION public.is_task_referee(task_uuid uuid, user_uuid uuid
       FROM public.task_referee_requests
      WHERE task_id = task_uuid
        AND matched_referee_id = user_uuid
-       AND status = 'accepted'
+       AND status IN ('accepted', 'closed')
   );
 $$;
 

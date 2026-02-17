@@ -33,7 +33,7 @@ class TaskCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(AppSizes.cardBorderRadius),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: onTap ?? () => context.push('/task_detail', extra: task),
+        onTap: onTap ?? () => context.push('/task_detail/${task.id}', extra: task),
         child: Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppSizes.cardPaddingHorizontal,

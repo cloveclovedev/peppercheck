@@ -48,4 +48,4 @@ final class FcmServiceProvider
   }
 }
 
-String _$fcmServiceHash() => r'6d6fe427f97899705dcefccfd971c8fd32bb29fc';
+String _$fcmServiceHash() => r'a2a639afc9cd1a68221a0587f05bafc804fc9fff';

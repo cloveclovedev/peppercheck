@@ -15,3 +15,7 @@
 "notification_evidence_submitted_body" = "%@ has submitted new evidence.";
 "notification_evidence_updated_title" = "Evidence Updated";
 "notification_evidence_updated_body" = "%@ has updated the evidence.";
+"notification_evidence_timeout_title" = "Evidence Timeout";
+"notification_evidence_timeout_body" = "Your task \"%@\" has timed out due to missing evidence. Points have been consumed.";
+"notification_evidence_timeout_reward_title" = "Reward Earned";
+"notification_evidence_timeout_reward_body" = "You earned a reward for task \"%@\" due to evidence timeout.";

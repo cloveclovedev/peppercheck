@@ -29,10 +29,11 @@ GoRouter router(Ref ref) {
         builder: (context, state) => const TaskCreationScreen(),
       ),
       GoRoute(
-        path: '/task_detail',
+        path: '/task_detail/:taskId',
         builder: (context, state) {
-          final task = state.extra as Task;
-          return TaskDetailScreen(task: task);
+          final taskId = state.pathParameters['taskId']!;
+          final task = state.extra as Task?;
+          return TaskDetailScreen(taskId: taskId, initialTask: task);
         },
       ),
       GoRoute(
