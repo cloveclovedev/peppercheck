@@ -6,7 +6,8 @@ NEVER manually create migration SQL files in `supabase/migrations/`.
 
 Always use the auto-generation workflow:
 1. Make changes to schema files in `supabase/schemas/` (functions, triggers, tables, etc.)
-2. Run `supabase db diff -f <descriptive_migration_name>` to auto-generate the migration file
+2. Register new schema files in `supabase/config.toml` under `[db.migrations]` — `db diff` only detects files listed in config.toml, not all files in the schemas directory
+3. Run `supabase db diff -f <descriptive_migration_name>` to auto-generate the migration file
    - `db diff` compares the cumulative result of all existing migrations against the current `supabase/schemas/` directory
    - It does NOT depend on the local running DB state — no need to manually apply SQL to the local DB first
 3. Review the generated migration file for correctness
