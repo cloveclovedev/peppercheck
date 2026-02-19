@@ -62,6 +62,7 @@ schema_paths = [
   # Reward
   "./schemas/reward/tables/reward_wallets.sql",
   "./schemas/reward/tables/reward_ledger.sql",
+  "./schemas/reward/tables/reward_exchange_rates.sql",
 
   # Task
   "./schemas/task/tables/tasks.sql",
