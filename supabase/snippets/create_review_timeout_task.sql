@@ -6,19 +6,19 @@
 
 DO $$
 DECLARE
-    v_tasker_id uuid := '00000000-0000-0000-0000-000000000000'; -- Replace with actual tasker ID
-    v_referee_id uuid := '00000000-0000-0000-0000-000000000000'; -- Replace with actual referee ID
+    v_tasker_id uuid := 'c2085585-0d29-48c5-aa1a-680b9d4f2cd7'; -- Replace with actual tasker ID
+    v_referee_id uuid := '8709765e-b0d3-406e-ab3f-711ac2fc58df'; -- Replace with actual referee ID
     v_task_id uuid;
     v_request_id uuid;
 BEGIN
-    -- 1. Create task with due_date 1 day ago
+    -- 1. Create task with future due_date (to allow evidence insertion)
     INSERT INTO public.tasks (
         tasker_id, title, description, due_date, status
     ) VALUES (
         v_tasker_id,
         'Review Timeout Test Task',
         'This task is for testing review timeout.',
-        now() - interval '1 day',
+        now() + interval '1 day',
         'open'
     ) RETURNING id INTO v_task_id;
 
@@ -36,7 +36,7 @@ BEGIN
         v_request_id, 'in_review'
     );
 
-    -- 4. Create evidence (so the task looks like evidence was submitted)
+    -- 4. Create evidence while due_date is still in the future
     INSERT INTO public.task_evidences (
         task_id, description
     ) VALUES (
@@ -52,7 +52,12 @@ BEGIN
         v_request_id
     );
 
-    -- 6. Trigger review timeout detection
+    -- 6. Move due_date to the past so timeout detection picks it up
+    UPDATE public.tasks
+    SET due_date = now() - interval '1 day'
+    WHERE id = v_task_id;
+
+    -- 7. Trigger review timeout detection
     PERFORM public.detect_and_handle_review_timeouts();
 
     RAISE NOTICE 'Created review timeout test: task_id=%, request_id=%', v_task_id, v_request_id;
