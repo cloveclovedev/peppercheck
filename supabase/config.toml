@@ -195,6 +195,7 @@ schema_paths = [
 
   # Reward
   "./schemas/reward/triggers/on_reward_wallets_update_set_updated_at.sql",
+  "./schemas/reward/triggers/on_reward_payouts_update_set_updated_at.sql",
 
   # Subscription
   "./schemas/subscription/triggers/on_user_subscriptions_update_set_updated_at.sql",
@@ -232,6 +233,7 @@ schema_paths = [
   "./schemas/point/policies/point_ledger_policies.sql",
   "./schemas/reward/policies/reward_wallets_policies.sql",
   "./schemas/reward/policies/reward_ledger_policies.sql",
+  "./schemas/reward/policies/reward_payouts_policies.sql",
   "./schemas/notification/policies/user_fcm_tokens_policies.sql",
 
 ]
