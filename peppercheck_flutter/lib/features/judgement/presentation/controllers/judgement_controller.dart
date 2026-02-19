@@ -55,4 +55,20 @@ class JudgementController extends _$JudgementController {
       onSuccess();
     });
   }
+
+  Future<void> confirmReviewTimeout({
+    required String taskId,
+    required String judgementId,
+    required VoidCallback onSuccess,
+  }) async {
+    state = const AsyncLoading();
+
+    state = await AsyncValue.guard(() async {
+      await ref
+          .read(judgementRepositoryProvider)
+          .confirmReviewTimeout(judgementId: judgementId);
+      ref.invalidate(taskProvider(taskId));
+      onSuccess();
+    });
+  }
 }

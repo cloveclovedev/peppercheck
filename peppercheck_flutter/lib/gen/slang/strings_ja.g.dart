@@ -320,6 +320,18 @@ class TranslationsNotificationJa {
 	/// ja: 'タスク「${taskTitle}」のエビデンス期限切れにより報酬を獲得しました。'
 	String evidence_timeout_reward_body({required Object taskTitle}) => 'タスク「${taskTitle}」のエビデンス期限切れにより報酬を獲得しました。';
 
+	/// ja: 'レビュー期限切れ'
+	String get review_timeout_tasker_title => 'レビュー期限切れ';
+
+	/// ja: 'タスク「${taskTitle}」は期間内に評価されませんでした。ポイントが返却されました。'
+	String review_timeout_tasker_body({required Object taskTitle}) => 'タスク「${taskTitle}」は期間内に評価されませんでした。ポイントが返却されました。';
+
+	/// ja: 'レビュー期限切れ'
+	String get review_timeout_referee_title => 'レビュー期限切れ';
+
+	/// ja: 'タスク「${taskTitle}」のレビュー期限が過ぎました。'
+	String review_timeout_referee_body({required Object taskTitle}) => 'タスク「${taskTitle}」のレビュー期限が過ぎました。';
+
 	/// ja: 'マッチング成立！'
 	String get request_matched_title => 'マッチング成立！';
 
@@ -578,6 +590,7 @@ class TranslationsTaskJudgementJa {
 	String get commentRequired => 'コメントを入力してください';
 
 	late final TranslationsTaskJudgementConfirmJa confirm = TranslationsTaskJudgementConfirmJa.internal(_root);
+	late final TranslationsTaskJudgementReviewTimeoutJa reviewTimeout = TranslationsTaskJudgementReviewTimeoutJa.internal(_root);
 }
 
 // Path: matching.referee_availability
@@ -712,6 +725,27 @@ class TranslationsTaskJudgementConfirmJa {
 	String get success => '判定を確認しました';
 }
 
+// Path: task.judgement.reviewTimeout
+class TranslationsTaskJudgementReviewTimeoutJa {
+	TranslationsTaskJudgementReviewTimeoutJa.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// ja: '期間内に評価されませんでした。ポイントが返却されました。'
+	String get description => '期間内に評価されませんでした。ポイントが返却されました。';
+
+	/// ja: '確認'
+	String get confirm => '確認';
+
+	/// ja: '確認済み'
+	String get confirmed => '確認済み';
+
+	/// ja: '確認しました'
+	String get success => '確認しました';
+}
+
 /// The flat map containing all translations for locale <ja>.
 /// Only for edge cases! For simple maps, use the map function of this library.
 ///
@@ -840,6 +874,10 @@ extension on Translations {
 			'task.judgement.confirm.comment' => 'コメント（任意）',
 			'task.judgement.confirm.submit' => '確認する',
 			'task.judgement.confirm.success' => '判定を確認しました',
+			'task.judgement.reviewTimeout.description' => '期間内に評価されませんでした。ポイントが返却されました。',
+			'task.judgement.reviewTimeout.confirm' => '確認',
+			'task.judgement.reviewTimeout.confirmed' => '確認済み',
+			'task.judgement.reviewTimeout.success' => '確認しました',
 			'profile.title' => 'プロフィール',
 			'matching.referee_availability.title' => '受付可能時間',
 			'matching.referee_availability.no_slots' => '受付可能時間が設定されていません',
@@ -853,6 +891,10 @@ extension on Translations {
 			'notification.evidence_timeout_body' => ({required Object taskTitle}) => 'タスク「${taskTitle}」のエビデンス提出期限が過ぎました。ポイントが消費されました。',
 			'notification.evidence_timeout_reward_title' => '報酬獲得',
 			'notification.evidence_timeout_reward_body' => ({required Object taskTitle}) => 'タスク「${taskTitle}」のエビデンス期限切れにより報酬を獲得しました。',
+			'notification.review_timeout_tasker_title' => 'レビュー期限切れ',
+			'notification.review_timeout_tasker_body' => ({required Object taskTitle}) => 'タスク「${taskTitle}」は期間内に評価されませんでした。ポイントが返却されました。',
+			'notification.review_timeout_referee_title' => 'レビュー期限切れ',
+			'notification.review_timeout_referee_body' => ({required Object taskTitle}) => 'タスク「${taskTitle}」のレビュー期限が過ぎました。',
 			'notification.request_matched_title' => 'マッチング成立！',
 			'notification.request_matched_body' => ({required Object taskTitle}) => 'あなたのタスク「${taskTitle}」のレフリーが見つかりました。',
 			'notification.referee_assigned_title' => '新しい担当タスク',

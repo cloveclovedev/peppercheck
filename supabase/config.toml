@@ -128,6 +128,8 @@ schema_paths = [
   # judgement
   "./schemas/judgement/functions/confirm_judgement_and_rate_referee.sql",
   "./schemas/judgement/functions/confirm_evidence_timeout.sql",
+  "./schemas/judgement/functions/confirm_review_timeout.sql",
+  "./schemas/judgement/functions/detect_review_timeouts.sql",
   "./schemas/judgement/functions/reopen_judgement.sql",
   "./schemas/judgement/functions/judge_evidence.sql",
   
@@ -165,6 +167,7 @@ schema_paths = [
   "./schemas/judgement/triggers/on_judgement_confirmed.sql",
   "./schemas/judgement/triggers/on_judgements_evidence_timeout_close_referee_request.sql",
   "./schemas/judgement/triggers/on_evidence_timeout_settle.sql",
+  "./schemas/judgement/triggers/on_review_timeout_settle.sql",
   "./schemas/judgement/triggers/on_judgement_threads_update_set_updated_at.sql",
   "./schemas/judgement/triggers/on_judgements_status_changed.sql",
 

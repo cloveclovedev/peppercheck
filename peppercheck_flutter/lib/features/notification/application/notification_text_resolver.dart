@@ -50,6 +50,14 @@ String? _resolveKey(String? locKey, String taskTitle) {
       return t.notification.evidence_updated_title;
     case 'notification_evidence_updated_body':
       return t.notification.evidence_updated_body(taskTitle: taskTitle);
+    case 'notification_review_timeout_tasker_title':
+      return t.notification.review_timeout_tasker_title;
+    case 'notification_review_timeout_tasker_body':
+      return t.notification.review_timeout_tasker_body(taskTitle: taskTitle);
+    case 'notification_review_timeout_referee_title':
+      return t.notification.review_timeout_referee_title;
+    case 'notification_review_timeout_referee_body':
+      return t.notification.review_timeout_referee_body(taskTitle: taskTitle);
     default:
       return null;
   }

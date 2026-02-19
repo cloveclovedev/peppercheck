@@ -50,6 +50,22 @@ class JudgementRepository {
       rethrow;
     }
   }
+
+  Future<void> confirmReviewTimeout({
+    required String judgementId,
+  }) async {
+    try {
+      await _client.rpc(
+        'confirm_review_timeout',
+        params: {
+          'p_judgement_id': judgementId,
+        },
+      );
+    } catch (e, st) {
+      _logger.e('confirmReviewTimeout failed', error: e, stackTrace: st);
+      rethrow;
+    }
+  }
 }
 
 @Riverpod(keepAlive: true)
