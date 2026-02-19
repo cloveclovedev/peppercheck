@@ -156,6 +156,7 @@ schema_paths = [
   # Reward
   "./schemas/reward/functions/grant_reward.sql",
   "./schemas/reward/functions/deduct_reward_for_payout.sql",
+  "./schemas/reward/functions/prepare_monthly_payouts.sql",
 
   # Notification
   "./schemas/notification/functions/notify_event.sql",
