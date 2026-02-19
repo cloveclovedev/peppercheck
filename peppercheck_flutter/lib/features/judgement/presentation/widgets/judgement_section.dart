@@ -105,7 +105,76 @@ class _JudgementSectionState extends ConsumerState<JudgementSection> {
         children: [
           for (int i = 0; i < completedRequests.length; i++) ...[
             if (i > 0) const SizedBox(height: AppSizes.cardGap),
-            _buildResultCard(completedRequests[i]),
+            if (completedRequests[i].judgement!.status == 'review_timeout')
+              _buildReviewTimeoutCard(completedRequests[i])
+            else
+              _buildResultCard(completedRequests[i]),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReviewTimeoutCard(RefereeRequest request) {
+    final judgement = request.judgement!;
+    final state = ref.watch(judgementControllerProvider);
+    final isLoading = state.isLoading;
+    final isTasker = _isCurrentUserTasker();
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.cardPaddingHorizontal,
+        vertical: AppSizes.cardPaddingVertical,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.backgroundWhite,
+        borderRadius: BorderRadius.circular(AppSizes.cardBorderRadius),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.warning_amber_rounded,
+                  color: AppColors.textError, size: 20),
+              const SizedBox(width: AppSizes.spacingTiny),
+              Expanded(
+                child: Text(
+                  t.task.judgement.reviewTimeout.description,
+                  style: TextStyle(color: AppColors.textError),
+                ),
+              ),
+            ],
+          ),
+          if (isTasker && !judgement.isConfirmed) ...[
+            const SizedBox(height: AppSizes.spacingSmall),
+            if (state.hasError) ...[
+              Text(
+                state.error.toString(),
+                style: TextStyle(color: AppColors.textError),
+              ),
+              const SizedBox(height: AppSizes.spacingSmall),
+            ],
+            PrimaryActionButton(
+              text: t.task.judgement.reviewTimeout.confirm,
+              icon: Icons.check,
+              onPressed:
+                  isLoading ? null : () => _confirmReviewTimeout(judgement),
+              isLoading: isLoading,
+            ),
+          ] else if (isTasker && judgement.isConfirmed) ...[
+            const SizedBox(height: AppSizes.spacingSmall),
+            Row(
+              children: [
+                Icon(Icons.check_circle,
+                    color: AppColors.accentGreen, size: 16),
+                const SizedBox(width: AppSizes.spacingTiny),
+                Text(
+                  t.task.judgement.reviewTimeout.confirmed,
+                  style: TextStyle(color: AppColors.accentGreen),
+                ),
+              ],
+            ),
           ],
         ],
       ),
@@ -115,15 +184,11 @@ class _JudgementSectionState extends ConsumerState<JudgementSection> {
   Widget _buildResultCard(RefereeRequest request) {
     final judgement = request.judgement!;
     final isApproved = judgement.status == 'approved';
-    final isReviewTimeout = judgement.status == 'review_timeout';
 
     final String statusText;
     final Color statusColor;
 
-    if (isReviewTimeout) {
-      statusText = t.task.judgement.reviewTimeout.description;
-      statusColor = AppColors.textError;
-    } else if (isApproved) {
+    if (isApproved) {
       statusText = t.task.judgement.approved;
       statusColor = AppColors.accentGreen;
     } else {
@@ -145,9 +210,7 @@ class _JudgementSectionState extends ConsumerState<JudgementSection> {
         children: [
           Row(
             children: [
-              if (isReviewTimeout)
-                Icon(Icons.warning_amber_rounded, color: AppColors.textError, size: AppSizes.taskCardIconSize)
-              else if (request.referee?.avatarUrl != null)
+              if (request.referee?.avatarUrl != null)
                 CircleAvatar(
                   radius: AppSizes.taskCardIconSize / 2,
                   backgroundImage: NetworkImage(
@@ -192,12 +255,8 @@ class _JudgementSectionState extends ConsumerState<JudgementSection> {
                 ),
             ],
           ),
-          if (_isCurrentUserTasker() && !judgement.isConfirmed) ...[
-            if (judgement.status == 'approved' || judgement.status == 'rejected')
-              _buildConfirmArea(judgement)
-            else if (judgement.status == 'review_timeout')
-              _buildReviewTimeoutConfirmArea(judgement),
-          ],
+          if (_isCurrentUserTasker() && !judgement.isConfirmed)
+            _buildConfirmArea(judgement),
         ],
       ),
     );
@@ -295,35 +354,6 @@ class _JudgementSectionState extends ConsumerState<JudgementSection> {
             );
           },
         );
-  }
-
-  Widget _buildReviewTimeoutConfirmArea(Judgement judgement) {
-    final state = ref.watch(judgementControllerProvider);
-    final isLoading = state.isLoading;
-
-    return Padding(
-      padding: const EdgeInsets.only(top: AppSizes.spacingTiny),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Divider(color: AppColors.border, height: 1),
-          const SizedBox(height: AppSizes.spacingTiny),
-          if (state.hasError) ...[
-            Text(
-              state.error.toString(),
-              style: TextStyle(color: AppColors.textError),
-            ),
-            const SizedBox(height: AppSizes.spacingSmall),
-          ],
-          PrimaryActionButton(
-            text: t.task.judgement.reviewTimeout.confirm,
-            icon: Icons.check,
-            onPressed: isLoading ? null : () => _confirmReviewTimeout(judgement),
-            isLoading: isLoading,
-          ),
-        ],
-      ),
-    );
   }
 
   Widget _buildConfirmArea(Judgement judgement) {
