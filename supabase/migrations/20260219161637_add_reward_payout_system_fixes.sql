@@ -1,10 +1,13 @@
-CREATE OR REPLACE FUNCTION public.prepare_monthly_payouts(
-    p_currency text DEFAULT 'JPY'
-) RETURNS jsonb
-    LANGUAGE plpgsql
-    SECURITY DEFINER
-    SET search_path = ''
-    AS $$
+alter table "public"."reward_exchange_rates" enable row level security;
+
+set check_function_bodies = off;
+
+CREATE OR REPLACE FUNCTION public.prepare_monthly_payouts(p_currency text DEFAULT 'JPY'::text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
 DECLARE
     v_rate integer;
     v_batch_date date := CURRENT_DATE;
@@ -84,6 +87,18 @@ BEGIN
         'rate_per_point', v_rate
     );
 END;
-$$;
+$function$
+;
 
-ALTER FUNCTION public.prepare_monthly_payouts(text) OWNER TO postgres;
+
+  create policy "reward_exchange_rates: select for authenticated"
+  on "public"."reward_exchange_rates"
+  as permissive
+  for select
+  to authenticated
+using (true);
+
+
+CREATE TRIGGER on_reward_exchange_rates_update_set_updated_at BEFORE UPDATE ON public.reward_exchange_rates FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
+
