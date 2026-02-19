@@ -39,6 +39,7 @@ Deno.serve(async (req) => {
       .select("id, user_id, points_amount, currency, currency_amount")
       .eq("status", "pending")
       .order("created_at", { ascending: true })
+      .limit(100)
 
     if (fetchError) {
       console.error("Failed to fetch pending payouts:", fetchError)
@@ -92,13 +93,20 @@ Deno.serve(async (req) => {
         )
 
         // Mark payout as success
-        await supabase
+        const { error: updateError } = await supabase
           .from("reward_payouts")
           .update({
             status: "success",
             stripe_transfer_id: transfer.id,
           })
           .eq("id", payout.id)
+
+        if (updateError) {
+          console.error(
+            `WARNING: Failed to mark payout ${payout.id} as success (transfer ${transfer.id}):`,
+            updateError,
+          )
+        }
 
         // Deduct wallet balance and create ledger entry
         const { error: deductError } = await supabase.rpc(
