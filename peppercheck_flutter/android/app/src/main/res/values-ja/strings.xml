@@ -14,4 +14,8 @@
     <string name="notification_evidence_timeout_body">タスク「%1$s」のエビデンス提出期限が過ぎました。ポイントが消費されました。</string>
     <string name="notification_evidence_timeout_reward_title">報酬獲得</string>
     <string name="notification_evidence_timeout_reward_body">タスク「%1$s」のエビデンス期限切れにより報酬を獲得しました。</string>
+    <string name="notification_review_timeout_tasker_title">レビュー期限切れ</string>
+    <string name="notification_review_timeout_tasker_body">タスク「%1$s」は期間内に評価されませんでした。ポイントが返却されました。</string>
+    <string name="notification_review_timeout_referee_title">レビュー期限切れ</string>
+    <string name="notification_review_timeout_referee_body">タスク「%1$s」のレビュー期限が過ぎました。</string>
 </resources>

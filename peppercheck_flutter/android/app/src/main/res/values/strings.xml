@@ -14,4 +14,8 @@
     <string name="notification_evidence_timeout_body">Your task "%1$s" has timed out due to missing evidence. Points have been consumed.</string>
     <string name="notification_evidence_timeout_reward_title">Reward Earned</string>
     <string name="notification_evidence_timeout_reward_body">You earned a reward for task "%1$s" due to evidence timeout.</string>
+    <string name="notification_review_timeout_tasker_title">Review Timeout</string>
+    <string name="notification_review_timeout_tasker_body">Your task "%1$s" was not reviewed in time. Points have been returned.</string>
+    <string name="notification_review_timeout_referee_title">Review Timeout</string>
+    <string name="notification_review_timeout_referee_body">The review deadline for task "%1$s" has passed.</string>
 </resources>

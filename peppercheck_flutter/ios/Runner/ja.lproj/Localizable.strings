@@ -19,3 +19,7 @@
 "notification_evidence_timeout_body" = "タスク「%@」のエビデンス提出期限が過ぎました。ポイントが消費されました。";
 "notification_evidence_timeout_reward_title" = "報酬獲得";
 "notification_evidence_timeout_reward_body" = "タスク「%@」のエビデンス期限切れにより報酬を獲得しました。";
+"notification_review_timeout_tasker_title" = "レビュー期限切れ";
+"notification_review_timeout_tasker_body" = "タスク「%@」は期間内に評価されませんでした。ポイントが返却されました。";
+"notification_review_timeout_referee_title" = "レビュー期限切れ";
+"notification_review_timeout_referee_body" = "タスク「%@」のレビュー期限が過ぎました。";

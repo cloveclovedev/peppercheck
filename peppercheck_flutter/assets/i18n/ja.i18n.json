@@ -154,6 +154,12 @@
         "comment": "コメント（任意）",
         "submit": "確認する",
         "success": "判定を確認しました"
+      },
+      "reviewTimeout": {
+        "description": "期間内に評価されませんでした。ポイントが返却されました。",
+        "confirm": "確認",
+        "confirmed": "確認済み",
+        "success": "確認しました"
       }
     }
   },
@@ -177,6 +183,10 @@
     "evidence_timeout_body": "タスク「${taskTitle}」のエビデンス提出期限が過ぎました。ポイントが消費されました。",
     "evidence_timeout_reward_title": "報酬獲得",
     "evidence_timeout_reward_body": "タスク「${taskTitle}」のエビデンス期限切れにより報酬を獲得しました。",
+    "review_timeout_tasker_title": "レビュー期限切れ",
+    "review_timeout_tasker_body": "タスク「${taskTitle}」は期間内に評価されませんでした。ポイントが返却されました。",
+    "review_timeout_referee_title": "レビュー期限切れ",
+    "review_timeout_referee_body": "タスク「${taskTitle}」のレビュー期限が過ぎました。",
     "request_matched_title": "マッチング成立！",
     "request_matched_body": "あなたのタスク「${taskTitle}」のレフリーが見つかりました。",
     "referee_assigned_title": "新しい担当タスク",
