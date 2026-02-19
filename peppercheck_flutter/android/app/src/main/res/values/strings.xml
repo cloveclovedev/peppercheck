@@ -18,4 +18,8 @@
     <string name="notification_review_timeout_tasker_body">Your task "%1$s" was not reviewed in time. Points have been returned.</string>
     <string name="notification_review_timeout_referee_title">Review Timeout</string>
     <string name="notification_review_timeout_referee_body">The review deadline for task "%1$s" has passed.</string>
+    <string name="notification_payout_connect_required_title">Payout Setup Required</string>
+    <string name="notification_payout_connect_required_body">Complete your payout setup to receive your reward earnings.</string>
+    <string name="notification_payout_failed_title">Payout Failed</string>
+    <string name="notification_payout_failed_body">Your reward payout could not be processed. Please check your account settings.</string>
 </resources>
