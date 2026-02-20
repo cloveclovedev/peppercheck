@@ -1,5 +1,12 @@
 # DB Testing
 
+## `supabase/tests/` vs `supabase/snippets/`
+
+- **`supabase/tests/`** — Automated unit tests. Transactional (`BEGIN`/`ROLLBACK`), self-contained, assertion-based. Run via `docker exec psql`. No data persists after execution.
+- **`supabase/snippets/`** — Manual test helpers. Set up real data in the local DB for emulator-based manual testing. Data persists so the app can interact with it. Include placeholder user IDs that the developer fills in.
+
+Do not put assertion-based unit tests in `snippets/`. Do not put persistent data setup in `tests/`.
+
 ## Unit Tests for Schema Changes
 
 When modifying `supabase/schemas/` (tables, functions, triggers, policies, etc.), always create or update corresponding unit tests in `supabase/tests/`.
