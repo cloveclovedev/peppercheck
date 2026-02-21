@@ -10,7 +10,15 @@ SELECT vault.create_secret(
   'URL for send-notification Edge Function (Local)'
 );
 
--- 2. service_role_key
+-- 2. supabase_url
+-- IMPORTANT: Replace '<YOUR_SUPABASE_URL>' with your actual Supabase project URL.
+-- For local development, this is typically 'http://127.0.0.1:54321'.
+SELECT vault.create_secret(
+    '<YOUR_SUPABASE_URL>',
+    'supabase_url'
+);
+
+-- 3. service_role_key
 -- IMPORTANT: Replace 'SERVICE_ROLE_KEY_HERE' with your actual local service role key.
 -- You can find this key by running `supabase status` in your terminal.
 SELECT vault.create_secret(
