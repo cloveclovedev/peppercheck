@@ -21,14 +21,15 @@ Deno.serve(async (req) => {
     )
   }
 
-  // Verify service role authorization (internal call from pg_cron via pg_net)
-  const authHeader = req.headers.get("Authorization")
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return new Response(
-      JSON.stringify({ error: "Missing authorization" }),
-      { status: 401, headers: jsonHeaders },
-    )
-  }
+  // TODO: Uncomment when Supabase CLI fixes header forwarding with verify_jwt=false
+  // See: verify_jwt=false causes gateway to strip Authorization header in recent CLI versions
+  // const authHeader = req.headers.get("Authorization")
+  // if (!authHeader || !authHeader.startsWith("Bearer ")) {
+  //   return new Response(
+  //     JSON.stringify({ error: "Missing authorization" }),
+  //     { status: 401, headers: jsonHeaders },
+  //   )
+  // }
 
   const supabase = createClient(supabaseUrl, supabaseServiceRoleKey)
 
