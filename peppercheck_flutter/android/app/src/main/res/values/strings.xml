@@ -10,6 +10,8 @@
     <string name="notification_evidence_submitted_body">%1$s has submitted new evidence.</string>
     <string name="notification_evidence_updated_title">Evidence Updated</string>
     <string name="notification_evidence_updated_body">%1$s has updated the evidence.</string>
+    <string name="notification_evidence_resubmitted_title">Evidence Resubmitted</string>
+    <string name="notification_evidence_resubmitted_body">Evidence for "%1$s" has been resubmitted. Please review again.</string>
     <string name="notification_evidence_timeout_title">Evidence Timeout</string>
     <string name="notification_evidence_timeout_body">Your task "%1$s" has timed out due to missing evidence. Points have been consumed.</string>
     <string name="notification_evidence_timeout_reward_title">Reward Earned</string>
