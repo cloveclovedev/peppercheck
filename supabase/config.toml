@@ -124,7 +124,8 @@ schema_paths = [
   "./schemas/evidence/functions/validate_evidence_due_date.sql",
   "./schemas/evidence/functions/submit_evidence.sql",
   "./schemas/evidence/functions/update_evidence.sql",
-  
+  "./schemas/evidence/functions/resubmit_evidence.sql",
+
   # rating
   "./schemas/rating/functions/update_user_ratings.sql",
   
