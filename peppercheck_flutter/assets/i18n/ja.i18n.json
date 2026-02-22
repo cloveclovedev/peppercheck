@@ -132,6 +132,7 @@
       "edit": "編集",
       "resubmit": "エビデンスを再提出",
       "resubmit_success": "エビデンスを再提出しました",
+      "update": "更新",
       "update_success": "エビデンスを更新しました",
       "timeout": {
         "description": "期限を過ぎました。ポイントが支払われました。",

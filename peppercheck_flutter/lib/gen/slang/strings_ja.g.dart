@@ -563,6 +563,9 @@ class TranslationsTaskEvidenceJa {
 	/// ja: 'エビデンスを再提出しました'
 	String get resubmit_success => 'エビデンスを再提出しました';
 
+	/// ja: '更新'
+	String get update => '更新';
+
 	/// ja: 'エビデンスを更新しました'
 	String get update_success => 'エビデンスを更新しました';
 
@@ -875,6 +878,7 @@ extension on Translations {
 			'task.evidence.edit' => '編集',
 			'task.evidence.resubmit' => 'エビデンスを再提出',
 			'task.evidence.resubmit_success' => 'エビデンスを再提出しました',
+			'task.evidence.update' => '更新',
 			'task.evidence.update_success' => 'エビデンスを更新しました',
 			'task.evidence.timeout.description' => '期限を過ぎました。ポイントが支払われました。',
 			'task.evidence.timeout.confirm' => '確認',

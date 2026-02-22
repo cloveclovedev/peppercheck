@@ -134,9 +134,16 @@ class _EvidenceSubmissionSectionState
       if (images.isNotEmpty) {
         setState(() {
           _selectedImages.addAll(images);
-          // Limit to 5 images total (existing kept + new)
-          if (_selectedImages.length > 5) {
-            _selectedImages.removeRange(5, _selectedImages.length);
+          // Limit to 5 images total (remaining existing + new)
+          final evidence = widget.task.evidence;
+          final remainingCount = _isEditing && evidence != null
+              ? evidence.assets
+                  .where((a) => !_assetIdsToRemove.contains(a.id))
+                  .length
+              : 0;
+          final maxNew = 5 - remainingCount;
+          if (_selectedImages.length > maxNew) {
+            _selectedImages.removeRange(maxNew, _selectedImages.length);
             ScaffoldMessenger.of(
               context,
             ).showSnackBar(SnackBar(content: Text(t.task.evidence.maxImages)));
@@ -347,7 +354,7 @@ class _EvidenceSubmissionSectionState
                 child: ActionButton(
                   text: _isResubmit
                       ? t.task.evidence.resubmit
-                      : t.task.evidence.edit,
+                      : t.task.evidence.update,
                   onPressed: _descriptionController.text.isNotEmpty
                       ? (_isResubmit ? _resubmitEvidence : _updateEvidence)
                       : null,
