@@ -24,7 +24,7 @@ awaiting_evidence ──submit_evidence()──→ in_review ──judge_evidenc
                                             │       (update existing)      │
                                             │                             │
                                             ←──resubmit_evidence()────────┘
-                                               (create new record, reopen_count++)
+                                               (update existing record, reopen_count++)
                                                conditions: reopen_count<1, due_date>now(), !is_confirmed
 ```
 
@@ -38,15 +38,14 @@ Changes:
 - Remove `in_review` and `rejected` from accepted states
 - Only accept `awaiting_evidence`
 
-### `resubmit_evidence(p_task_id, p_description, p_assets)` — New
+### `resubmit_evidence(p_evidence_id, p_description, p_assets_to_add, p_asset_ids_to_remove)` — New
 
-Resubmission after rejection. `rejected` → `in_review`.
+Resubmission after rejection. `rejected` → `in_review`. Updates existing evidence in-place (same as `update_evidence` logic) + transitions judgement.
 
 Processing order:
 1. Validate (`rejected`, `reopen_count<1`, `due_date>now()`, `!is_confirmed`, tasker auth)
-2. Update judgement (`status='in_review'`, `reopen_count++`) — update first so trigger can read it
-3. Create new evidence record + assets
-4. Trigger fires → checks `reopen_count` to send "resubmitted" notification
+2. Update existing evidence record (description, add/remove assets) — evidence trigger fires but skips notification because judgement is still `rejected`
+3. Update judgement (`status='in_review'`, `reopen_count++`) — judgement trigger fires, detects `rejected → in_review` with `reopen_count > 0`, sends "resubmitted" notification to referee
 
 ### `update_evidence(p_evidence_id, p_description, p_assets_to_add, p_asset_ids_to_remove)` — New
 
@@ -60,17 +59,29 @@ Processing:
 ## Evidence Record Strategy
 
 - **Edit during in_review**: Update existing record (in-place replacement). Minor fixes don't need history.
-- **Resubmit after rejected**: Create new record. The rejected evidence is preserved as a snapshot, providing context for the Referee's rejection comment.
+- **Resubmit after rejected**: Update existing record (in-place replacement). Both edit and resubmit use the same evidence update logic; the difference is only in judgement state transition.
 
 ## Notifications
 
-Modify existing trigger `on_task_evidences_upserted_notify_referee`:
+Two triggers collaborate to avoid duplicate notifications during resubmission:
 
-| Condition | Notification Key | Message |
-|---|---|---|
-| INSERT + `reopen_count = 0` | `notification_evidence_submitted` | Evidence has been submitted |
-| INSERT + `reopen_count > 0` | `notification_evidence_resubmitted` | Evidence has been resubmitted. Please review again. |
-| UPDATE | `notification_evidence_updated` | Evidence has been updated |
+### `on_task_evidences_upserted_notify_referee` (evidence trigger)
+
+| Condition | Action |
+|---|---|
+| INSERT | Send `notification_evidence_submitted` to referee |
+| UPDATE + judgement is `rejected` | **Skip** (resubmission in progress — judgement trigger handles it) |
+| UPDATE + judgement is `in_review` | Send `notification_evidence_updated` to referee |
+
+### `on_judgements_status_changed` (judgement trigger)
+
+| Condition | Action |
+|---|---|
+| `rejected → in_review` + `reopen_count > 0` | Send `notification_evidence_resubmitted` to referee |
+| `→ approved` | Send `notification_judgement_approved` to tasker (existing) |
+| `→ rejected` | Send `notification_judgement_rejected` to tasker (existing) |
+
+This works because `resubmit_evidence` updates evidence FIRST (while judgement is still `rejected`), then updates judgement. Each trigger makes decisions based on the current state at the time it fires — fully declarative, no session variables needed.
 
 ## Flutter UI
 
@@ -100,9 +111,10 @@ Rationale: The `due_date > now()` condition is time-dependent and cannot be main
 
 ### Modify
 - `submit_evidence()` — simplify to `awaiting_evidence` only
-- `on_task_evidences_upserted_notify_referee` — branch on `reopen_count` for INSERT notifications
+- `on_task_evidences_upserted_notify_referee` — skip notification on UPDATE when judgement is `rejected`
+- `on_judgements_status_changed` — add `rejected → in_review` case to send "resubmitted" notification to referee
 - Flutter: evidence submission UI (add edit mode, resubmit button)
-- Flutter: judgement repository (add `updateEvidence()`, `resubmitEvidence()` methods)
+- Flutter: evidence repository (add `updateEvidence()`, `resubmitEvidence()` methods)
 
 ### Create
 - `supabase/schemas/evidence/functions/resubmit_evidence.sql`
