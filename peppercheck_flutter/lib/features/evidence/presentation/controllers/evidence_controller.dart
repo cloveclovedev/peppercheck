@@ -42,7 +42,7 @@ class EvidenceController extends _$EvidenceController {
     });
   }
 
-  Future<void> update({
+  Future<void> updateEvidence({
     required String taskId,
     required String evidenceId,
     required String description,
