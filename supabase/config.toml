@@ -176,6 +176,7 @@ schema_paths = [
   "./schemas/judgement/triggers/on_review_timeout_settle.sql",
   "./schemas/judgement/triggers/on_judgement_threads_update_set_updated_at.sql",
   "./schemas/judgement/triggers/on_judgements_status_changed.sql",
+  "./schemas/judgement/triggers/on_judgement_confirmed_notify.sql",
 
   # Task
   "./schemas/task/triggers/on_tasks_update_set_updated_at.sql",
