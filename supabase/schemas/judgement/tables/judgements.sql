@@ -22,7 +22,6 @@ CREATE TABLE IF NOT EXISTS public.judgements (
     is_confirmed boolean DEFAULT false,
     is_auto_confirmed boolean DEFAULT false NOT NULL,
     reopen_count smallint DEFAULT 0 NOT NULL,
-    is_evidence_timeout_confirmed boolean DEFAULT false NOT NULL,
     
     -- Timestamps
     created_at timestamp with time zone DEFAULT now(),
@@ -34,12 +33,10 @@ CREATE TABLE IF NOT EXISTS public.judgements (
 ALTER TABLE public.judgements OWNER TO postgres;
 
 -- Indexes
-CREATE INDEX idx_judgements_evidence_timeout_confirmed ON public.judgements USING btree (is_evidence_timeout_confirmed) WHERE (status = 'evidence_timeout'::judgement_status);
 -- No need for request_id or task_id indexes as id is the FK and PK.
 
 COMMENT ON TABLE public.judgements IS 'Stores judgement decisions. ID is strictly 1:1 with task_referee_requests.id.';
 COMMENT ON COLUMN public.judgements.id IS 'Foreign Key to task_referee_requests.id. Ensures 1:1 relationship.';
 COMMENT ON COLUMN public.judgements.reopen_count IS 'Number of times this judgement has been reopened.';
-COMMENT ON COLUMN public.judgements.is_evidence_timeout_confirmed IS 'Indicates whether the referee has confirmed the evidence timeout.';
 
 
