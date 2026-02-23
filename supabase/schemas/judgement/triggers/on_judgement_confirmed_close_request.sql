@@ -17,8 +17,5 @@ ALTER FUNCTION public.close_referee_request_on_confirmed() OWNER TO postgres;
 CREATE OR REPLACE TRIGGER on_judgement_confirmed_close_request
     AFTER UPDATE ON public.judgements
     FOR EACH ROW
-    WHEN (
-        (NEW.is_confirmed = true AND OLD.is_confirmed = false)
-        OR (NEW.is_evidence_timeout_confirmed = true AND OLD.is_evidence_timeout_confirmed = false)
-    )
+    WHEN (NEW.is_confirmed = true AND OLD.is_confirmed = false)
     EXECUTE FUNCTION public.close_referee_request_on_confirmed();

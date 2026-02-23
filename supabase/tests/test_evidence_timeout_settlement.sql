@@ -106,7 +106,7 @@ BEGIN
 END $$;
 
 
--- ===== Test 3: is_evidence_timeout_confirmed auto-set and request closed =====
+-- ===== Test 3: Request auto-closed directly by settlement trigger =====
 \echo ''
 \echo '=========================================='
 \echo ' Test 3: Auto-close referee side'
@@ -114,8 +114,7 @@ END $$;
 
 DO $$
 BEGIN
-  ASSERT (SELECT is_evidence_timeout_confirmed FROM public.judgements WHERE id = 'cccccccc-aaaa-aaaa-aaaa-aaaaaaaaaaaa') = true,
-    'Test 3 FAILED: is_evidence_timeout_confirmed should be true';
+  -- is_evidence_timeout_confirmed column removed — settlement trigger now closes request directly
   ASSERT (SELECT status FROM public.task_referee_requests WHERE id = 'cccccccc-aaaa-aaaa-aaaa-aaaaaaaaaaaa') = 'closed',
     'Test 3 FAILED: request should be closed';
   RAISE NOTICE 'Test 3 PASSED: referee side auto-closed';

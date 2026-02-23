@@ -79,7 +79,6 @@ SELECT
     t.status AS task_status,
     t.due_date,
     j.status AS judgement_status,
-    j.is_evidence_timeout_confirmed,
     j.is_confirmed,
     trr.status AS request_status
 FROM public.tasks t

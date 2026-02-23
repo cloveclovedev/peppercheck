@@ -15,7 +15,6 @@ CREATE OR REPLACE FUNCTION public.get_active_referee_tasks() RETURNS jsonb
             'updated_at', j.updated_at,
             'is_confirmed', j.is_confirmed,
             'reopen_count', j.reopen_count,
-            'is_evidence_timeout_confirmed', j.is_evidence_timeout_confirmed,
             'can_reopen', (
               j.status = 'rejected'
               AND j.reopen_count < 1

@@ -118,9 +118,6 @@ The Tasker then calls `confirm_evidence_timeout` RPC to set `is_confirmed = true
 |smallint
 |Number of times evidence was resubmitted (max 1)
 
-|`is_evidence_timeout_confirmed`
-|boolean
-|Whether evidence timeout was acknowledged
 |===
 
 == Related Links

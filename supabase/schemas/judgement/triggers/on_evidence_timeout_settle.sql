@@ -44,10 +44,9 @@ BEGIN
         NEW.id
     );
 
-    -- Auto-set is_evidence_timeout_confirmed to close the request for referee side
-    -- This triggers on_judgement_confirmed_close_request → request closes
-    UPDATE public.judgements
-    SET is_evidence_timeout_confirmed = true
+    -- Close referee request directly (same pattern as settle_review_timeout)
+    UPDATE public.task_referee_requests
+    SET status = 'closed'::public.referee_request_status
     WHERE id = NEW.id;
 
     -- Notify tasker: evidence timed out

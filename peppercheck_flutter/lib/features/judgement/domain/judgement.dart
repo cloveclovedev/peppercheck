@@ -13,9 +13,6 @@ abstract class Judgement with _$Judgement {
     String? comment,
     @JsonKey(name: 'is_confirmed') @Default(false) bool isConfirmed,
     @JsonKey(name: 'reopen_count') @Default(0) int reopenCount,
-    @JsonKey(name: 'is_evidence_timeout_confirmed')
-    @Default(false)
-    bool isEvidenceTimeoutConfirmed,
     @JsonKey(name: 'created_at') required String createdAt,
     @JsonKey(name: 'updated_at') required String updatedAt,
   }) = _Judgement;

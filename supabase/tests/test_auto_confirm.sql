@@ -210,9 +210,9 @@ INSERT INTO public.task_referee_requests (id, task_id, matching_strategy, status
 VALUES ('cccccccc-eeee-aaaa-aaaa-aaaaaaaaaaaa', 'eeeeeeee-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'standard', 'closed', '22222222-2222-2222-2222-222222222222', now());
 
 -- evidence_timeout: settlement already done (points consumed, reward granted, request closed)
--- Simulate post-settlement state
-INSERT INTO public.judgements (id, status, is_evidence_timeout_confirmed)
-VALUES ('cccccccc-eeee-aaaa-aaaa-aaaaaaaaaaaa', 'evidence_timeout', true);
+-- Simulate post-settlement state (is_evidence_timeout_confirmed removed; closure now done directly)
+INSERT INTO public.judgements (id, status)
+VALUES ('cccccccc-eeee-aaaa-aaaa-aaaaaaaaaaaa', 'evidence_timeout');
 
 -- Consume points to simulate settle_evidence_timeout already ran
 SELECT public.consume_points('11111111-1111-1111-1111-111111111111', 1, 'matching_settled'::public.point_reason, 'Simulated evidence timeout consume');

@@ -171,7 +171,6 @@ schema_paths = [
   "./schemas/judgement/triggers/on_judgements_timeout_score_referee.sql",
   "./schemas/judgement/triggers/on_judgement_confirmed_close_request.sql",
   "./schemas/judgement/triggers/on_judgement_confirmed.sql",
-  "./schemas/judgement/triggers/on_judgements_evidence_timeout_close_referee_request.sql",
   "./schemas/judgement/triggers/on_evidence_timeout_settle.sql",
   "./schemas/judgement/triggers/on_review_timeout_settle.sql",
   "./schemas/judgement/triggers/on_judgement_threads_update_set_updated_at.sql",
