@@ -368,6 +368,18 @@ class TranslationsNotificationJa {
 	/// ja: '${taskTitle}のエビデンスが再提出されました。再度判定してください。'
 	String evidence_resubmitted_body({required Object taskTitle}) => '${taskTitle}のエビデンスが再提出されました。再度判定してください。';
 
+	/// ja: '自動確認'
+	String get auto_confirm_tasker_title => '自動確認';
+
+	/// ja: 'タスク「${taskTitle}」の評価が自動的に確認されました。'
+	String auto_confirm_tasker_body({required Object taskTitle}) => 'タスク「${taskTitle}」の評価が自動的に確認されました。';
+
+	/// ja: '評価確認'
+	String get auto_confirm_referee_title => '評価確認';
+
+	/// ja: 'タスク「${taskTitle}」の評価が確認されました。'
+	String auto_confirm_referee_body({required Object taskTitle}) => 'タスク「${taskTitle}」の評価が確認されました。';
+
 	/// ja: 'お知らせ'
 	String get fallback_title => 'お知らせ';
 
@@ -933,6 +945,10 @@ extension on Translations {
 			'notification.evidence_updated_body' => ({required Object taskTitle}) => '${taskTitle}さんがエビデンスを更新しました。',
 			'notification.evidence_resubmitted_title' => 'エビデンス再提出',
 			'notification.evidence_resubmitted_body' => ({required Object taskTitle}) => '${taskTitle}のエビデンスが再提出されました。再度判定してください。',
+			'notification.auto_confirm_tasker_title' => '自動確認',
+			'notification.auto_confirm_tasker_body' => ({required Object taskTitle}) => 'タスク「${taskTitle}」の評価が自動的に確認されました。',
+			'notification.auto_confirm_referee_title' => '評価確認',
+			'notification.auto_confirm_referee_body' => ({required Object taskTitle}) => 'タスク「${taskTitle}」の評価が確認されました。',
 			'notification.fallback_title' => 'お知らせ',
 			'notification.fallback_body' => '新しい通知があります。',
 			_ => null,

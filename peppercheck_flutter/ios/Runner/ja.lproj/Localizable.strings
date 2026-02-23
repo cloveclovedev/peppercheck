@@ -25,3 +25,8 @@
 "notification_review_timeout_tasker_body" = "タスク「%@」は期間内に評価されませんでした。ポイントが返却されました。";
 "notification_review_timeout_referee_title" = "レビュー期限切れ";
 "notification_review_timeout_referee_body" = "タスク「%@」のレビュー期限が過ぎました。";
+
+"notification_auto_confirm_tasker_title" = "自動確認";
+"notification_auto_confirm_tasker_body" = "タスク「%@」の評価が自動的に確認されました。";
+"notification_auto_confirm_referee_title" = "評価確認";
+"notification_auto_confirm_referee_body" = "タスク「%@」の評価が確認されました。";
