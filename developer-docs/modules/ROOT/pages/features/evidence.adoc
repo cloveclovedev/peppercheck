@@ -54,8 +54,8 @@ include::example$features/evidence/upload_sequence.pu[]
 
 When evidence is submitted or updated, a push notification is sent to the assigned Referee:
 
-* **Insert** (new submission) → `notification_evidence_submitted`
-* **Update** (resubmission after rejection) → `notification_evidence_updated`
+* **Insert** (new submission) → `notification_evidence_submitted_referee`
+* **Update** (resubmission after rejection) → `notification_evidence_updated_referee`
 
 This is handled by the `on_task_evidences_upserted_notify_referee` database trigger, which calls `notify_event()`.
 

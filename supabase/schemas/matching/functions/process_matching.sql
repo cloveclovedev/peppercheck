@@ -170,7 +170,7 @@ BEGIN
         -- 1. Notify Referee (assigned)
         PERFORM public.notify_event(
             v_matched_referee_id,
-            'notification_referee_assigned',
+            'notification_task_assigned_referee',
             ARRAY[v_task.title]::text[],
             jsonb_build_object('route', '/tasks/' || v_request.task_id)
         );
@@ -178,7 +178,7 @@ BEGIN
         -- 2. Notify Tasker (matched/found)
         PERFORM public.notify_event(
             v_task.tasker_id,
-            'notification_request_matched',
+            'notification_request_matched_tasker',
             ARRAY[v_task.title]::text[],
             jsonb_build_object('route', '/tasks/' || v_request.task_id)
         );

@@ -1,26 +1,26 @@
-/* 
+/*
   Localizable.strings
   Runner
 
   Created via Antigravity
 */
 
-"notification_request_matched_title" = "Match Found!";
-"notification_request_matched_body" = "A referee has been found for your task \"%@\".";
-"notification_referee_assigned_title" = "New Assignment";
-"notification_referee_assigned_body" = "You have been assigned to judge task \"%@\".";
+"notification_request_matched_tasker_title" = "Match Found!";
+"notification_request_matched_tasker_body" = "A referee has been found for your task \"%@\".";
+"notification_task_assigned_referee_title" = "New Assignment";
+"notification_task_assigned_referee_body" = "You have been assigned to judge task \"%@\".";
 "notification_request_accepted_title" = "Request Accepted";
 "notification_request_accepted_body" = "Your request has been accepted.";
-"notification_evidence_submitted_title" = "Evidence Submitted";
-"notification_evidence_submitted_body" = "%@ has submitted new evidence.";
-"notification_evidence_updated_title" = "Evidence Updated";
-"notification_evidence_updated_body" = "%@ has updated the evidence.";
-"notification_evidence_resubmitted_title" = "Evidence Resubmitted";
-"notification_evidence_resubmitted_body" = "Evidence for \"%@\" has been resubmitted. Please review again.";
-"notification_evidence_timeout_title" = "Evidence Timeout";
-"notification_evidence_timeout_body" = "Your task \"%@\" has timed out due to missing evidence. Points have been consumed.";
-"notification_evidence_timeout_reward_title" = "Reward Earned";
-"notification_evidence_timeout_reward_body" = "You earned a reward for task \"%@\" due to evidence timeout.";
+"notification_evidence_submitted_referee_title" = "Evidence Submitted";
+"notification_evidence_submitted_referee_body" = "%@ has submitted new evidence.";
+"notification_evidence_updated_referee_title" = "Evidence Updated";
+"notification_evidence_updated_referee_body" = "%@ has updated the evidence.";
+"notification_evidence_resubmitted_referee_title" = "Evidence Resubmitted";
+"notification_evidence_resubmitted_referee_body" = "Evidence for \"%@\" has been resubmitted. Please review again.";
+"notification_evidence_timeout_tasker_title" = "Evidence Timeout";
+"notification_evidence_timeout_tasker_body" = "Your task \"%@\" has timed out due to missing evidence. Points have been consumed.";
+"notification_evidence_timeout_referee_title" = "Reward Earned";
+"notification_evidence_timeout_referee_body" = "You earned a reward for task \"%@\" due to evidence timeout.";
 "notification_review_timeout_tasker_title" = "Review Timeout";
 "notification_review_timeout_tasker_body" = "Your task \"%@\" was not reviewed in time. Points have been returned.";
 "notification_review_timeout_referee_title" = "Review Timeout";

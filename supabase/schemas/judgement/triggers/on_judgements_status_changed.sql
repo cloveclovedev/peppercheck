@@ -31,15 +31,15 @@ BEGIN
     -- Determine notification based on new status
     CASE NEW.status
         WHEN 'approved' THEN
-            v_notification_key := 'notification_judgement_approved';
+            v_notification_key := 'notification_judgement_approved_tasker';
             v_recipient_id := v_tasker_id;
         WHEN 'rejected' THEN
-            v_notification_key := 'notification_judgement_rejected';
+            v_notification_key := 'notification_judgement_rejected_tasker';
             v_recipient_id := v_tasker_id;
         WHEN 'in_review' THEN
             -- Resubmission: rejected → in_review with reopen_count > 0
             IF OLD.status = 'rejected' AND NEW.reopen_count > 0 THEN
-                v_notification_key := 'notification_evidence_resubmitted';
+                v_notification_key := 'notification_evidence_resubmitted_referee';
                 v_recipient_id := v_referee_id;
             ELSE
                 RETURN NEW;

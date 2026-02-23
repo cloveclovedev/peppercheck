@@ -27,7 +27,7 @@ BEGIN
             IF FOUND THEN
                 PERFORM public.notify_event(
                     v_referee_id,
-                    'notification_judgement_confirmed',
+                    'notification_judgement_confirmed_referee',
                     ARRAY[v_task_title],
                     jsonb_build_object('task_id', v_task_id, 'judgement_id', NEW.id)
                 );
