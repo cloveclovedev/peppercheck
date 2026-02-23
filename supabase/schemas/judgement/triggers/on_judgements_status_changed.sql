@@ -7,18 +7,19 @@ CREATE OR REPLACE FUNCTION public.on_judgements_status_changed()
     AS $$
 DECLARE
     v_tasker_id uuid;
+    v_referee_id uuid;
     v_task_id uuid;
     v_task_title text;
     v_notification_key text;
+    v_recipient_id uuid;
 BEGIN
-    -- Early return if status did not change
     IF OLD.status = NEW.status THEN
         RETURN NEW;
     END IF;
 
     -- Resolve task info via task_referee_requests
-    SELECT t.id, t.tasker_id, t.title
-    INTO v_task_id, v_tasker_id, v_task_title
+    SELECT t.id, t.tasker_id, t.title, trr.matched_referee_id
+    INTO v_task_id, v_tasker_id, v_task_title, v_referee_id
     FROM public.task_referee_requests trr
     JOIN public.tasks t ON t.id = trr.task_id
     WHERE trr.id = NEW.id;
@@ -31,16 +32,25 @@ BEGIN
     CASE NEW.status
         WHEN 'approved' THEN
             v_notification_key := 'notification_judgement_approved';
+            v_recipient_id := v_tasker_id;
         WHEN 'rejected' THEN
             v_notification_key := 'notification_judgement_rejected';
+            v_recipient_id := v_tasker_id;
+        WHEN 'in_review' THEN
+            -- Resubmission: rejected → in_review with reopen_count > 0
+            IF OLD.status = 'rejected' AND NEW.reopen_count > 0 THEN
+                v_notification_key := 'notification_evidence_resubmitted';
+                v_recipient_id := v_referee_id;
+            ELSE
+                RETURN NEW;
+            END IF;
         ELSE
-            -- Other status changes: no notification for now (future extension point)
             RETURN NEW;
     END CASE;
 
-    -- Send notification to tasker
+    -- Send notification
     PERFORM public.notify_event(
-        v_tasker_id,
+        v_recipient_id,
         v_notification_key,
         ARRAY[v_task_title],
         jsonb_build_object('task_id', v_task_id, 'judgement_id', NEW.id)
@@ -52,7 +62,6 @@ $$;
 
 ALTER FUNCTION public.on_judgements_status_changed() OWNER TO postgres;
 
--- Create Trigger
 DROP TRIGGER IF EXISTS on_judgements_status_changed ON public.judgements;
 
 CREATE TRIGGER on_judgements_status_changed

@@ -362,6 +362,12 @@ class TranslationsNotificationJa {
 	/// ja: '${taskTitle}さんがエビデンスを更新しました。'
 	String evidence_updated_body({required Object taskTitle}) => '${taskTitle}さんがエビデンスを更新しました。';
 
+	/// ja: 'エビデンス再提出'
+	String get evidence_resubmitted_title => 'エビデンス再提出';
+
+	/// ja: '${taskTitle}のエビデンスが再提出されました。再度判定してください。'
+	String evidence_resubmitted_body({required Object taskTitle}) => '${taskTitle}のエビデンスが再提出されました。再度判定してください。';
+
 	/// ja: 'お知らせ'
 	String get fallback_title => 'お知らせ';
 
@@ -547,6 +553,21 @@ class TranslationsTaskEvidenceJa {
 
 	/// ja: 'エラーが発生しました: $message'
 	String error({required Object message}) => 'エラーが発生しました: ${message}';
+
+	/// ja: '編集'
+	String get edit => '編集';
+
+	/// ja: 'エビデンスを再提出'
+	String get resubmit => 'エビデンスを再提出';
+
+	/// ja: 'エビデンスを再提出しました'
+	String get resubmit_success => 'エビデンスを再提出しました';
+
+	/// ja: '更新'
+	String get update => '更新';
+
+	/// ja: 'エビデンスを更新しました'
+	String get update_success => 'エビデンスを更新しました';
 
 	late final TranslationsTaskEvidenceTimeoutJa timeout = TranslationsTaskEvidenceTimeoutJa.internal(_root);
 }
@@ -854,6 +875,11 @@ extension on Translations {
 			'task.evidence.maxImages' => '画像は最大5枚までです',
 			'task.evidence.success' => 'エビデンスを提出しました',
 			'task.evidence.error' => ({required Object message}) => 'エラーが発生しました: ${message}',
+			'task.evidence.edit' => '編集',
+			'task.evidence.resubmit' => 'エビデンスを再提出',
+			'task.evidence.resubmit_success' => 'エビデンスを再提出しました',
+			'task.evidence.update' => '更新',
+			'task.evidence.update_success' => 'エビデンスを更新しました',
 			'task.evidence.timeout.description' => '期限を過ぎました。ポイントが支払われました。',
 			'task.evidence.timeout.confirm' => '確認',
 			'task.evidence.timeout.confirmed' => '確認済み',
@@ -905,6 +931,8 @@ extension on Translations {
 			'notification.evidence_submitted_body' => ({required Object taskTitle}) => '${taskTitle}さんが新しいエビデンスを提出しました。',
 			'notification.evidence_updated_title' => 'エビデンス更新',
 			'notification.evidence_updated_body' => ({required Object taskTitle}) => '${taskTitle}さんがエビデンスを更新しました。',
+			'notification.evidence_resubmitted_title' => 'エビデンス再提出',
+			'notification.evidence_resubmitted_body' => ({required Object taskTitle}) => '${taskTitle}のエビデンスが再提出されました。再度判定してください。',
 			'notification.fallback_title' => 'お知らせ',
 			'notification.fallback_body' => '新しい通知があります。',
 			_ => null,

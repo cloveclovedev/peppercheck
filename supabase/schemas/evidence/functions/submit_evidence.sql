@@ -27,12 +27,6 @@ BEGIN
     END IF;
 
     -- 1.2 Authorization & Status Check
-    -- Check if:
-    --   a) User is tasker (Auth check)
-    --   b) Task/Judgement is in valid state:
-    --      - Status is 'open' (Awaiting Evidence)
-    --      - OR Status is 'rejected' AND reopen_count < 1 AND Now < DueDate
-    -- Note: We join with tasks to check tasker_id and due_date
     IF NOT EXISTS (
         SELECT 1
         FROM public.tasks t
@@ -40,11 +34,7 @@ BEGIN
         JOIN public.judgements j ON j.id = trr.id
         WHERE t.id = p_task_id
           AND t.tasker_id = auth.uid()
-          AND (
-              j.status IN ('awaiting_evidence', 'in_review')
-              OR
-              (j.status = 'rejected' AND j.reopen_count < 1 AND t.due_date > v_now)
-          )
+          AND j.status = 'awaiting_evidence'
     ) THEN
         RAISE EXCEPTION 'Not authorized or task not in valid state for evidence submission';
     END IF;
@@ -87,20 +77,15 @@ BEGIN
     END LOOP;
 
     -- 3. Update Judgements
-    -- Transition 'open' or 'rejected' to 'in_review'
     UPDATE public.judgements j
-    SET 
+    SET
         status = 'in_review',
         updated_at = v_now
     FROM public.task_referee_requests trr
-    WHERE 
+    WHERE
         j.id = trr.id
         AND trr.task_id = p_task_id
-        AND (
-            j.status IN ('awaiting_evidence', 'in_review')
-            OR 
-            (j.status = 'rejected' AND j.reopen_count < 1) 
-        );
+        AND j.status = 'awaiting_evidence';
 
     GET DIAGNOSTICS v_updated_count = ROW_COUNT;
 

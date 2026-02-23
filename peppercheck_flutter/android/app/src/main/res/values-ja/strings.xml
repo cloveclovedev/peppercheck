@@ -10,6 +10,8 @@
     <string name="notification_evidence_submitted_body">%1$sさんが新しいエビデンスを提出しました。</string>
     <string name="notification_evidence_updated_title">エビデンス更新</string>
     <string name="notification_evidence_updated_body">%1$sさんがエビデンスを更新しました。</string>
+    <string name="notification_evidence_resubmitted_title">エビデンス再提出</string>
+    <string name="notification_evidence_resubmitted_body">%1$sのエビデンスが再提出されました。再度判定してください。</string>
     <string name="notification_evidence_timeout_title">エビデンス期限切れ</string>
     <string name="notification_evidence_timeout_body">タスク「%1$s」のエビデンス提出期限が過ぎました。ポイントが消費されました。</string>
     <string name="notification_evidence_timeout_reward_title">報酬獲得</string>

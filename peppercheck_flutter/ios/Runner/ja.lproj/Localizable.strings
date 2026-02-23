@@ -15,6 +15,8 @@
 "notification_evidence_submitted_body" = "%@さんが新しいエビデンスを提出しました。";
 "notification_evidence_updated_title" = "エビデンス更新";
 "notification_evidence_updated_body" = "%@さんがエビデンスを更新しました。";
+"notification_evidence_resubmitted_title" = "エビデンス再提出";
+"notification_evidence_resubmitted_body" = "%@のエビデンスが再提出されました。再度判定してください。";
 "notification_evidence_timeout_title" = "エビデンス期限切れ";
 "notification_evidence_timeout_body" = "タスク「%@」のエビデンス提出期限が過ぎました。ポイントが消費されました。";
 "notification_evidence_timeout_reward_title" = "報酬獲得";

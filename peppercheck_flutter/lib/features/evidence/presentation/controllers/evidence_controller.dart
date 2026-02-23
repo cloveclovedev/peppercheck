@@ -42,6 +42,50 @@ class EvidenceController extends _$EvidenceController {
     });
   }
 
+  Future<void> updateEvidence({
+    required String taskId,
+    required String evidenceId,
+    required String description,
+    required List<XFile> newImages,
+    required List<String> assetIdsToRemove,
+    required VoidCallback onSuccess,
+  }) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      await ref.read(evidenceRepositoryProvider).updateEvidence(
+            evidenceId: evidenceId,
+            taskId: taskId,
+            description: description,
+            newImages: newImages,
+            assetIdsToRemove: assetIdsToRemove,
+          );
+      ref.invalidate(taskProvider(taskId));
+      onSuccess();
+    });
+  }
+
+  Future<void> resubmit({
+    required String taskId,
+    required String evidenceId,
+    required String description,
+    required List<XFile> newImages,
+    required List<String> assetIdsToRemove,
+    required VoidCallback onSuccess,
+  }) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      await ref.read(evidenceRepositoryProvider).resubmitEvidence(
+            evidenceId: evidenceId,
+            taskId: taskId,
+            description: description,
+            newImages: newImages,
+            assetIdsToRemove: assetIdsToRemove,
+          );
+      ref.invalidate(taskProvider(taskId));
+      onSuccess();
+    });
+  }
+
   Future<void> confirmEvidenceTimeout({
     required String taskId,
     required String judgementId,

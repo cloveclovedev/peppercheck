@@ -13,7 +13,6 @@ abstract class Judgement with _$Judgement {
     String? comment,
     @JsonKey(name: 'is_confirmed') @Default(false) bool isConfirmed,
     @JsonKey(name: 'reopen_count') @Default(0) int reopenCount,
-    @JsonKey(name: 'can_reopen') @Default(false) bool canReopen,
     @JsonKey(name: 'is_evidence_timeout_confirmed')
     @Default(false)
     bool isEvidenceTimeoutConfirmed,

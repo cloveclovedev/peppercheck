@@ -123,7 +123,9 @@ schema_paths = [
   "./schemas/evidence/functions/detect_evidence_timeouts.sql",
   "./schemas/evidence/functions/validate_evidence_due_date.sql",
   "./schemas/evidence/functions/submit_evidence.sql",
-  
+  "./schemas/evidence/functions/update_evidence.sql",
+  "./schemas/evidence/functions/resubmit_evidence.sql",
+
   # rating
   "./schemas/rating/functions/update_user_ratings.sql",
   
@@ -132,7 +134,6 @@ schema_paths = [
   "./schemas/judgement/functions/confirm_evidence_timeout.sql",
   "./schemas/judgement/functions/confirm_review_timeout.sql",
   "./schemas/judgement/functions/detect_review_timeouts.sql",
-  "./schemas/judgement/functions/reopen_judgement.sql",
   "./schemas/judgement/functions/judge_evidence.sql",
   
   # existing wildcards (checking required)

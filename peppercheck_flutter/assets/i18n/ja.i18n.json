@@ -129,6 +129,11 @@
       "maxImages": "画像は最大5枚までです",
       "success": "エビデンスを提出しました",
       "error": "エラーが発生しました: $message",
+      "edit": "編集",
+      "resubmit": "エビデンスを再提出",
+      "resubmit_success": "エビデンスを再提出しました",
+      "update": "更新",
+      "update_success": "エビデンスを更新しました",
       "timeout": {
         "description": "期限を過ぎました。ポイントが支払われました。",
         "confirm": "確認",
@@ -197,6 +202,8 @@
     "evidence_submitted_body": "${taskTitle}さんが新しいエビデンスを提出しました。",
     "evidence_updated_title": "エビデンス更新",
     "evidence_updated_body": "${taskTitle}さんがエビデンスを更新しました。",
+    "evidence_resubmitted_title": "エビデンス再提出",
+    "evidence_resubmitted_body": "${taskTitle}のエビデンスが再提出されました。再度判定してください。",
     "fallback_title": "お知らせ",
     "fallback_body": "新しい通知があります。"
   }
