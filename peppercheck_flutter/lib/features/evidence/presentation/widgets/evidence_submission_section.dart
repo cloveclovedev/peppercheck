@@ -351,15 +351,21 @@ class _EvidenceSubmissionSectionState
           Row(
             children: [
               Expanded(
-                child: ActionButton(
-                  text: _isResubmit
-                      ? t.task.evidence.resubmit
-                      : t.task.evidence.update,
-                  onPressed: _descriptionController.text.isNotEmpty
-                      ? (_isResubmit ? _resubmitEvidence : _updateEvidence)
-                      : null,
-                  isLoading: isLoading,
-                ),
+                child: _isResubmit
+                    ? PrimaryActionButton(
+                        text: t.task.evidence.resubmit,
+                        onPressed: _descriptionController.text.isNotEmpty
+                            ? _resubmitEvidence
+                            : null,
+                        isLoading: isLoading,
+                      )
+                    : ActionButton(
+                        text: t.task.evidence.update,
+                        onPressed: _descriptionController.text.isNotEmpty
+                            ? _updateEvidence
+                            : null,
+                        isLoading: isLoading,
+                      ),
               ),
               const SizedBox(width: AppSizes.spacingSmall),
               TextButton(
@@ -430,7 +436,7 @@ class _EvidenceSubmissionSectionState
             ],
             if (_canReopen() && _isCurrentUserTasker()) ...[
               const SizedBox(height: AppSizes.spacingSmall),
-              ActionButton(
+              PrimaryActionButton(
                 text: t.task.evidence.resubmit,
                 onPressed: () => _enterEditMode(isResubmit: true),
                 isLoading: false,
@@ -598,7 +604,7 @@ class _EvidenceSubmissionSectionState
             ),
             const SizedBox(height: 8),
           ],
-          ActionButton(
+          PrimaryActionButton(
             text: t.task.evidence.submit,
             onPressed:
                 _selectedImages.isNotEmpty &&
