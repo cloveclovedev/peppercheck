@@ -135,7 +135,9 @@
       "update": "更新",
       "update_success": "エビデンスを更新しました",
       "timeout": {
+        "title": "タイムアウト通知",
         "description": "期限を過ぎました。ポイントが支払われました。",
+        "referee_description": "エビデンスの提出期限が過ぎたため、報酬が付与されました。",
         "confirm": "確認",
         "confirmed": "確認済み",
         "success": "確認しました"

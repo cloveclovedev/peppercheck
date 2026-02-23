@@ -718,8 +718,14 @@ class TranslationsTaskEvidenceTimeoutJa {
 
 	// Translations
 
+	/// ja: 'タイムアウト通知'
+	String get title => 'タイムアウト通知';
+
 	/// ja: '期限を過ぎました。ポイントが支払われました。'
 	String get description => '期限を過ぎました。ポイントが支払われました。';
+
+	/// ja: 'エビデンスの提出期限が過ぎたため、報酬が付与されました。'
+	String get referee_description => 'エビデンスの提出期限が過ぎたため、報酬が付与されました。';
 
 	/// ja: '確認'
 	String get confirm => '確認';
@@ -892,7 +898,9 @@ extension on Translations {
 			'task.evidence.resubmit_success' => 'エビデンスを再提出しました',
 			'task.evidence.update' => '更新',
 			'task.evidence.update_success' => 'エビデンスを更新しました',
+			'task.evidence.timeout.title' => 'タイムアウト通知',
 			'task.evidence.timeout.description' => '期限を過ぎました。ポイントが支払われました。',
+			'task.evidence.timeout.referee_description' => 'エビデンスの提出期限が過ぎたため、報酬が付与されました。',
 			'task.evidence.timeout.confirm' => '確認',
 			'task.evidence.timeout.confirmed' => '確認済み',
 			'task.evidence.timeout.success' => '確認しました',
