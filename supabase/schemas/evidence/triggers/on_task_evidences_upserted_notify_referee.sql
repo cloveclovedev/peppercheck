@@ -24,14 +24,14 @@ BEGIN
 
     -- 2. Determine Event Key
     IF TG_OP = 'INSERT' THEN
-        v_notification_key := 'notification_evidence_submitted';
+        v_notification_key := 'notification_evidence_submitted_referee';
     ELSIF TG_OP = 'UPDATE' THEN
         -- During resubmission, evidence is updated while judgement is still 'rejected'.
         -- The judgement status change trigger handles the resubmission notification.
         IF v_judgement_status = 'rejected' THEN
             RETURN NEW;
         END IF;
-        v_notification_key := 'notification_evidence_updated';
+        v_notification_key := 'notification_evidence_updated_referee';
     END IF;
 
     -- 3. Identify Task Details

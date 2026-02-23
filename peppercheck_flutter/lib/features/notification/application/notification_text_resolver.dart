@@ -22,38 +22,38 @@ String? _resolveKey(String? locKey, String taskTitle) {
   if (locKey == null) return null;
 
   switch (locKey) {
-    case 'notification_evidence_timeout_title':
-      return t.notification.evidence_timeout_title;
-    case 'notification_evidence_timeout_body':
-      return t.notification.evidence_timeout_body(taskTitle: taskTitle);
-    case 'notification_evidence_timeout_reward_title':
-      return t.notification.evidence_timeout_reward_title;
-    case 'notification_evidence_timeout_reward_body':
-      return t.notification.evidence_timeout_reward_body(taskTitle: taskTitle);
-    case 'notification_request_matched_title':
-      return t.notification.request_matched_title;
-    case 'notification_request_matched_body':
-      return t.notification.request_matched_body(taskTitle: taskTitle);
-    case 'notification_referee_assigned_title':
-      return t.notification.referee_assigned_title;
-    case 'notification_referee_assigned_body':
-      return t.notification.referee_assigned_body(taskTitle: taskTitle);
+    case 'notification_evidence_timeout_tasker_title':
+      return t.notification.evidence_timeout_tasker_title;
+    case 'notification_evidence_timeout_tasker_body':
+      return t.notification.evidence_timeout_tasker_body(taskTitle: taskTitle);
+    case 'notification_evidence_timeout_referee_title':
+      return t.notification.evidence_timeout_referee_title;
+    case 'notification_evidence_timeout_referee_body':
+      return t.notification.evidence_timeout_referee_body(taskTitle: taskTitle);
+    case 'notification_request_matched_tasker_title':
+      return t.notification.request_matched_tasker_title;
+    case 'notification_request_matched_tasker_body':
+      return t.notification.request_matched_tasker_body(taskTitle: taskTitle);
+    case 'notification_task_assigned_referee_title':
+      return t.notification.task_assigned_referee_title;
+    case 'notification_task_assigned_referee_body':
+      return t.notification.task_assigned_referee_body(taskTitle: taskTitle);
     case 'notification_request_accepted_title':
       return t.notification.request_accepted_title;
     case 'notification_request_accepted_body':
       return t.notification.request_accepted_body;
-    case 'notification_evidence_submitted_title':
-      return t.notification.evidence_submitted_title;
-    case 'notification_evidence_submitted_body':
-      return t.notification.evidence_submitted_body(taskTitle: taskTitle);
-    case 'notification_evidence_updated_title':
-      return t.notification.evidence_updated_title;
-    case 'notification_evidence_updated_body':
-      return t.notification.evidence_updated_body(taskTitle: taskTitle);
-    case 'notification_evidence_resubmitted_title':
-      return t.notification.evidence_resubmitted_title;
-    case 'notification_evidence_resubmitted_body':
-      return t.notification.evidence_resubmitted_body(taskTitle: taskTitle);
+    case 'notification_evidence_submitted_referee_title':
+      return t.notification.evidence_submitted_referee_title;
+    case 'notification_evidence_submitted_referee_body':
+      return t.notification.evidence_submitted_referee_body(taskTitle: taskTitle);
+    case 'notification_evidence_updated_referee_title':
+      return t.notification.evidence_updated_referee_title;
+    case 'notification_evidence_updated_referee_body':
+      return t.notification.evidence_updated_referee_body(taskTitle: taskTitle);
+    case 'notification_evidence_resubmitted_referee_title':
+      return t.notification.evidence_resubmitted_referee_title;
+    case 'notification_evidence_resubmitted_referee_body':
+      return t.notification.evidence_resubmitted_referee_body(taskTitle: taskTitle);
     case 'notification_review_timeout_tasker_title':
       return t.notification.review_timeout_tasker_title;
     case 'notification_review_timeout_tasker_body':

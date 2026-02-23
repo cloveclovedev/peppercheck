@@ -309,16 +309,16 @@ class TranslationsNotificationJa {
 	// Translations
 
 	/// ja: 'エビデンス期限切れ'
-	String get evidence_timeout_title => 'エビデンス期限切れ';
+	String get evidence_timeout_tasker_title => 'エビデンス期限切れ';
 
 	/// ja: 'タスク「${taskTitle}」のエビデンス提出期限が過ぎました。ポイントが消費されました。'
-	String evidence_timeout_body({required Object taskTitle}) => 'タスク「${taskTitle}」のエビデンス提出期限が過ぎました。ポイントが消費されました。';
+	String evidence_timeout_tasker_body({required Object taskTitle}) => 'タスク「${taskTitle}」のエビデンス提出期限が過ぎました。ポイントが消費されました。';
 
 	/// ja: '報酬獲得'
-	String get evidence_timeout_reward_title => '報酬獲得';
+	String get evidence_timeout_referee_title => '報酬獲得';
 
 	/// ja: 'タスク「${taskTitle}」のエビデンス期限切れにより報酬を獲得しました。'
-	String evidence_timeout_reward_body({required Object taskTitle}) => 'タスク「${taskTitle}」のエビデンス期限切れにより報酬を獲得しました。';
+	String evidence_timeout_referee_body({required Object taskTitle}) => 'タスク「${taskTitle}」のエビデンス期限切れにより報酬を獲得しました。';
 
 	/// ja: 'レビュー期限切れ'
 	String get review_timeout_tasker_title => 'レビュー期限切れ';
@@ -333,16 +333,16 @@ class TranslationsNotificationJa {
 	String review_timeout_referee_body({required Object taskTitle}) => 'タスク「${taskTitle}」のレビュー期限が過ぎました。';
 
 	/// ja: 'マッチング成立！'
-	String get request_matched_title => 'マッチング成立！';
+	String get request_matched_tasker_title => 'マッチング成立！';
 
 	/// ja: 'あなたのタスク「${taskTitle}」のレフリーが見つかりました。'
-	String request_matched_body({required Object taskTitle}) => 'あなたのタスク「${taskTitle}」のレフリーが見つかりました。';
+	String request_matched_tasker_body({required Object taskTitle}) => 'あなたのタスク「${taskTitle}」のレフリーが見つかりました。';
 
 	/// ja: '新しい担当タスク'
-	String get referee_assigned_title => '新しい担当タスク';
+	String get task_assigned_referee_title => '新しい担当タスク';
 
 	/// ja: 'タスク「${taskTitle}」の担当レフリーに選ばれました。'
-	String referee_assigned_body({required Object taskTitle}) => 'タスク「${taskTitle}」の担当レフリーに選ばれました。';
+	String task_assigned_referee_body({required Object taskTitle}) => 'タスク「${taskTitle}」の担当レフリーに選ばれました。';
 
 	/// ja: 'リクエスト承認'
 	String get request_accepted_title => 'リクエスト承認';
@@ -351,22 +351,22 @@ class TranslationsNotificationJa {
 	String get request_accepted_body => 'リクエストが承認されました。';
 
 	/// ja: 'エビデンス提出'
-	String get evidence_submitted_title => 'エビデンス提出';
+	String get evidence_submitted_referee_title => 'エビデンス提出';
 
 	/// ja: '${taskTitle}さんが新しいエビデンスを提出しました。'
-	String evidence_submitted_body({required Object taskTitle}) => '${taskTitle}さんが新しいエビデンスを提出しました。';
+	String evidence_submitted_referee_body({required Object taskTitle}) => '${taskTitle}さんが新しいエビデンスを提出しました。';
 
 	/// ja: 'エビデンス更新'
-	String get evidence_updated_title => 'エビデンス更新';
+	String get evidence_updated_referee_title => 'エビデンス更新';
 
 	/// ja: '${taskTitle}さんがエビデンスを更新しました。'
-	String evidence_updated_body({required Object taskTitle}) => '${taskTitle}さんがエビデンスを更新しました。';
+	String evidence_updated_referee_body({required Object taskTitle}) => '${taskTitle}さんがエビデンスを更新しました。';
 
 	/// ja: 'エビデンス再提出'
-	String get evidence_resubmitted_title => 'エビデンス再提出';
+	String get evidence_resubmitted_referee_title => 'エビデンス再提出';
 
 	/// ja: '${taskTitle}のエビデンスが再提出されました。再度判定してください。'
-	String evidence_resubmitted_body({required Object taskTitle}) => '${taskTitle}のエビデンスが再提出されました。再度判定してください。';
+	String evidence_resubmitted_referee_body({required Object taskTitle}) => '${taskTitle}のエビデンスが再提出されました。再度判定してください。';
 
 	/// ja: '自動確認'
 	String get auto_confirm_tasker_title => '自動確認';
@@ -925,26 +925,26 @@ extension on Translations {
 			'matching.referee_availability.dialog_end_time' => '終了時間',
 			'matching.referee_availability.dialog_dow' => '曜日',
 			'matching.referee_availability.invalid_time_range' => '終了時間は開始時間より後である必要があります',
-			'notification.evidence_timeout_title' => 'エビデンス期限切れ',
-			'notification.evidence_timeout_body' => ({required Object taskTitle}) => 'タスク「${taskTitle}」のエビデンス提出期限が過ぎました。ポイントが消費されました。',
-			'notification.evidence_timeout_reward_title' => '報酬獲得',
-			'notification.evidence_timeout_reward_body' => ({required Object taskTitle}) => 'タスク「${taskTitle}」のエビデンス期限切れにより報酬を獲得しました。',
+			'notification.evidence_timeout_tasker_title' => 'エビデンス期限切れ',
+			'notification.evidence_timeout_tasker_body' => ({required Object taskTitle}) => 'タスク「${taskTitle}」のエビデンス提出期限が過ぎました。ポイントが消費されました。',
+			'notification.evidence_timeout_referee_title' => '報酬獲得',
+			'notification.evidence_timeout_referee_body' => ({required Object taskTitle}) => 'タスク「${taskTitle}」のエビデンス期限切れにより報酬を獲得しました。',
 			'notification.review_timeout_tasker_title' => 'レビュー期限切れ',
 			'notification.review_timeout_tasker_body' => ({required Object taskTitle}) => 'タスク「${taskTitle}」は期間内に評価されませんでした。ポイントが返却されました。',
 			'notification.review_timeout_referee_title' => 'レビュー期限切れ',
 			'notification.review_timeout_referee_body' => ({required Object taskTitle}) => 'タスク「${taskTitle}」のレビュー期限が過ぎました。',
-			'notification.request_matched_title' => 'マッチング成立！',
-			'notification.request_matched_body' => ({required Object taskTitle}) => 'あなたのタスク「${taskTitle}」のレフリーが見つかりました。',
-			'notification.referee_assigned_title' => '新しい担当タスク',
-			'notification.referee_assigned_body' => ({required Object taskTitle}) => 'タスク「${taskTitle}」の担当レフリーに選ばれました。',
+			'notification.request_matched_tasker_title' => 'マッチング成立！',
+			'notification.request_matched_tasker_body' => ({required Object taskTitle}) => 'あなたのタスク「${taskTitle}」のレフリーが見つかりました。',
+			'notification.task_assigned_referee_title' => '新しい担当タスク',
+			'notification.task_assigned_referee_body' => ({required Object taskTitle}) => 'タスク「${taskTitle}」の担当レフリーに選ばれました。',
 			'notification.request_accepted_title' => 'リクエスト承認',
 			'notification.request_accepted_body' => 'リクエストが承認されました。',
-			'notification.evidence_submitted_title' => 'エビデンス提出',
-			'notification.evidence_submitted_body' => ({required Object taskTitle}) => '${taskTitle}さんが新しいエビデンスを提出しました。',
-			'notification.evidence_updated_title' => 'エビデンス更新',
-			'notification.evidence_updated_body' => ({required Object taskTitle}) => '${taskTitle}さんがエビデンスを更新しました。',
-			'notification.evidence_resubmitted_title' => 'エビデンス再提出',
-			'notification.evidence_resubmitted_body' => ({required Object taskTitle}) => '${taskTitle}のエビデンスが再提出されました。再度判定してください。',
+			'notification.evidence_submitted_referee_title' => 'エビデンス提出',
+			'notification.evidence_submitted_referee_body' => ({required Object taskTitle}) => '${taskTitle}さんが新しいエビデンスを提出しました。',
+			'notification.evidence_updated_referee_title' => 'エビデンス更新',
+			'notification.evidence_updated_referee_body' => ({required Object taskTitle}) => '${taskTitle}さんがエビデンスを更新しました。',
+			'notification.evidence_resubmitted_referee_title' => 'エビデンス再提出',
+			'notification.evidence_resubmitted_referee_body' => ({required Object taskTitle}) => '${taskTitle}のエビデンスが再提出されました。再度判定してください。',
 			'notification.auto_confirm_tasker_title' => '自動確認',
 			'notification.auto_confirm_tasker_body' => ({required Object taskTitle}) => 'タスク「${taskTitle}」の評価が自動的に確認されました。',
 			'notification.auto_confirm_referee_title' => '評価確認',

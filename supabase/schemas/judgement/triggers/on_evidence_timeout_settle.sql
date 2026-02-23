@@ -53,7 +53,7 @@ BEGIN
     -- Notify tasker: evidence timed out
     PERFORM public.notify_event(
         v_tasker_id,
-        'notification_evidence_timeout',
+        'notification_evidence_timeout_tasker',
         ARRAY[v_task_title],
         jsonb_build_object('task_id', v_task_id, 'judgement_id', NEW.id)
     );
@@ -61,7 +61,7 @@ BEGIN
     -- Notify referee: reward granted
     PERFORM public.notify_event(
         v_referee_id,
-        'notification_evidence_timeout_reward',
+        'notification_evidence_timeout_referee',
         ARRAY[v_task_title],
         jsonb_build_object('task_id', v_task_id, 'judgement_id', NEW.id)
     );

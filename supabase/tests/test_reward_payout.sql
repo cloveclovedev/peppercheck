@@ -153,7 +153,7 @@ BEGIN
 
             PERFORM public.notify_event(
                 v_wallet.user_id,
-                'notification_payout_connect_required',
+                'notification_payout_connect_required_referee',
                 NULL,
                 jsonb_build_object('batch_date', v_batch_date)
             );
