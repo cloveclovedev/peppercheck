@@ -428,7 +428,7 @@ class _EvidenceSubmissionSectionState
                 isLoading: false,
               ),
             ],
-            if (_canReopen()) ...[
+            if (_canReopen() && _isCurrentUserTasker()) ...[
               const SizedBox(height: AppSizes.spacingSmall),
               ActionButton(
                 text: t.task.evidence.resubmit,
