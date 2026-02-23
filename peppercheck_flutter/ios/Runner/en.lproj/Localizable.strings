@@ -25,3 +25,7 @@
 "notification_review_timeout_tasker_body" = "Your task \"%@\" was not reviewed in time. Points have been returned.";
 "notification_review_timeout_referee_title" = "Review Timeout";
 "notification_review_timeout_referee_body" = "The review deadline for task \"%@\" has passed.";
+"notification_auto_confirm_tasker_title" = "Auto Confirmed";
+"notification_auto_confirm_tasker_body" = "Your task \"%@\" has been automatically confirmed.";
+"notification_auto_confirm_referee_title" = "Review Confirmed";
+"notification_auto_confirm_referee_body" = "Your review for task \"%@\" has been confirmed.";

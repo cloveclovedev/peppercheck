@@ -134,6 +134,7 @@ schema_paths = [
   "./schemas/judgement/functions/confirm_evidence_timeout.sql",
   "./schemas/judgement/functions/confirm_review_timeout.sql",
   "./schemas/judgement/functions/detect_review_timeouts.sql",
+  "./schemas/judgement/functions/detect_auto_confirms.sql",
   "./schemas/judgement/functions/judge_evidence.sql",
   
   # existing wildcards (checking required)
@@ -175,6 +176,7 @@ schema_paths = [
   "./schemas/judgement/triggers/on_review_timeout_settle.sql",
   "./schemas/judgement/triggers/on_judgement_threads_update_set_updated_at.sql",
   "./schemas/judgement/triggers/on_judgements_status_changed.sql",
+  "./schemas/judgement/triggers/on_judgement_confirmed_notify.sql",
 
   # Task
   "./schemas/task/triggers/on_tasks_update_set_updated_at.sql",

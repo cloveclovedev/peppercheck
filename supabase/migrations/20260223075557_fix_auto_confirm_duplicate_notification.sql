@@ -1,8 +1,11 @@
--- Function + Trigger: Notify referee when judgement is confirmed
-CREATE OR REPLACE FUNCTION public.handle_judgement_confirmed() RETURNS trigger
-    LANGUAGE plpgsql SECURITY DEFINER
-    SET search_path = ''
-    AS $$
+set check_function_bodies = off;
+
+CREATE OR REPLACE FUNCTION public.handle_judgement_confirmed()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
 DECLARE
     v_referee_id uuid;
     v_task_id uuid;
@@ -38,12 +41,7 @@ BEGIN
 
     RETURN NEW;
 END;
-$$;
+$function$
+;
 
-ALTER FUNCTION public.handle_judgement_confirmed() OWNER TO postgres;
 
-CREATE OR REPLACE TRIGGER on_judgement_confirmed
-    AFTER UPDATE ON public.judgements
-    FOR EACH ROW
-    WHEN (NEW.is_confirmed = true AND (OLD.is_confirmed IS NULL OR OLD.is_confirmed = false))
-    EXECUTE FUNCTION public.handle_judgement_confirmed();

@@ -24,4 +24,8 @@
     <string name="notification_payout_connect_required_body">報酬を受け取るために振込先の設定を完了してください。</string>
     <string name="notification_payout_failed_title">報酬振込失敗</string>
     <string name="notification_payout_failed_body">報酬の振込に失敗しました。アカウント設定をご確認ください。</string>
+    <string name="notification_auto_confirm_tasker_title">自動確認</string>
+    <string name="notification_auto_confirm_tasker_body">タスク「%1$s」の評価が自動的に確認されました。</string>
+    <string name="notification_auto_confirm_referee_title">評価確認</string>
+    <string name="notification_auto_confirm_referee_body">タスク「%1$s」の評価が確認されました。</string>
 </resources>

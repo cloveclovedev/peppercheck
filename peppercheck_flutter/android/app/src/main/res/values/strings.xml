@@ -24,4 +24,8 @@
     <string name="notification_payout_connect_required_body">Complete your payout setup to receive your reward earnings.</string>
     <string name="notification_payout_failed_title">Payout Failed</string>
     <string name="notification_payout_failed_body">Your reward payout could not be processed. Please check your account settings.</string>
+    <string name="notification_auto_confirm_tasker_title">Auto Confirmed</string>
+    <string name="notification_auto_confirm_tasker_body">Your task "%1$s" has been automatically confirmed.</string>
+    <string name="notification_auto_confirm_referee_title">Review Confirmed</string>
+    <string name="notification_auto_confirm_referee_body">Your review for task "%1$s" has been confirmed.</string>
 </resources>

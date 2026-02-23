@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS public.judgements (
     
     -- Workflow Flags
     is_confirmed boolean DEFAULT false,
+    is_auto_confirmed boolean DEFAULT false NOT NULL,
     reopen_count smallint DEFAULT 0 NOT NULL,
     is_evidence_timeout_confirmed boolean DEFAULT false NOT NULL,
     
