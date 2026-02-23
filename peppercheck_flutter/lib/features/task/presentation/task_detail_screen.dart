@@ -9,6 +9,7 @@ import 'package:peppercheck_flutter/features/task/domain/task.dart';
 import 'package:peppercheck_flutter/features/task/presentation/widgets/task_detail/task_detail_info_section.dart';
 import 'package:peppercheck_flutter/features/task/presentation/widgets/task_detail/task_referees_section.dart';
 import 'package:peppercheck_flutter/features/evidence/presentation/widgets/evidence_submission_section.dart';
+import 'package:peppercheck_flutter/features/evidence/presentation/widgets/evidence_timeout_referee_section.dart';
 import 'package:peppercheck_flutter/features/judgement/presentation/widgets/judgement_section.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -64,6 +65,10 @@ class TaskDetailScreen extends ConsumerWidget {
                   EvidenceSubmissionSection(task: displayTask),
                   const SizedBox(height: AppSizes.sectionGap),
                 ],
+                if (_shouldShowEvidenceTimeoutRefereeSection(displayTask)) ...[
+                  const EvidenceTimeoutRefereeSection(),
+                  const SizedBox(height: AppSizes.sectionGap),
+                ],
                 JudgementSection(task: displayTask),
                 const SizedBox(height: AppSizes.sectionGap),
               ],
@@ -92,5 +97,15 @@ class TaskDetailScreen extends ConsumerWidget {
       (req) => req.status == 'accepted',
     );
     return hasAcceptedRequest;
+  }
+
+  bool _shouldShowEvidenceTimeoutRefereeSection(Task task) {
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return false;
+    // Only for non-tasker (referee)
+    if (task.taskerId == userId) return false;
+    return task.refereeRequests.any(
+      (req) => req.judgement?.status == 'evidence_timeout',
+    );
   }
 }
