@@ -75,8 +75,10 @@ schema_paths = [
   # Matching
   "./schemas/matching/tables/enums.sql",
   "./schemas/matching/tables/matching_config.sql",
+  "./schemas/matching/tables/matching_time_config.sql",
   "./schemas/matching/tables/referee_available_time_slots.sql",
   "./schemas/matching/tables/task_referee_requests.sql",
+  "./schemas/matching/tables/referee_blocked_dates.sql",
 
   # Judgement (Moved BEFORE Rating due to FK dependency)
   "./schemas/judgement/tables/judgements.sql",
@@ -118,7 +120,12 @@ schema_paths = [
   "./schemas/matching/functions/auto_score_timeout_referee.sql",
   "./schemas/matching/functions/detect_referee_timeouts.sql",
   "./schemas/matching/functions/get_active_referee_tasks.sql",
-  
+  "./schemas/matching/functions/create_referee_blocked_date.sql",
+  "./schemas/matching/functions/update_referee_blocked_date.sql",
+  "./schemas/matching/functions/delete_referee_blocked_date.sql",
+  "./schemas/matching/functions/cancel_referee_assignment.sql",
+  "./schemas/matching/functions/process_pending_requests.sql",
+
   # evidence
   "./schemas/evidence/functions/detect_evidence_timeouts.sql",
   "./schemas/evidence/functions/validate_evidence_due_date.sql",
@@ -193,6 +200,7 @@ schema_paths = [
   "./schemas/matching/triggers/on_task_referee_requests_update_process_matching.sql",
   "./schemas/matching/triggers/on_referee_available_time_slots_update_set_updated_at.sql",
   "./schemas/matching/triggers/on_matching_config_update_set_updated_at.sql",
+  "./schemas/matching/triggers/on_referee_blocked_dates_update_set_updated_at.sql",
 
   # Point
   "./schemas/point/triggers/on_point_wallets_update_set_updated_at.sql",
@@ -226,6 +234,7 @@ schema_paths = [
   "./schemas/evidence/policies/task_evidence_assets_policies.sql",
   "./schemas/matching/policies/task_referee_requests_policies.sql",
   "./schemas/matching/policies/referee_available_time_slots_policies.sql",
+  "./schemas/matching/policies/referee_blocked_dates_policies.sql",
   "./schemas/rating/policies/rating_histories_policies.sql",
   "./schemas/rating/policies/user_ratings_policies.sql",
   "./schemas/profile/policies/profiles_policies.sql",

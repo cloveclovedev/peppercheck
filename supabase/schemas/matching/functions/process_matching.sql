@@ -78,6 +78,21 @@ BEGIN
                 INNER JOIN public.profiles p ON rats.user_id = p.id
                 WHERE rats.is_active = true
                 AND rats.user_id != v_task.tasker_id
+                -- Exclude referees who cancelled this task previously
+                AND rats.user_id NOT IN (
+                    SELECT trr_c.matched_referee_id
+                    FROM public.task_referee_requests trr_c
+                    WHERE trr_c.task_id = v_request.task_id
+                    AND trr_c.status = 'cancelled'
+                    AND trr_c.matched_referee_id IS NOT NULL
+                )
+                -- Exclude referees blocked on the due date
+                AND NOT EXISTS (
+                    SELECT 1 FROM public.referee_blocked_dates rbd
+                    WHERE rbd.user_id = rats.user_id
+                    AND (v_due_date AT TIME ZONE COALESCE(p.timezone, 'UTC'))::date
+                        BETWEEN rbd.start_date AND rbd.end_date
+                )
                 AND EXTRACT(DOW FROM (v_due_date AT TIME ZONE COALESCE(p.timezone, 'UTC'))) = rats.dow
                 AND (EXTRACT(HOUR FROM (v_due_date AT TIME ZONE COALESCE(p.timezone, 'UTC'))) * 60 +
                      EXTRACT(MINUTE FROM (v_due_date AT TIME ZONE COALESCE(p.timezone, 'UTC')))) >= rats.start_min
@@ -175,13 +190,26 @@ BEGIN
             jsonb_build_object('route', '/tasks/' || v_request.task_id)
         );
 
-        -- 2. Notify Tasker (matched/found)
-        PERFORM public.notify_event(
-            v_task.tasker_id,
-            'notification_request_matched_tasker',
-            ARRAY[v_task.title]::text[],
-            jsonb_build_object('route', '/tasks/' || v_request.task_id)
-        );
+        -- 2. Notify Tasker (different message for re-matches vs first match)
+        IF EXISTS (
+            SELECT 1 FROM public.task_referee_requests
+            WHERE task_id = v_request.task_id
+            AND status = 'cancelled'
+        ) THEN
+            PERFORM public.notify_event(
+                v_task.tasker_id,
+                'notification_matching_reassigned_tasker',
+                ARRAY[v_task.title]::text[],
+                jsonb_build_object('route', '/tasks/' || v_request.task_id)
+            );
+        ELSE
+            PERFORM public.notify_event(
+                v_task.tasker_id,
+                'notification_request_matched_tasker',
+                ARRAY[v_task.title]::text[],
+                jsonb_build_object('route', '/tasks/' || v_request.task_id)
+            );
+        END IF;
 
         RETURN json_build_object(
             'success', true,
