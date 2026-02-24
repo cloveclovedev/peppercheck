@@ -167,16 +167,12 @@ AND NOT EXISTS (
 
 2. **Expire** pending requests where `task.due_date - interval '<rematch_cutoff_hours> hours' <= NOW()`:
    - Set request status to `expired`
-   - Refund locked points: decrement `point_wallets.locked`, add `point_histories` record with `transaction_type = 'matching_refunded'`
+   - Refund locked points via `unlock_points` with reason `matching_refund`
    - Notify tasker: `notification_matching_expired_refunded_tasker`
 
 ### Point Refund
 
-New transaction type: `matching_refunded` in `point_transaction_type` enum.
-
-Refund logic mirrors `lock_points` in reverse:
-- `point_wallets.locked -= cost`
-- Insert `point_histories` with negative amount and type `matching_refunded`
+Reuses existing `matching_refund` value in `point_reason` enum (no new enum value needed). Uses `unlock_points` function which decreases `point_wallets.locked` and inserts a positive ledger entry.
 
 ---
 
@@ -209,7 +205,7 @@ Update `developer-docs/modules/ROOT/pages/features/task.adoc`:
 **In scope:**
 1. `matching_time_config` singleton table with 3 time constraint values
 2. `cancelled` status addition to `referee_request_status` enum
-3. `matching_refunded` transaction type addition to `point_transaction_type` enum
+3. Point refund via existing `matching_refund` reason and `unlock_points` function
 4. `referee_blocked_dates` table with CRUD RPCs and RLS
 5. `cancel_referee_assignment` RPC with configurable deadline
 6. `process_matching` updates: exclude cancelled referees + blocked dates
