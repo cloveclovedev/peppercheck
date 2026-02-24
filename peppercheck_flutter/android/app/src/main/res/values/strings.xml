@@ -28,4 +28,10 @@
     <string name="notification_auto_confirm_tasker_body">Your task "%1$s" has been automatically confirmed.</string>
     <string name="notification_auto_confirm_referee_title">Review Confirmed</string>
     <string name="notification_auto_confirm_referee_body">Your review for task "%1$s" has been confirmed.</string>
+    <string name="notification_matching_reassigned_tasker_title">Referee changed</string>
+    <string name="notification_matching_reassigned_tasker_body">A new referee has been assigned for \'%1$s\'</string>
+    <string name="notification_matching_cancelled_pending_tasker_title">Matching cancelled</string>
+    <string name="notification_matching_cancelled_pending_tasker_body">The previous referee cancelled. Searching for a new referee for \'%1$s\'</string>
+    <string name="notification_matching_expired_refunded_tasker_title">Matching expired</string>
+    <string name="notification_matching_expired_refunded_tasker_body">No referee found for \'%1$s\'. Points have been refunded</string>
 </resources>

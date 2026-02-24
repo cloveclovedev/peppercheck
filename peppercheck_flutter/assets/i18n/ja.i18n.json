@@ -90,7 +90,14 @@
     "detail": {
       "title": "タスク詳細",
       "sectionRequests": "リクエスト",
-      "labelStatus": "ステータス"
+      "labelStatus": "ステータス",
+      "cancelAssignment": {
+        "button": "担当をキャンセル",
+        "dialogTitle": "担当のキャンセル",
+        "dialogMessage": "担当をキャンセルしますか？",
+        "success": "担当をキャンセルしました",
+        "error": "エラーが発生しました: $message"
+      }
     },
     "creation": {
       "title": "タスク作成",
@@ -183,6 +190,19 @@
       "dialog_end_time": "終了時間",
       "dialog_dow": "曜日",
       "invalid_time_range": "終了時間は開始時間より後である必要があります"
+    },
+    "referee_blocked_dates": {
+      "title": "ブロック日",
+      "no_dates": "ブロック日が設定されていません",
+      "add_date": "ブロック日を追加",
+      "add_title": "ブロック日を追加",
+      "edit_title": "ブロック日を編集",
+      "start_date": "開始日",
+      "end_date": "終了日",
+      "reason": "理由（任意）",
+      "reason_hint": "理由を入力してください",
+      "select_date_range": "日付範囲を選択",
+      "invalid_date_range": "終了日は開始日以降である必要があります"
     }
   },
   "notification": {
@@ -210,6 +230,12 @@
     "auto_confirm_tasker_body": "タスク「${taskTitle}」の評価が自動的に確認されました。",
     "auto_confirm_referee_title": "評価確認",
     "auto_confirm_referee_body": "タスク「${taskTitle}」の評価が確認されました。",
+    "matching_reassigned_tasker_title": "レフェリーが変更されました",
+    "matching_reassigned_tasker_body": "「${taskTitle}」に新しいレフェリーが割り当てられました",
+    "matching_cancelled_pending_tasker_title": "マッチングがキャンセルされました",
+    "matching_cancelled_pending_tasker_body": "レフェリーがキャンセルしました。「${taskTitle}」の新しいレフェリーを検索中です",
+    "matching_expired_refunded_tasker_title": "マッチング期限切れ",
+    "matching_expired_refunded_tasker_body": "「${taskTitle}」のレフェリーが見つかりませんでした。ポイントが返金されました",
     "fallback_title": "お知らせ",
     "fallback_body": "新しい通知があります。"
   }

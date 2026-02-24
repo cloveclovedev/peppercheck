@@ -28,4 +28,10 @@
     <string name="notification_auto_confirm_tasker_body">タスク「%1$s」の評価が自動的に確認されました。</string>
     <string name="notification_auto_confirm_referee_title">評価確認</string>
     <string name="notification_auto_confirm_referee_body">タスク「%1$s」の評価が確認されました。</string>
+    <string name="notification_matching_reassigned_tasker_title">レフェリーが変更されました</string>
+    <string name="notification_matching_reassigned_tasker_body">「%1$s」に新しいレフェリーが割り当てられました</string>
+    <string name="notification_matching_cancelled_pending_tasker_title">マッチングがキャンセルされました</string>
+    <string name="notification_matching_cancelled_pending_tasker_body">レフェリーがキャンセルしました。「%1$s」の新しいレフェリーを検索中です</string>
+    <string name="notification_matching_expired_refunded_tasker_title">マッチング期限切れ</string>
+    <string name="notification_matching_expired_refunded_tasker_body">「%1$s」のレフェリーが見つかりませんでした。ポイントが返金されました</string>
 </resources>
