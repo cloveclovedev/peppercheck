@@ -133,9 +133,14 @@ BEGIN
     SET status = 'cancelled'::public.referee_request_status
     WHERE id = p_request_id;
 
-    -- 2. Delete the associated judgement (awaiting_evidence — no evidence yet)
+    -- 2. Delete the associated judgement (only if still awaiting_evidence)
     DELETE FROM public.judgements
-    WHERE id = p_request_id;
+    WHERE id = p_request_id
+    AND status = 'awaiting_evidence';
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Cannot cancel: judgement has progressed beyond awaiting_evidence';
+    END IF;
 
     -- 3. Insert new request (triggers process_matching via INSERT trigger)
     INSERT INTO public.task_referee_requests (
@@ -264,6 +269,7 @@ BEGIN
         INNER JOIN public.tasks t ON t.id = trr.task_id
         WHERE trr.status = 'pending'
         AND t.due_date - (v_cfg.rematch_cutoff_hours || ' hours')::interval <= v_now
+        FOR UPDATE OF trr SKIP LOCKED
     LOOP
         UPDATE public.task_referee_requests
         SET status = 'expired'::public.referee_request_status
@@ -299,6 +305,7 @@ BEGIN
         INNER JOIN public.tasks t ON t.id = trr.task_id
         WHERE trr.status = 'pending'
         AND t.due_date - (v_cfg.rematch_cutoff_hours || ' hours')::interval > v_now
+        FOR UPDATE OF trr SKIP LOCKED
     LOOP
         v_retry_count := v_retry_count + 1;
 
@@ -795,3 +802,4 @@ SELECT cron.schedule(
     '0 * * * *',
     $$SELECT public.process_pending_requests()$$
 );
+

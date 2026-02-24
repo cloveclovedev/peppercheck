@@ -62,9 +62,14 @@ BEGIN
     SET status = 'cancelled'::public.referee_request_status
     WHERE id = p_request_id;
 
-    -- 2. Delete the associated judgement (awaiting_evidence — no evidence yet)
+    -- 2. Delete the associated judgement (only if still awaiting_evidence)
     DELETE FROM public.judgements
-    WHERE id = p_request_id;
+    WHERE id = p_request_id
+    AND status = 'awaiting_evidence';
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Cannot cancel: judgement has progressed beyond awaiting_evidence';
+    END IF;
 
     -- 3. Insert new request (triggers process_matching via INSERT trigger)
     INSERT INTO public.task_referee_requests (

@@ -27,6 +27,7 @@ BEGIN
         INNER JOIN public.tasks t ON t.id = trr.task_id
         WHERE trr.status = 'pending'
         AND t.due_date - (v_cfg.rematch_cutoff_hours || ' hours')::interval <= v_now
+        FOR UPDATE OF trr SKIP LOCKED
     LOOP
         UPDATE public.task_referee_requests
         SET status = 'expired'::public.referee_request_status
@@ -62,6 +63,7 @@ BEGIN
         INNER JOIN public.tasks t ON t.id = trr.task_id
         WHERE trr.status = 'pending'
         AND t.due_date - (v_cfg.rematch_cutoff_hours || ' hours')::interval > v_now
+        FOR UPDATE OF trr SKIP LOCKED
     LOOP
         v_retry_count := v_retry_count + 1;
 
