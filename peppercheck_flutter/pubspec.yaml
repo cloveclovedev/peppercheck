@@ -61,6 +61,7 @@ dependencies:
   flutter_local_notifications:
   dio: ^5.9.0
   image_picker: ^1.2.1
+  confetti: ^0.8.0
   mime: ^2.0.0
 
 dev_dependencies:
