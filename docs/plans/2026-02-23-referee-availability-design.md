@@ -16,13 +16,13 @@ Enhance the referee availability system with three capabilities:
 |-------- 24h+ --------|-- 10h ----|-- 2h --|------ due_date ------|
 ^                       ^           ^        ^
 Task Open             Re-match    Cancel   due_date
-(min_due_date=24h)    cutoff      cutoff
+(open_deadline=24h)   cutoff      cutoff
                       (14h)       (12h)
 ```
 
 **Rationale for 14h re-matching cutoff:** A referee assigned close to due_date may not notice the assignment (e.g., assigned at 2am for an 8am task). This is a human behavioral constraint (people sleep), not a technical limit. Even with a larger referee pool, this cutoff cannot be safely shortened.
 
-**Rationale for 24h minimum due_date:** Ensures at least one full matching + cancellation + re-matching cycle can occur. The 24h constraint applies only to task "Open" (requesting a referee), not to task creation in draft status.
+**Rationale for 24h `open_deadline_hours`:** Ensures at least one full matching + cancellation + re-matching cycle can occur. The 24h constraint applies only to task "Open" (requesting a referee), not to task creation in draft status.
 
 ### Configuration: `matching_time_config` (typed singleton table)
 
@@ -31,14 +31,14 @@ All time constraint values are stored in a typed singleton table with CHECK cons
 ```sql
 CREATE TABLE public.matching_time_config (
     id boolean PRIMARY KEY DEFAULT true,
-    min_due_date_interval_hours int NOT NULL,  -- 24
+    open_deadline_hours int NOT NULL,           -- 24
     cancel_deadline_hours int NOT NULL,        -- 12
     rematch_cutoff_hours int NOT NULL,         -- 14
     updated_at timestamptz NOT NULL DEFAULT now(),
     CONSTRAINT singleton CHECK (id = true),
     CONSTRAINT cancel_deadline_positive CHECK (cancel_deadline_hours > 0),
     CONSTRAINT ordering_invariant CHECK (
-        min_due_date_interval_hours > rematch_cutoff_hours
+        open_deadline_hours > rematch_cutoff_hours
         AND rematch_cutoff_hours > cancel_deadline_hours
     )
 );
@@ -48,7 +48,7 @@ The singleton pattern (`id boolean DEFAULT true CHECK (id = true)`) guarantees e
 
 Functions read config with: `SELECT * INTO STRICT v_cfg FROM matching_time_config WHERE id = true;`
 
-The existing `matching_config` table's `min_due_date_interval_hours` row is migrated to this table and removed from `matching_config`.
+The existing `matching_config` table's `min_due_date_interval_hours` row is migrated to this table as `open_deadline_hours` and removed from `matching_config`.
 
 Future config domains (review timeouts, auto-confirm delays) will get their own singleton tables following the same pattern.
 
@@ -215,7 +215,7 @@ Update `developer-docs/modules/ROOT/pages/features/task.adoc`:
 6. `process_matching` updates: exclude cancelled referees + blocked dates
 7. Pending request retry cron job (hourly)
 8. Pending request expiration + point refund (configurable cutoff)
-9. Migrate `min_due_date_interval_hours` from `matching_config` to `matching_time_config` (value 1 → 24)
+9. Migrate `min_due_date_interval_hours` from `matching_config` to `matching_time_config` as `open_deadline_hours` (value 1 → 24)
 10. Notification templates (4 new/reused)
 11. Flutter UI: cancel button on referee task detail, blocked dates management screen
 12. Developer documentation: time constraint model in `task.adoc`
