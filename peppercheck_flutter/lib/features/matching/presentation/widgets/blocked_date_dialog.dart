@@ -48,7 +48,7 @@ class _BlockedDateDialogState extends State<BlockedDateDialog> {
     final picked = await showDateRangePicker(
       context: context,
       initialDateRange: initialRange,
-      firstDate: DateTime(2020),
+      firstDate: DateTime.now(),
       lastDate: DateTime(2100),
       builder: (context, child) {
         return Theme(

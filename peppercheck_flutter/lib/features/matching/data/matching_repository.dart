@@ -129,6 +129,10 @@ class MatchingRepository {
       'cancel_referee_assignment',
       params: {'p_request_id': requestId},
     );
-    return response as Map<String, dynamic>;
+    final result = response as Map<String, dynamic>;
+    if (result['success'] != true) {
+      throw Exception(result['error'] ?? 'Cancel failed');
+    }
+    return result;
   }
 }
