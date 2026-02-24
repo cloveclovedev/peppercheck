@@ -7,6 +7,10 @@ actor Referee
 
 note left of System
   **Time Parameters:**
+  * **Matching Phase (matching_time_config):**
+  * Open Deadline: Due Date - 24h (min)
+  * Rematch Cutoff: Due Date - 14h
+  * Cancel Deadline: Due Date - 12h
   * Evidence Warning: Due Date - 10min
   * Judgement Timeout Threshold: Due Date + 3h
   * Auto-Confirm Grace Period: N days (e.g., 3 days)
@@ -19,6 +23,18 @@ System -> System: State: Request Pending
 == Matching (Auto) ==
 System -> Referee: Notification: Assigned to Task (Matched)
 System -> System: State: Request Matched -> Accepted (Auto)
+
+== Cancellation & Expiration ==
+group Referee Cancels (before cancel deadline)
+    Referee -> System: Cancel Assignment
+    System -> System: Old request: Cancelled\nNew request: Pending → re-match
+    System -> Tasker: Notification: Reassigned / Pending
+end
+
+group Pending Request Expired (cron, past rematch cutoff)
+    System -> System: Request: Expired\nRefund locked points
+    System -> Tasker: Notification: Matching expired, points refunded
+end
 
 == Evidence Phase ==
 group Evidence Deadline Warning

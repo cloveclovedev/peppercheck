@@ -37,15 +37,19 @@ state "Task: Open" as TaskOpen {
         EvidenceTimeout --> JudgementConfirmed : Tasker Confirm (Optional)\nSystem Auto-Confirm (Now > DueDate + N days)
     }
 
+    state "Request: Cancelled" as RequestCancelled
+    state "Request: Expired" as RequestExpired
     state "Request: Closed" as RequestClosed
 
     [*] --> RequestPending
     RequestPending --> RequestMatched : System Match\n[Notification] Referee
-    
+    RequestPending --> RequestExpired : System Cron\n(past rematch cutoff)\n[Refund Points]
+
     RequestMatched --> RequestAccepted : System Auto-Accept (MVP)\n[Notification] Tasker
     RequestMatched --> RequestPending : Referee Decline (Optional Cancellation)
-    
-    RequestAccepted --> RequestPending : Referee Decline (Optional Cancellation)
+
+    RequestAccepted --> RequestCancelled : Referee Cancel\n(before cancel deadline)
+    RequestCancelled --> RequestPending : New Request (auto re-match)
     RequestAccepted --> RequestClosed : System Detect Judgement Confirmed\nOR Evidence Timeout
 }
 state "Task: Closed" as TaskClosed
