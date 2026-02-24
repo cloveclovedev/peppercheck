@@ -1,3 +1,6 @@
+import 'dart:math';
+
+import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:peppercheck_flutter/app/theme/app_colors.dart';
@@ -24,16 +27,24 @@ class JudgementSection extends ConsumerStatefulWidget {
 class _JudgementSectionState extends ConsumerState<JudgementSection> {
   final _commentController = TextEditingController();
   final _confirmCommentController = TextEditingController();
+  late final ConfettiController _confettiLeftController;
+  late final ConfettiController _confettiRightController;
   bool? _selectedIsPositive;
 
   @override
   void initState() {
     super.initState();
+    _confettiLeftController =
+        ConfettiController(duration: const Duration(seconds: 1));
+    _confettiRightController =
+        ConfettiController(duration: const Duration(seconds: 1));
     _commentController.addListener(() => setState(() {}));
   }
 
   @override
   void dispose() {
+    _confettiLeftController.dispose();
+    _confettiRightController.dispose();
     _commentController.dispose();
     _confirmCommentController.dispose();
     super.dispose();
@@ -90,10 +101,56 @@ class _JudgementSectionState extends ConsumerState<JudgementSection> {
       return const SizedBox.shrink();
     }
 
-    return Column(
+    return Stack(
+      alignment: Alignment.bottomCenter,
       children: [
-        if (completedRequests.isNotEmpty) _buildResultView(completedRequests),
-        if (showForm) _buildFormView(),
+        Column(
+          children: [
+            if (completedRequests.isNotEmpty)
+              _buildResultView(completedRequests),
+            if (showForm) _buildFormView(),
+          ],
+        ),
+        Positioned(
+          bottom: 0,
+          left: 0,
+          child: ConfettiWidget(
+            confettiController: _confettiLeftController,
+            blastDirection: -pi / 3,
+            emissionFrequency: 0.03,
+            numberOfParticles: 12,
+            maxBlastForce: 30,
+            minBlastForce: 10,
+            gravity: 0.1,
+            shouldLoop: false,
+            colors: const [
+              AppColors.accentYellowLight,
+              AppColors.accentGreenLight,
+              AppColors.backgroundDark,
+              AppColors.accentYellow,
+            ],
+          ),
+        ),
+        Positioned(
+          bottom: 0,
+          right: 0,
+          child: ConfettiWidget(
+            confettiController: _confettiRightController,
+            blastDirection: -2 * pi / 3,
+            emissionFrequency: 0.03,
+            numberOfParticles: 12,
+            maxBlastForce: 30,
+            minBlastForce: 10,
+            gravity: 0.1,
+            shouldLoop: false,
+            colors: const [
+              AppColors.accentYellowLight,
+              AppColors.accentGreenLight,
+              AppColors.backgroundDark,
+              AppColors.accentYellow,
+            ],
+          ),
+        ),
       ],
     );
   }
@@ -331,6 +388,10 @@ class _JudgementSectionState extends ConsumerState<JudgementSection> {
               ? null
               : _confirmCommentController.text.trim(),
           onSuccess: () {
+            if (judgement.status == 'approved') {
+              _confettiLeftController.play();
+              _confettiRightController.play();
+            }
             setState(() {
               _selectedIsPositive = null;
               _confirmCommentController.clear();
