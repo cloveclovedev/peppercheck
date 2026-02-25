@@ -5,7 +5,8 @@ CREATE TYPE public.referee_request_status AS ENUM (
     'declined',
     'expired',
     'payment_processing',
-    'closed'
+    'closed',
+    'cancelled'
 );
 
 CREATE TYPE public.matching_strategy AS ENUM (

@@ -36,6 +36,8 @@ include::example$features/task/lifecycle.pu[]
 * **Pending**: Waiting for a referee to be matched.
 * **Matched**: System found a referee. (Auto-transits to Accepted in MVP).
 * **Accepted**: Referee accepted the request. Points reserved.
+* **Cancelled**: Referee cancelled assignment. New request created for re-matching.
+* **Expired**: Pending request expired (past rematch cutoff). Points refunded.
 * **Closed**: Request finished (either Judgement Confirmed or Evidence Timeout).
 
 ==== Judgement Status
@@ -55,6 +57,21 @@ Notifications and state changes occur based on time limits (timeouts).
 ----
 include::example$features/task/timing.pu[]
 ----
+
+== Time Constraints
+
+All matching time constraints live in the `matching_time_config` singleton table with a CHECK constraint enforcing `open_deadline > rematch_cutoff > cancel_deadline`.
+
+[cols="1,1,2"]
+|===
+| Parameter | Default | Purpose
+
+| `open_deadline_hours` | 24 | Min hours before due_date to open a task
+| `cancel_deadline_hours` | 12 | Hours before due_date until referee can cancel
+| `rematch_cutoff_hours` | 14 | Hours before due_date until system retries matching; past this, pending requests expire with refund
+|===
+
+The rematch cutoff (14h) is the binding constraint -- a referee assigned overnight may not notice the assignment before due_date.
 
 == Points and Closure
 

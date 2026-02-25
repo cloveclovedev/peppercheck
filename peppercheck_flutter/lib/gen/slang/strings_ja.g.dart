@@ -298,6 +298,7 @@ class TranslationsMatchingJa {
 
 	// Translations
 	late final TranslationsMatchingRefereeAvailabilityJa referee_availability = TranslationsMatchingRefereeAvailabilityJa.internal(_root);
+	late final TranslationsMatchingRefereeBlockedDatesJa referee_blocked_dates = TranslationsMatchingRefereeBlockedDatesJa.internal(_root);
 }
 
 // Path: notification
@@ -379,6 +380,24 @@ class TranslationsNotificationJa {
 
 	/// ja: 'タスク「${taskTitle}」の評価が確認されました。'
 	String auto_confirm_referee_body({required Object taskTitle}) => 'タスク「${taskTitle}」の評価が確認されました。';
+
+	/// ja: 'レフェリーが変更されました'
+	String get matching_reassigned_tasker_title => 'レフェリーが変更されました';
+
+	/// ja: '「${taskTitle}」に新しいレフェリーが割り当てられました'
+	String matching_reassigned_tasker_body({required Object taskTitle}) => '「${taskTitle}」に新しいレフェリーが割り当てられました';
+
+	/// ja: 'マッチングがキャンセルされました'
+	String get matching_cancelled_pending_tasker_title => 'マッチングがキャンセルされました';
+
+	/// ja: 'レフェリーがキャンセルしました。「${taskTitle}」の新しいレフェリーを検索中です'
+	String matching_cancelled_pending_tasker_body({required Object taskTitle}) => 'レフェリーがキャンセルしました。「${taskTitle}」の新しいレフェリーを検索中です';
+
+	/// ja: 'マッチング期限切れ'
+	String get matching_expired_refunded_tasker_title => 'マッチング期限切れ';
+
+	/// ja: '「${taskTitle}」のレフェリーが見つかりませんでした。ポイントが返金されました'
+	String matching_expired_refunded_tasker_body({required Object taskTitle}) => '「${taskTitle}」のレフェリーが見つかりませんでした。ポイントが返金されました';
 
 	/// ja: 'お知らせ'
 	String get fallback_title => 'お知らせ';
@@ -487,6 +506,8 @@ class TranslationsTaskDetailJa {
 
 	/// ja: 'ステータス'
 	String get labelStatus => 'ステータス';
+
+	late final TranslationsTaskDetailCancelAssignmentJa cancelAssignment = TranslationsTaskDetailCancelAssignmentJa.internal(_root);
 }
 
 // Path: task.creation
@@ -657,6 +678,72 @@ class TranslationsMatchingRefereeAvailabilityJa {
 
 	/// ja: '終了時間は開始時間より後である必要があります'
 	String get invalid_time_range => '終了時間は開始時間より後である必要があります';
+}
+
+// Path: matching.referee_blocked_dates
+class TranslationsMatchingRefereeBlockedDatesJa {
+	TranslationsMatchingRefereeBlockedDatesJa.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// ja: 'ブロック日'
+	String get title => 'ブロック日';
+
+	/// ja: 'ブロック日が設定されていません'
+	String get no_dates => 'ブロック日が設定されていません';
+
+	/// ja: 'ブロック日を追加'
+	String get add_date => 'ブロック日を追加';
+
+	/// ja: 'ブロック日を追加'
+	String get add_title => 'ブロック日を追加';
+
+	/// ja: 'ブロック日を編集'
+	String get edit_title => 'ブロック日を編集';
+
+	/// ja: '開始日'
+	String get start_date => '開始日';
+
+	/// ja: '終了日'
+	String get end_date => '終了日';
+
+	/// ja: '理由（任意）'
+	String get reason => '理由（任意）';
+
+	/// ja: '理由を入力してください'
+	String get reason_hint => '理由を入力してください';
+
+	/// ja: '日付範囲を選択'
+	String get select_date_range => '日付範囲を選択';
+
+	/// ja: '終了日は開始日以降である必要があります'
+	String get invalid_date_range => '終了日は開始日以降である必要があります';
+}
+
+// Path: task.detail.cancelAssignment
+class TranslationsTaskDetailCancelAssignmentJa {
+	TranslationsTaskDetailCancelAssignmentJa.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// ja: '担当をキャンセル'
+	String get button => '担当をキャンセル';
+
+	/// ja: '担当のキャンセル'
+	String get dialogTitle => '担当のキャンセル';
+
+	/// ja: '担当をキャンセルしますか？'
+	String get dialogMessage => '担当をキャンセルしますか？';
+
+	/// ja: '担当をキャンセルしました'
+	String get success => '担当をキャンセルしました';
+
+	/// ja: 'エラーが発生しました: $message'
+	String error({required Object message}) => 'エラーが発生しました: ${message}';
 }
 
 // Path: task.creation.strategy
@@ -863,6 +950,11 @@ extension on Translations {
 			'task.detail.title' => 'タスク詳細',
 			'task.detail.sectionRequests' => 'リクエスト',
 			'task.detail.labelStatus' => 'ステータス',
+			'task.detail.cancelAssignment.button' => '担当をキャンセル',
+			'task.detail.cancelAssignment.dialogTitle' => '担当のキャンセル',
+			'task.detail.cancelAssignment.dialogMessage' => '担当をキャンセルしますか？',
+			'task.detail.cancelAssignment.success' => '担当をキャンセルしました',
+			'task.detail.cancelAssignment.error' => ({required Object message}) => 'エラーが発生しました: ${message}',
 			'task.creation.title' => 'タスク作成',
 			'task.creation.titleEdit' => 'タスク編集',
 			'task.creation.sectionInfo' => 'タスク情報',
@@ -933,6 +1025,17 @@ extension on Translations {
 			'matching.referee_availability.dialog_end_time' => '終了時間',
 			'matching.referee_availability.dialog_dow' => '曜日',
 			'matching.referee_availability.invalid_time_range' => '終了時間は開始時間より後である必要があります',
+			'matching.referee_blocked_dates.title' => 'ブロック日',
+			'matching.referee_blocked_dates.no_dates' => 'ブロック日が設定されていません',
+			'matching.referee_blocked_dates.add_date' => 'ブロック日を追加',
+			'matching.referee_blocked_dates.add_title' => 'ブロック日を追加',
+			'matching.referee_blocked_dates.edit_title' => 'ブロック日を編集',
+			'matching.referee_blocked_dates.start_date' => '開始日',
+			'matching.referee_blocked_dates.end_date' => '終了日',
+			'matching.referee_blocked_dates.reason' => '理由（任意）',
+			'matching.referee_blocked_dates.reason_hint' => '理由を入力してください',
+			'matching.referee_blocked_dates.select_date_range' => '日付範囲を選択',
+			'matching.referee_blocked_dates.invalid_date_range' => '終了日は開始日以降である必要があります',
 			'notification.evidence_timeout_tasker_title' => 'エビデンス期限切れ',
 			'notification.evidence_timeout_tasker_body' => ({required Object taskTitle}) => 'タスク「${taskTitle}」のエビデンス提出期限が過ぎました。ポイントが消費されました。',
 			'notification.evidence_timeout_referee_title' => '報酬獲得',
@@ -957,6 +1060,12 @@ extension on Translations {
 			'notification.auto_confirm_tasker_body' => ({required Object taskTitle}) => 'タスク「${taskTitle}」の評価が自動的に確認されました。',
 			'notification.auto_confirm_referee_title' => '評価確認',
 			'notification.auto_confirm_referee_body' => ({required Object taskTitle}) => 'タスク「${taskTitle}」の評価が確認されました。',
+			'notification.matching_reassigned_tasker_title' => 'レフェリーが変更されました',
+			'notification.matching_reassigned_tasker_body' => ({required Object taskTitle}) => '「${taskTitle}」に新しいレフェリーが割り当てられました',
+			'notification.matching_cancelled_pending_tasker_title' => 'マッチングがキャンセルされました',
+			'notification.matching_cancelled_pending_tasker_body' => ({required Object taskTitle}) => 'レフェリーがキャンセルしました。「${taskTitle}」の新しいレフェリーを検索中です',
+			'notification.matching_expired_refunded_tasker_title' => 'マッチング期限切れ',
+			'notification.matching_expired_refunded_tasker_body' => ({required Object taskTitle}) => '「${taskTitle}」のレフェリーが見つかりませんでした。ポイントが返金されました',
 			'notification.fallback_title' => 'お知らせ',
 			'notification.fallback_body' => '新しい通知があります。',
 			_ => null,

@@ -15,14 +15,10 @@ DECLARE
     v_req jsonb;
     v_strategy public.matching_strategy;
 BEGIN
-    -- 1. Due Date Validation
-    SELECT (value::text)::int INTO v_min_hours
-    FROM public.matching_config
-    WHERE key = 'min_due_date_interval_hours';
-
-    IF v_min_hours IS NULL THEN
-        RAISE EXCEPTION 'Configuration missing for min_due_date_interval_hours in matching_config';
-    END IF;
+    -- 1. Due Date Validation (from matching_time_config singleton)
+    SELECT open_deadline_hours INTO STRICT v_min_hours
+    FROM public.matching_time_config
+    WHERE id = true;
 
     IF p_due_date <= (now() + (v_min_hours || ' hours')::interval) THEN
         RAISE EXCEPTION 'Due date must be at least % hours from now', v_min_hours;

@@ -70,6 +70,18 @@ String? _resolveKey(String? locKey, String taskTitle) {
       return t.notification.auto_confirm_referee_title;
     case 'notification_auto_confirm_referee_body':
       return t.notification.auto_confirm_referee_body(taskTitle: taskTitle);
+    case 'notification_matching_reassigned_tasker_title':
+      return t.notification.matching_reassigned_tasker_title;
+    case 'notification_matching_reassigned_tasker_body':
+      return t.notification.matching_reassigned_tasker_body(taskTitle: taskTitle);
+    case 'notification_matching_cancelled_pending_tasker_title':
+      return t.notification.matching_cancelled_pending_tasker_title;
+    case 'notification_matching_cancelled_pending_tasker_body':
+      return t.notification.matching_cancelled_pending_tasker_body(taskTitle: taskTitle);
+    case 'notification_matching_expired_refunded_tasker_title':
+      return t.notification.matching_expired_refunded_tasker_title;
+    case 'notification_matching_expired_refunded_tasker_body':
+      return t.notification.matching_expired_refunded_tasker_body(taskTitle: taskTitle);
     default:
       return null;
   }

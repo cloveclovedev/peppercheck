@@ -1,4 +1,5 @@
 import 'package:peppercheck_flutter/features/matching/domain/referee_available_time_slot.dart';
+import 'package:peppercheck_flutter/features/matching/domain/referee_blocked_date.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -68,5 +69,70 @@ class MatchingRepository {
       'delete_referee_available_time_slot',
       params: {'p_id': id},
     );
+  }
+
+  Future<List<RefereeBlockedDate>> getRefereeBlockedDates() async {
+    final response = await _supabase
+        .from('referee_blocked_dates')
+        .select()
+        .order('start_date', ascending: true);
+
+    return (response as List)
+        .map((e) => RefereeBlockedDate.fromJson(e))
+        .toList();
+  }
+
+  Future<String> createRefereeBlockedDate({
+    required DateTime startDate,
+    required DateTime endDate,
+    String? reason,
+  }) async {
+    final response = await _supabase.rpc<String>(
+      'create_referee_blocked_date',
+      params: {
+        'p_start_date': startDate.toIso8601String().substring(0, 10),
+        'p_end_date': endDate.toIso8601String().substring(0, 10),
+        'p_reason': reason,
+      },
+    );
+    return response;
+  }
+
+  Future<void> updateRefereeBlockedDate({
+    required String id,
+    required DateTime startDate,
+    required DateTime endDate,
+    String? reason,
+  }) async {
+    await _supabase.rpc(
+      'update_referee_blocked_date',
+      params: {
+        'p_id': id,
+        'p_start_date': startDate.toIso8601String().substring(0, 10),
+        'p_end_date': endDate.toIso8601String().substring(0, 10),
+        'p_reason': reason,
+      },
+    );
+  }
+
+  Future<void> deleteRefereeBlockedDate(String id) async {
+    await _supabase.rpc(
+      'delete_referee_blocked_date',
+      params: {'p_id': id},
+    );
+  }
+
+  Future<Map<String, dynamic>> cancelRefereeAssignment(
+    String requestId,
+  ) async {
+    final response = await _supabase.rpc(
+      'cancel_referee_assignment',
+      params: {'p_request_id': requestId},
+    );
+    final result = response as Map<String, dynamic>;
+    if (result['success'] != true) {
+      throw Exception(result['error'] ?? 'Cancel failed');
+    }
+    return result;
   }
 }
