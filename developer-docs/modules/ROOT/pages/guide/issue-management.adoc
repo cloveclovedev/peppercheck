@@ -1,0 +1,107 @@
+= Issue & Milestone Management
+:sectnums:
+
+This document defines how GitHub Issues and Milestones are used to plan and track work in this project.
+
+== Core Principles
+
+* **Flat issues only** — No Epic hierarchy. Every issue is a directly actionable work unit.
+* **Milestones carry due dates** — Issues do not have individual due dates. Milestones define "what ships when."
+* **Milestone = scheduled, No milestone = backlog** — If an issue has a milestone, it is committed to a time frame. If not, it is in the backlog with no scheduled delivery.
+* **Define milestones just-in-time** — Only the next 1–2 milestones should be concretely defined. Do not create milestones for the distant future.
+
+== Milestones
+
+=== Naming
+
+Milestones use semantic versioning: `v0.3.0`, `v1.0.0`, etc. Each milestone corresponds to a release or a meaningful deliverable.
+
+=== Lifecycle
+
+[cols="1,3"]
+|===
+| State | Meaning
+
+| Open (with due date)
+| Active or upcoming. Issues are being worked on or planned.
+
+| Closed
+| All issues completed and the release is shipped.
+|===
+
+* When all issues in a milestone are done, close the milestone.
+* Update due dates when schedules change rather than leaving stale dates.
+* Delete milestones that are no longer relevant (e.g., plans changed significantly).
+
+=== Scope
+
+A milestone groups all work for a release: features, bug fixes, refactoring, and chores. There is no separate "tech debt" or "maintenance" milestone — those issues belong to whichever release they ship with.
+
+== Issues
+
+=== Granularity
+
+One issue = one actionable piece of work. This can range from a small bug fix to a large feature, as long as it is a coherent unit.
+
+For large features, use a single issue with a checklist in the body to track sub-tasks:
+
+[source,markdown]
+----
+## Sub-tasks
+- [ ] Database schema changes
+- [ ] Backend API
+- [ ] Flutter UI
+- [ ] Tests
+----
+
+Split into multiple issues only when sub-tasks need independent tracking (e.g., assigned to different people or different milestones).
+
+=== Labels
+
+[cols="1,3"]
+|===
+| Label | Usage
+
+| `type/feature`
+| A user-facing feature or significant capability.
+
+| `type/task`
+| Internal task: refactoring, infrastructure, tooling.
+
+| `bug`
+| Something is broken.
+
+| `enhancement`
+| Improvement to an existing feature.
+
+| `area/*`
+| Technology area: `area/supabase`, `area/android`, `area/web`, `area/infra`, `area/cloudflare`.
+
+| `priority/P0`–`P3`
+| Urgency level (P0 = critical, P3 = low).
+|===
+
+=== Backlog
+
+Issues without a milestone are backlog items. They represent work that is valid but has no scheduled delivery. When planning the next milestone, pull relevant backlog issues in and assign the milestone.
+
+== Workflow
+
+=== Planning a milestone
+
+1. Review backlog issues and recent feedback.
+2. Create a milestone with a version number and realistic due date.
+3. Assign issues to the milestone.
+4. Begin work, updating issue status as you go.
+
+=== During development
+
+* Close issues as they are completed (via PR or direct close).
+* If scope changes, move issues between milestones or back to backlog.
+* If the due date slips, update it — do not leave stale dates.
+
+=== Completing a milestone
+
+1. Verify all assigned issues are closed.
+2. Close the milestone.
+3. Create the next milestone if not already defined.
