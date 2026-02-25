@@ -1,0 +1,267 @@
+= Deployment Flow
+
+This page describes the CI/CD pipeline and deployment strategy for peppercheck.
+
+== Branch Strategy
+
+peppercheck uses a *Release Branch Model*:
+
+[source]
+----
+main (always latest, no deploy on push)
+  |
+  +-- beta/v0.3 (cut from main when release is near)
+  |     +-- push -> auto-deploy to all beta environments
+  |     +-- v0.3.0 tag -> auto-deploy to all production environments
+  |
+  +-- hotfix flow:
+        1. fix PR -> main (squash merge)
+        2. cherry-pick to beta/v0.3
+        3. v0.3.1 tag on beta/v0.3
+----
+
+=== Branch Naming
+
+[cols="1,2"]
+|===
+| Type | Pattern
+
+| Feature
+| `feat/<description>` -> PR to `main`
+
+| Beta release
+| `beta/v0.x` -> cut from main
+
+| Release tag
+| `v0.x.y` -> created on `beta/v0.x`
+
+| Hotfix
+| `fix/<description>` -> PR to `main` -> cherry-pick to `beta/v0.x`
+|===
+
+== Trigger Mapping
+
+[cols="2,2,3"]
+|===
+| Trigger | Condition | Action
+
+| PR to `main`
+| `peppercheck_flutter/**` changed
+| Flutter analyze + test
+
+| PR to `main`
+| `supabase/migrations/**` changed
+| Supabase DB test + data check + dry-run
+
+| PR to `main`
+| `peppercheck-webapp/**` changed
+| Webapp type-check + lint + prettier
+
+| Push to `beta/v*`
+| always
+| Deploy all components to beta
+
+| `v*` tag
+| always
+| Deploy all components to production
+|===
+
+== Deploy Order
+
+. Supabase DB migrations (`supabase db push`)
+. Supabase Edge Functions (`supabase functions deploy --use-api`)
+. Flutter Android build + distribute (parallel, after Supabase)
+. Webapp deploy via Cloudflare Workers (parallel, after Supabase)
+
+DB migrations run first because Edge Functions and apps may depend on schema changes.
+
+== Supabase Deployment
+
+=== Environments
+
+[cols="1,2,2"]
+|===
+| Environment | Project | Trigger
+
+| Local
+| `supabase start`
+| manual
+
+| Beta
+| beta Supabase project
+| Push to `beta/v*`
+
+| Production
+| production Supabase project
+| `v*` tag
+|===
+
+=== Deploy Steps
+
+[source,bash]
+----
+supabase link --project-ref $PROJECT_ID    # connect to target project
+supabase db push                            # apply pending migrations
+supabase functions deploy --use-api         # deploy all Edge Functions
+----
+
+The `--use-api` flag eliminates Docker dependency for faster CI deploys.
+
+=== Edge Function Secrets
+
+Runtime secrets are set per environment via CLI (managed manually, not via CI/CD):
+
+[source,bash]
+----
+supabase secrets set --project-ref <id> --env-file .env.beta
+supabase secrets set --project-ref <id> --env-file .env.production
+----
+
+=== Production Safety
+
+* Beta environment is always deployed and validated first
+* `supabase db push --dry-run` runs in PR CI for migration changes
+* Migrations use `IF EXISTS`/`IF NOT EXISTS` guards
+* Large table changes set `SET lock_timeout = '10s'`
+* Destructive changes are done in 2 phases across releases
+* Rollback is forward-only: create a new "undo" migration
+
+== Flutter Android Deployment
+
+=== Environments
+
+[cols="1,1,2,2"]
+|===
+| Environment | Build | Entry Point | Distribution
+
+| Beta
+| APK (release)
+| `lib/main_staging.dart`
+| Firebase App Distribution
+
+| Production
+| AAB (release)
+| `lib/main_production.dart`
+| Google Play Store (future)
+|===
+
+=== Build Environment
+
+* Runner: `ubuntu-latest` (1x minute rate)
+* Java: Temurin 17
+* Flutter: 3.38.3 (stable)
+* Caching: Flutter SDK + pub packages + Gradle
+
+=== Signing
+
+Keystore is stored as Base64 in GitHub Secrets, decoded at build time. `key.properties` is generated in the workflow.
+
+=== Firebase App Distribution (beta)
+
+Uses Firebase CLI directly with `google-github-actions/auth@v2` for authentication:
+
+[source,bash]
+----
+firebase appdistribution:distribute <apk-path> \
+  --app $FIREBASE_APP_ID \
+  --groups internal-testers
+----
+
+== Webapp Deployment (Cloudflare Workers)
+
+=== Environments
+
+[cols="1,2,2,2"]
+|===
+| Environment | Wrangler Env | Domain | Trigger
+
+| Beta
+| `staging`
+| `*.workers.dev`
+| Push to `beta/v*`
+
+| Production
+| `production`
+| `peppercheck.dev`
+| `v*` tag
+|===
+
+=== Deploy Commands
+
+[source,bash]
+----
+# Beta
+opennextjs-cloudflare build && opennextjs-cloudflare deploy -- --env staging
+
+# Production
+opennextjs-cloudflare build && opennextjs-cloudflare deploy -- --env production
+----
+
+Uses `cloudflare/wrangler-action@v3` (Cloudflare official).
+
+== Workflow Files
+
+[source]
+----
+.github/workflows/
+├── ci-flutter.yml          # PR: Flutter analyze + test
+├── ci-supabase.yml         # PR: DB test + data check + dry-run
+├── ci-webapp.yml           # PR: type-check + lint + prettier
+├── deploy-beta.yml         # beta/v* push: all components to beta
+└── deploy-production.yml   # v* tag: all components to production
+----
+
+=== Deploy Job Dependencies
+
+[source]
+----
+supabase-deploy
+    +-- flutter-build-distribute (needs: supabase-deploy)
+    +-- webapp-deploy (needs: supabase-deploy)
+----
+
+== Required GitHub Secrets
+
+[cols="2,3"]
+|===
+| Secret | Purpose
+
+| `SUPABASE_ACCESS_TOKEN`
+| Supabase CLI authentication
+
+| `BETA_SUPABASE_PROJECT_ID`
+| Beta Supabase project ref
+
+| `BETA_SUPABASE_DB_PASSWORD`
+| Beta DB password
+
+| `PROD_SUPABASE_PROJECT_ID`
+| Production Supabase project ref
+
+| `PROD_SUPABASE_DB_PASSWORD`
+| Production DB password
+
+| `KEYSTORE_BASE64`
+| Base64-encoded Android keystore
+
+| `KEYSTORE_PASSWORD`
+| Keystore store password
+
+| `KEY_PASSWORD`
+| Key password
+
+| `KEY_ALIAS`
+| Key alias
+
+| `FIREBASE_APP_ID`
+| Firebase App ID
+
+| `FIREBASE_SERVICE_ACCOUNT_JSON`
+| Firebase service account JSON
+
+| `CLOUDFLARE_API_TOKEN`
+| Cloudflare API token
+
+| `CLOUDFLARE_ACCOUNT_ID`
+| Cloudflare account ID
+|===
