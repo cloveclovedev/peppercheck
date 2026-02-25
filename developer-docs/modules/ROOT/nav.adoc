@@ -31,3 +31,4 @@
 
 * Guide
 ** xref:guide/document-architecture.adoc[Documentation Architecture]
+** xref:guide/issue-management.adoc[Issue & Milestone Management]
