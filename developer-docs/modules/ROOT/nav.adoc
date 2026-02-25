@@ -31,4 +31,5 @@
 
 * Guide
 ** xref:guide/document-architecture.adoc[Documentation Architecture]
+** xref:guide/deployment-flow.adoc[Deployment Flow]
 ** xref:guide/issue-management.adoc[Issue & Milestone Management]
