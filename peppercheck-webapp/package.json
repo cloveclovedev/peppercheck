@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy -- --keep-vars",
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy -- --env production --keep-vars",
     "deploy:staging": "opennextjs-cloudflare build && opennextjs-cloudflare deploy -- --env staging",
     "deploy:production": "opennextjs-cloudflare build && opennextjs-cloudflare deploy -- --env production --keep-vars",
     "upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
