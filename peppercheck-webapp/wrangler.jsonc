@@ -19,7 +19,12 @@
   "env": {
     "staging": {
       "name": "peppercheck-webapp-staging",
-      "workers_dev": true,
+      "routes": [
+        {
+          "pattern": "staging.peppercheck.dev",
+          "custom_domain": true
+        }
+      ],
       "services": [
         {
           "binding": "WORKER_SELF_REFERENCE",
