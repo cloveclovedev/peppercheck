@@ -1,14 +1,13 @@
-name: check-webapp-code-quality
+name: ci-webapp
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'peppercheck-webapp/**'
   pull_request:
     paths:
       - 'peppercheck-webapp/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   quality-check:
