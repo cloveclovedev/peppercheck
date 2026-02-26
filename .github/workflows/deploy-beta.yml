@@ -1,6 +1,7 @@
 name: deploy-beta
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - 'beta/v*'

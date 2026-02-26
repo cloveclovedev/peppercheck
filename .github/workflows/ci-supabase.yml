@@ -1,6 +1,7 @@
 name: ci-supabase
 
 on:
+  workflow_dispatch:
   pull_request:
     paths:
       - 'supabase/migrations/**'

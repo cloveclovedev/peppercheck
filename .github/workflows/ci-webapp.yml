@@ -1,6 +1,7 @@
 name: ci-webapp
 
 on:
+  workflow_dispatch:
   pull_request:
     paths:
       - 'peppercheck-webapp/**'
