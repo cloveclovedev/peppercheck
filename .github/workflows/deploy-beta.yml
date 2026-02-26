@@ -68,7 +68,7 @@ jobs:
       - name: Generate staging env file
         run: |
           cat > assets/env/.env.staging <<EOF
-          SUPABASE_URL=${{ secrets.BETA_SUPABASE_URL }}
+          SUPABASE_URL=https://${{ secrets.BETA_SUPABASE_PROJECT_ID }}.supabase.co
           SUPABASE_ANON_KEY=${{ secrets.BETA_SUPABASE_ANON_KEY }}
           STRIPE_PUBLISHABLE_KEY=${{ secrets.BETA_STRIPE_PUBLISHABLE_KEY }}
           EOF
@@ -124,7 +124,7 @@ jobs:
       - name: Set staging environment
         run: |
           cat > .env.local <<EOF
-          NEXT_PUBLIC_SUPABASE_URL=${{ secrets.BETA_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_URL=https://${{ secrets.BETA_SUPABASE_PROJECT_ID }}.supabase.co
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${{ secrets.BETA_SUPABASE_ANON_KEY }}
           EOF
 
