@@ -1,20 +1,18 @@
-name: Supabase data check
+name: ci-supabase
 
 on:
+  workflow_dispatch:
   pull_request:
     paths:
       - 'supabase/migrations/**'
-      - 'supabase/data/**'
-  push:
-    branches: [main]
-    paths:
-      - 'supabase/migrations/**'
-      - 'supabase/data/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  verify:
+  test-and-verify:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
@@ -28,9 +26,16 @@ jobs:
           sed -i 's/^major_version = 17/# major_version = 17/' supabase/config.toml
           supabase start -x studio,imgproxy,realtime,storage-api,mailpit,vector,logflare,edge-runtime
 
-      - name: Check reference CSVs
+      - name: Run database unit tests
         run: |
-          # TODO: Make this logic order-independent so that CSV row order doesn't cause failures
+          for f in supabase/tests/test_*.sql; do
+            echo "=== Running $f ==="
+            PGPASSWORD=postgres psql -h localhost -p 54322 -U postgres -f "$f"
+            echo ""
+          done
+
+      - name: Check reference data integrity
+        run: |
           set -euo pipefail
           declare -A queries
           queries["currencies"]="SELECT code, kind, exponent, description FROM public.currencies ORDER BY code"
@@ -44,3 +49,11 @@ jobs:
               -c "COPY (${queries[$name]}) TO STDOUT CSV HEADER" > "$out"
             diff --strip-trailing-cr -u "supabase/data/${name}.csv" "$out"
           done
+
+      - name: Dry-run migrations against beta
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.BETA_SUPABASE_DB_PASSWORD }}
+        run: |
+          supabase link --project-ref ${{ secrets.BETA_SUPABASE_PROJECT_ID }}
+          supabase db push --dry-run
