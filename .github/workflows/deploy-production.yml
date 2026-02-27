@@ -82,6 +82,9 @@ jobs:
           WEB_DASHBOARD_URL=https://peppercheck.dev/dashboard
           EOF
 
+      - name: Generate google-services.json
+        run: echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > android/app/google-services.json
+
       - name: Decode keystore
         run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android/app/upload-keystore.jks
 
