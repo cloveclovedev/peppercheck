@@ -53,7 +53,7 @@ while IFS= read -r line; do
   fi
 
   # Set the secret
-  if echo "$value" | gh secret set "$key" 2>/dev/null; then
+  if printf '%s' "$value" | gh secret set "$key" 2>/dev/null; then
     echo "  SET   $key"
     ((count++))
   else
