@@ -75,7 +75,7 @@ jobs:
 
       - name: Generate production env file
         run: |
-          cat > assets/env/.env.production <<EOF
+          cat > assets/env/.env.production <<'EOF'
           SUPABASE_URL=https://${{ secrets.PROD_SUPABASE_PROJECT_ID }}.supabase.co
           SUPABASE_ANON_KEY=${{ secrets.PROD_SUPABASE_PUBLISHABLE_KEY }}
           STRIPE_PUBLISHABLE_KEY=${{ secrets.PROD_STRIPE_PUBLISHABLE_KEY }}
@@ -90,7 +90,7 @@ jobs:
 
       - name: Create key.properties
         run: |
-          cat > android/key.properties <<EOF
+          cat > android/key.properties <<'EOF'
           storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
           keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
@@ -137,7 +137,7 @@ jobs:
 
       - name: Set production environment
         run: |
-          cat > .env.local <<EOF
+          cat > .env.local <<'EOF'
           NEXT_PUBLIC_SUPABASE_URL=https://${{ secrets.PROD_SUPABASE_PROJECT_ID }}.supabase.co
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${{ secrets.PROD_SUPABASE_PUBLISHABLE_KEY }}
           EOF
