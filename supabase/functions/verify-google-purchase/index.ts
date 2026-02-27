@@ -1,15 +1,52 @@
-// Follow this setup guide to integrate the Deno language server with your editor:
-// https://deno.land/manual/getting_started/setup_your_environment
-// This enables autocomplete, go to definition, etc.
-
-// Setup type definitions for built-in Supabase Runtime APIs
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 import { createClient } from '@supabase/supabase-js'
-import { google } from 'googleapis'
+import { importPKCS8, SignJWT } from 'jose'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+/** Exchange a Google service account credential for an OAuth2 access token. */
+async function getGoogleAccessToken(
+  credentials: { client_email: string; private_key: string },
+  scope: string,
+): Promise<string> {
+  const now = Math.floor(Date.now() / 1000)
+  const privateKey = await importPKCS8(credentials.private_key, 'RS256')
+
+  const jwt = await new SignJWT({
+    iss: credentials.client_email,
+    scope,
+    aud: 'https://oauth2.googleapis.com/token',
+  })
+    .setProtectedHeader({ alg: 'RS256', typ: 'JWT' })
+    .setIssuedAt(now)
+    .setExpirationTime(now + 3600)
+    .sign(privateKey)
+
+  const res = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+      assertion: jwt,
+    }),
+  })
+
+  if (!res.ok) {
+    const body = await res.text()
+    throw new Error(`Google token exchange failed (${res.status}): ${body}`)
+  }
+
+  const data = await res.json()
+  return data.access_token
+}
+
+interface SubscriptionPurchase {
+  startTimeMillis?: string
+  expiryTimeMillis?: string
+  autoRenewing?: boolean
 }
 
 Deno.serve(async (req) => {
@@ -36,91 +73,73 @@ Deno.serve(async (req) => {
     }
     const credentials = JSON.parse(serviceAccountJson)
 
-    // Authenticate Google Client
-    const auth = new google.auth.GoogleAuth({
-      credentials,
-      scopes: ['https://www.googleapis.com/auth/androidpublisher'],
-    })
-    const androidPublisher = google.androidpublisher({ version: 'v3', auth })
     const packageName = 'dev.cloveclove.peppercheck'
 
-    let subscriptionData = null
-
-    if (type === 'subscription') {
-      // Verify Subscription
-      const res = await androidPublisher.purchases.subscriptions.get({
-        packageName,
-        subscriptionId: productId,
-        token: purchaseToken,
-      })
-
-      const purchase = res.data
-
-      // Check expiry (expiryTimeMillis is string)
-      const expiryTime = parseInt(purchase.expiryTimeMillis ?? '0')
-      const now = Date.now()
-      const isActive = expiryTime > now
-
-      // Map to our status
-      let status = 'canceled'
-      if (isActive) {
-        status = 'active'
-        // Handle autoRenewing etc if needed for more granular status
-      }
-
-      // Upsert to DB
-      // We need user_id from Auth header (handled by Supabase Functions usually,
-      // but if called from App, user is authenticated)
-      const authHeader = req.headers.get('Authorization')
-      if (!authHeader) throw new Error('Missing Authorization header')
-      const token = authHeader.replace('Bearer ', '')
-      const { data: { user }, error: userError } = await supabase.auth.getUser(token)
-      if (userError || !user) throw new Error('Invalid User Token')
-
-      // Upsert
-      const { error: dbError } = await supabase
-        .from('user_subscriptions')
-        .upsert({
-          user_id: user.id,
-          plan_id: productId, // Assuming productId maps to subscription_plans.id (e.g. 'light')?
-          // OR we need a mapping if IDs differ.
-          // For now assuming 1:1 or logic handles it.
-          status: status,
-          provider: 'google',
-          google_purchase_token: purchaseToken,
-          current_period_start: new Date(parseInt(purchase.startTimeMillis ?? '0')).toISOString(),
-          current_period_end: new Date(expiryTime).toISOString(),
-          cancel_at_period_end: !purchase.autoRenewing,
-          updated_at: new Date().toISOString(),
-        })
-
-      if (dbError) throw new Error(`DB Error: ${dbError.message}`)
-
-      subscriptionData = { status, expiryTime: new Date(expiryTime).toISOString() }
-    } else {
+    if (type !== 'subscription') {
       throw new Error(`Unsupported purchase type: ${type}`)
     }
+
+    // Get OAuth2 access token from service account
+    const accessToken = await getGoogleAccessToken(
+      credentials,
+      'https://www.googleapis.com/auth/androidpublisher',
+    )
+
+    // Call Android Publisher API directly
+    const apiUrl =
+      `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${packageName}/purchases/subscriptions/${productId}/tokens/${purchaseToken}`
+
+    const apiRes = await fetch(apiUrl, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+
+    if (!apiRes.ok) {
+      const body = await apiRes.text()
+      throw new Error(`Google Play API error (${apiRes.status}): ${body}`)
+    }
+
+    const purchase: SubscriptionPurchase = await apiRes.json()
+
+    // Check expiry
+    const expiryTime = parseInt(purchase.expiryTimeMillis ?? '0')
+    const isActive = expiryTime > Date.now()
+    const status = isActive ? 'active' : 'canceled'
+
+    // Get authenticated user
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) throw new Error('Missing Authorization header')
+    const token = authHeader.replace('Bearer ', '')
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token)
+    if (userError || !user) throw new Error('Invalid User Token')
+
+    // Upsert subscription
+    const { error: dbError } = await supabase
+      .from('user_subscriptions')
+      .upsert({
+        user_id: user.id,
+        plan_id: productId,
+        status,
+        provider: 'google',
+        google_purchase_token: purchaseToken,
+        current_period_start: new Date(parseInt(purchase.startTimeMillis ?? '0')).toISOString(),
+        current_period_end: new Date(expiryTime).toISOString(),
+        cancel_at_period_end: !purchase.autoRenewing,
+        updated_at: new Date().toISOString(),
+      })
+
+    if (dbError) throw new Error(`DB Error: ${dbError.message}`)
+
+    const subscriptionData = { status, expiryTime: new Date(expiryTime).toISOString() }
 
     return new Response(
       JSON.stringify(subscriptionData),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     )
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error'
     return new Response(
-      JSON.stringify({ error: error.message || 'Unknown error' }),
+      JSON.stringify({ error: message }),
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     )
   }
 })
-
-/* To invoke locally:
-
-  1. Run `supabase start` (see: https://supabase.com/docs/reference/cli/supabase-start)
-  2. Make an HTTP request:
-
-  curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/verify-google-purchase' \
-    --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0' \
-    --header 'Content-Type: application/json' \
-    --data '{"name":"Functions"}'
-
-*/
