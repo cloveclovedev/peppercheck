@@ -70,7 +70,7 @@ jobs:
         run: |
           cat > assets/env/.env.staging <<EOF
           SUPABASE_URL=https://${{ secrets.BETA_SUPABASE_PROJECT_ID }}.supabase.co
-          SUPABASE_ANON_KEY=${{ secrets.BETA_SUPABASE_ANON_KEY }}
+          SUPABASE_ANON_KEY=${{ secrets.BETA_SUPABASE_PUBLISHABLE_KEY }}
           STRIPE_PUBLISHABLE_KEY=${{ secrets.BETA_STRIPE_PUBLISHABLE_KEY }}
           WEB_DASHBOARD_URL=https://staging.peppercheck.dev/dashboard
           EOF
@@ -127,7 +127,7 @@ jobs:
         run: |
           cat > .env.local <<EOF
           NEXT_PUBLIC_SUPABASE_URL=https://${{ secrets.BETA_SUPABASE_PROJECT_ID }}.supabase.co
-          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${{ secrets.BETA_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${{ secrets.BETA_SUPABASE_PUBLISHABLE_KEY }}
           EOF
 
       - name: Build and deploy to Cloudflare (staging)
