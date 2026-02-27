@@ -8,13 +8,13 @@
   "preview_urls": true,
   "assets": {
     "binding": "ASSETS",
-    "directory": ".open-next/assets"
+    "directory": ".open-next/assets",
   },
   "images": {
-    "binding": "IMAGES"
+    "binding": "IMAGES",
   },
   "observability": {
-    "enabled": true
+    "enabled": true,
   },
   "env": {
     "staging": {
@@ -22,30 +22,30 @@
       "routes": [
         {
           "pattern": "staging.peppercheck.dev",
-          "custom_domain": true
-        }
+          "custom_domain": true,
+        },
       ],
       "services": [
         {
           "binding": "WORKER_SELF_REFERENCE",
-          "service": "peppercheck-webapp-staging"
-        }
-      ]
+          "service": "peppercheck-webapp-staging",
+        },
+      ],
     },
     "production": {
       "name": "peppercheck-webapp",
       "routes": [
         {
           "pattern": "peppercheck.dev",
-          "custom_domain": true
-        }
+          "custom_domain": true,
+        },
       ],
       "services": [
         {
           "binding": "WORKER_SELF_REFERENCE",
-          "service": "peppercheck-webapp"
-        }
-      ]
-    }
-  }
+          "service": "peppercheck-webapp",
+        },
+      ],
+    },
+  },
 }

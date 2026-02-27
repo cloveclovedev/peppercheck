@@ -29,6 +29,13 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Create placeholder env files
+        run: |
+          mkdir -p assets/env
+          touch assets/env/.env.debug
+          touch assets/env/.env.staging
+          touch assets/env/.env.production
+
       - name: Analyze
         run: flutter analyze --no-fatal-infos
 
