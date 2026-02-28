@@ -97,8 +97,18 @@ jobs:
           storeFile=upload-keystore.jks
           EOF
 
+      - name: Extract version from tag
+        id: version
+        run: |
+          # v0.3.0 → 0.3.0
+          echo "build_name=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          echo "build_number=${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+
       - name: Build production AAB
-        run: flutter build appbundle --release -t lib/main_production.dart
+        run: |
+          flutter build appbundle --release -t lib/main_production.dart \
+            --build-name=${{ steps.version.outputs.build_name }} \
+            --build-number=${{ steps.version.outputs.build_number }}
 
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v4

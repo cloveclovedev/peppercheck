@@ -97,8 +97,19 @@ jobs:
           storeFile=upload-keystore.jks
           EOF
 
+      - name: Extract version from branch name
+        id: version
+        run: |
+          # beta/v0.3 → 0.3.0-beta.N
+          BASE_VERSION="${GITHUB_REF_NAME#beta/v}"
+          echo "build_name=${BASE_VERSION}.0-beta.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+          echo "build_number=${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+
       - name: Build staging APK
-        run: flutter build apk --release -t lib/main_staging.dart
+        run: |
+          flutter build apk --release -t lib/main_staging.dart \
+            --build-name=${{ steps.version.outputs.build_name }} \
+            --build-number=${{ steps.version.outputs.build_number }}
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
@@ -112,7 +123,7 @@ jobs:
             build/app/outputs/flutter-apk/app-release.apk \
             --app "${{ secrets.FIREBASE_APP_ID }}" \
             --groups "beta-testers" \
-            --release-notes "Beta build from ${{ github.ref_name }} (${GITHUB_SHA::7})"
+            --release-notes "Beta ${{ steps.version.outputs.build_name }} (${GITHUB_SHA::7})"
 
   webapp-deploy:
     needs: supabase-deploy
