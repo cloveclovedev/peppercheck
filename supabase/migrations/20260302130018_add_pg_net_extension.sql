@@ -1,0 +1,14 @@
+-- pg_net is defined in schemas/extensions.sql but was never included in a migration.
+--
+-- Why pg_net was missed:
+--   pg_net is a Supabase core extension, pre-installed in both the local dev
+--   environment (supabase start) and the shadow database used by `supabase db diff`.
+--   Because it already exists in the shadow DB, `db diff` never detects it as a
+--   difference — unlike pg_cron, which is NOT pre-installed and was therefore
+--   auto-generated into migration 20251124135306 by `db diff`.
+--
+-- Impact:
+--   `supabase db push` only applies migration files, not schema_paths files.
+--   Remote deployments were missing pg_net, causing "schema net does not exist"
+--   errors in notify_event() and cron jobs that call net.http_post().
+CREATE EXTENSION IF NOT EXISTS pg_net WITH SCHEMA net;
