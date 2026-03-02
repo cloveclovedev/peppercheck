@@ -44,5 +44,19 @@
         "description": "Includes {points} points / month"
       }
     }
+  },
+  "StripeConnect": {
+    "return": {
+      "title": "Payout setup completed",
+      "description": "Your payout setup has been completed successfully. Please return to the Peppercheck app to confirm.",
+      "note": "If additional information is required, please tap the setup button again and complete the necessary steps.",
+      "contact": "If you have any questions, contact us at {email}."
+    },
+    "refresh": {
+      "title": "Payout setup did not complete successfully",
+      "description": "Please return to the app and restart the setup.",
+      "note": "Any information you have already entered has been saved. You only need to provide the missing details.",
+      "contact": "If you have any questions, contact us at {email}."
+    }
   }
 }
