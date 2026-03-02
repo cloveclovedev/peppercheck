@@ -7,4 +7,5 @@
 .env.local
 .env.*.local
 .env
-
+.env.staging
+.env.production
