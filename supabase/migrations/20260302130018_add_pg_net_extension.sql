@@ -11,4 +11,4 @@
 --   `supabase db push` only applies migration files, not schema_paths files.
 --   Remote deployments were missing pg_net, causing "schema net does not exist"
 --   errors in notify_event() and cron jobs that call net.http_post().
-CREATE EXTENSION IF NOT EXISTS pg_net WITH SCHEMA net;
+CREATE EXTENSION IF NOT EXISTS pg_net;
