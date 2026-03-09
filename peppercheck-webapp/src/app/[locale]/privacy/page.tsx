@@ -1,6 +1,9 @@
 import { Header } from '@/components/Header'
 import { Footer } from '@/components/Footer'
 import { getTranslations } from 'next-intl/server'
+import { createGenerateMetadata } from '@/lib/metadata'
+
+export const generateMetadata = createGenerateMetadata('Privacy')
 
 export default async function PrivacyPolicyPage() {
   const t = await getTranslations('Privacy')

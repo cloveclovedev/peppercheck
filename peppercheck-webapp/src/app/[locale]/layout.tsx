@@ -16,7 +16,10 @@ const notoSansJP = Noto_Sans_JP({
 })
 
 export const metadata: Metadata = {
-  title: 'Peppercheck',
+  title: {
+    default: 'Peppercheck',
+    template: '%s | Peppercheck',
+  },
   description: 'Peer Referee Platform for Tasks',
 }
 
