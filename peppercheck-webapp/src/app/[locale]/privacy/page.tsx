@@ -8,10 +8,28 @@ export const generateMetadata = createGenerateMetadata('Privacy')
 export default async function PrivacyPolicyPage() {
   const t = await getTranslations('Privacy')
 
-  const collectCategories = ['account', 'task', 'payment', 'device', 'usage'] as const
-  const purposeItems = ['auth', 'service', 'payment', 'notification', 'support', 'safety'] as const
+  const collectCategories = [
+    'account',
+    'task',
+    'payment',
+    'device',
+    'usage',
+  ] as const
+  const purposeItems = [
+    'auth',
+    'service',
+    'payment',
+    'notification',
+    'support',
+    'safety',
+  ] as const
   const thirdParties = ['google', 'stripe', 'firebase', 'supabase'] as const
-  const rightsItems = ['access', 'correction', 'deletion', 'withdrawal'] as const
+  const rightsItems = [
+    'access',
+    'correction',
+    'deletion',
+    'withdrawal',
+  ] as const
 
   return (
     <div className="flex min-h-screen flex-col font-sans">
@@ -31,7 +49,9 @@ export default async function PrivacyPolicyPage() {
             <h2 className="text-xl font-bold text-[var(--color-heading)]">
               {t('operator.heading')}
             </h2>
-            <p className="mt-3 text-[var(--color-text)]">{t('operator.body')}</p>
+            <p className="mt-3 text-[var(--color-text)]">
+              {t('operator.body')}
+            </p>
           </section>
 
           {/* 2. Information We Collect */}
@@ -39,7 +59,9 @@ export default async function PrivacyPolicyPage() {
             <h2 className="text-xl font-bold text-[var(--color-heading)]">
               {t('collect.heading')}
             </h2>
-            <p className="mt-3 text-[var(--color-text)]">{t('collect.intro')}</p>
+            <p className="mt-3 text-[var(--color-text)]">
+              {t('collect.intro')}
+            </p>
             <dl className="mt-4 space-y-4">
               {collectCategories.map((key) => (
                 <div key={key}>
@@ -59,7 +81,9 @@ export default async function PrivacyPolicyPage() {
             <h2 className="text-xl font-bold text-[var(--color-heading)]">
               {t('purpose.heading')}
             </h2>
-            <p className="mt-3 text-[var(--color-text)]">{t('purpose.intro')}</p>
+            <p className="mt-3 text-[var(--color-text)]">
+              {t('purpose.intro')}
+            </p>
             <ul className="mt-3 list-disc space-y-1 pl-6 text-[var(--color-text)]">
               {purposeItems.map((key) => (
                 <li key={key}>{t(`purpose.items.${key}`)}</li>
@@ -72,7 +96,9 @@ export default async function PrivacyPolicyPage() {
             <h2 className="text-xl font-bold text-[var(--color-heading)]">
               {t('thirdParty.heading')}
             </h2>
-            <p className="mt-3 text-[var(--color-text)]">{t('thirdParty.intro')}</p>
+            <p className="mt-3 text-[var(--color-text)]">
+              {t('thirdParty.intro')}
+            </p>
             <dl className="mt-4 space-y-4">
               {thirdParties.map((key) => (
                 <div key={key}>
@@ -92,7 +118,9 @@ export default async function PrivacyPolicyPage() {
             <h2 className="text-xl font-bold text-[var(--color-heading)]">
               {t('security.heading')}
             </h2>
-            <p className="mt-3 text-[var(--color-text)]">{t('security.body')}</p>
+            <p className="mt-3 text-[var(--color-text)]">
+              {t('security.body')}
+            </p>
           </section>
 
           {/* 6. Data Retention */}
@@ -100,7 +128,9 @@ export default async function PrivacyPolicyPage() {
             <h2 className="text-xl font-bold text-[var(--color-heading)]">
               {t('retention.heading')}
             </h2>
-            <p className="mt-3 text-[var(--color-text)]">{t('retention.body')}</p>
+            <p className="mt-3 text-[var(--color-text)]">
+              {t('retention.body')}
+            </p>
           </section>
 
           {/* 7. Your Rights */}
@@ -122,7 +152,9 @@ export default async function PrivacyPolicyPage() {
             <h2 className="text-xl font-bold text-[var(--color-heading)]">
               {t('children.heading')}
             </h2>
-            <p className="mt-3 text-[var(--color-text)]">{t('children.body')}</p>
+            <p className="mt-3 text-[var(--color-text)]">
+              {t('children.body')}
+            </p>
           </section>
 
           {/* 9. Changes to This Policy */}
@@ -140,7 +172,10 @@ export default async function PrivacyPolicyPage() {
             </h2>
             <p className="mt-3 text-[var(--color-text)]">{t('contact.body')}</p>
             <p className="mt-2 font-semibold text-[var(--color-heading)]">
-              <a href={`mailto:${t('contact.email')}`} className="underline decoration-2">
+              <a
+                href={`mailto:${t('contact.email')}`}
+                className="underline decoration-2"
+              >
                 {t('contact.email')}
               </a>
             </p>
