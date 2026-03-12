@@ -243,5 +243,22 @@
     "matching_expired_refunded_tasker_body": "「${taskTitle}」のレフェリーが見つかりませんでした。ポイントが返金されました",
     "fallback_title": "お知らせ",
     "fallback_body": "新しい通知があります。"
+  },
+  "account": {
+    "actions": {
+      "title": "アカウント",
+      "deleteAccount": "アカウントを削除",
+      "deleteBlocked": "進行中のタスクまたはレフェリーリクエストがあるため、アカウントを削除できません。",
+      "deleteBlockedOpenTasks": "進行中のタスクがあります",
+      "deleteBlockedActiveReferee": "アクティブなレフェリーリクエストがあります",
+      "confirmTitle": "アカウントの削除",
+      "confirmDescription": "以下のデータが削除されます：\n\n・プロフィール情報\n・ポイント残高\n・サブスクリプション\n・通知設定\n\n以下のデータは匿名化されて保持されます：\n・タスク履歴\n・評価履歴\n\nエビデンスファイルは一定期間後に自動削除されます。\n\nサブスクリプションをご利用の場合は、ストア（Google Play / App Store）側で別途キャンセルしてください。",
+      "finalConfirmDescription": "この操作は取り消せません",
+      "deleteButton": "削除",
+      "cancelButton": "キャンセル",
+      "payoutFailedTitle": "報酬の振り込みに失敗しました",
+      "payoutFailedDescription": "未払いの報酬 ¥$amount を受け取れませんでした。報酬を放棄してアカウントを削除しますか？",
+      "deletedSnackbar": "アカウントが削除されました"
+    }
   }
 }

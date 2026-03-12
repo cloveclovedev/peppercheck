@@ -51,6 +51,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final TranslationsProfileJa profile = TranslationsProfileJa.internal(_root);
 	late final TranslationsMatchingJa matching = TranslationsMatchingJa.internal(_root);
 	late final TranslationsNotificationJa notification = TranslationsNotificationJa.internal(_root);
+	late final TranslationsAccountJa account = TranslationsAccountJa.internal(_root);
 }
 
 // Path: login
@@ -421,6 +422,16 @@ class TranslationsNotificationJa {
 	String get fallback_body => '新しい通知があります。';
 }
 
+// Path: account
+class TranslationsAccountJa {
+	TranslationsAccountJa.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+	late final TranslationsAccountActionsJa actions = TranslationsAccountActionsJa.internal(_root);
+}
+
 // Path: billing.plans
 class TranslationsBillingPlansJa {
 	TranslationsBillingPlansJa.internal(this._root);
@@ -735,6 +746,54 @@ class TranslationsMatchingRefereeBlockedDatesJa {
 
 	/// ja: '終了日は開始日以降である必要があります'
 	String get invalid_date_range => '終了日は開始日以降である必要があります';
+}
+
+// Path: account.actions
+class TranslationsAccountActionsJa {
+	TranslationsAccountActionsJa.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// ja: 'アカウント'
+	String get title => 'アカウント';
+
+	/// ja: 'アカウントを削除'
+	String get deleteAccount => 'アカウントを削除';
+
+	/// ja: '進行中のタスクまたはレフェリーリクエストがあるため、アカウントを削除できません。'
+	String get deleteBlocked => '進行中のタスクまたはレフェリーリクエストがあるため、アカウントを削除できません。';
+
+	/// ja: '進行中のタスクがあります'
+	String get deleteBlockedOpenTasks => '進行中のタスクがあります';
+
+	/// ja: 'アクティブなレフェリーリクエストがあります'
+	String get deleteBlockedActiveReferee => 'アクティブなレフェリーリクエストがあります';
+
+	/// ja: 'アカウントの削除'
+	String get confirmTitle => 'アカウントの削除';
+
+	/// ja: '以下のデータが削除されます： ・プロフィール情報 ・ポイント残高 ・サブスクリプション ・通知設定 以下のデータは匿名化されて保持されます： ・タスク履歴 ・評価履歴 エビデンスファイルは一定期間後に自動削除されます。 サブスクリプションをご利用の場合は、ストア（Google Play / App Store）側で別途キャンセルしてください。'
+	String get confirmDescription => '以下のデータが削除されます：\n\n・プロフィール情報\n・ポイント残高\n・サブスクリプション\n・通知設定\n\n以下のデータは匿名化されて保持されます：\n・タスク履歴\n・評価履歴\n\nエビデンスファイルは一定期間後に自動削除されます。\n\nサブスクリプションをご利用の場合は、ストア（Google Play / App Store）側で別途キャンセルしてください。';
+
+	/// ja: 'この操作は取り消せません'
+	String get finalConfirmDescription => 'この操作は取り消せません';
+
+	/// ja: '削除'
+	String get deleteButton => '削除';
+
+	/// ja: 'キャンセル'
+	String get cancelButton => 'キャンセル';
+
+	/// ja: '報酬の振り込みに失敗しました'
+	String get payoutFailedTitle => '報酬の振り込みに失敗しました';
+
+	/// ja: '未払いの報酬 ¥$amount を受け取れませんでした。報酬を放棄してアカウントを削除しますか？'
+	String payoutFailedDescription({required Object amount}) => '未払いの報酬 ¥${amount} を受け取れませんでした。報酬を放棄してアカウントを削除しますか？';
+
+	/// ja: 'アカウントが削除されました'
+	String get deletedSnackbar => 'アカウントが削除されました';
 }
 
 // Path: task.detail.cancelAssignment
@@ -1088,6 +1147,19 @@ extension on Translations {
 			'notification.matching_expired_refunded_tasker_body' => ({required Object taskTitle}) => '「${taskTitle}」のレフェリーが見つかりませんでした。ポイントが返金されました',
 			'notification.fallback_title' => 'お知らせ',
 			'notification.fallback_body' => '新しい通知があります。',
+			'account.actions.title' => 'アカウント',
+			'account.actions.deleteAccount' => 'アカウントを削除',
+			'account.actions.deleteBlocked' => '進行中のタスクまたはレフェリーリクエストがあるため、アカウントを削除できません。',
+			'account.actions.deleteBlockedOpenTasks' => '進行中のタスクがあります',
+			'account.actions.deleteBlockedActiveReferee' => 'アクティブなレフェリーリクエストがあります',
+			'account.actions.confirmTitle' => 'アカウントの削除',
+			'account.actions.confirmDescription' => '以下のデータが削除されます：\n\n・プロフィール情報\n・ポイント残高\n・サブスクリプション\n・通知設定\n\n以下のデータは匿名化されて保持されます：\n・タスク履歴\n・評価履歴\n\nエビデンスファイルは一定期間後に自動削除されます。\n\nサブスクリプションをご利用の場合は、ストア（Google Play / App Store）側で別途キャンセルしてください。',
+			'account.actions.finalConfirmDescription' => 'この操作は取り消せません',
+			'account.actions.deleteButton' => '削除',
+			'account.actions.cancelButton' => 'キャンセル',
+			'account.actions.payoutFailedTitle' => '報酬の振り込みに失敗しました',
+			'account.actions.payoutFailedDescription' => ({required Object amount}) => '未払いの報酬 ¥${amount} を受け取れませんでした。報酬を放棄してアカウントを削除しますか？',
+			'account.actions.deletedSnackbar' => 'アカウントが削除されました',
 			_ => null,
 		};
 	}
