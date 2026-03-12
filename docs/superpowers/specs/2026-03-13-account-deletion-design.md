@@ -77,7 +77,7 @@ Responses:
 
 ```
 1. Extract user_id from JWT
-2. check_account_deletable(user_id) → 409 if blocked
+2. check_account_deletable() → 409 if blocked (uses auth.uid() internally)
 3. If force = false AND reward_wallets.balance > 0:
    → Execute Stripe Transfer (immediate payout)
    → Record in reward_payouts
@@ -95,7 +95,7 @@ Responses:
 
 Steps 3-5 are idempotent: already-cancelled subscriptions and already-deauthorized Connect accounts return success from Stripe API, so retries are safe.
 
-### DB Function: `check_account_deletable(user_id)`
+### DB Function: `check_account_deletable()`
 
 ```sql
 -- Returns: { deletable: boolean, reasons: text[] }
