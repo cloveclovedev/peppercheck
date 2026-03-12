@@ -154,5 +154,21 @@
       "body": "If you have any questions about this privacy policy or our data practices, please contact us at:",
       "email": "hi@cloveclove.dev"
     }
+  },
+  "AccountDelete": {
+    "title": "Delete Account",
+    "description": "The following data will be deleted:",
+    "deletedItems": "Profile information, point balances, subscription, notification settings",
+    "anonymizedLabel": "The following data will be anonymized and retained:",
+    "anonymizedItems": "Task history, rating history",
+    "retainedLabel": "Evidence files will be automatically deleted after a period.",
+    "iapNotice": "If you have an active subscription, please cancel it separately via Google Play or App Store settings.",
+    "finalWarning": "This action cannot be undone",
+    "deleteButton": "Delete",
+    "cancelButton": "Cancel",
+    "deletedMessage": "Your account has been deleted.",
+    "blocked": "Cannot delete account: you have in-progress tasks or referee requests. Please complete or cancel them first.",
+    "payoutFailed": "Reward payout of ¥{amount} failed. Would you like to forfeit unpaid rewards and proceed with deletion?",
+    "error": "An error occurred. Please try again."
   }
 }

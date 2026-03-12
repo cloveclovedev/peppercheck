@@ -56,7 +56,8 @@ export async function updateSession(
     !user &&
     !pathnameWithoutLocale.startsWith('/login') &&
     !pathnameWithoutLocale.startsWith('/auth') &&
-    pathnameWithoutLocale.startsWith('/dashboard')
+    (pathnameWithoutLocale.startsWith('/dashboard') ||
+     pathnameWithoutLocale.startsWith('/account'))
   ) {
     // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone()
