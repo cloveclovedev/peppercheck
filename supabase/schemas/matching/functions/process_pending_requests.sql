@@ -38,10 +38,12 @@ BEGIN
         WHERE t.id = v_request.task_id;
 
         v_cost := public.get_point_for_matching_strategy(v_request.matching_strategy);
-        PERFORM public.unlock_points(
+        PERFORM public.route_unlock_points(
+            v_request.id,
             v_task.tasker_id,
             v_cost,
             'matching_refund'::public.point_reason,
+            'matching_unlock'::public.trial_point_reason,
             'Matching expired — no referee found',
             v_request.task_id
         );

@@ -24,10 +24,12 @@ BEGIN
     v_cost := public.get_point_for_matching_strategy(v_matching_strategy);
 
     -- Return locked points to tasker (no consumption)
-    PERFORM public.unlock_points(
+    PERFORM public.route_unlock_points(
+        NEW.id,
         v_tasker_id,
         v_cost,
         'matching_unlock'::public.point_reason,
+        'matching_unlock'::public.trial_point_reason,
         'Review timeout (judgement ' || NEW.id || ')',
         NEW.id
     );

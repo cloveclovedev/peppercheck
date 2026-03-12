@@ -20,7 +20,7 @@ BEGIN
     END IF;
 
     -- Get request details
-    SELECT trr.id, trr.task_id, trr.matching_strategy, trr.status, trr.matched_referee_id
+    SELECT trr.id, trr.task_id, trr.matching_strategy, trr.status, trr.matched_referee_id, trr.point_source
     INTO v_request
     FROM public.task_referee_requests trr
     WHERE trr.id = p_request_id;
@@ -73,11 +73,12 @@ BEGIN
 
     -- 3. Insert new request (triggers process_matching via INSERT trigger)
     INSERT INTO public.task_referee_requests (
-        task_id, matching_strategy, status
+        task_id, matching_strategy, status, point_source
     ) VALUES (
         v_request.task_id,
         v_request.matching_strategy,
-        'pending'::public.referee_request_status
+        'pending'::public.referee_request_status,
+        v_request.point_source
     ) RETURNING id INTO v_new_request_id;
 
     -- 4. Check if re-matching succeeded (trigger has already run)

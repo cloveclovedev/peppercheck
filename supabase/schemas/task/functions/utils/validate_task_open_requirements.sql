@@ -6,6 +6,7 @@ CREATE OR REPLACE FUNCTION public.validate_task_open_requirements(
 RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = ''
 AS $$
 DECLARE
     v_min_hours int;
@@ -14,6 +15,9 @@ DECLARE
     v_wallet_locked int;
     v_req jsonb;
     v_strategy public.matching_strategy;
+    v_trial_balance int;
+    v_trial_locked int;
+    v_trial_active boolean;
 BEGIN
     -- 1. Due Date Validation (from matching_time_config singleton)
     SELECT open_deadline_hours INTO STRICT v_min_hours
@@ -33,6 +37,17 @@ BEGIN
         END LOOP;
     END IF;
 
+    -- Check trial wallet FIRST
+    SELECT balance, locked, is_active INTO v_trial_balance, v_trial_locked, v_trial_active
+    FROM public.trial_point_wallets
+    WHERE user_id = p_user_id;
+
+    IF v_trial_active IS NOT NULL AND v_trial_active = true
+       AND (v_trial_balance - v_trial_locked) >= v_new_cost THEN
+        RETURN;  -- Trial points sufficient
+    END IF;
+
+    -- Fallback: check regular wallet
     SELECT balance, locked INTO v_wallet_balance, v_wallet_locked
     FROM public.point_wallets
     WHERE user_id = p_user_id;
