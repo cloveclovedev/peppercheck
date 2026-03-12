@@ -18,6 +18,10 @@ BEGIN
     FROM public.task_referee_requests
     WHERE id = p_request_id;
 
+    IF v_is_obligation IS NULL THEN
+        RAISE EXCEPTION 'Task referee request not found: %', p_request_id;
+    END IF;
+
     IF v_is_obligation THEN
         -- Fulfill oldest pending obligation (FIFO)
         SELECT id INTO v_obligation_id

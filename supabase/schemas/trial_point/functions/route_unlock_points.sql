@@ -18,6 +18,10 @@ BEGIN
     FROM public.task_referee_requests
     WHERE id = p_request_id;
 
+    IF v_point_source IS NULL THEN
+        RAISE EXCEPTION 'Task referee request not found: %', p_request_id;
+    END IF;
+
     IF v_point_source = 'trial' THEN
         PERFORM public.unlock_trial_points(p_user_id, p_cost, p_reason_trial, p_description, p_related_id);
     ELSE
