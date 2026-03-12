@@ -171,6 +171,15 @@ schema_paths = [
   "./schemas/point/functions/unlock_points.sql",
   "./schemas/point/functions/grant_subscription_points.sql",
 
+  # Trial Point
+  "./schemas/trial_point/functions/lock_trial_points.sql",
+  "./schemas/trial_point/functions/unlock_trial_points.sql",
+  "./schemas/trial_point/functions/consume_trial_points.sql",
+  "./schemas/trial_point/functions/deactivate_trial_points.sql",
+  "./schemas/trial_point/functions/route_consume_points.sql",
+  "./schemas/trial_point/functions/route_unlock_points.sql",
+  "./schemas/trial_point/functions/route_referee_reward.sql",
+
   # Reward
   "./schemas/reward/functions/grant_reward.sql",
   "./schemas/reward/functions/deduct_reward_for_payout.sql",
