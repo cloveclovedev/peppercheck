@@ -25,7 +25,9 @@ export default function DeleteAccountPage() {
 
   async function checkDeletable() {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
       if (!user) return
 
       const { data, error } = await supabase.rpc('check_account_deletable')
@@ -117,7 +119,7 @@ export default function DeleteAccountPage() {
 
         {state.step === 'final-confirm' && (
           <>
-            <p className="text-red-600 font-medium">{t('finalWarning')}</p>
+            <p className="font-medium text-red-600">{t('finalWarning')}</p>
             <div className="flex gap-3">
               <button
                 onClick={() => executeDelete(false)}
