@@ -3,6 +3,8 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'referee_obligation.freezed.dart';
 part 'referee_obligation.g.dart';
 
+// ignore_for_file: invalid_annotation_target
+
 @freezed
 abstract class RefereeObligation with _$RefereeObligation {
   const factory RefereeObligation({

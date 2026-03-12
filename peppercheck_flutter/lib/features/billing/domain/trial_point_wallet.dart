@@ -3,6 +3,8 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'trial_point_wallet.freezed.dart';
 part 'trial_point_wallet.g.dart';
 
+// ignore_for_file: invalid_annotation_target
+
 @freezed
 abstract class TrialPointWallet with _$TrialPointWallet {
   const factory TrialPointWallet({
