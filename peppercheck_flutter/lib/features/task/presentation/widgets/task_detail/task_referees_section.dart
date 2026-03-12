@@ -137,7 +137,8 @@ class _TaskRefereesSectionState extends ConsumerState<TaskRefereesSection> {
                           style:
                               const TextStyle(color: AppColors.textMuted),
                         ),
-                        if (widget.task.refereeRequests[i].isObligation)
+                        if (widget.task.refereeRequests[i].isObligation &&
+                            _isCurrentUserMatchedReferee(widget.task.refereeRequests[i]))
                           Padding(
                             padding: const EdgeInsets.only(top: 4),
                             child: Text(
