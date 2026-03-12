@@ -159,6 +159,18 @@ async function handleSubscriptionChange(
     console.error('Failed to upsert user_subscription:', error)
     throw error
   }
+
+  // Deactivate trial points on subscription start
+  // Best-effort: subscription activation is primary, trial deactivation can be retried
+  const { error: trialError } = await supabaseAdmin.rpc('deactivate_trial_points', {
+    p_user_id: userId,
+  })
+  if (trialError) {
+    // Log but don't throw - subscription activation is more important
+    console.error(`Failed to deactivate trial points for user ${userId}:`, trialError)
+  } else {
+    console.log(`Trial points deactivated for user ${userId}`)
+  }
 }
 
 async function handleInvoicePaymentSucceeded(

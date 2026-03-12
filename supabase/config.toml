@@ -59,6 +59,12 @@ schema_paths = [
   "./schemas/point/tables/point_wallets.sql",
   "./schemas/point/tables/point_ledger.sql",
 
+  # Trial Point (enums must precede matching/tables/task_referee_requests.sql)
+  "./schemas/trial_point/tables/enums.sql",
+  "./schemas/trial_point/tables/trial_point_config.sql",
+  "./schemas/trial_point/tables/trial_point_wallets.sql",
+  "./schemas/trial_point/tables/trial_point_ledger.sql",
+
   # Reward
   "./schemas/reward/tables/reward_wallets.sql",
   "./schemas/reward/tables/reward_ledger.sql",
@@ -79,6 +85,9 @@ schema_paths = [
   "./schemas/matching/tables/referee_available_time_slots.sql",
   "./schemas/matching/tables/task_referee_requests.sql",
   "./schemas/matching/tables/referee_blocked_dates.sql",
+
+  # Trial Point (referee_obligations FK -> task_referee_requests, must come after)
+  "./schemas/trial_point/tables/referee_obligations.sql",
 
   # Judgement (Moved BEFORE Rating due to FK dependency)
   "./schemas/judgement/tables/judgements.sql",
@@ -162,6 +171,15 @@ schema_paths = [
   "./schemas/point/functions/unlock_points.sql",
   "./schemas/point/functions/grant_subscription_points.sql",
 
+  # Trial Point
+  "./schemas/trial_point/functions/lock_trial_points.sql",
+  "./schemas/trial_point/functions/unlock_trial_points.sql",
+  "./schemas/trial_point/functions/consume_trial_points.sql",
+  "./schemas/trial_point/functions/deactivate_trial_points.sql",
+  "./schemas/trial_point/functions/route_consume_points.sql",
+  "./schemas/trial_point/functions/route_unlock_points.sql",
+  "./schemas/trial_point/functions/route_referee_reward.sql",
+
   # Reward
   "./schemas/reward/functions/grant_reward.sql",
   "./schemas/reward/functions/deduct_reward_for_payout.sql",
@@ -205,6 +223,10 @@ schema_paths = [
   # Point
   "./schemas/point/triggers/on_point_wallets_update_set_updated_at.sql",
 
+  # Trial Point
+  "./schemas/trial_point/triggers/on_trial_point_wallets_update_set_updated_at.sql",
+  "./schemas/trial_point/triggers/on_trial_point_config_update_set_updated_at.sql",
+
   # Reward
   "./schemas/reward/triggers/on_reward_wallets_update_set_updated_at.sql",
   "./schemas/reward/triggers/on_reward_payouts_update_set_updated_at.sql",
@@ -245,6 +267,10 @@ schema_paths = [
   "./schemas/subscription/policies/user_subscriptions_policies.sql",
   "./schemas/point/policies/point_wallets_policies.sql",
   "./schemas/point/policies/point_ledger_policies.sql",
+  "./schemas/trial_point/policies/trial_point_wallets_policies.sql",
+  "./schemas/trial_point/policies/trial_point_ledger_policies.sql",
+  "./schemas/trial_point/policies/referee_obligations_policies.sql",
+  "./schemas/trial_point/policies/trial_point_config_policies.sql",
   "./schemas/reward/policies/reward_wallets_policies.sql",
   "./schemas/reward/policies/reward_ledger_policies.sql",
   "./schemas/reward/policies/reward_payouts_policies.sql",

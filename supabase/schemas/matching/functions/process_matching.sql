@@ -12,6 +12,8 @@ DECLARE
     v_least_busy_referees UUID[];
     v_selected_referee UUID;
     v_debug_info JSONB;
+    v_obligation_referees UUID[];
+    v_is_obligation_match BOOLEAN := false;
 BEGIN
     v_debug_info := jsonb_build_object();
 
@@ -142,7 +144,23 @@ BEGIN
                 );
 
                 IF COALESCE(array_length(v_least_busy_referees, 1), 0) > 0 THEN
-                    v_selected_referee := v_least_busy_referees[1 + floor(random() * array_length(v_least_busy_referees, 1))::INTEGER];
+                    -- Check for referees with pending obligations among candidates
+                    SELECT array_agg(ref_id) INTO v_obligation_referees
+                    FROM (
+                        SELECT DISTINCT ro.user_id as ref_id
+                        FROM public.referee_obligations ro
+                        WHERE ro.user_id = ANY(v_least_busy_referees)
+                        AND ro.status = 'pending'
+                    ) obligated;
+
+                    IF COALESCE(array_length(v_obligation_referees, 1), 0) > 0 THEN
+                        v_selected_referee := v_obligation_referees[1 + floor(random() * array_length(v_obligation_referees, 1))::INTEGER];
+                        v_is_obligation_match := true;
+                    ELSE
+                        v_selected_referee := v_least_busy_referees[1 + floor(random() * array_length(v_least_busy_referees, 1))::INTEGER];
+                        v_is_obligation_match := false;
+                    END IF;
+
                     v_matched_referee_id := v_selected_referee;
                     v_debug_info := v_debug_info || jsonb_build_object('selected_referee', v_selected_referee);
                 ELSE
@@ -175,7 +193,8 @@ BEGIN
         SET
             status = 'accepted'::public.referee_request_status,
             matched_referee_id = v_matched_referee_id,
-            responded_at = NOW()
+            responded_at = NOW(),
+            is_obligation = v_is_obligation_match
         WHERE id = p_request_id;
 
         INSERT INTO public.judgements (id, status)

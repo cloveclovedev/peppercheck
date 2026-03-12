@@ -17,6 +17,8 @@ _RefereeRequest _$RefereeRequestFromJson(Map<String, dynamic> json) =>
       respondedAt: json['responded_at'] as String?,
       createdAt: json['created_at'] as String,
       updatedAt: json['updated_at'] as String?,
+      pointSource: json['point_source'] as String?,
+      isObligation: json['is_obligation'] as bool? ?? false,
       judgement: json['judgement'] == null
           ? null
           : Judgement.fromJson(json['judgement'] as Map<String, dynamic>),
@@ -36,6 +38,8 @@ Map<String, dynamic> _$RefereeRequestToJson(_RefereeRequest instance) =>
       'responded_at': instance.respondedAt,
       'created_at': instance.createdAt,
       'updated_at': instance.updatedAt,
+      'point_source': instance.pointSource,
+      'is_obligation': instance.isObligation,
       'judgement': instance.judgement,
       'referee': instance.referee,
     };

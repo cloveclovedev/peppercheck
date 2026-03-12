@@ -149,6 +149,21 @@ class TranslationsBillingJa {
 
 	/// ja: '未加入'
 	String get noPlan => '未加入';
+
+	/// ja: 'お試し'
+	String get trialSectionTitle => 'お試し';
+
+	/// ja: 'お試しポイント: 残り$count pt'
+	String trialPoints({required Object count}) => 'お試しポイント: 残り${count} pt';
+
+	/// ja: '無料レフェリー義務: 残り$count 件'
+	String pendingObligations({required Object count}) => '無料レフェリー義務: 残り${count} 件';
+
+	/// ja: 'お試しポイントを使用します。タスク完了後に無料レフェリー義務が発生します。'
+	String get trialPointNotice => 'お試しポイントを使用します。タスク完了後に無料レフェリー義務が発生します。';
+
+	/// ja: 'お試し義務によるレフェリーです。リワードポイントは付与されません。'
+	String get obligationRefereeNotice => 'お試し義務によるレフェリーです。リワードポイントは付与されません。';
 }
 
 // Path: common
@@ -903,6 +918,11 @@ extension on Translations {
 			'billing.plans.standard' => 'スタンダードプラン',
 			'billing.plans.premium' => 'プレミアムプラン',
 			'billing.noPlan' => '未加入',
+			'billing.trialSectionTitle' => 'お試し',
+			'billing.trialPoints' => ({required Object count}) => 'お試しポイント: 残り${count} pt',
+			'billing.pendingObligations' => ({required Object count}) => '無料レフェリー義務: 残り${count} 件',
+			'billing.trialPointNotice' => 'お試しポイントを使用します。タスク完了後に無料レフェリー義務が発生します。',
+			'billing.obligationRefereeNotice' => 'お試し義務によるレフェリーです。リワードポイントは付与されません。',
 			'common.cancel' => 'キャンセル',
 			'common.confirm' => '確認',
 			'common.save' => '保存',

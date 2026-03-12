@@ -10,7 +10,9 @@ CREATE TABLE IF NOT EXISTS public.task_referee_requests (
     matched_referee_id uuid,
     responded_at timestamp with time zone,
     created_at timestamp with time zone DEFAULT now(),
-    updated_at timestamp with time zone DEFAULT now()
+    updated_at timestamp with time zone DEFAULT now(),
+    point_source public.point_source_type NOT NULL DEFAULT 'regular'::public.point_source_type,
+    is_obligation boolean NOT NULL DEFAULT false
 );
 
 ALTER TABLE public.task_referee_requests OWNER TO postgres;
@@ -30,6 +32,8 @@ COMMENT ON COLUMN public.task_referee_requests.preferred_referee_id IS 'Specific
 COMMENT ON COLUMN public.task_referee_requests.status IS 'Request status: pending → matched → accepted/declined/expired → payment_processing → closed';
 COMMENT ON COLUMN public.task_referee_requests.matched_referee_id IS 'Referee assigned by matching algorithm';
 COMMENT ON COLUMN public.task_referee_requests.responded_at IS 'Timestamp when referee accepted or declined the request';
+COMMENT ON COLUMN public.task_referee_requests.point_source IS 'Which point wallet funded this request: regular (subscription points) or trial (trial points). Set at lock time, used at settlement to route consume/unlock.';
+COMMENT ON COLUMN public.task_referee_requests.is_obligation IS 'Whether the matched referee was assigned via obligation fulfillment. Set at matching time, used at settlement to skip reward grant.';
 
 
 ALTER TABLE ONLY public.task_referee_requests

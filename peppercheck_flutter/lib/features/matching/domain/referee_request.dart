@@ -20,6 +20,9 @@ abstract class RefereeRequest with _$RefereeRequest {
     @JsonKey(name: 'created_at') required String createdAt,
     @JsonKey(name: 'updated_at') String? updatedAt,
 
+    @JsonKey(name: 'point_source') String? pointSource,
+    @JsonKey(name: 'is_obligation') @Default(false) bool isObligation,
+
     // Aggregated fields
     Judgement? judgement,
     Profile? referee,

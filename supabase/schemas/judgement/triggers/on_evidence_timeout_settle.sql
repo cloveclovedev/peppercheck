@@ -27,16 +27,17 @@ BEGIN
     v_cost := public.get_point_for_matching_strategy(v_matching_strategy);
 
     -- Settle: consume locked points from tasker
-    PERFORM public.consume_points(
+    PERFORM public.route_consume_points(
+        NEW.id,
         v_tasker_id,
         v_cost,
-        'matching_settled'::public.point_reason,
         'Evidence timeout (judgement ' || NEW.id || ')',
         NEW.id
     );
 
     -- Grant reward to referee
-    PERFORM public.grant_reward(
+    PERFORM public.route_referee_reward(
+        NEW.id,
         v_referee_id,
         v_cost,
         'evidence_timeout'::public.reward_reason,

@@ -33,16 +33,17 @@ BEGIN
             v_cost := public.get_point_for_matching_strategy(v_rec.matching_strategy);
 
             -- Consume locked points from tasker
-            PERFORM public.consume_points(
+            PERFORM public.route_consume_points(
+                v_rec.judgement_id,
                 v_rec.tasker_id,
                 v_cost,
-                'matching_settled'::public.point_reason,
                 'Auto-confirmed (judgement ' || v_rec.judgement_id || ')',
                 v_rec.judgement_id
             );
 
             -- Grant reward to referee
-            PERFORM public.grant_reward(
+            PERFORM public.route_referee_reward(
+                v_rec.judgement_id,
                 v_rec.referee_id,
                 v_cost,
                 'review_completed'::public.reward_reason,
