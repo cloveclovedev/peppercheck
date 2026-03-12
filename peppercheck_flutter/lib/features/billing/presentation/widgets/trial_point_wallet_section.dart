@@ -23,7 +23,7 @@ class TrialPointWalletSection extends ConsumerWidget {
         final availableTrialPoints = trialWallet.balance - trialWallet.locked;
 
         return BaseSection(
-          title: 'お試し',
+          title: t.billing.trialSectionTitle,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

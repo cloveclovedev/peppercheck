@@ -31,6 +31,7 @@
       "premium": "プレミアムプラン"
     },
     "noPlan": "未加入",
+    "trialSectionTitle": "お試し",
     "trialPoints": "お試しポイント: 残り$count pt",
     "pendingObligations": "無料レフェリー義務: 残り$count 件",
     "trialPointNotice": "お試しポイントを使用します。タスク完了後に無料レフェリー義務が発生します。",
