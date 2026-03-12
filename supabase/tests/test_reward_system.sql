@@ -340,6 +340,9 @@ END $$;
 -- Reset state
 UPDATE public.point_wallets SET balance = 5, locked = 0 WHERE user_id = '11111111-1111-1111-1111-111111111111';
 
+-- Deactivate trial wallet so the helper uses regular points
+SELECT public.deactivate_trial_points('11111111-1111-1111-1111-111111111111');
+
 -- Create a fresh task (inserted directly, not via RPC, to isolate the helper)
 INSERT INTO public.tasks (id, tasker_id, title, description, criteria, due_date, status)
 VALUES ('dddddddd-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '11111111-1111-1111-1111-111111111111', 'Lock Test Task', 'Desc', 'Criteria', now() + interval '7 days', 'open');

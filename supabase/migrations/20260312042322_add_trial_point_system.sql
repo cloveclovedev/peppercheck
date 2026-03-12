@@ -620,4 +620,7 @@ CREATE TRIGGER on_trial_point_config_update_set_updated_at BEFORE UPDATE ON publ
 
 CREATE TRIGGER on_trial_point_wallets_update_set_updated_at BEFORE UPDATE ON public.trial_point_wallets FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 
-
+-- DML, not detected by schema diff
+INSERT INTO public.trial_point_config (id, initial_grant_amount)
+VALUES (true, 3)
+ON CONFLICT (id) DO NOTHING;
