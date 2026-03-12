@@ -1,5 +1,7 @@
 import 'package:peppercheck_flutter/features/billing/domain/point_wallet.dart';
+import 'package:peppercheck_flutter/features/billing/domain/referee_obligation.dart';
 import 'package:peppercheck_flutter/features/billing/domain/subscription.dart';
+import 'package:peppercheck_flutter/features/billing/domain/trial_point_wallet.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -55,5 +57,25 @@ class BillingRepository {
     } catch (_) {
       rethrow;
     }
+  }
+
+  Future<TrialPointWallet?> fetchTrialPointWallet() async {
+    final data = await _supabase
+        .from('trial_point_wallets')
+        .select('balance, locked, is_active')
+        .maybeSingle();
+
+    if (data == null) return null;
+    return TrialPointWallet.fromJson(data);
+  }
+
+  Future<List<RefereeObligation>> fetchPendingObligations() async {
+    final data = await _supabase
+        .from('referee_obligations')
+        .select('id, status, source_request_id, fulfill_request_id, created_at, fulfilled_at')
+        .eq('status', 'pending')
+        .order('created_at');
+
+    return data.map((e) => RefereeObligation.fromJson(e)).toList();
   }
 }
