@@ -2,7 +2,7 @@
 CREATE TABLE IF NOT EXISTS public.judgement_threads (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     judgement_id uuid NOT NULL,
-    sender_id uuid NOT NULL,
+    sender_id uuid,
     message text NOT NULL,
     created_at timestamp with time zone DEFAULT now(),
     updated_at timestamp with time zone DEFAULT now()

@@ -7,7 +7,7 @@ CREATE TYPE public.reward_payout_status AS ENUM (
 
 CREATE TABLE IF NOT EXISTS public.reward_payouts (
     id uuid NOT NULL DEFAULT gen_random_uuid(),
-    user_id uuid NOT NULL,
+    user_id uuid,
     points_amount integer NOT NULL,                           -- Points being paid out
     currency text NOT NULL,                                   -- 'JPY'
     currency_amount integer NOT NULL,                         -- Total payout in minor units (matches Stripe amount convention)
@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS public.reward_payouts (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     CONSTRAINT reward_payouts_pkey PRIMARY KEY (id),
-    CONSTRAINT reward_payouts_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+    CONSTRAINT reward_payouts_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE SET NULL
 );
 
 ALTER TABLE public.reward_payouts OWNER TO postgres;

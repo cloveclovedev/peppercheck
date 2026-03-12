@@ -31,7 +31,7 @@ ALTER TABLE ONLY public.rating_histories
     ADD CONSTRAINT fk_rating_histories_judgement_id FOREIGN KEY (judgement_id) REFERENCES public.judgements(id);
 
 ALTER TABLE ONLY public.rating_histories
-    ADD CONSTRAINT fk_rating_histories_rater_id FOREIGN KEY (rater_id) REFERENCES public.profiles(id);
+    ADD CONSTRAINT fk_rating_histories_rater_id FOREIGN KEY (rater_id) REFERENCES public.profiles(id) ON DELETE SET NULL;
 
 ALTER TABLE ONLY public.rating_histories
     ADD CONSTRAINT fk_rating_histories_ratee_id FOREIGN KEY (ratee_id) REFERENCES public.profiles(id) ON DELETE SET NULL;

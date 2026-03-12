@@ -188,6 +188,9 @@ schema_paths = [
   # Notification
   "./schemas/notification/functions/notify_event.sql",
 
+  # Account
+  "./schemas/account/functions/check_account_deletable.sql",
+
 # triggers
   "./schemas/auth/triggers/on_auth_user_created.sql",
   
@@ -590,7 +593,7 @@ entrypoint = "./functions/payout-setup/index.ts"
 
 [functions.create-stripe-checkout]
 enabled = true
-verify_jwt = true
+verify_jwt = false
 import_map = "./functions/create-stripe-checkout/deno.json"
 # Uncomment to specify a custom file path to the entrypoint.
 # Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx

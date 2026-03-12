@@ -8,7 +8,7 @@ CREATE TYPE public.task_status AS ENUM (
 -- Table: tasks
 CREATE TABLE IF NOT EXISTS public.tasks (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
-    tasker_id uuid NOT NULL,
+    tasker_id uuid,
     title text NOT NULL,
     description text,
     criteria text,
