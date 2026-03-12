@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:go_router/go_router.dart';
+import 'package:peppercheck_flutter/app/theme/app_colors.dart';
+import 'package:peppercheck_flutter/features/billing/data/billing_providers.dart';
 import 'package:peppercheck_flutter/features/task/domain/task.dart';
 import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
 import 'package:peppercheck_flutter/common_widgets/app_background.dart';
@@ -74,6 +76,7 @@ class _TaskCreationScreenState extends ConsumerState<TaskCreationScreen> {
                       selectedStrategies: state.request.matchingStrategies,
                       onStrategiesChange: controller.updateMatchingStrategies,
                     ),
+                    if (!isEditing) const _TrialPointNotice(),
                   ],
                   const SizedBox(height: AppSizes.buttonGap),
                   PrimaryActionButton(
@@ -104,6 +107,61 @@ class _TaskCreationScreenState extends ConsumerState<TaskCreationScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _TrialPointNotice extends ConsumerWidget {
+  const _TrialPointNotice();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final trialWalletAsync = ref.watch(trialPointWalletProvider);
+
+    return trialWalletAsync.when(
+      data: (trialWallet) {
+        if (trialWallet == null || !trialWallet.isActive) {
+          return const SizedBox.shrink();
+        }
+        return Padding(
+          padding: const EdgeInsets.only(top: AppSizes.spacingSmall),
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSizes.spacingMedium,
+              vertical: AppSizes.spacingSmall,
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.accentGreenLight.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
+              border: Border.all(
+                color: AppColors.accentGreen.withValues(alpha: 0.5),
+              ),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(
+                  Icons.info_outline,
+                  color: AppColors.accentGreen,
+                  size: 18,
+                ),
+                const SizedBox(width: AppSizes.spacingSmall),
+                Expanded(
+                  child: Text(
+                    t.billing.trialPointNotice,
+                    style: const TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
     );
   }
 }

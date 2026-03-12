@@ -137,6 +137,17 @@ class _TaskRefereesSectionState extends ConsumerState<TaskRefereesSection> {
                           style:
                               const TextStyle(color: AppColors.textMuted),
                         ),
+                        if (widget.task.refereeRequests[i].isObligation)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text(
+                              t.billing.obligationRefereeNotice,
+                              style: const TextStyle(
+                                color: AppColors.accentYellow,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ),
