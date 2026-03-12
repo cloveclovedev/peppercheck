@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
           error: "not_deletable",
           reasons: checkResult.reasons,
         }),
-        { status: 409, headers: jsonHeaders },
+        { status: 200, headers: jsonHeaders },
       )
     }
 
@@ -117,7 +117,7 @@ Deno.serve(async (req) => {
               reward_balance: wallet.balance,
               message: "No active Connect account for payout",
             }),
-            { status: 500, headers: jsonHeaders },
+            { status: 200, headers: jsonHeaders },
           )
         }
 
@@ -191,7 +191,7 @@ Deno.serve(async (req) => {
               reward_balance: wallet.balance,
               message,
             }),
-            { status: 500, headers: jsonHeaders },
+            { status: 200, headers: jsonHeaders },
           )
         }
       }
