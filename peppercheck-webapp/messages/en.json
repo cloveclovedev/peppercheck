@@ -221,5 +221,17 @@
     "blocked": "Cannot delete account: you have in-progress tasks or referee requests. Please complete or cancel them first.",
     "payoutFailed": "Reward payout of ¥{amount} failed. Would you like to forfeit unpaid rewards and proceed with deletion?",
     "error": "An error occurred. Please try again."
+  },
+  "Tokushoho": {
+    "title": "Specified Commercial Transactions Act Disclosure",
+    "seller": { "label": "Seller", "value": "CloveClove" },
+    "representative": { "label": "Representative", "value": "Makoto Kuri" },
+    "address": { "label": "Address", "value": "Available upon request" },
+    "contact": { "label": "Contact", "value": "Available on this page" },
+    "price": { "label": "Service Price", "value": "See pricing page for details" },
+    "additionalFees": { "label": "Additional Fees", "value": "Internet connection fees and other communication charges are borne by the customer" },
+    "payment": { "label": "Payment Method", "value": "Credit card (via Stripe)" },
+    "delivery": { "label": "Service Delivery", "value": "Available immediately after subscription purchase" },
+    "cancellation": { "label": "Cancellation & Refunds", "value": "See refund & cancellation policy for details" }
   }
 }
