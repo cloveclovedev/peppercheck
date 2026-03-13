@@ -154,5 +154,21 @@
       "body": "本プライバシーポリシーまたは当方のデータ取り扱いについてご質問がある場合は、以下までご連絡ください。",
       "email": "hi@cloveclove.dev"
     }
+  },
+  "AccountDelete": {
+    "title": "アカウントの削除",
+    "description": "以下のデータが削除されます：",
+    "deletedItems": "プロフィール情報、ポイント残高、サブスクリプション、通知設定",
+    "anonymizedLabel": "以下のデータは匿名化されて保持されます：",
+    "anonymizedItems": "タスク履歴、評価履歴",
+    "retainedLabel": "エビデンスファイルは一定期間後に自動削除されます。",
+    "iapNotice": "サブスクリプションをご利用の場合は、Google PlayまたはApp Storeの設定から別途キャンセルしてください。",
+    "finalWarning": "この操作は取り消せません",
+    "deleteButton": "削除",
+    "cancelButton": "キャンセル",
+    "deletedMessage": "アカウントが削除されました。",
+    "blocked": "進行中のタスクまたはレフェリーリクエストがあるため、アカウントを削除できません。先にタスクを完了またはキャンセルしてください。",
+    "payoutFailed": "未払いの報酬 ¥{amount} を受け取れませんでした。報酬を放棄してアカウントを削除しますか？",
+    "error": "エラーが発生しました。もう一度お試しください。"
   }
 }

@@ -37,10 +37,10 @@ COMMENT ON COLUMN public.task_referee_requests.is_obligation IS 'Whether the mat
 
 
 ALTER TABLE ONLY public.task_referee_requests
-    ADD CONSTRAINT task_referee_requests_matched_referee_id_fkey FOREIGN KEY (matched_referee_id) REFERENCES public.profiles(id);
+    ADD CONSTRAINT task_referee_requests_matched_referee_id_fkey FOREIGN KEY (matched_referee_id) REFERENCES public.profiles(id) ON DELETE SET NULL;
 
 ALTER TABLE ONLY public.task_referee_requests
-    ADD CONSTRAINT task_referee_requests_preferred_referee_id_fkey FOREIGN KEY (preferred_referee_id) REFERENCES public.profiles(id);
+    ADD CONSTRAINT task_referee_requests_preferred_referee_id_fkey FOREIGN KEY (preferred_referee_id) REFERENCES public.profiles(id) ON DELETE SET NULL;
 
 ALTER TABLE ONLY public.task_referee_requests
     ADD CONSTRAINT task_referee_requests_task_id_fkey FOREIGN KEY (task_id) REFERENCES public.tasks(id) ON DELETE CASCADE;
