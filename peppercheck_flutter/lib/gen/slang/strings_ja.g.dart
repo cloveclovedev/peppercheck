@@ -774,8 +774,23 @@ class TranslationsAccountActionsJa {
 	/// ja: 'アカウントの削除'
 	String get confirmTitle => 'アカウントの削除';
 
-	/// ja: '以下のデータが削除されます： ・プロフィール情報 ・ポイント残高 ・サブスクリプション ・通知設定 以下のデータは匿名化されて保持されます： ・タスク履歴 ・評価履歴 エビデンスファイルは一定期間後に自動削除されます。 サブスクリプションをご利用の場合は、ストア（Google Play / App Store）側で別途キャンセルしてください。'
-	String get confirmDescription => '以下のデータが削除されます：\n\n・プロフィール情報\n・ポイント残高\n・サブスクリプション\n・通知設定\n\n以下のデータは匿名化されて保持されます：\n・タスク履歴\n・評価履歴\n\nエビデンスファイルは一定期間後に自動削除されます。\n\nサブスクリプションをご利用の場合は、ストア（Google Play / App Store）側で別途キャンセルしてください。';
+	/// ja: '削除されるデータ'
+	String get confirmDeletedLabel => '削除されるデータ';
+
+	/// ja: 'プロフィール、ポイント残高、サブスクリプション、通知設定'
+	String get confirmDeletedItems => 'プロフィール、ポイント残高、サブスクリプション、通知設定';
+
+	/// ja: '匿名化して保持されるデータ'
+	String get confirmAnonymizedLabel => '匿名化して保持されるデータ';
+
+	/// ja: 'タスク履歴、評価履歴'
+	String get confirmAnonymizedItems => 'タスク履歴、評価履歴';
+
+	/// ja: 'エビデンスファイルは一定期間後に自動削除されます。'
+	String get confirmRetainedNote => 'エビデンスファイルは一定期間後に自動削除されます。';
+
+	/// ja: 'サブスクリプションをご利用の場合はストア側で別途キャンセルしてください。'
+	String get confirmIapNotice => 'サブスクリプションをご利用の場合はストア側で別途キャンセルしてください。';
 
 	/// ja: 'この操作は取り消せません'
 	String get finalConfirmDescription => 'この操作は取り消せません';
@@ -1153,7 +1168,12 @@ extension on Translations {
 			'account.actions.deleteBlockedOpenTasks' => '進行中のタスクがあります',
 			'account.actions.deleteBlockedActiveReferee' => 'アクティブなレフェリーリクエストがあります',
 			'account.actions.confirmTitle' => 'アカウントの削除',
-			'account.actions.confirmDescription' => '以下のデータが削除されます：\n\n・プロフィール情報\n・ポイント残高\n・サブスクリプション\n・通知設定\n\n以下のデータは匿名化されて保持されます：\n・タスク履歴\n・評価履歴\n\nエビデンスファイルは一定期間後に自動削除されます。\n\nサブスクリプションをご利用の場合は、ストア（Google Play / App Store）側で別途キャンセルしてください。',
+			'account.actions.confirmDeletedLabel' => '削除されるデータ',
+			'account.actions.confirmDeletedItems' => 'プロフィール、ポイント残高、サブスクリプション、通知設定',
+			'account.actions.confirmAnonymizedLabel' => '匿名化して保持されるデータ',
+			'account.actions.confirmAnonymizedItems' => 'タスク履歴、評価履歴',
+			'account.actions.confirmRetainedNote' => 'エビデンスファイルは一定期間後に自動削除されます。',
+			'account.actions.confirmIapNotice' => 'サブスクリプションをご利用の場合はストア側で別途キャンセルしてください。',
 			'account.actions.finalConfirmDescription' => 'この操作は取り消せません',
 			'account.actions.deleteButton' => '削除',
 			'account.actions.cancelButton' => 'キャンセル',
