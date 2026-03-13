@@ -1,7 +1,22 @@
 {
   "HomePage": {
     "title": "Peer Referee Platform<br></br>for Tasks",
-    "placeholder": "(Content placeholder)"
+    "subtitle": "Get your tasks reviewed by real people. Stay accountable, improve quality, and build better habits.",
+    "features": {
+      "create": {
+        "heading": "Create Tasks",
+        "body": "Define your tasks with clear criteria and deadlines."
+      },
+      "review": {
+        "heading": "Peer Review",
+        "body": "Get matched with a referee who reviews your evidence and provides feedback."
+      },
+      "reward": {
+        "heading": "Earn Rewards",
+        "body": "Serve as a referee for others and earn reward points redeemable for payouts."
+      }
+    },
+    "cta": "View Plans"
   },
   "Header": {
     "login": "Login"
