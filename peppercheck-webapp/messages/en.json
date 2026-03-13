@@ -222,6 +222,27 @@
     "payoutFailed": "Reward payout of ¥{amount} failed. Would you like to forfeit unpaid rewards and proceed with deletion?",
     "error": "An error occurred. Please try again."
   },
+  "Refund": {
+    "title": "Refund & Cancellation Policy",
+    "effectiveDate": "Effective date: March 12, 2026",
+    "cancellation": {
+      "heading": "1. How to Cancel",
+      "body": "You may cancel your subscription at any time through the app settings or via the Stripe Customer Portal. Cancellation takes effect at the end of the current billing period — you will continue to have access until then."
+    },
+    "refund": {
+      "heading": "2. Refund Policy",
+      "body": "We do not offer prorated refunds for unused portions of a billing period. Once a billing cycle has begun, the charge for that period is non-refundable."
+    },
+    "exceptions": {
+      "heading": "3. Exceptions",
+      "body": "Refunds may be considered on a case-by-case basis in the event of service errors, duplicate charges, or other exceptional circumstances. Please contact us to discuss your situation."
+    },
+    "contact": {
+      "heading": "4. Contact",
+      "body": "For refund inquiries or cancellation assistance, please contact us at:",
+      "email": "hi@cloveclove.dev"
+    }
+  },
   "Tokushoho": {
     "title": "Specified Commercial Transactions Act Disclosure",
     "seller": { "label": "Seller", "value": "CloveClove" },
