@@ -1,3 +1,5 @@
+'use client'
+
 import { Link } from '@/i18n/routing'
 import { useTranslations } from 'next-intl'
 
@@ -5,14 +7,20 @@ export function Footer() {
   const t = useTranslations('Footer')
   return (
     <footer className="relative z-50 w-full border-t border-[var(--color-text)] bg-[var(--color-background-light)] py-12 text-sm font-semibold tracking-wide">
-      <div className="mx-auto flex max-w-[var(--max-content-width)] flex-col items-start justify-between gap-6 px-6 md:flex-row md:items-center">
-        {/* Left: Terms & Privacy */}
+      <div className="mx-auto flex max-w-[var(--max-content-width)] flex-col items-start justify-between gap-6 px-6 md:flex-row md:items-start">
+        {/* Left: Legal links */}
         <div className="flex flex-col gap-2">
-          <Link href="#" className="decoration-2 hover:underline">
+          <Link href="/legal/terms" className="decoration-2 hover:underline">
             {t('terms')}
           </Link>
-          <Link href="/privacy" className="decoration-2 hover:underline">
+          <Link href="/legal/privacy" className="decoration-2 hover:underline">
             {t('privacy')}
+          </Link>
+          <Link href="/legal/tokushoho" className="decoration-2 hover:underline">
+            {t('tokushoho')}
+          </Link>
+          <Link href="/legal/refund" className="decoration-2 hover:underline">
+            {t('refund')}
           </Link>
         </div>
 
@@ -24,7 +32,6 @@ export function Footer() {
             rel="noopener noreferrer"
             className="hover:opacity-80"
           >
-            {/* Simple X Logo SVG */}
             <svg
               viewBox="0 0 24 24"
               aria-hidden="true"

@@ -1,5 +1,6 @@
 import { Header } from '@/components/Header'
 import { Footer } from '@/components/Footer'
+import { ObfuscatedEmail } from '@/components/ObfuscatedEmail'
 import { getTranslations } from 'next-intl/server'
 import { createGenerateMetadata } from '@/lib/metadata'
 
@@ -172,12 +173,7 @@ export default async function PrivacyPolicyPage() {
             </h2>
             <p className="mt-3 text-[var(--color-text)]">{t('contact.body')}</p>
             <p className="mt-2 font-semibold text-[var(--color-heading)]">
-              <a
-                href={`mailto:${t('contact.email')}`}
-                className="underline decoration-2"
-              >
-                {t('contact.email')}
-              </a>
+              <ObfuscatedEmail />
             </p>
           </section>
         </article>
