@@ -16,7 +16,10 @@ export function Footer() {
           <Link href="/legal/privacy" className="decoration-2 hover:underline">
             {t('privacy')}
           </Link>
-          <Link href="/legal/tokushoho" className="decoration-2 hover:underline">
+          <Link
+            href="/legal/tokushoho"
+            className="decoration-2 hover:underline"
+          >
             {t('tokushoho')}
           </Link>
           <Link href="/legal/refund" className="decoration-2 hover:underline">

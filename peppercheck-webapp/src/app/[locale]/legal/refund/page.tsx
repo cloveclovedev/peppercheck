@@ -37,9 +37,7 @@ export default async function RefundPage() {
             <h2 className="text-xl font-bold text-[var(--color-heading)]">
               {t('refund.heading')}
             </h2>
-            <p className="mt-3 text-[var(--color-text)]">
-              {t('refund.body')}
-            </p>
+            <p className="mt-3 text-[var(--color-text)]">{t('refund.body')}</p>
           </section>
 
           {/* 3. Exceptions */}
@@ -57,9 +55,7 @@ export default async function RefundPage() {
             <h2 className="text-xl font-bold text-[var(--color-heading)]">
               {t('contact.heading')}
             </h2>
-            <p className="mt-3 text-[var(--color-text)]">
-              {t('contact.body')}
-            </p>
+            <p className="mt-3 text-[var(--color-text)]">{t('contact.body')}</p>
             <p className="mt-2 font-semibold text-[var(--color-heading)]">
               <ObfuscatedEmail />
             </p>

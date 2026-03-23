@@ -253,12 +253,30 @@
   "Tokushoho": {
     "title": "特定商取引法に基づく表記",
     "seller": { "label": "販売業者", "value": "CloveClove" },
-    "address": { "label": "所在地", "value": "請求があった場合に遅滞なく開示いたします" },
+    "address": {
+      "label": "所在地",
+      "value": "請求があった場合に遅滞なく開示いたします"
+    },
     "contact": { "label": "連絡先" },
-    "price": { "label": "販売価格", "value": "料金プランページをご確認ください" },
-    "additionalFees": { "label": "商品代金以外の必要料金", "value": "インターネット接続料金その他通信に要する費用はお客様のご負担となります" },
-    "payment": { "label": "支払方法", "value": "クレジットカード（Stripe経由）、アプリ内課金（Google Play / App Store）" },
-    "delivery": { "label": "提供時期", "value": "サブスクリプション購入後すぐにご利用いただけます" },
-    "cancellation": { "label": "解約・返金", "value": "返金・キャンセルポリシーをご確認ください" }
+    "price": {
+      "label": "販売価格",
+      "value": "料金プランページをご確認ください"
+    },
+    "additionalFees": {
+      "label": "商品代金以外の必要料金",
+      "value": "インターネット接続料金その他通信に要する費用はお客様のご負担となります"
+    },
+    "payment": {
+      "label": "支払方法",
+      "value": "クレジットカード（Stripe経由）、アプリ内課金（Google Play / App Store）"
+    },
+    "delivery": {
+      "label": "提供時期",
+      "value": "サブスクリプション購入後すぐにご利用いただけます"
+    },
+    "cancellation": {
+      "label": "解約・返金",
+      "value": "返金・キャンセルポリシーをご確認ください"
+    }
   }
 }

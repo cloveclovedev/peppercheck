@@ -42,9 +42,7 @@ export default async function TermsPage() {
             <h2 className="text-xl font-bold text-[var(--color-heading)]">
               {t('service.heading')}
             </h2>
-            <p className="mt-3 text-[var(--color-text)]">
-              {t('service.body')}
-            </p>
+            <p className="mt-3 text-[var(--color-text)]">{t('service.body')}</p>
           </section>
 
           {/* 3. Subscription Terms */}
@@ -103,11 +101,8 @@ export default async function TermsPage() {
             <h2 className="text-xl font-bold text-[var(--color-heading)]">
               {t('changes.heading')}
             </h2>
-            <p className="mt-3 text-[var(--color-text)]">
-              {t('changes.body')}
-            </p>
+            <p className="mt-3 text-[var(--color-text)]">{t('changes.body')}</p>
           </section>
-
         </article>
       </main>
 

@@ -255,10 +255,25 @@
     "seller": { "label": "Seller", "value": "CloveClove" },
     "address": { "label": "Address", "value": "Available upon request" },
     "contact": { "label": "Contact" },
-    "price": { "label": "Service Price", "value": "See pricing page for details" },
-    "additionalFees": { "label": "Additional Fees", "value": "Internet connection fees and other communication charges are borne by the customer" },
-    "payment": { "label": "Payment Method", "value": "Credit card (via Stripe), In-app purchase (Google Play / App Store)" },
-    "delivery": { "label": "Service Delivery", "value": "Available immediately after subscription purchase" },
-    "cancellation": { "label": "Cancellation & Refunds", "value": "See refund & cancellation policy for details" }
+    "price": {
+      "label": "Service Price",
+      "value": "See pricing page for details"
+    },
+    "additionalFees": {
+      "label": "Additional Fees",
+      "value": "Internet connection fees and other communication charges are borne by the customer"
+    },
+    "payment": {
+      "label": "Payment Method",
+      "value": "Credit card (via Stripe), In-app purchase (Google Play / App Store)"
+    },
+    "delivery": {
+      "label": "Service Delivery",
+      "value": "Available immediately after subscription purchase"
+    },
+    "cancellation": {
+      "label": "Cancellation & Refunds",
+      "value": "See refund & cancellation policy for details"
+    }
   }
 }
