@@ -15,3 +15,9 @@ repos:
         types_or: [ts, tsx, js, jsx]
         pass_filenames: false
         files: ^supabase/functions/
+      - id: no-stripe-live-keys
+        name: Detect Stripe live keys
+        entry: bash -c 'grep -rn "sk_live_\|rk_live_\|whsec_live_" "$@" && echo "ERROR: Stripe live key detected!" && exit 1 || exit 0'
+        language: system
+        types_or: [ts, tsx, js, jsx, dart, sql, toml, json, yaml]
+        exclude: \.pre-commit-config\.yaml$
