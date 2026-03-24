@@ -11,7 +11,7 @@ const stripeApiKey = Deno.env.get("STRIPE_SECRET_KEY") ?? ""
 const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? ""
 const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? ""
 const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-const stripeApiVersion = "2024-11-20.acacia"
+const stripeApiVersion = "2025-11-17.clover"
 
 if (!stripeApiKey) {
   console.error("Missing STRIPE_SECRET_KEY")
