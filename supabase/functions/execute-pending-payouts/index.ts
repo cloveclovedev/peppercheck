@@ -8,7 +8,7 @@ const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
 const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY") ?? ""
 
 const stripe = new Stripe(stripeSecretKey, {
-  apiVersion: "2024-11-20.acacia",
+  apiVersion: "2025-11-17.clover",
 })
 
 const jsonHeaders = { "Content-Type": "application/json" }

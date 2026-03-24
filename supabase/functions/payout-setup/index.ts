@@ -26,7 +26,7 @@ if (!stripeOnboardingReturnUrl || !stripeOnboardingRefreshUrl) {
 }
 
 const stripe = new Stripe(stripeSecretKey, {
-  apiVersion: "2024-11-20.acacia",
+  apiVersion: "2025-11-17.clover",
 })
 
 const jsonHeaders = { "Content-Type": "application/json" }
