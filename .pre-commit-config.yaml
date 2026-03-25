@@ -5,19 +5,23 @@ repos:
         name: Deno fmt (Edge Functions)
         entry: deno fmt --config supabase/deno.jsonc --check
         language: system
-        types_or: [ts, tsx, js, jsx]
         pass_filenames: false
-        files: ^supabase/functions/
+        files: ^supabase/functions/.*\.(ts|tsx|js|jsx)$
       - id: deno-lint
         name: Deno lint (Edge Functions)
         entry: deno lint --config supabase/deno.jsonc
         language: system
-        types_or: [ts, tsx, js, jsx]
         pass_filenames: false
-        files: ^supabase/functions/
+        files: ^supabase/functions/.*\.(ts|tsx|js|jsx)$
+      - id: prettier-webapp
+        name: Prettier (Webapp)
+        entry: bash -c 'cd peppercheck-webapp && npx prettier --check .'
+        language: system
+        pass_filenames: false
+        files: ^peppercheck-webapp/
       - id: no-stripe-live-keys
         name: Detect Stripe live keys
-        entry: bash -c 'grep -rn "sk_live_\|rk_live_\|whsec_live_" "$@" && echo "ERROR: Stripe live key detected!" && exit 1 || exit 0'
-        language: system
-        types_or: [ts, tsx, js, jsx, dart, sql, toml, json, yaml]
+        entry: 'sk_live_|rk_live_|whsec_live_'
+        language: pygrep
+        files: \.(ts|tsx|js|jsx|dart|sql|toml|json|yaml)$
         exclude: \.pre-commit-config\.yaml$
