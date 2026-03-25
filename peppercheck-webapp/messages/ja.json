@@ -253,11 +253,19 @@
   "Tokushoho": {
     "title": "特定商取引法に基づく表記",
     "seller": { "label": "販売業者", "value": "CloveClove" },
+    "representative": {
+      "label": "運営責任者",
+      "value": "請求があった場合に遅滞なく開示いたします"
+    },
     "address": {
       "label": "所在地",
       "value": "請求があった場合に遅滞なく開示いたします"
     },
-    "contact": { "label": "連絡先" },
+    "phone": {
+      "label": "電話番号",
+      "value": "請求があった場合に遅滞なく開示いたします"
+    },
+    "contact": { "label": "メールアドレス" },
     "price": {
       "label": "販売価格",
       "value": "料金プランページをご確認ください"
@@ -269,6 +277,10 @@
     "payment": {
       "label": "支払方法",
       "value": "クレジットカード（Stripe経由）、アプリ内課金（Google Play / App Store）"
+    },
+    "paymentPeriod": {
+      "label": "支払時期",
+      "value": "クレジットカードの場合はご注文時に即時課金されます。アプリ内課金の場合は各ストアの規定に準じます。"
     },
     "delivery": {
       "label": "提供時期",
