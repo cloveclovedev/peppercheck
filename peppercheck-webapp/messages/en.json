@@ -257,7 +257,10 @@
       "label": "Head of Operations",
       "value": "Disclosed without delay upon request"
     },
-    "address": { "label": "Address", "value": "Disclosed without delay upon request" },
+    "address": {
+      "label": "Address",
+      "value": "Disclosed without delay upon request"
+    },
     "phone": {
       "label": "Phone Number",
       "value": "Disclosed without delay upon request"
