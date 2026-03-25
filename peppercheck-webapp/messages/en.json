@@ -253,8 +253,19 @@
   "Tokushoho": {
     "title": "Specified Commercial Transactions Act Disclosure",
     "seller": { "label": "Seller", "value": "CloveClove" },
-    "address": { "label": "Address", "value": "Available upon request" },
-    "contact": { "label": "Contact" },
+    "representative": {
+      "label": "Head of Operations",
+      "value": "Disclosed without delay upon request"
+    },
+    "address": {
+      "label": "Address",
+      "value": "Disclosed without delay upon request"
+    },
+    "phone": {
+      "label": "Phone Number",
+      "value": "Disclosed without delay upon request"
+    },
+    "contact": { "label": "Email" },
     "price": {
       "label": "Service Price",
       "value": "See pricing page for details"
@@ -266,6 +277,10 @@
     "payment": {
       "label": "Payment Method",
       "value": "Credit card (via Stripe), In-app purchase (Google Play / App Store)"
+    },
+    "paymentPeriod": {
+      "label": "Payment Period",
+      "value": "Credit card payments are charged immediately at the time of purchase. In-app purchases follow the respective store's billing terms."
     },
     "delivery": {
       "label": "Service Delivery",

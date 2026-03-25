@@ -9,11 +9,14 @@ export const generateMetadata = createGenerateMetadata('Tokushoho')
 
 const ROWS = [
   'seller',
+  'representative',
   'address',
+  'phone',
   'contact',
   'price',
   'additionalFees',
   'payment',
+  'paymentPeriod',
   'delivery',
   'cancellation',
 ] as const
