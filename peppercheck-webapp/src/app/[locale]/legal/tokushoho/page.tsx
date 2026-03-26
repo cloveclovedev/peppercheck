@@ -54,12 +54,15 @@ export default async function TokushohoPage() {
                       {t(`${key}.value`)}
                     </Link>
                   ) : key === 'cancellation' ? (
-                    <Link
-                      href="/legal/refund"
-                      className="underline decoration-2 hover:opacity-80"
-                    >
-                      {t(`${key}.value`)}
-                    </Link>
+                    <div className="space-y-2">
+                      <p className="whitespace-pre-line">{t(`${key}.value`)}</p>
+                      <Link
+                        href="/legal/refund"
+                        className="text-sm underline decoration-2 hover:opacity-80"
+                      >
+                        {t(`${key}.details`)}
+                      </Link>
+                    </div>
                   ) : (
                     t(`${key}.value`)
                   )}
