@@ -5,33 +5,48 @@
   Created via Antigravity
 */
 
-"notification_request_matched_tasker_title" = "Match Found!";
-"notification_request_matched_tasker_body" = "A referee has been found for your task \"%@\".";
-"notification_task_assigned_referee_title" = "New Assignment";
-"notification_task_assigned_referee_body" = "You have been assigned to judge task \"%@\".";
-"notification_request_accepted_title" = "Request Accepted";
-"notification_request_accepted_body" = "Your request has been accepted.";
-"notification_evidence_submitted_referee_title" = "Evidence Submitted";
-"notification_evidence_submitted_referee_body" = "%@ has submitted new evidence.";
-"notification_evidence_updated_referee_title" = "Evidence Updated";
-"notification_evidence_updated_referee_body" = "%@ has updated the evidence.";
-"notification_evidence_resubmitted_referee_title" = "Evidence Resubmitted";
-"notification_evidence_resubmitted_referee_body" = "Evidence for \"%@\" has been resubmitted. Please review again.";
-"notification_evidence_timeout_tasker_title" = "Evidence Timeout";
-"notification_evidence_timeout_tasker_body" = "Your task \"%@\" has timed out due to missing evidence. Points have been consumed.";
-"notification_evidence_timeout_referee_title" = "Reward Earned";
-"notification_evidence_timeout_referee_body" = "You earned a reward for task \"%@\" due to evidence timeout.";
-"notification_review_timeout_tasker_title" = "Review Timeout";
-"notification_review_timeout_tasker_body" = "Your task \"%@\" was not reviewed in time. Points have been returned.";
-"notification_review_timeout_referee_title" = "Review Timeout";
-"notification_review_timeout_referee_body" = "The review deadline for task \"%@\" has passed.";
-"notification_auto_confirm_tasker_title" = "Auto Confirmed";
-"notification_auto_confirm_tasker_body" = "Your task \"%@\" has been automatically confirmed.";
-"notification_auto_confirm_referee_title" = "Review Confirmed";
-"notification_auto_confirm_referee_body" = "Your review for task \"%@\" has been confirmed.";
+/* Matching */
+"notification_request_matched_tasker_title" = "Match found!";
+"notification_request_matched_tasker_body" = "A referee has been found for \"%@\"!";
+"notification_task_assigned_referee_title" = "New task assigned!";
+"notification_task_assigned_referee_body" = "You've been assigned as referee for \"%@\".";
 "notification_matching_reassigned_tasker_title" = "Referee changed";
-"notification_matching_reassigned_tasker_body" = "A new referee has been assigned for '%@'";
+"notification_matching_reassigned_tasker_body" = "A new referee has been assigned to \"%@\".";
 "notification_matching_cancelled_pending_tasker_title" = "Matching cancelled";
-"notification_matching_cancelled_pending_tasker_body" = "The previous referee cancelled. Searching for a new referee for '%@'";
-"notification_matching_expired_refunded_tasker_title" = "Matching expired";
-"notification_matching_expired_refunded_tasker_body" = "No referee found for '%@'. Points have been refunded";
+"notification_matching_cancelled_pending_tasker_body" = "The referee for \"%@\" cancelled. Searching for a new referee.";
+"notification_matching_expired_refunded_tasker_title" = "No referee found";
+"notification_matching_expired_refunded_tasker_body" = "No referee was found for \"%@\". Your points have been refunded.";
+
+/* Evidence */
+"notification_evidence_submitted_referee_title" = "New evidence received!";
+"notification_evidence_submitted_referee_body" = "New evidence has been submitted for \"%@\". Please review it.";
+"notification_evidence_updated_referee_title" = "Evidence updated";
+"notification_evidence_updated_referee_body" = "The evidence for \"%@\" has been updated. Please review it.";
+"notification_evidence_resubmitted_referee_title" = "Evidence resubmitted!";
+"notification_evidence_resubmitted_referee_body" = "Evidence for \"%@\" has been resubmitted. Please review again.";
+"notification_evidence_timeout_tasker_title" = "Evidence deadline passed";
+"notification_evidence_timeout_tasker_body" = "The evidence submission deadline for \"%@\" has passed. Points have been consumed.";
+"notification_evidence_timeout_referee_title" = "Reward earned!";
+"notification_evidence_timeout_referee_body" = "You earned a reward due to the evidence deadline expiring for \"%@\".";
+
+/* Judgement */
+"notification_judgement_approved_tasker_title" = "Congratulations!";
+"notification_judgement_approved_tasker_body" = "\"%@\" has been approved. Great work!";
+"notification_judgement_rejected_tasker_title" = "Evidence returned";
+"notification_judgement_rejected_tasker_body" = "\"%@\" was not approved. Please review the details.";
+"notification_judgement_confirmed_referee_title" = "Judgement confirmed!";
+"notification_judgement_confirmed_referee_body" = "Your judgement for \"%@\" has been confirmed. Thank you!";
+"notification_auto_confirm_tasker_title" = "Judgement auto-confirmed";
+"notification_auto_confirm_tasker_body" = "The judgement for \"%@\" was not confirmed in time and has been automatically confirmed.";
+"notification_auto_confirm_referee_title" = "Judgement confirmed!";
+"notification_auto_confirm_referee_body" = "Your judgement for \"%@\" has been confirmed. Thank you!";
+"notification_review_timeout_tasker_title" = "Not judged in time";
+"notification_review_timeout_tasker_body" = "\"%@\" was not judged in time. Your points have been returned.";
+"notification_review_timeout_referee_title" = "Judgement deadline passed";
+"notification_review_timeout_referee_body" = "The judgement deadline for \"%@\" has passed. No reward will be granted.";
+
+/* Payout */
+"notification_payout_connect_required_referee_title" = "Payout setup required";
+"notification_payout_connect_required_referee_body" = "You have a pending reward. Please set up your payout account to receive it.";
+"notification_payout_failed_referee_title" = "Payout failed";
+"notification_payout_failed_referee_body" = "Your payout could not be processed. Please check your account settings.";

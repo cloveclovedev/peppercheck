@@ -5,13 +5,13 @@ repos:
         name: Deno fmt (Edge Functions)
         entry: deno fmt --config supabase/deno.jsonc --check
         language: system
-        pass_filenames: false
+        pass_filenames: true
         files: ^supabase/functions/.*\.(ts|tsx|js|jsx)$
       - id: deno-lint
         name: Deno lint (Edge Functions)
         entry: deno lint --config supabase/deno.jsonc
         language: system
-        pass_filenames: false
+        pass_filenames: true
         files: ^supabase/functions/.*\.(ts|tsx|js|jsx)$
       - id: prettier-webapp
         name: Prettier (Webapp)

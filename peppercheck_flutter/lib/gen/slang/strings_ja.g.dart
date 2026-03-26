@@ -325,95 +325,119 @@ class TranslationsNotificationJa {
 
 	// Translations
 
-	/// ja: 'エビデンス期限切れ'
-	String get evidence_timeout_tasker_title => 'エビデンス期限切れ';
-
-	/// ja: 'タスク「${taskTitle}」のエビデンス提出期限が過ぎました。ポイントが消費されました。'
-	String evidence_timeout_tasker_body({required Object taskTitle}) => 'タスク「${taskTitle}」のエビデンス提出期限が過ぎました。ポイントが消費されました。';
-
-	/// ja: '報酬獲得'
-	String get evidence_timeout_referee_title => '報酬獲得';
-
-	/// ja: 'タスク「${taskTitle}」のエビデンス期限切れにより報酬を獲得しました。'
-	String evidence_timeout_referee_body({required Object taskTitle}) => 'タスク「${taskTitle}」のエビデンス期限切れにより報酬を獲得しました。';
-
-	/// ja: 'レビュー期限切れ'
-	String get review_timeout_tasker_title => 'レビュー期限切れ';
-
-	/// ja: 'タスク「${taskTitle}」は期間内に評価されませんでした。ポイントが返却されました。'
-	String review_timeout_tasker_body({required Object taskTitle}) => 'タスク「${taskTitle}」は期間内に評価されませんでした。ポイントが返却されました。';
-
-	/// ja: 'レビュー期限切れ'
-	String get review_timeout_referee_title => 'レビュー期限切れ';
-
-	/// ja: 'タスク「${taskTitle}」のレビュー期限が過ぎました。'
-	String review_timeout_referee_body({required Object taskTitle}) => 'タスク「${taskTitle}」のレビュー期限が過ぎました。';
-
 	/// ja: 'マッチング成立！'
 	String get request_matched_tasker_title => 'マッチング成立！';
 
-	/// ja: 'あなたのタスク「${taskTitle}」のレフリーが見つかりました。'
-	String request_matched_tasker_body({required Object taskTitle}) => 'あなたのタスク「${taskTitle}」のレフリーが見つかりました。';
+	/// ja: '「${taskTitle}」のレフリーが見つかりました！'
+	String request_matched_tasker_body({required Object taskTitle}) => '「${taskTitle}」のレフリーが見つかりました！';
 
-	/// ja: '新しい担当タスク'
-	String get task_assigned_referee_title => '新しい担当タスク';
+	/// ja: '新しい担当タスクが届きました！'
+	String get task_assigned_referee_title => '新しい担当タスクが届きました！';
 
-	/// ja: 'タスク「${taskTitle}」の担当レフリーに選ばれました。'
-	String task_assigned_referee_body({required Object taskTitle}) => 'タスク「${taskTitle}」の担当レフリーに選ばれました。';
+	/// ja: '「${taskTitle}」の担当レフリーに選ばれました。'
+	String task_assigned_referee_body({required Object taskTitle}) => '「${taskTitle}」の担当レフリーに選ばれました。';
 
-	/// ja: 'リクエスト承認'
-	String get request_accepted_title => 'リクエスト承認';
+	/// ja: 'レフリーが変更されました'
+	String get matching_reassigned_tasker_title => 'レフリーが変更されました';
 
-	/// ja: 'リクエストが承認されました。'
-	String get request_accepted_body => 'リクエストが承認されました。';
-
-	/// ja: 'エビデンス提出'
-	String get evidence_submitted_referee_title => 'エビデンス提出';
-
-	/// ja: '${taskTitle}さんが新しいエビデンスを提出しました。'
-	String evidence_submitted_referee_body({required Object taskTitle}) => '${taskTitle}さんが新しいエビデンスを提出しました。';
-
-	/// ja: 'エビデンス更新'
-	String get evidence_updated_referee_title => 'エビデンス更新';
-
-	/// ja: '${taskTitle}さんがエビデンスを更新しました。'
-	String evidence_updated_referee_body({required Object taskTitle}) => '${taskTitle}さんがエビデンスを更新しました。';
-
-	/// ja: 'エビデンス再提出'
-	String get evidence_resubmitted_referee_title => 'エビデンス再提出';
-
-	/// ja: '${taskTitle}のエビデンスが再提出されました。再度判定してください。'
-	String evidence_resubmitted_referee_body({required Object taskTitle}) => '${taskTitle}のエビデンスが再提出されました。再度判定してください。';
-
-	/// ja: '自動確認'
-	String get auto_confirm_tasker_title => '自動確認';
-
-	/// ja: 'タスク「${taskTitle}」の評価が自動的に確認されました。'
-	String auto_confirm_tasker_body({required Object taskTitle}) => 'タスク「${taskTitle}」の評価が自動的に確認されました。';
-
-	/// ja: '評価確認'
-	String get auto_confirm_referee_title => '評価確認';
-
-	/// ja: 'タスク「${taskTitle}」の評価が確認されました。'
-	String auto_confirm_referee_body({required Object taskTitle}) => 'タスク「${taskTitle}」の評価が確認されました。';
-
-	/// ja: 'レフェリーが変更されました'
-	String get matching_reassigned_tasker_title => 'レフェリーが変更されました';
-
-	/// ja: '「${taskTitle}」に新しいレフェリーが割り当てられました'
-	String matching_reassigned_tasker_body({required Object taskTitle}) => '「${taskTitle}」に新しいレフェリーが割り当てられました';
+	/// ja: '「${taskTitle}」に新しいレフリーが割り当てられました。'
+	String matching_reassigned_tasker_body({required Object taskTitle}) => '「${taskTitle}」に新しいレフリーが割り当てられました。';
 
 	/// ja: 'マッチングがキャンセルされました'
 	String get matching_cancelled_pending_tasker_title => 'マッチングがキャンセルされました';
 
-	/// ja: 'レフェリーがキャンセルしました。「${taskTitle}」の新しいレフェリーを検索中です'
-	String matching_cancelled_pending_tasker_body({required Object taskTitle}) => 'レフェリーがキャンセルしました。「${taskTitle}」の新しいレフェリーを検索中です';
+	/// ja: '「${taskTitle}」のレフリーがキャンセルしたため、新しいレフリーを探しています。'
+	String matching_cancelled_pending_tasker_body({required Object taskTitle}) => '「${taskTitle}」のレフリーがキャンセルしたため、新しいレフリーを探しています。';
 
-	/// ja: 'マッチング期限切れ'
-	String get matching_expired_refunded_tasker_title => 'マッチング期限切れ';
+	/// ja: 'レフリーが見つかりませんでした'
+	String get matching_expired_refunded_tasker_title => 'レフリーが見つかりませんでした';
 
-	/// ja: '「${taskTitle}」のレフェリーが見つかりませんでした。ポイントが返金されました'
-	String matching_expired_refunded_tasker_body({required Object taskTitle}) => '「${taskTitle}」のレフェリーが見つかりませんでした。ポイントが返金されました';
+	/// ja: '「${taskTitle}」のレフリーが見つかりませんでした。ポイントは返金済みです。'
+	String matching_expired_refunded_tasker_body({required Object taskTitle}) => '「${taskTitle}」のレフリーが見つかりませんでした。ポイントは返金済みです。';
+
+	/// ja: 'エビデンスが届きました！'
+	String get evidence_submitted_referee_title => 'エビデンスが届きました！';
+
+	/// ja: '「${taskTitle}」に新しいエビデンスが提出されました。確認してください。'
+	String evidence_submitted_referee_body({required Object taskTitle}) => '「${taskTitle}」に新しいエビデンスが提出されました。確認してください。';
+
+	/// ja: 'エビデンスが更新されました'
+	String get evidence_updated_referee_title => 'エビデンスが更新されました';
+
+	/// ja: '「${taskTitle}」のエビデンスが更新されました。確認してください。'
+	String evidence_updated_referee_body({required Object taskTitle}) => '「${taskTitle}」のエビデンスが更新されました。確認してください。';
+
+	/// ja: 'エビデンスが再提出されました！'
+	String get evidence_resubmitted_referee_title => 'エビデンスが再提出されました！';
+
+	/// ja: '「${taskTitle}」のエビデンスが再提出されました。再度判定してください。'
+	String evidence_resubmitted_referee_body({required Object taskTitle}) => '「${taskTitle}」のエビデンスが再提出されました。再度判定してください。';
+
+	/// ja: 'エビデンスの提出期限を過ぎました'
+	String get evidence_timeout_tasker_title => 'エビデンスの提出期限を過ぎました';
+
+	/// ja: '「${taskTitle}」のエビデンス提出期限が過ぎたため、ポイントが消費されました。'
+	String evidence_timeout_tasker_body({required Object taskTitle}) => '「${taskTitle}」のエビデンス提出期限が過ぎたため、ポイントが消費されました。';
+
+	/// ja: '報酬を獲得しました！'
+	String get evidence_timeout_referee_title => '報酬を獲得しました！';
+
+	/// ja: '「${taskTitle}」のエビデンス提出期限切れにより、報酬を獲得しました。'
+	String evidence_timeout_referee_body({required Object taskTitle}) => '「${taskTitle}」のエビデンス提出期限切れにより、報酬を獲得しました。';
+
+	/// ja: 'タスク達成おめでとう！'
+	String get judgement_approved_tasker_title => 'タスク達成おめでとう！';
+
+	/// ja: '「${taskTitle}」が承認されました。お疲れさまでした！'
+	String judgement_approved_tasker_body({required Object taskTitle}) => '「${taskTitle}」が承認されました。お疲れさまでした！';
+
+	/// ja: 'エビデンスが差し戻されました'
+	String get judgement_rejected_tasker_title => 'エビデンスが差し戻されました';
+
+	/// ja: '「${taskTitle}」が承認されませんでした。内容を確認してください。'
+	String judgement_rejected_tasker_body({required Object taskTitle}) => '「${taskTitle}」が承認されませんでした。内容を確認してください。';
+
+	/// ja: '判定が確認されました！'
+	String get judgement_confirmed_referee_title => '判定が確認されました！';
+
+	/// ja: '「${taskTitle}」の判定結果が確認されました。ありがとうございました。'
+	String judgement_confirmed_referee_body({required Object taskTitle}) => '「${taskTitle}」の判定結果が確認されました。ありがとうございました。';
+
+	/// ja: '判定が自動確認されました'
+	String get auto_confirm_tasker_title => '判定が自動確認されました';
+
+	/// ja: '「${taskTitle}」の判定結果が期限内に確認されなかったため、自動的に確認されました。'
+	String auto_confirm_tasker_body({required Object taskTitle}) => '「${taskTitle}」の判定結果が期限内に確認されなかったため、自動的に確認されました。';
+
+	/// ja: '判定が確認されました！'
+	String get auto_confirm_referee_title => '判定が確認されました！';
+
+	/// ja: '「${taskTitle}」の判定結果が確認されました。ありがとうございました。'
+	String auto_confirm_referee_body({required Object taskTitle}) => '「${taskTitle}」の判定結果が確認されました。ありがとうございました。';
+
+	/// ja: '期限内に判定されませんでした'
+	String get review_timeout_tasker_title => '期限内に判定されませんでした';
+
+	/// ja: '「${taskTitle}」が期限内に判定されなかったため、ポイントが返却されました。'
+	String review_timeout_tasker_body({required Object taskTitle}) => '「${taskTitle}」が期限内に判定されなかったため、ポイントが返却されました。';
+
+	/// ja: '判定期限を過ぎました'
+	String get review_timeout_referee_title => '判定期限を過ぎました';
+
+	/// ja: '「${taskTitle}」の判定期限が過ぎました。報酬は付与されません。'
+	String review_timeout_referee_body({required Object taskTitle}) => '「${taskTitle}」の判定期限が過ぎました。報酬は付与されません。';
+
+	/// ja: '報酬の受取設定をお願いします'
+	String get payout_connect_required_referee_title => '報酬の受取設定をお願いします';
+
+	/// ja: '報酬が発生しています。受け取るには振込先の設定を完了してください。'
+	String get payout_connect_required_referee_body => '報酬が発生しています。受け取るには振込先の設定を完了してください。';
+
+	/// ja: '報酬振込に失敗しました'
+	String get payout_failed_referee_title => '報酬振込に失敗しました';
+
+	/// ja: '報酬の振込に失敗しました。お手数ですが、アカウント設定をご確認ください。'
+	String get payout_failed_referee_body => '報酬の振込に失敗しました。お手数ですが、アカウント設定をご確認ください。';
 
 	/// ja: 'お知らせ'
 	String get fallback_title => 'お知らせ';
@@ -1130,36 +1154,44 @@ extension on Translations {
 			'matching.referee_blocked_dates.reason_hint' => '理由を入力してください',
 			'matching.referee_blocked_dates.select_date_range' => '日付範囲を選択',
 			'matching.referee_blocked_dates.invalid_date_range' => '終了日は開始日以降である必要があります',
-			'notification.evidence_timeout_tasker_title' => 'エビデンス期限切れ',
-			'notification.evidence_timeout_tasker_body' => ({required Object taskTitle}) => 'タスク「${taskTitle}」のエビデンス提出期限が過ぎました。ポイントが消費されました。',
-			'notification.evidence_timeout_referee_title' => '報酬獲得',
-			'notification.evidence_timeout_referee_body' => ({required Object taskTitle}) => 'タスク「${taskTitle}」のエビデンス期限切れにより報酬を獲得しました。',
-			'notification.review_timeout_tasker_title' => 'レビュー期限切れ',
-			'notification.review_timeout_tasker_body' => ({required Object taskTitle}) => 'タスク「${taskTitle}」は期間内に評価されませんでした。ポイントが返却されました。',
-			'notification.review_timeout_referee_title' => 'レビュー期限切れ',
-			'notification.review_timeout_referee_body' => ({required Object taskTitle}) => 'タスク「${taskTitle}」のレビュー期限が過ぎました。',
 			'notification.request_matched_tasker_title' => 'マッチング成立！',
-			'notification.request_matched_tasker_body' => ({required Object taskTitle}) => 'あなたのタスク「${taskTitle}」のレフリーが見つかりました。',
-			'notification.task_assigned_referee_title' => '新しい担当タスク',
-			'notification.task_assigned_referee_body' => ({required Object taskTitle}) => 'タスク「${taskTitle}」の担当レフリーに選ばれました。',
-			'notification.request_accepted_title' => 'リクエスト承認',
-			'notification.request_accepted_body' => 'リクエストが承認されました。',
-			'notification.evidence_submitted_referee_title' => 'エビデンス提出',
-			'notification.evidence_submitted_referee_body' => ({required Object taskTitle}) => '${taskTitle}さんが新しいエビデンスを提出しました。',
-			'notification.evidence_updated_referee_title' => 'エビデンス更新',
-			'notification.evidence_updated_referee_body' => ({required Object taskTitle}) => '${taskTitle}さんがエビデンスを更新しました。',
-			'notification.evidence_resubmitted_referee_title' => 'エビデンス再提出',
-			'notification.evidence_resubmitted_referee_body' => ({required Object taskTitle}) => '${taskTitle}のエビデンスが再提出されました。再度判定してください。',
-			'notification.auto_confirm_tasker_title' => '自動確認',
-			'notification.auto_confirm_tasker_body' => ({required Object taskTitle}) => 'タスク「${taskTitle}」の評価が自動的に確認されました。',
-			'notification.auto_confirm_referee_title' => '評価確認',
-			'notification.auto_confirm_referee_body' => ({required Object taskTitle}) => 'タスク「${taskTitle}」の評価が確認されました。',
-			'notification.matching_reassigned_tasker_title' => 'レフェリーが変更されました',
-			'notification.matching_reassigned_tasker_body' => ({required Object taskTitle}) => '「${taskTitle}」に新しいレフェリーが割り当てられました',
+			'notification.request_matched_tasker_body' => ({required Object taskTitle}) => '「${taskTitle}」のレフリーが見つかりました！',
+			'notification.task_assigned_referee_title' => '新しい担当タスクが届きました！',
+			'notification.task_assigned_referee_body' => ({required Object taskTitle}) => '「${taskTitle}」の担当レフリーに選ばれました。',
+			'notification.matching_reassigned_tasker_title' => 'レフリーが変更されました',
+			'notification.matching_reassigned_tasker_body' => ({required Object taskTitle}) => '「${taskTitle}」に新しいレフリーが割り当てられました。',
 			'notification.matching_cancelled_pending_tasker_title' => 'マッチングがキャンセルされました',
-			'notification.matching_cancelled_pending_tasker_body' => ({required Object taskTitle}) => 'レフェリーがキャンセルしました。「${taskTitle}」の新しいレフェリーを検索中です',
-			'notification.matching_expired_refunded_tasker_title' => 'マッチング期限切れ',
-			'notification.matching_expired_refunded_tasker_body' => ({required Object taskTitle}) => '「${taskTitle}」のレフェリーが見つかりませんでした。ポイントが返金されました',
+			'notification.matching_cancelled_pending_tasker_body' => ({required Object taskTitle}) => '「${taskTitle}」のレフリーがキャンセルしたため、新しいレフリーを探しています。',
+			'notification.matching_expired_refunded_tasker_title' => 'レフリーが見つかりませんでした',
+			'notification.matching_expired_refunded_tasker_body' => ({required Object taskTitle}) => '「${taskTitle}」のレフリーが見つかりませんでした。ポイントは返金済みです。',
+			'notification.evidence_submitted_referee_title' => 'エビデンスが届きました！',
+			'notification.evidence_submitted_referee_body' => ({required Object taskTitle}) => '「${taskTitle}」に新しいエビデンスが提出されました。確認してください。',
+			'notification.evidence_updated_referee_title' => 'エビデンスが更新されました',
+			'notification.evidence_updated_referee_body' => ({required Object taskTitle}) => '「${taskTitle}」のエビデンスが更新されました。確認してください。',
+			'notification.evidence_resubmitted_referee_title' => 'エビデンスが再提出されました！',
+			'notification.evidence_resubmitted_referee_body' => ({required Object taskTitle}) => '「${taskTitle}」のエビデンスが再提出されました。再度判定してください。',
+			'notification.evidence_timeout_tasker_title' => 'エビデンスの提出期限を過ぎました',
+			'notification.evidence_timeout_tasker_body' => ({required Object taskTitle}) => '「${taskTitle}」のエビデンス提出期限が過ぎたため、ポイントが消費されました。',
+			'notification.evidence_timeout_referee_title' => '報酬を獲得しました！',
+			'notification.evidence_timeout_referee_body' => ({required Object taskTitle}) => '「${taskTitle}」のエビデンス提出期限切れにより、報酬を獲得しました。',
+			'notification.judgement_approved_tasker_title' => 'タスク達成おめでとう！',
+			'notification.judgement_approved_tasker_body' => ({required Object taskTitle}) => '「${taskTitle}」が承認されました。お疲れさまでした！',
+			'notification.judgement_rejected_tasker_title' => 'エビデンスが差し戻されました',
+			'notification.judgement_rejected_tasker_body' => ({required Object taskTitle}) => '「${taskTitle}」が承認されませんでした。内容を確認してください。',
+			'notification.judgement_confirmed_referee_title' => '判定が確認されました！',
+			'notification.judgement_confirmed_referee_body' => ({required Object taskTitle}) => '「${taskTitle}」の判定結果が確認されました。ありがとうございました。',
+			'notification.auto_confirm_tasker_title' => '判定が自動確認されました',
+			'notification.auto_confirm_tasker_body' => ({required Object taskTitle}) => '「${taskTitle}」の判定結果が期限内に確認されなかったため、自動的に確認されました。',
+			'notification.auto_confirm_referee_title' => '判定が確認されました！',
+			'notification.auto_confirm_referee_body' => ({required Object taskTitle}) => '「${taskTitle}」の判定結果が確認されました。ありがとうございました。',
+			'notification.review_timeout_tasker_title' => '期限内に判定されませんでした',
+			'notification.review_timeout_tasker_body' => ({required Object taskTitle}) => '「${taskTitle}」が期限内に判定されなかったため、ポイントが返却されました。',
+			'notification.review_timeout_referee_title' => '判定期限を過ぎました',
+			'notification.review_timeout_referee_body' => ({required Object taskTitle}) => '「${taskTitle}」の判定期限が過ぎました。報酬は付与されません。',
+			'notification.payout_connect_required_referee_title' => '報酬の受取設定をお願いします',
+			'notification.payout_connect_required_referee_body' => '報酬が発生しています。受け取るには振込先の設定を完了してください。',
+			'notification.payout_failed_referee_title' => '報酬振込に失敗しました',
+			'notification.payout_failed_referee_body' => '報酬の振込に失敗しました。お手数ですが、アカウント設定をご確認ください。',
 			'notification.fallback_title' => 'お知らせ',
 			'notification.fallback_body' => '新しい通知があります。',
 			'account.actions.title' => 'アカウント',

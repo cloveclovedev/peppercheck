@@ -5,34 +5,48 @@
   Created via Antigravity
 */
 
+/* Matching */
 "notification_request_matched_tasker_title" = "マッチング成立！";
-"notification_request_matched_tasker_body" = "あなたのタスク「%@」のレフリーが見つかりました。";
-"notification_task_assigned_referee_title" = "新しい担当タスク";
-"notification_task_assigned_referee_body" = "タスク「%@」の担当レフリーに選ばれました。";
-"notification_request_accepted_title" = "リクエスト承認";
-"notification_request_accepted_body" = "リクエストが承認されました。";
-"notification_evidence_submitted_referee_title" = "エビデンス提出";
-"notification_evidence_submitted_referee_body" = "%@さんが新しいエビデンスを提出しました。";
-"notification_evidence_updated_referee_title" = "エビデンス更新";
-"notification_evidence_updated_referee_body" = "%@さんがエビデンスを更新しました。";
-"notification_evidence_resubmitted_referee_title" = "エビデンス再提出";
-"notification_evidence_resubmitted_referee_body" = "%@のエビデンスが再提出されました。再度判定してください。";
-"notification_evidence_timeout_tasker_title" = "エビデンス期限切れ";
-"notification_evidence_timeout_tasker_body" = "タスク「%@」のエビデンス提出期限が過ぎました。ポイントが消費されました。";
-"notification_evidence_timeout_referee_title" = "報酬獲得";
-"notification_evidence_timeout_referee_body" = "タスク「%@」のエビデンス期限切れにより報酬を獲得しました。";
-"notification_review_timeout_tasker_title" = "レビュー期限切れ";
-"notification_review_timeout_tasker_body" = "タスク「%@」は期間内に評価されませんでした。ポイントが返却されました。";
-"notification_review_timeout_referee_title" = "レビュー期限切れ";
-"notification_review_timeout_referee_body" = "タスク「%@」のレビュー期限が過ぎました。";
-
-"notification_auto_confirm_tasker_title" = "自動確認";
-"notification_auto_confirm_tasker_body" = "タスク「%@」の評価が自動的に確認されました。";
-"notification_auto_confirm_referee_title" = "評価確認";
-"notification_auto_confirm_referee_body" = "タスク「%@」の評価が確認されました。";
-"notification_matching_reassigned_tasker_title" = "レフェリーが変更されました";
-"notification_matching_reassigned_tasker_body" = "「%@」に新しいレフェリーが割り当てられました";
+"notification_request_matched_tasker_body" = "「%@」のレフリーが見つかりました！";
+"notification_task_assigned_referee_title" = "新しい担当タスクが届きました！";
+"notification_task_assigned_referee_body" = "「%@」の担当レフリーに選ばれました。";
+"notification_matching_reassigned_tasker_title" = "レフリーが変更されました";
+"notification_matching_reassigned_tasker_body" = "「%@」に新しいレフリーが割り当てられました。";
 "notification_matching_cancelled_pending_tasker_title" = "マッチングがキャンセルされました";
-"notification_matching_cancelled_pending_tasker_body" = "レフェリーがキャンセルしました。「%@」の新しいレフェリーを検索中です";
-"notification_matching_expired_refunded_tasker_title" = "マッチング期限切れ";
-"notification_matching_expired_refunded_tasker_body" = "「%@」のレフェリーが見つかりませんでした。ポイントが返金されました";
+"notification_matching_cancelled_pending_tasker_body" = "「%@」のレフリーがキャンセルしたため、新しいレフリーを探しています。";
+"notification_matching_expired_refunded_tasker_title" = "レフリーが見つかりませんでした";
+"notification_matching_expired_refunded_tasker_body" = "「%@」のレフリーが見つかりませんでした。ポイントは返金済みです。";
+
+/* Evidence */
+"notification_evidence_submitted_referee_title" = "エビデンスが届きました！";
+"notification_evidence_submitted_referee_body" = "「%@」に新しいエビデンスが提出されました。確認してください。";
+"notification_evidence_updated_referee_title" = "エビデンスが更新されました";
+"notification_evidence_updated_referee_body" = "「%@」のエビデンスが更新されました。確認してください。";
+"notification_evidence_resubmitted_referee_title" = "エビデンスが再提出されました！";
+"notification_evidence_resubmitted_referee_body" = "「%@」のエビデンスが再提出されました。再度判定してください。";
+"notification_evidence_timeout_tasker_title" = "エビデンスの提出期限を過ぎました";
+"notification_evidence_timeout_tasker_body" = "「%@」のエビデンス提出期限が過ぎたため、ポイントが消費されました。";
+"notification_evidence_timeout_referee_title" = "報酬を獲得しました！";
+"notification_evidence_timeout_referee_body" = "「%@」のエビデンス提出期限切れにより、報酬を獲得しました。";
+
+/* Judgement */
+"notification_judgement_approved_tasker_title" = "タスク達成おめでとう！";
+"notification_judgement_approved_tasker_body" = "「%@」が承認されました。お疲れさまでした！";
+"notification_judgement_rejected_tasker_title" = "エビデンスが差し戻されました";
+"notification_judgement_rejected_tasker_body" = "「%@」が承認されませんでした。内容を確認してください。";
+"notification_judgement_confirmed_referee_title" = "判定が確認されました！";
+"notification_judgement_confirmed_referee_body" = "「%@」の判定結果が確認されました。ありがとうございました。";
+"notification_auto_confirm_tasker_title" = "判定が自動確認されました";
+"notification_auto_confirm_tasker_body" = "「%@」の判定結果が期限内に確認されなかったため、自動的に確認されました。";
+"notification_auto_confirm_referee_title" = "判定が確認されました！";
+"notification_auto_confirm_referee_body" = "「%@」の判定結果が確認されました。ありがとうございました。";
+"notification_review_timeout_tasker_title" = "期限内に判定されませんでした";
+"notification_review_timeout_tasker_body" = "「%@」が期限内に判定されなかったため、ポイントが返却されました。";
+"notification_review_timeout_referee_title" = "判定期限を過ぎました";
+"notification_review_timeout_referee_body" = "「%@」の判定期限が過ぎました。報酬は付与されません。";
+
+/* Payout */
+"notification_payout_connect_required_referee_title" = "報酬の受取設定をお願いします";
+"notification_payout_connect_required_referee_body" = "報酬が発生しています。受け取るには振込先の設定を完了してください。";
+"notification_payout_failed_referee_title" = "報酬振込に失敗しました";
+"notification_payout_failed_referee_body" = "報酬の振込に失敗しました。お手数ですが、アカウント設定をご確認ください。";
