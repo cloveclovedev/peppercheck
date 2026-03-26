@@ -1,22 +1,23 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts"
+// deno-lint-ignore no-unversioned-import
+import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 
-import { createClient } from "@supabase/supabase-js"
-import Stripe from "stripe"
+import { createClient } from '@supabase/supabase-js'
+import Stripe from 'stripe'
 
-const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? ""
-const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY") ?? ""
+const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY') ?? ''
 
 const stripe = new Stripe(stripeSecretKey, {
-  apiVersion: "2025-11-17.clover",
+  apiVersion: '2025-11-17.clover',
 })
 
-const jsonHeaders = { "Content-Type": "application/json" }
+const jsonHeaders = { 'Content-Type': 'application/json' }
 
 Deno.serve(async (req) => {
-  if (req.method !== "POST") {
+  if (req.method !== 'POST') {
     return new Response(
-      JSON.stringify({ error: "Method not allowed" }),
+      JSON.stringify({ error: 'Method not allowed' }),
       { status: 405, headers: jsonHeaders },
     )
   }
@@ -36,23 +37,23 @@ Deno.serve(async (req) => {
   try {
     // Fetch pending payouts
     const { data: payouts, error: fetchError } = await supabase
-      .from("reward_payouts")
-      .select("id, user_id, points_amount, currency, currency_amount")
-      .eq("status", "pending")
-      .order("created_at", { ascending: true })
+      .from('reward_payouts')
+      .select('id, user_id, points_amount, currency, currency_amount')
+      .eq('status', 'pending')
+      .order('created_at', { ascending: true })
       .limit(100)
 
     if (fetchError) {
-      console.error("Failed to fetch pending payouts:", fetchError)
+      console.error('Failed to fetch pending payouts:', fetchError)
       return new Response(
-        JSON.stringify({ error: "Failed to fetch payouts" }),
+        JSON.stringify({ error: 'Failed to fetch payouts' }),
         { status: 500, headers: jsonHeaders },
       )
     }
 
     if (!payouts || payouts.length === 0) {
       return new Response(
-        JSON.stringify({ message: "No pending payouts", processed: 0 }),
+        JSON.stringify({ message: 'No pending payouts', processed: 0 }),
         { status: 200, headers: jsonHeaders },
       )
     }
@@ -65,14 +66,14 @@ Deno.serve(async (req) => {
         // Get Connect account ID for this user
         // profiles.id = auth.users.id = stripe_accounts.profile_id
         const { data: stripeAccount, error: accountError } = await supabase
-          .from("stripe_accounts")
-          .select("stripe_connect_account_id")
-          .eq("profile_id", payout.user_id)
+          .from('stripe_accounts')
+          .select('stripe_connect_account_id')
+          .eq('profile_id', payout.user_id)
           .single()
 
         if (accountError || !stripeAccount?.stripe_connect_account_id) {
           throw new Error(
-            `No Connect account for user ${payout.user_id}: ${accountError?.message ?? "missing"}`,
+            `No Connect account for user ${payout.user_id}: ${accountError?.message ?? 'missing'}`,
           )
         }
 
@@ -95,12 +96,12 @@ Deno.serve(async (req) => {
 
         // Mark payout as success
         const { error: updateError } = await supabase
-          .from("reward_payouts")
+          .from('reward_payouts')
           .update({
-            status: "success",
+            status: 'success',
             stripe_transfer_id: transfer.id,
           })
-          .eq("id", payout.id)
+          .eq('id', payout.id)
 
         if (updateError) {
           console.error(
@@ -111,7 +112,7 @@ Deno.serve(async (req) => {
 
         // Deduct wallet balance and create ledger entry
         const { error: deductError } = await supabase.rpc(
-          "deduct_reward_for_payout",
+          'deduct_reward_for_payout',
           {
             p_user_id: payout.user_id,
             p_amount: payout.points_amount,
@@ -129,23 +130,22 @@ Deno.serve(async (req) => {
 
         successCount++
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : String(error)
+        const errorMessage = error instanceof Error ? error.message : String(error)
         console.error(`Payout ${payout.id} failed:`, errorMessage)
 
         // Mark payout as failed
         await supabase
-          .from("reward_payouts")
+          .from('reward_payouts')
           .update({
-            status: "failed",
+            status: 'failed',
             error_message: errorMessage.substring(0, 500),
           })
-          .eq("id", payout.id)
+          .eq('id', payout.id)
 
         // Notify user of failed payout
-        await supabase.rpc("notify_event", {
+        await supabase.rpc('notify_event', {
           p_user_id: payout.user_id,
-          p_template_key: "notification_payout_failed",
+          p_template_key: 'notification_payout_failed_referee',
           p_template_args: null,
           p_data: { payout_id: payout.id },
         })
@@ -163,9 +163,9 @@ Deno.serve(async (req) => {
       { status: 200, headers: jsonHeaders },
     )
   } catch (error) {
-    console.error("execute-pending-payouts error:", error)
+    console.error('execute-pending-payouts error:', error)
     return new Response(
-      JSON.stringify({ error: "Internal server error" }),
+      JSON.stringify({ error: 'Internal server error' }),
       { status: 500, headers: jsonHeaders },
     )
   }
