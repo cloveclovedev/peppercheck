@@ -268,7 +268,7 @@
     "contact": { "label": "Email" },
     "price": {
       "label": "Service Price",
-      "value": "See pricing page for details"
+      "value": "As listed on the pricing page (tax included)"
     },
     "additionalFees": {
       "label": "Additional Fees",
@@ -287,8 +287,12 @@
       "value": "Available immediately after subscription purchase"
     },
     "cancellation": {
-      "label": "Cancellation & Refunds",
-      "value": "See refund & cancellation policy for details"
+      "label": "Returns & Exchanges",
+      "normalHeading": "Normal cancellation",
+      "normalBody": "You can cancel your subscription at any time from the app settings or the Stripe customer portal. Cancellation takes effect at the end of the current billing period. No prorated refunds are provided for the unused portion of a billing period.",
+      "defectHeading": "Service issues / defects",
+      "defectBody": "In cases of service outages, duplicate charges, or other exceptional circumstances, refunds will be considered on a case-by-case basis.",
+      "details": "See full policy"
     }
   }
 }
