@@ -1,37 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="notification_request_matched_tasker_title">Match Found!</string>
-    <string name="notification_request_matched_tasker_body">A referee has been found for your task "%1$s".</string>
-    <string name="notification_task_assigned_referee_title">New Assignment</string>
-    <string name="notification_task_assigned_referee_body">You have been assigned to judge task "%1$s".</string>
-    <string name="notification_request_accepted_title">Request Accepted</string>
-    <string name="notification_request_accepted_body">Your request has been accepted.</string>
-    <string name="notification_evidence_submitted_referee_title">Evidence Submitted</string>
-    <string name="notification_evidence_submitted_referee_body">%1$s has submitted new evidence.</string>
-    <string name="notification_evidence_updated_referee_title">Evidence Updated</string>
-    <string name="notification_evidence_updated_referee_body">%1$s has updated the evidence.</string>
-    <string name="notification_evidence_resubmitted_referee_title">Evidence Resubmitted</string>
-    <string name="notification_evidence_resubmitted_referee_body">Evidence for "%1$s" has been resubmitted. Please review again.</string>
-    <string name="notification_evidence_timeout_tasker_title">Evidence Timeout</string>
-    <string name="notification_evidence_timeout_tasker_body">Your task "%1$s" has timed out due to missing evidence. Points have been consumed.</string>
-    <string name="notification_evidence_timeout_referee_title">Reward Earned</string>
-    <string name="notification_evidence_timeout_referee_body">You earned a reward for task "%1$s" due to evidence timeout.</string>
-    <string name="notification_review_timeout_tasker_title">Review Timeout</string>
-    <string name="notification_review_timeout_tasker_body">Your task "%1$s" was not reviewed in time. Points have been returned.</string>
-    <string name="notification_review_timeout_referee_title">Review Timeout</string>
-    <string name="notification_review_timeout_referee_body">The review deadline for task "%1$s" has passed.</string>
-    <string name="notification_payout_connect_required_referee_title">Payout Setup Required</string>
-    <string name="notification_payout_connect_required_referee_body">Complete your payout setup to receive your reward earnings.</string>
-    <string name="notification_payout_failed_title">Payout Failed</string>
-    <string name="notification_payout_failed_body">Your reward payout could not be processed. Please check your account settings.</string>
-    <string name="notification_auto_confirm_tasker_title">Auto Confirmed</string>
-    <string name="notification_auto_confirm_tasker_body">Your task "%1$s" has been automatically confirmed.</string>
-    <string name="notification_auto_confirm_referee_title">Review Confirmed</string>
-    <string name="notification_auto_confirm_referee_body">Your review for task "%1$s" has been confirmed.</string>
+    <!-- Matching -->
+    <string name="notification_request_matched_tasker_title">Match found!</string>
+    <string name="notification_request_matched_tasker_body">A referee has been found for "%1$s"!</string>
+    <string name="notification_task_assigned_referee_title">New task assigned!</string>
+    <string name="notification_task_assigned_referee_body">You\'ve been assigned as referee for "%1$s".</string>
     <string name="notification_matching_reassigned_tasker_title">Referee changed</string>
-    <string name="notification_matching_reassigned_tasker_body">A new referee has been assigned for \'%1$s\'</string>
+    <string name="notification_matching_reassigned_tasker_body">A new referee has been assigned to "%1$s".</string>
     <string name="notification_matching_cancelled_pending_tasker_title">Matching cancelled</string>
-    <string name="notification_matching_cancelled_pending_tasker_body">The previous referee cancelled. Searching for a new referee for \'%1$s\'</string>
-    <string name="notification_matching_expired_refunded_tasker_title">Matching expired</string>
-    <string name="notification_matching_expired_refunded_tasker_body">No referee found for \'%1$s\'. Points have been refunded</string>
+    <string name="notification_matching_cancelled_pending_tasker_body">The referee for "%1$s" cancelled. Searching for a new referee.</string>
+    <string name="notification_matching_expired_refunded_tasker_title">No referee found</string>
+    <string name="notification_matching_expired_refunded_tasker_body">No referee was found for "%1$s". Your points have been refunded.</string>
+    <!-- Evidence -->
+    <string name="notification_evidence_submitted_referee_title">New evidence received!</string>
+    <string name="notification_evidence_submitted_referee_body">New evidence has been submitted for "%1$s". Please review it.</string>
+    <string name="notification_evidence_updated_referee_title">Evidence updated</string>
+    <string name="notification_evidence_updated_referee_body">The evidence for "%1$s" has been updated. Please review it.</string>
+    <string name="notification_evidence_resubmitted_referee_title">Evidence resubmitted!</string>
+    <string name="notification_evidence_resubmitted_referee_body">Evidence for "%1$s" has been resubmitted. Please review again.</string>
+    <string name="notification_evidence_timeout_tasker_title">Evidence deadline passed</string>
+    <string name="notification_evidence_timeout_tasker_body">The evidence submission deadline for "%1$s" has passed. Points have been consumed.</string>
+    <string name="notification_evidence_timeout_referee_title">Reward earned!</string>
+    <string name="notification_evidence_timeout_referee_body">You earned a reward due to the evidence deadline expiring for "%1$s".</string>
+    <!-- Judgement -->
+    <string name="notification_judgement_approved_tasker_title">Congratulations!</string>
+    <string name="notification_judgement_approved_tasker_body">"%1$s" has been approved. Great work!</string>
+    <string name="notification_judgement_rejected_tasker_title">Evidence returned</string>
+    <string name="notification_judgement_rejected_tasker_body">"%1$s" was not approved. Please review the details.</string>
+    <string name="notification_judgement_confirmed_referee_title">Judgement confirmed!</string>
+    <string name="notification_judgement_confirmed_referee_body">Your judgement for "%1$s" has been confirmed. Thank you!</string>
+    <string name="notification_auto_confirm_tasker_title">Judgement auto-confirmed</string>
+    <string name="notification_auto_confirm_tasker_body">The judgement for "%1$s" was not confirmed in time and has been automatically confirmed.</string>
+    <string name="notification_auto_confirm_referee_title">Judgement confirmed!</string>
+    <string name="notification_auto_confirm_referee_body">Your judgement for "%1$s" has been confirmed. Thank you!</string>
+    <string name="notification_review_timeout_tasker_title">Not judged in time</string>
+    <string name="notification_review_timeout_tasker_body">"%1$s" was not judged in time. Your points have been returned.</string>
+    <string name="notification_review_timeout_referee_title">Judgement deadline passed</string>
+    <string name="notification_review_timeout_referee_body">The judgement deadline for "%1$s" has passed. No reward will be granted.</string>
+    <!-- Payout -->
+    <string name="notification_payout_connect_required_referee_title">Payout setup required</string>
+    <string name="notification_payout_connect_required_referee_body">You have a pending reward. Please set up your payout account to receive it.</string>
+    <string name="notification_payout_failed_referee_title">Payout failed</string>
+    <string name="notification_payout_failed_referee_body">Your payout could not be processed. Please check your account settings.</string>
 </resources>
