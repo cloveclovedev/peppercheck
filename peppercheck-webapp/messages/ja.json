@@ -26,7 +26,7 @@
     "privacy": "プライバシーポリシー",
     "tokushoho": "特定商取引法に基づく表記",
     "refund": "返金・キャンセルポリシー",
-    "copyright": "© 2024 CloveClove, Inc."
+    "copyright": "© 2024 CloveClove"
   },
   "Dashboard": {
     "title": "ダッシュボード",
@@ -252,13 +252,9 @@
   },
   "Tokushoho": {
     "title": "特定商取引法に基づく表記",
-    "seller": { "label": "販売業者", "value": "CloveClove" },
-    "representative": {
-      "label": "運営責任者",
-      "value": "請求があった場合に遅滞なく開示いたします"
-    },
+    "seller": { "label": "事業者名", "value": "CloveClove" },
     "address": {
-      "label": "所在地",
+      "label": "住所",
       "value": "請求があった場合に遅滞なく開示いたします"
     },
     "phone": {
@@ -266,33 +262,43 @@
       "value": "請求があった場合に遅滞なく開示いたします"
     },
     "contact": { "label": "メールアドレス" },
-    "price": {
-      "label": "販売価格",
-      "value": "各料金プランページに記載の金額（税込）"
+    "representative": {
+      "label": "運営責任者",
+      "value": "栗原 誠"
     },
     "additionalFees": {
-      "label": "商品代金以外の必要料金",
+      "label": "追加手数料",
       "value": "インターネット接続料金その他通信に要する費用はお客様のご負担となります"
     },
-    "payment": {
-      "label": "支払方法",
-      "value": "クレジットカード（Stripe経由）、アプリ内課金（Google Play / App Store）"
-    },
-    "paymentPeriod": {
-      "label": "支払時期",
-      "value": "クレジットカードの場合はご注文時に即時課金されます。アプリ内課金の場合は各ストアの規定に準じます。"
-    },
-    "delivery": {
-      "label": "提供時期",
-      "value": "サブスクリプション購入後すぐにご利用いただけます"
-    },
     "cancellation": {
-      "label": "返品・交換について",
+      "label": "交換および返品に関するポリシー",
       "normalHeading": "通常のキャンセル",
       "normalBody": "サブスクリプションはアプリの設定画面またはStripeカスタマーポータルからいつでもキャンセルできます。キャンセルは現在の請求期間の終了時に有効となります。請求期間の未使用分に対する日割り返金は行っておりません。",
       "defectHeading": "サービス障害・不具合の場合",
       "defectBody": "サービスの障害、重複課金、その他の例外的な状況については、個別に返金を検討いたします。",
       "details": "詳しくはこちら"
+    },
+    "delivery": {
+      "label": "配達時間",
+      "value": "サブスクリプション購入後すぐにご利用いただけます"
+    },
+    "payment": {
+      "label": "利用可能な決済手段",
+      "value": "クレジットカード（Stripe経由）、アプリ内課金（Google Play / App Store）"
+    },
+    "paymentPeriod": {
+      "label": "決済期間",
+      "value": "クレジットカードの場合はご注文時に即時課金されます。アプリ内課金の場合は各ストアの規定に準じます。"
+    },
+    "price": {
+      "label": "価格",
+      "perMonth": "/月",
+      "taxIncluded": "（税込）",
+      "details": "料金プラン詳細はこちら"
+    },
+    "environment": {
+      "label": "動作環境",
+      "value": "Android 5.0以上、iOS 13.0以上"
     }
   }
 }

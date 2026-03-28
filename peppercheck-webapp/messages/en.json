@@ -26,7 +26,7 @@
     "privacy": "Privacy Policy",
     "tokushoho": "Specified Commercial Transactions Act",
     "refund": "Refund & Cancellation Policy",
-    "copyright": "© 2024 CloveClove, Inc."
+    "copyright": "© 2024 CloveClove"
   },
   "Dashboard": {
     "title": "Dashboard",
@@ -252,11 +252,7 @@
   },
   "Tokushoho": {
     "title": "Specified Commercial Transactions Act Disclosure",
-    "seller": { "label": "Seller", "value": "CloveClove" },
-    "representative": {
-      "label": "Head of Operations",
-      "value": "Disclosed without delay upon request"
-    },
+    "seller": { "label": "Business Name", "value": "CloveClove" },
     "address": {
       "label": "Address",
       "value": "Disclosed without delay upon request"
@@ -266,33 +262,43 @@
       "value": "Disclosed without delay upon request"
     },
     "contact": { "label": "Email" },
-    "price": {
-      "label": "Service Price",
-      "value": "As listed on the pricing page (tax included)"
+    "representative": {
+      "label": "Head of Operations",
+      "value": "Makoto Kurihara"
     },
     "additionalFees": {
       "label": "Additional Fees",
       "value": "Internet connection fees and other communication charges are borne by the customer"
     },
+    "cancellation": {
+      "label": "Exchange and Return Policy",
+      "normalHeading": "Normal cancellation",
+      "normalBody": "You can cancel your subscription at any time from the app settings or the Stripe customer portal. Cancellation takes effect at the end of the current billing period. No prorated refunds are provided for the unused portion of a billing period.",
+      "defectHeading": "Service issues / defects",
+      "defectBody": "In cases of service outages, duplicate charges, or other exceptional circumstances, refunds will be considered on a case-by-case basis.",
+      "details": "See full policy"
+    },
+    "delivery": {
+      "label": "Delivery Time",
+      "value": "Available immediately after subscription purchase"
+    },
     "payment": {
-      "label": "Payment Method",
+      "label": "Available Payment Methods",
       "value": "Credit card (via Stripe), In-app purchase (Google Play / App Store)"
     },
     "paymentPeriod": {
       "label": "Payment Period",
       "value": "Credit card payments are charged immediately at the time of purchase. In-app purchases follow the respective store's billing terms."
     },
-    "delivery": {
-      "label": "Service Delivery",
-      "value": "Available immediately after subscription purchase"
+    "price": {
+      "label": "Price",
+      "perMonth": "/mo",
+      "taxIncluded": " (tax included)",
+      "details": "View pricing details"
     },
-    "cancellation": {
-      "label": "Returns & Exchanges",
-      "normalHeading": "Normal cancellation",
-      "normalBody": "You can cancel your subscription at any time from the app settings or the Stripe customer portal. Cancellation takes effect at the end of the current billing period. No prorated refunds are provided for the unused portion of a billing period.",
-      "defectHeading": "Service issues / defects",
-      "defectBody": "In cases of service outages, duplicate charges, or other exceptional circumstances, refunds will be considered on a case-by-case basis.",
-      "details": "See full policy"
+    "environment": {
+      "label": "System Requirements",
+      "value": "Android 5.0 or later, iOS 13.0 or later"
     }
   }
 }
