@@ -4,25 +4,50 @@ import { ObfuscatedEmail } from '@/components/ObfuscatedEmail'
 import { getTranslations } from 'next-intl/server'
 import { createGenerateMetadata } from '@/lib/metadata'
 import { Link } from '@/i18n/routing'
+import { createClient } from '@/lib/supabase/server'
 
 export const generateMetadata = createGenerateMetadata('Tokushoho')
 
 const ROWS = [
   'seller',
-  'representative',
   'address',
   'phone',
   'contact',
-  'price',
+  'representative',
   'additionalFees',
+  'cancellation',
+  'delivery',
   'payment',
   'paymentPeriod',
-  'delivery',
-  'cancellation',
+  'price',
+  'environment',
 ] as const
 
 export default async function TokushohoPage() {
   const t = await getTranslations('Tokushoho')
+  const tPricing = await getTranslations('Pricing')
+
+  const supabase = await createClient()
+  const { data: plans } = await supabase
+    .from('subscription_plans')
+    .select('*, prices:subscription_plan_prices(*)')
+    .eq('is_active', true)
+    .order('monthly_points')
+
+  const priceLines = plans
+    ?.map((plan) => {
+      const price = plan.prices.find(
+        (p: { provider: string; currency_code: string }) =>
+          p.provider === 'stripe' && p.currency_code === 'JPY',
+      )
+      if (!price) return null
+      const planKey = plan.name.toLowerCase().replace(' ', '_')
+      const name = tPricing.has(`plans.${planKey}.name`)
+        ? tPricing(`plans.${planKey}.name`)
+        : plan.name
+      return `${name} ¥${price.amount_minor.toLocaleString()}${t('price.perMonth')}`
+    })
+    .filter(Boolean)
 
   return (
     <div className="flex min-h-screen flex-col font-sans">
@@ -47,12 +72,18 @@ export default async function TokushohoPage() {
                   {key === 'contact' ? (
                     <ObfuscatedEmail />
                   ) : key === 'price' ? (
-                    <Link
-                      href="/pricing"
-                      className="underline decoration-2 hover:opacity-80"
-                    >
-                      {t(`${key}.value`)}
-                    </Link>
+                    <div className="space-y-2">
+                      <p>
+                        {priceLines?.join('、')}
+                        {t('price.taxIncluded')}
+                      </p>
+                      <Link
+                        href="/pricing"
+                        className="block text-sm underline decoration-2 hover:opacity-80"
+                      >
+                        {t('price.details')}
+                      </Link>
+                    </div>
                   ) : key === 'cancellation' ? (
                     <div className="space-y-4">
                       <div>
