@@ -123,10 +123,11 @@ function mapSubscriptionStatus(notificationType: number): string | null {
       return 'past_due'
     case NOTIFICATION_TYPE.ON_HOLD:
       return 'unpaid'
-    case NOTIFICATION_TYPE.CANCELED:
     case NOTIFICATION_TYPE.EXPIRED:
     case NOTIFICATION_TYPE.REVOKED:
       return 'canceled'
+    case NOTIFICATION_TYPE.CANCELED:
+      return null // Handled separately: only sets cancel_at_period_end
     case NOTIFICATION_TYPE.PAUSED:
       return 'paused'
     default:
@@ -155,19 +156,10 @@ async function handleSubscriptionNotification(
   }
 
   const planId = extractPlanId(lineItem.productId)
-  const status = mapSubscriptionStatus(notificationType)
 
-  if (!status) {
-    console.log(`Notification type ${notificationType} does not require status update, skipping`)
-    return
-  }
-
-  console.log(
-    `Processing notification type=${notificationType} for user=${userId} plan=${planId} status=${status}`,
-  )
-
-  // Handle CANCELED: only update cancel_at_period_end, keep status active until expiry
+  // Handle CANCELED separately: only update cancel_at_period_end, keep status active until expiry
   if (notificationType === NOTIFICATION_TYPE.CANCELED) {
+    console.log(`Processing CANCELED for user=${userId}: setting cancel_at_period_end`)
     const { error } = await supabaseAdmin
       .from('user_subscriptions')
       .update({
@@ -183,6 +175,16 @@ async function handleSubscriptionNotification(
     console.log(`Marked cancel_at_period_end for user ${userId}`)
     return
   }
+
+  const status = mapSubscriptionStatus(notificationType)
+  if (!status) {
+    console.log(`Notification type ${notificationType} does not require status update, skipping`)
+    return
+  }
+
+  console.log(
+    `Processing notification type=${notificationType} for user=${userId} plan=${planId} status=${status}`,
+  )
 
   // Upsert subscription for all other notification types
   // deno-lint-ignore no-explicit-any
@@ -350,8 +352,11 @@ Deno.serve(async (req) => {
       status: 200,
     })
   } catch (error) {
+    // Errors from handleSubscriptionNotification bubble up here intentionally.
+    // Unlike Stripe webhooks (which return 500 for retries), Pub/Sub retries
+    // on any non-2xx with exponential backoff — always return 200 to prevent
+    // infinite retry loops. Failed operations are logged for manual investigation.
     console.error('Error processing RTDN:', error)
-    // Always return 200 to prevent Pub/Sub infinite retries
     return new Response(JSON.stringify({ error: 'processing failed' }), {
       headers: { 'Content-Type': 'application/json' },
       status: 200,
