@@ -1,6 +1,7 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:peppercheck_flutter/app/theme/app_colors.dart';
 import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
 import 'package:peppercheck_flutter/common_widgets/action_button.dart';
@@ -42,7 +43,6 @@ class SubscriptionSection extends ConsumerWidget {
     final state = ref.watch(subscriptionProvider);
     final purchaseState = ref.watch(inAppPurchaseControllerProvider);
 
-    // Show overlay if purchasing
     final isPurchasing = purchaseState.isLoading;
 
     return Stack(
@@ -122,14 +122,11 @@ class SubscriptionSection extends ConsumerWidget {
                   ),
                   const SizedBox(height: AppSizes.spacingSmall),
 
-                  // Show products if not active (or even if active? for now simple)
-                  // TODO: Uncomment when Google Play Console is configured and products are active.
-                  /*
                   if (!isActive) ...[
                     const _ProductList(),
                     const SizedBox(height: AppSizes.spacingSmall),
                   ],
-                  */
+
                   ActionButton(
                     text: t.billing.manageSubscription,
                     icon: Icons.open_in_new,
@@ -155,13 +152,99 @@ class SubscriptionSection extends ConsumerWidget {
           ),
         ),
         if (isPurchasing)
-          const Positioned.fill(
+          Positioned.fill(
             child: ColoredBox(
               color: Colors.black45,
-              child: Center(child: CircularProgressIndicator()),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const CircularProgressIndicator(),
+                    const SizedBox(height: AppSizes.spacingMedium),
+                    Text(
+                      t.billing.processingPurchase,
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
       ],
+    );
+  }
+}
+
+class _ProductList extends ConsumerWidget {
+  const _ProductList();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final productsState = ref.watch(availableProductsProvider);
+
+    return productsState.when(
+      data: (products) {
+        if (products.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        // Sort by price ascending (light < standard < premium)
+        final sorted = List<ProductDetails>.from(products)
+          ..sort((a, b) => a.rawPrice.compareTo(b.rawPrice));
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: sorted.map((product) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: AppSizes.spacingSmall),
+              child: _ProductCard(product: product),
+            );
+          }).toList(),
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, st) => const SizedBox.shrink(),
+    );
+  }
+}
+
+class _ProductCard extends ConsumerWidget {
+  final ProductDetails product;
+  const _ProductCard({required this.product});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return OutlinedButton(
+      style: OutlinedButton.styleFrom(
+        padding: const EdgeInsets.all(AppSizes.spacingMedium),
+        side: const BorderSide(color: AppColors.border),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
+        ),
+      ),
+      onPressed: () {
+        ref
+            .read(inAppPurchaseControllerProvider.notifier)
+            .buy(product: product);
+      },
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: Text(
+              product.title,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          Text(
+            product.price,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: AppColors.accentBlue,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
