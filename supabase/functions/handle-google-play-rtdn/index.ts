@@ -266,8 +266,8 @@ async function handleSubscriptionNotification(
 }
 
 async function fetchSubscriptionV2(purchaseToken: string): Promise<SubscriptionV2> {
-  const serviceAccountJson = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_JSON')
-  if (!serviceAccountJson) throw new Error('Missing GOOGLE_SERVICE_ACCOUNT_JSON')
+  const serviceAccountJson = Deno.env.get('GOOGLE_PLAY_SERVICE_ACCOUNT_JSON')
+  if (!serviceAccountJson) throw new Error('Missing GOOGLE_PLAY_SERVICE_ACCOUNT_JSON')
 
   const credentials = JSON.parse(serviceAccountJson)
   const accessToken = await getGoogleAccessToken(
