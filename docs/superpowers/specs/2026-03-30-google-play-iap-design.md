@@ -122,7 +122,7 @@ Google Play status → existing `subscription_status` enum mapping:
 
 ### Idempotency
 
-`grant_subscription_points` already checks for duplicate `p_invoice_id` in `point_ledger`. For Google Play, pass `google:{purchaseToken}:{notificationType}` as the invoice_id equivalent. This prevents double point grants when Pub/Sub redelivers the same message.
+`grant_subscription_points` already checks for duplicate `p_invoice_id` in `point_ledger`. For Google Play, pass `google:{purchaseToken}:{expiryTime}` as the invoice_id equivalent. Using `expiryTime` (not `notificationType`) ensures each renewal period gets a unique key, since `purchaseToken` remains the same for the life of the subscription. This prevents double point grants when Pub/Sub redelivers the same message, while correctly granting points for each renewal.
 
 ### Google Play API Authentication
 
