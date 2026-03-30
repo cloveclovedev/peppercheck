@@ -1,19 +1,20 @@
 import 'dart:async';
 
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:in_app_purchase_android/billing_client_wrappers.dart';
+import 'package:in_app_purchase_android/in_app_purchase_android.dart';
 import 'package:logger/logger.dart';
 import 'package:peppercheck_flutter/features/billing/data/billing_providers.dart';
 import 'package:peppercheck_flutter/features/billing/data/in_app_purchase_repository.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 part 'in_app_purchase_controller.g.dart';
 
 @riverpod
 Future<List<ProductDetails>> availableProducts(Ref ref) async {
-  // TODO: Define these IDs somewhere (remote config or const)
-  // For now hardcoding based on pricing.adoc
   const productIds = <String>{
-    'light_monthly', // These must match Play Console Product IDs
+    'light_monthly',
     'standard_monthly',
     'premium_monthly',
   };
@@ -28,16 +29,16 @@ Future<List<ProductDetails>> availableProducts(Ref ref) async {
 @Riverpod(keepAlive: true)
 class InAppPurchaseController extends _$InAppPurchaseController {
   final _logger = Logger();
-  StreamSubscription<List<PurchaseDetails>>? _subscription;
+  StreamSubscription<List<PurchaseDetails>>? _purchaseSubscription;
+  RealtimeChannel? _realtimeChannel;
 
   @override
   FutureOr<void> build() {
-    // Start listening on build
     final repo = ref.watch(inAppPurchaseRepositoryProvider);
-    _subscription = repo.purchaseStream.listen(
+    _purchaseSubscription = repo.purchaseStream.listen(
       _onPurchaseUpdate,
       onDone: () {
-        _subscription?.cancel();
+        _purchaseSubscription?.cancel();
       },
       onError: (error) {
         state = AsyncError(error, StackTrace.current);
@@ -45,17 +46,38 @@ class InAppPurchaseController extends _$InAppPurchaseController {
     );
 
     ref.onDispose(() {
-      _subscription?.cancel();
+      _purchaseSubscription?.cancel();
+      _removeRealtimeSubscription();
     });
   }
 
-  Future<void> buy(ProductDetails product) async {
+  Future<void> buy({
+    required ProductDetails product,
+    GooglePlayPurchaseDetails? oldPurchase,
+    bool isUpgrade = false,
+  }) async {
     state = const AsyncLoading();
     try {
       final repo = ref.read(inAppPurchaseRepositoryProvider);
-      await repo.buySubscription(product);
-      // State remains loading or idle?
-      // actual result comes via stream.
+      final userId = Supabase.instance.client.auth.currentUser?.id;
+      if (userId == null) throw Exception('User not authenticated');
+
+      await repo.buySubscription(
+        product: product,
+        userId: userId,
+        oldPurchase: oldPurchase,
+        isUpgrade: isUpgrade,
+      );
+    } catch (e, st) {
+      state = AsyncError(e, st);
+    }
+  }
+
+  Future<void> restorePurchases() async {
+    state = const AsyncLoading();
+    try {
+      final repo = ref.read(inAppPurchaseRepositoryProvider);
+      await repo.restorePurchases();
     } catch (e, st) {
       state = AsyncError(e, st);
     }
@@ -68,37 +90,59 @@ class InAppPurchaseController extends _$InAppPurchaseController {
 
     for (final purchase in purchaseDetailsList) {
       if (purchase.status == PurchaseStatus.pending) {
-        state = const AsyncLoading(); // Show loading overlay
-      } else {
-        if (purchase.status == PurchaseStatus.error) {
-          _logger.e('Purchase Error: ${purchase.error}');
-          state = AsyncError(purchase.error!, StackTrace.current);
-        } else if (purchase.status == PurchaseStatus.purchased ||
-            purchase.status == PurchaseStatus.restored) {
-          try {
-            // 1. Verify with Backend
-            await repo.verifyPurchase(purchase);
+        state = const AsyncLoading();
+      } else if (purchase.status == PurchaseStatus.error) {
+        _logger.e('Purchase Error: ${purchase.error}');
+        state = AsyncError(purchase.error!, StackTrace.current);
+      } else if (purchase.status == PurchaseStatus.purchased ||
+          purchase.status == PurchaseStatus.restored) {
+        try {
+          if (purchase.pendingCompletePurchase) {
+            await repo.completePurchase(purchase);
+          }
+          _subscribeToRealtimeUpdates();
+        } catch (e, st) {
+          _logger.e('Purchase completion failed', error: e, stackTrace: st);
+          state = AsyncError(e, st);
+        }
+      } else if (purchase.status == PurchaseStatus.canceled) {
+        state = const AsyncData(null);
+      }
+    }
+  }
 
-            // 2. Complete/Acknowledge
-            if (purchase.pendingCompletePurchase) {
-              await repo.completePurchase(purchase);
-            }
+  void _subscribeToRealtimeUpdates() {
+    _removeRealtimeSubscription();
 
-            // 3. Refresh Subscription Status
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return;
+
+    _realtimeChannel = Supabase.instance.client
+        .channel('iap-subscription-status')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'user_subscriptions',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'user_id',
+            value: userId,
+          ),
+          callback: (payload) {
+            _logger.i('Subscription updated via Realtime: ${payload.newRecord}');
             ref.invalidate(subscriptionProvider);
             ref.invalidate(pointWalletProvider);
-
             state = const AsyncData(null);
-          } catch (e, st) {
-            _logger.e(
-              'Verification/Completion Failed',
-              error: e,
-              stackTrace: st,
-            );
-            state = AsyncError(e, st);
-          }
-        }
-      }
+            _removeRealtimeSubscription();
+          },
+        )
+        .subscribe();
+  }
+
+  void _removeRealtimeSubscription() {
+    if (_realtimeChannel != null) {
+      Supabase.instance.client.removeChannel(_realtimeChannel!);
+      _realtimeChannel = null;
     }
   }
 }
