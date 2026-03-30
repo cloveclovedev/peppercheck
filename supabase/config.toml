@@ -613,6 +613,12 @@ entrypoint = "./functions/handle-stripe-webhook/index.ts"
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/handle-stripe-webhook/*.html" ]
 
+[functions.handle-google-play-rtdn]
+enabled = true
+verify_jwt = false
+import_map = "./functions/handle-google-play-rtdn/deno.json"
+entrypoint = "./functions/handle-google-play-rtdn/index.ts"
+
 [functions.verify-google-purchase]
 enabled = true
 verify_jwt = true
@@ -650,3 +656,4 @@ entrypoint = "./functions/delete-account/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/delete-account/*.html" ]
+
