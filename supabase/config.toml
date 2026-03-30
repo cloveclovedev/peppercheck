@@ -103,6 +103,7 @@ schema_paths = [
   "./schemas/subscription/tables/subscription_plans.sql",
   "./schemas/subscription/tables/subscription_plan_prices.sql",
   "./schemas/subscription/tables/user_subscriptions.sql",
+  "./schemas/subscription/tables/realtime.sql",
 
   # Notification
   "./schemas/notification/tables/user_fcm_tokens.sql",
