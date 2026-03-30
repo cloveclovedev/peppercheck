@@ -1,4 +1,5 @@
 import 'jsr:@supabase/functions-js@^2/edge-runtime.d.ts'
+import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { createRemoteJWKSet, importPKCS8, jwtVerify, SignJWT } from 'jose'
 
 const GOOGLE_JWKS = createRemoteJWKSet(
@@ -87,7 +88,182 @@ interface SubscriptionV2 {
   acknowledgementState?: string
 }
 
-async function _fetchSubscriptionV2(purchaseToken: string): Promise<SubscriptionV2> {
+// RTDN notification types
+// https://developer.android.com/google/play/billing/rtdn-reference
+const NOTIFICATION_TYPE = {
+  RECOVERED: 1,
+  RENEWED: 2,
+  CANCELED: 3,
+  PURCHASED: 4,
+  ON_HOLD: 5,
+  IN_GRACE_PERIOD: 6,
+  RESTARTED: 7,
+  PRICE_CHANGE_CONFIRMED: 8,
+  DEFERRED: 9,
+  PAUSED: 10,
+  PAUSE_SCHEDULE_CHANGED: 11,
+  REVOKED: 12,
+  EXPIRED: 13,
+} as const
+
+// Google Play product IDs are '{planId}_monthly', DB plan IDs are '{planId}'
+function extractPlanId(productId: string): string {
+  return productId.replace('_monthly', '')
+}
+
+// Map notification types to subscription_status enum values in DB
+function mapSubscriptionStatus(notificationType: number): string | null {
+  switch (notificationType) {
+    case NOTIFICATION_TYPE.PURCHASED:
+    case NOTIFICATION_TYPE.RENEWED:
+    case NOTIFICATION_TYPE.RECOVERED:
+    case NOTIFICATION_TYPE.RESTARTED:
+      return 'active'
+    case NOTIFICATION_TYPE.IN_GRACE_PERIOD:
+      return 'past_due'
+    case NOTIFICATION_TYPE.ON_HOLD:
+      return 'unpaid'
+    case NOTIFICATION_TYPE.CANCELED:
+    case NOTIFICATION_TYPE.EXPIRED:
+    case NOTIFICATION_TYPE.REVOKED:
+      return 'canceled'
+    case NOTIFICATION_TYPE.PAUSED:
+      return 'paused'
+    default:
+      return null
+  }
+}
+
+async function handleSubscriptionNotification(
+  notificationType: number,
+  purchaseToken: string,
+  supabaseAdmin: ReturnType<typeof createClient>,
+): Promise<void> {
+  // Always fetch current state — notifications are signals, not data
+  const subscription = await fetchSubscriptionV2(purchaseToken)
+
+  const userId = subscription.externalAccountIdentifiers?.obfuscatedExternalAccountId
+  if (!userId) {
+    console.error('No obfuscatedExternalAccountId found in subscription response')
+    return
+  }
+
+  const lineItem = subscription.lineItems?.[0]
+  if (!lineItem) {
+    console.error('No line items in subscription response')
+    return
+  }
+
+  const planId = extractPlanId(lineItem.productId)
+  const status = mapSubscriptionStatus(notificationType)
+
+  if (!status) {
+    console.log(`Notification type ${notificationType} does not require status update, skipping`)
+    return
+  }
+
+  console.log(
+    `Processing notification type=${notificationType} for user=${userId} plan=${planId} status=${status}`,
+  )
+
+  // Handle CANCELED: only update cancel_at_period_end, keep status active until expiry
+  if (notificationType === NOTIFICATION_TYPE.CANCELED) {
+    const { error } = await supabaseAdmin
+      .from('user_subscriptions')
+      .update({
+        cancel_at_period_end: true,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('user_id', userId)
+
+    if (error) {
+      console.error('Failed to update cancel_at_period_end:', error)
+      throw error
+    }
+    console.log(`Marked cancel_at_period_end for user ${userId}`)
+    return
+  }
+
+  // Upsert subscription for all other notification types
+  // deno-lint-ignore no-explicit-any
+  const { error: upsertError } = await (supabaseAdmin.from('user_subscriptions') as any).upsert({
+    user_id: userId,
+    plan_id: planId,
+    status: status,
+    provider: 'google',
+    google_purchase_token: purchaseToken,
+    current_period_start: subscription.startTime
+      ? new Date(subscription.startTime).toISOString()
+      : new Date().toISOString(),
+    current_period_end: new Date(lineItem.expiryTime).toISOString(),
+    cancel_at_period_end: !lineItem.autoRenewingPlan,
+    updated_at: new Date().toISOString(),
+  })
+
+  if (upsertError) {
+    console.error('Failed to upsert user_subscription:', upsertError)
+    throw upsertError
+  }
+
+  // Grant points on PURCHASED or RENEWED
+  if (
+    notificationType === NOTIFICATION_TYPE.PURCHASED ||
+    notificationType === NOTIFICATION_TYPE.RENEWED
+  ) {
+    // deno-lint-ignore no-explicit-any
+    const plansTable = supabaseAdmin.from('subscription_plans') as any
+    const { data: planData, error: planError } = await plansTable
+      .select('monthly_points')
+      .eq('id', planId)
+      .single()
+
+    if (planError || !planData) {
+      console.error(`Failed to fetch plan data for ${planId}:`, planError?.message)
+      throw new Error(`Plan not found: ${planId}`)
+    }
+
+    if (planData.monthly_points > 0) {
+      // Idempotency key: google:{purchaseToken}:{expiryTime}
+      // Using expiryTime ensures each renewal period gets a unique key
+      // (purchaseToken stays the same for the life of the subscription)
+      const invoiceId = `google:${purchaseToken}:${lineItem.expiryTime}`
+      const { data: granted, error: rpcError } = await supabaseAdmin.rpc(
+        'grant_subscription_points',
+        {
+          p_user_id: userId,
+          p_amount: planData.monthly_points,
+          p_invoice_id: invoiceId,
+        },
+      )
+
+      if (rpcError) {
+        console.error(`grant_subscription_points failed:`, rpcError)
+        throw rpcError
+      }
+
+      if (granted) {
+        console.log(`Granted ${planData.monthly_points} points to user ${userId}`)
+      } else {
+        console.log(`Points already granted for ${invoiceId}, skipping (idempotent)`)
+      }
+    }
+  }
+
+  // Deactivate trial points on PURCHASED (best-effort)
+  if (notificationType === NOTIFICATION_TYPE.PURCHASED) {
+    const { error: trialError } = await supabaseAdmin.rpc('deactivate_trial_points', {
+      p_user_id: userId,
+    })
+    if (trialError) {
+      console.error(`Failed to deactivate trial points for user ${userId}:`, trialError)
+      // Don't throw — subscription activation is primary
+    } else {
+      console.log(`Trial points deactivated for user ${userId}`)
+    }
+  }
+}
+
+async function fetchSubscriptionV2(purchaseToken: string): Promise<SubscriptionV2> {
   const serviceAccountJson = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_JSON')
   if (!serviceAccountJson) throw new Error('Missing GOOGLE_SERVICE_ACCOUNT_JSON')
 
@@ -124,15 +300,58 @@ Deno.serve(async (req) => {
     return new Response('Unauthorized', { status: 401 })
   }
 
+  const supabaseAdmin = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+  )
+
   try {
     const body = await req.json()
-    console.log('Received authenticated Pub/Sub message:', JSON.stringify(body))
+
+    // Parse Pub/Sub push envelope
+    const messageData = body.message?.data
+    if (!messageData) {
+      console.error('No message.data in Pub/Sub envelope')
+      return new Response(JSON.stringify({ received: true }), {
+        headers: { 'Content-Type': 'application/json' },
+        status: 200,
+      })
+    }
+
+    // Decode base64 notification data
+    const decoded = atob(messageData)
+    const notification = JSON.parse(decoded)
+
+    console.log(
+      `RTDN: package=${notification.packageName}, event_time=${notification.eventTimeMillis}`,
+    )
+
+    // Handle test notification
+    if (notification.testNotification) {
+      console.log('Received test notification, version:', notification.testNotification.version)
+      return new Response(JSON.stringify({ received: true, test: true }), {
+        headers: { 'Content-Type': 'application/json' },
+        status: 200,
+      })
+    }
+
+    // Handle subscription notification
+    if (notification.subscriptionNotification) {
+      const { notificationType, purchaseToken } = notification.subscriptionNotification
+      console.log(`Subscription notification: type=${notificationType}, token=${purchaseToken}`)
+
+      await handleSubscriptionNotification(notificationType, purchaseToken, supabaseAdmin)
+    } else {
+      console.log('Received non-subscription notification, skipping')
+    }
+
     return new Response(JSON.stringify({ received: true }), {
       headers: { 'Content-Type': 'application/json' },
       status: 200,
     })
   } catch (error) {
     console.error('Error processing RTDN:', error)
+    // Always return 200 to prevent Pub/Sub infinite retries
     return new Response(JSON.stringify({ error: 'processing failed' }), {
       headers: { 'Content-Type': 'application/json' },
       status: 200,
