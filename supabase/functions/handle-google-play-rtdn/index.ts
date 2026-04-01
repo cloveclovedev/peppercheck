@@ -1,5 +1,5 @@
 import 'jsr:@supabase/functions-js@^2/edge-runtime.d.ts'
-import { createClient } from 'jsr:@supabase/supabase-js@2'
+import { createClient } from '@supabase/supabase-js'
 import { createRemoteJWKSet, importPKCS8, jwtVerify, SignJWT } from 'jose'
 
 const GOOGLE_JWKS = createRemoteJWKSet(
