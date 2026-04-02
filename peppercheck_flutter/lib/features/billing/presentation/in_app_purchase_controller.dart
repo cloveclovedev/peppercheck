@@ -5,6 +5,7 @@ import 'package:in_app_purchase_android/in_app_purchase_android.dart';
 import 'package:logger/logger.dart';
 import 'package:peppercheck_flutter/features/billing/data/billing_providers.dart';
 import 'package:peppercheck_flutter/features/billing/data/in_app_purchase_repository.dart';
+import 'package:peppercheck_flutter/features/billing/presentation/current_purchase_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -90,6 +91,18 @@ class InAppPurchaseController extends _$InAppPurchaseController {
     }
   }
 
+  /// Fetches the current Google Play purchase for upgrade/downgrade flow.
+  /// Unlike [restorePurchases], this does not set up Realtime subscription.
+  Future<void> fetchCurrentPurchase() async {
+    try {
+      final repo = ref.read(inAppPurchaseRepositoryProvider);
+      await repo.restorePurchases();
+    } catch (e, st) {
+      _logger.e('Failed to fetch current purchase', error: e, stackTrace: st);
+      // Non-fatal: plan change won't work but new purchase still will.
+    }
+  }
+
   Future<void> _onPurchaseUpdate(
     List<PurchaseDetails> purchaseDetailsList,
   ) async {
@@ -102,8 +115,16 @@ class InAppPurchaseController extends _$InAppPurchaseController {
         _logger.e('Purchase Error: ${purchase.error}');
         _removeRealtimeSubscription();
         state = AsyncError(purchase.error!, StackTrace.current);
-      } else if (purchase.status == PurchaseStatus.purchased ||
-          purchase.status == PurchaseStatus.restored) {
+      } else if (purchase.status == PurchaseStatus.restored) {
+        // Store restored Google Play purchase for upgrade/downgrade flow.
+        // Do NOT change controller state — this is not a new purchase.
+        if (purchase is GooglePlayPurchaseDetails) {
+          ref.read(currentPurchaseProvider.notifier).set(purchase);
+        }
+        if (purchase.pendingCompletePurchase) {
+          await repo.completePurchase(purchase);
+        }
+      } else if (purchase.status == PurchaseStatus.purchased) {
         try {
           if (purchase.pendingCompletePurchase) {
             await repo.completePurchase(purchase);
