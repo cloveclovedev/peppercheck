@@ -23,7 +23,7 @@ class AccountActionsSection extends ConsumerWidget {
         data: (status) =>
             _buildDeleteButton(context, ref, status.deletable, status.reasons),
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => _buildDeleteButton(context, ref, false, []),
+        error: (_, _) => _buildDeleteButton(context, ref, false, []),
       ),
     );
   }

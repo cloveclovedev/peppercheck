@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:in_app_purchase/in_app_purchase.dart';
-import 'package:in_app_purchase_android/billing_client_wrappers.dart';
 import 'package:in_app_purchase_android/in_app_purchase_android.dart';
 import 'package:logger/logger.dart';
 import 'package:peppercheck_flutter/features/billing/data/billing_providers.dart';
