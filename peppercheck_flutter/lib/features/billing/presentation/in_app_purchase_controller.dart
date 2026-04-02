@@ -32,7 +32,7 @@ class InAppPurchaseController extends _$InAppPurchaseController {
   RealtimeChannel? _realtimeChannel;
 
   @override
-  FutureOr<void> build() {
+  FutureOr<bool> build() {
     final repo = ref.watch(inAppPurchaseRepositoryProvider);
     _purchaseSubscription = repo.purchaseStream.listen(
       _onPurchaseUpdate,
@@ -48,6 +48,8 @@ class InAppPurchaseController extends _$InAppPurchaseController {
       _purchaseSubscription?.cancel();
       _removeRealtimeSubscription();
     });
+
+    return false;
   }
 
   Future<void> buy({
@@ -55,11 +57,15 @@ class InAppPurchaseController extends _$InAppPurchaseController {
     GooglePlayPurchaseDetails? oldPurchase,
     bool isUpgrade = false,
   }) async {
-    state = const AsyncLoading();
     try {
       final repo = ref.read(inAppPurchaseRepositoryProvider);
       final userId = Supabase.instance.client.auth.currentUser?.id;
       if (userId == null) throw Exception('User not authenticated');
+
+      // Subscribe to Realtime BEFORE initiating purchase to avoid race condition.
+      // The RTDN chain (Google → Pub/Sub → Edge Function → DB) can complete
+      // before a post-purchase subscribe, causing us to miss the update.
+      _subscribeToRealtimeUpdates();
 
       await repo.buySubscription(
         product: product,
@@ -68,16 +74,18 @@ class InAppPurchaseController extends _$InAppPurchaseController {
         isUpgrade: isUpgrade,
       );
     } catch (e, st) {
+      _removeRealtimeSubscription();
       state = AsyncError(e, st);
     }
   }
 
   Future<void> restorePurchases() async {
-    state = const AsyncLoading();
     try {
       final repo = ref.read(inAppPurchaseRepositoryProvider);
+      _subscribeToRealtimeUpdates();
       await repo.restorePurchases();
     } catch (e, st) {
+      _removeRealtimeSubscription();
       state = AsyncError(e, st);
     }
   }
@@ -89,9 +97,10 @@ class InAppPurchaseController extends _$InAppPurchaseController {
 
     for (final purchase in purchaseDetailsList) {
       if (purchase.status == PurchaseStatus.pending) {
-        state = const AsyncLoading();
+        // No-op: Google Play dialog is visible, no need to change state.
       } else if (purchase.status == PurchaseStatus.error) {
         _logger.e('Purchase Error: ${purchase.error}');
+        _removeRealtimeSubscription();
         state = AsyncError(purchase.error!, StackTrace.current);
       } else if (purchase.status == PurchaseStatus.purchased ||
           purchase.status == PurchaseStatus.restored) {
@@ -99,13 +108,17 @@ class InAppPurchaseController extends _$InAppPurchaseController {
           if (purchase.pendingCompletePurchase) {
             await repo.completePurchase(purchase);
           }
-          _subscribeToRealtimeUpdates();
+          // Signal UI to show "プラン更新中..." inline text.
+          // Realtime subscription is already active (set up in buy()).
+          state = const AsyncData(true);
         } catch (e, st) {
           _logger.e('Purchase completion failed', error: e, stackTrace: st);
+          _removeRealtimeSubscription();
           state = AsyncError(e, st);
         }
       } else if (purchase.status == PurchaseStatus.canceled) {
-        state = const AsyncData(null);
+        _removeRealtimeSubscription();
+        state = const AsyncData(false);
       }
     }
   }
@@ -133,7 +146,7 @@ class InAppPurchaseController extends _$InAppPurchaseController {
             );
             ref.invalidate(subscriptionProvider);
             ref.invalidate(pointWalletProvider);
-            state = const AsyncData(null);
+            state = const AsyncData(false);
             _removeRealtimeSubscription();
           },
         )
