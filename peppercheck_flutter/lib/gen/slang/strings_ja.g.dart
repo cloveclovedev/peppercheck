@@ -165,6 +165,9 @@ class TranslationsBillingJa {
 
 	/// ja: 'お試し義務によるレフェリーです。リワードポイントは付与されません。'
 	String get obligationRefereeNotice => 'お試し義務によるレフェリーです。リワードポイントは付与されません。';
+
+	/// ja: 'サブスクリプションを処理中...'
+	String get processingPurchase => 'サブスクリプションを処理中...';
 }
 
 // Path: common
@@ -1021,6 +1024,7 @@ extension on Translations {
 			'billing.pendingObligations' => ({required Object count}) => '無料レフェリー義務: 残り${count} 件',
 			'billing.trialPointNotice' => 'お試しポイントを使用します。タスク完了後に無料レフェリー義務が発生します。',
 			'billing.obligationRefereeNotice' => 'お試し義務によるレフェリーです。リワードポイントは付与されません。',
+			'billing.processingPurchase' => 'サブスクリプションを処理中...',
 			'common.cancel' => 'キャンセル',
 			'common.confirm' => '確認',
 			'common.save' => '保存',
