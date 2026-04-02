@@ -19,6 +19,18 @@ repos:
         language: system
         pass_filenames: false
         files: ^peppercheck-webapp/
+      - id: dart-format
+        name: Dart format (Flutter)
+        entry: dart format --set-exit-if-changed --line-length 80
+        language: system
+        pass_filenames: true
+        files: ^peppercheck_flutter/.*\.dart$
+      - id: flutter-analyze
+        name: Flutter analyze
+        entry: bash -c 'cd peppercheck_flutter && flutter analyze --no-fatal-infos'
+        language: system
+        pass_filenames: false
+        files: ^peppercheck_flutter/.*\.dart$
       - id: no-stripe-live-keys
         name: Detect Stripe live keys
         entry: 'sk_live_|rk_live_|whsec_live_'
