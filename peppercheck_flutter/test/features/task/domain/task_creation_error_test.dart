@@ -99,7 +99,9 @@ void main() {
 
     group('Wallet Not Found Error', () {
       test('detects wallet not found message', () {
-        final error = TaskCreationError.parse('Point wallet not found for user');
+        final error = TaskCreationError.parse(
+          'Point wallet not found for user',
+        );
 
         expect(error.type, TaskCreationErrorType.walletNotFound);
         expect(error.message, 'Point wallet not found for user');
@@ -163,15 +165,18 @@ void main() {
         expect(error.type, TaskCreationErrorType.unknown);
       });
 
-      test('ensures balance/locked/required are null for non-points errors', () {
-        final error = TaskCreationError.parse(
-          'Due date must be at least 24 hours from now',
-        );
+      test(
+        'ensures balance/locked/required are null for non-points errors',
+        () {
+          final error = TaskCreationError.parse(
+            'Due date must be at least 24 hours from now',
+          );
 
-        expect(error.balance, isNull);
-        expect(error.locked, isNull);
-        expect(error.required, isNull);
-      });
+          expect(error.balance, isNull);
+          expect(error.locked, isNull);
+          expect(error.required, isNull);
+        },
+      );
 
       test('ensures minHours is null for non-due-date errors', () {
         final error = TaskCreationError.parse(

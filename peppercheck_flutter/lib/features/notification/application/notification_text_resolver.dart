@@ -12,8 +12,10 @@ import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 }) {
   final taskTitle = (locArgs != null && locArgs.isNotEmpty) ? locArgs[0] : '';
 
-  final title = _resolveKey(titleLocKey, taskTitle) ?? t.notification.fallback_title;
-  final body = _resolveKey(bodyLocKey, taskTitle) ?? t.notification.fallback_body;
+  final title =
+      _resolveKey(titleLocKey, taskTitle) ?? t.notification.fallback_title;
+  final body =
+      _resolveKey(bodyLocKey, taskTitle) ?? t.notification.fallback_body;
 
   return (title: title, body: body);
 }
@@ -34,20 +36,28 @@ String? _resolveKey(String? locKey, String taskTitle) {
     case 'notification_matching_reassigned_tasker_title':
       return t.notification.matching_reassigned_tasker_title;
     case 'notification_matching_reassigned_tasker_body':
-      return t.notification.matching_reassigned_tasker_body(taskTitle: taskTitle);
+      return t.notification.matching_reassigned_tasker_body(
+        taskTitle: taskTitle,
+      );
     case 'notification_matching_cancelled_pending_tasker_title':
       return t.notification.matching_cancelled_pending_tasker_title;
     case 'notification_matching_cancelled_pending_tasker_body':
-      return t.notification.matching_cancelled_pending_tasker_body(taskTitle: taskTitle);
+      return t.notification.matching_cancelled_pending_tasker_body(
+        taskTitle: taskTitle,
+      );
     case 'notification_matching_expired_refunded_tasker_title':
       return t.notification.matching_expired_refunded_tasker_title;
     case 'notification_matching_expired_refunded_tasker_body':
-      return t.notification.matching_expired_refunded_tasker_body(taskTitle: taskTitle);
+      return t.notification.matching_expired_refunded_tasker_body(
+        taskTitle: taskTitle,
+      );
     // Evidence
     case 'notification_evidence_submitted_referee_title':
       return t.notification.evidence_submitted_referee_title;
     case 'notification_evidence_submitted_referee_body':
-      return t.notification.evidence_submitted_referee_body(taskTitle: taskTitle);
+      return t.notification.evidence_submitted_referee_body(
+        taskTitle: taskTitle,
+      );
     case 'notification_evidence_updated_referee_title':
       return t.notification.evidence_updated_referee_title;
     case 'notification_evidence_updated_referee_body':
@@ -55,7 +65,9 @@ String? _resolveKey(String? locKey, String taskTitle) {
     case 'notification_evidence_resubmitted_referee_title':
       return t.notification.evidence_resubmitted_referee_title;
     case 'notification_evidence_resubmitted_referee_body':
-      return t.notification.evidence_resubmitted_referee_body(taskTitle: taskTitle);
+      return t.notification.evidence_resubmitted_referee_body(
+        taskTitle: taskTitle,
+      );
     case 'notification_evidence_timeout_tasker_title':
       return t.notification.evidence_timeout_tasker_title;
     case 'notification_evidence_timeout_tasker_body':
@@ -68,15 +80,21 @@ String? _resolveKey(String? locKey, String taskTitle) {
     case 'notification_judgement_approved_tasker_title':
       return t.notification.judgement_approved_tasker_title;
     case 'notification_judgement_approved_tasker_body':
-      return t.notification.judgement_approved_tasker_body(taskTitle: taskTitle);
+      return t.notification.judgement_approved_tasker_body(
+        taskTitle: taskTitle,
+      );
     case 'notification_judgement_rejected_tasker_title':
       return t.notification.judgement_rejected_tasker_title;
     case 'notification_judgement_rejected_tasker_body':
-      return t.notification.judgement_rejected_tasker_body(taskTitle: taskTitle);
+      return t.notification.judgement_rejected_tasker_body(
+        taskTitle: taskTitle,
+      );
     case 'notification_judgement_confirmed_referee_title':
       return t.notification.judgement_confirmed_referee_title;
     case 'notification_judgement_confirmed_referee_body':
-      return t.notification.judgement_confirmed_referee_body(taskTitle: taskTitle);
+      return t.notification.judgement_confirmed_referee_body(
+        taskTitle: taskTitle,
+      );
     case 'notification_auto_confirm_tasker_title':
       return t.notification.auto_confirm_tasker_title;
     case 'notification_auto_confirm_tasker_body':

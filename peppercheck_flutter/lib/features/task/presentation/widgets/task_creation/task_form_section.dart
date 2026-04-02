@@ -71,7 +71,8 @@ class _TaskFormSectionState extends ConsumerState<TaskFormSection> {
           children: [
             BaseTextField(
               controller: _titleController,
-              value: state.request
+              value: state
+                  .request
                   .title, // Keep value for initial sync if needed, but controller handles it
               onValueChange: controller.updateTitle,
               label: t.task.creation.labelTitle,
@@ -111,9 +112,7 @@ class _TaskFormSectionState extends ConsumerState<TaskFormSection> {
         ),
       ),
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stack) => Center(
-        child: Text('Error: $error'),
-      ),
+      error: (error, stack) => Center(child: Text('Error: $error')),
     );
   }
 

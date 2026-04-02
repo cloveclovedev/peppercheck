@@ -6,10 +6,7 @@ import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 class TaskCreationErrorDialog extends StatelessWidget {
   final TaskCreationError error;
 
-  const TaskCreationErrorDialog({
-    super.key,
-    required this.error,
-  });
+  const TaskCreationErrorDialog({super.key, required this.error});
 
   String _getTitle() {
     final errorStrings = t.task.creation.error;
@@ -35,9 +32,7 @@ class TaskCreationErrorDialog extends StatelessWidget {
           required: error.required ?? 0,
         );
       case TaskCreationErrorType.dueDateTooSoon:
-        return errorStrings.dueDateTooSoonDetail(
-          minHours: error.minHours ?? 0,
-        );
+        return errorStrings.dueDateTooSoonDetail(minHours: error.minHours ?? 0);
       case TaskCreationErrorType.walletNotFound:
         return errorStrings.walletNotFoundDetail;
       case TaskCreationErrorType.unknown:
@@ -57,15 +52,15 @@ class TaskCreationErrorDialog extends StatelessWidget {
       title: Text(
         _getTitle(),
         style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.bold,
-            ),
+          color: AppColors.textPrimary,
+          fontWeight: FontWeight.bold,
+        ),
       ),
       content: Text(
         _getDetailMessage(),
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppColors.textPrimary,
-            ),
+        style: Theme.of(
+          context,
+        ).textTheme.bodyMedium?.copyWith(color: AppColors.textPrimary),
       ),
       actions: [
         ElevatedButton(

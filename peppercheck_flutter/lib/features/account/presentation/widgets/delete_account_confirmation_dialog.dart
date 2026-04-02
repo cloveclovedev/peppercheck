@@ -6,10 +6,7 @@ import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 class DeleteAccountConfirmationDialog extends StatelessWidget {
   final VoidCallback onConfirm;
 
-  const DeleteAccountConfirmationDialog({
-    super.key,
-    required this.onConfirm,
-  });
+  const DeleteAccountConfirmationDialog({super.key, required this.onConfirm});
 
   @override
   Widget build(BuildContext context) {
@@ -23,9 +20,9 @@ class DeleteAccountConfirmationDialog extends StatelessWidget {
       title: Text(
         t.account.actions.confirmTitle,
         style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.bold,
-            ),
+          color: AppColors.textPrimary,
+          fontWeight: FontWeight.bold,
+        ),
       ),
       content: SingleChildScrollView(
         child: Column(
@@ -44,9 +41,9 @@ class DeleteAccountConfirmationDialog extends StatelessWidget {
             const SizedBox(height: AppSizes.spacingSmall),
             Text(
               t.account.actions.confirmIapNotice,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
             ),
           ],
         ),
@@ -73,18 +70,18 @@ class DeleteAccountConfirmationDialog extends StatelessWidget {
     return Text(
       text,
       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: AppColors.textPrimary,
-            fontWeight: FontWeight.bold,
-          ),
+        color: AppColors.textPrimary,
+        fontWeight: FontWeight.bold,
+      ),
     );
   }
 
   Widget _buildBody(BuildContext context, String text) {
     return Text(
       text,
-      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: AppColors.textPrimary,
-          ),
+      style: Theme.of(
+        context,
+      ).textTheme.bodyMedium?.copyWith(color: AppColors.textPrimary),
     );
   }
 
@@ -101,21 +98,22 @@ class DeleteAccountConfirmationDialog extends StatelessWidget {
         title: Text(
           t.account.actions.confirmTitle,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.bold,
-              ),
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         content: Text(
           t.account.actions.finalConfirmDescription,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.textError,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: AppColors.textError),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            style:
-                TextButton.styleFrom(foregroundColor: AppColors.textSecondary),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.textSecondary,
+            ),
             child: Text(t.account.actions.cancelButton),
           ),
           TextButton(
@@ -154,16 +152,17 @@ class PayoutFailedDialog extends StatelessWidget {
       title: Text(
         t.account.actions.payoutFailedTitle,
         style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.bold,
-            ),
+          color: AppColors.textPrimary,
+          fontWeight: FontWeight.bold,
+        ),
       ),
       content: Text(
         t.account.actions.payoutFailedDescription(
-            amount: rewardBalance.toString()),
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppColors.textPrimary,
-            ),
+          amount: rewardBalance.toString(),
+        ),
+        style: Theme.of(
+          context,
+        ).textTheme.bodyMedium?.copyWith(color: AppColors.textPrimary),
       ),
       actions: [
         TextButton(

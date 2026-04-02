@@ -133,7 +133,10 @@ class _BlockedDateDialogState extends State<BlockedDateDialog> {
                       child: Text(
                         (_startDate != null && _endDate != null)
                             ? '${_formatDate(_startDate!)} - ${_formatDate(_endDate!)}'
-                            : t.matching.referee_blocked_dates.select_date_range,
+                            : t
+                                  .matching
+                                  .referee_blocked_dates
+                                  .select_date_range,
                         style: TextStyle(
                           color: (_startDate != null)
                               ? AppColors.textPrimary

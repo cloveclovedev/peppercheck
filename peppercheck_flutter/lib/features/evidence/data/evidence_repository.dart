@@ -15,14 +15,15 @@ class EvidenceRepository {
   EvidenceRepository(this._client, this._logger);
 
   Future<List<Map<String, dynamic>>> _uploadImages(
-      String taskId, List<XFile> images) async {
+    String taskId,
+    List<XFile> images,
+  ) async {
     final assets = <Map<String, dynamic>>[];
     final dio = Dio();
 
     for (final image in images) {
       final length = await image.length();
-      final mimeType =
-          lookupMimeType(image.path) ?? 'application/octet-stream';
+      final mimeType = lookupMimeType(image.path) ?? 'application/octet-stream';
 
       // 1. Get presigned URL
       final response = await _client.functions.invoke(
@@ -148,15 +149,11 @@ class EvidenceRepository {
     }
   }
 
-  Future<void> confirmEvidenceTimeout({
-    required String judgementId,
-  }) async {
+  Future<void> confirmEvidenceTimeout({required String judgementId}) async {
     try {
       await _client.rpc(
         'confirm_evidence_timeout',
-        params: {
-          'p_judgement_id': judgementId,
-        },
+        params: {'p_judgement_id': judgementId},
       );
     } catch (e, st) {
       _logger.e('confirmEvidenceTimeout failed', error: e, stackTrace: st);

@@ -66,9 +66,9 @@ class AccountActionsSection extends ConsumerWidget {
               foregroundColor: contentColor,
               side: BorderSide(color: borderColor, width: 2),
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20)),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               minimumSize: Size.zero,
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               elevation: 0,
@@ -82,9 +82,9 @@ class AccountActionsSection extends ConsumerWidget {
                 Text(
                   t.account.actions.deleteAccount,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: contentColor,
-                        fontWeight: FontWeight.w500,
-                      ),
+                    color: contentColor,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ],
             ),
@@ -103,20 +103,25 @@ class AccountActionsSection extends ConsumerWidget {
     );
   }
 
-  Future<void> _executeDelete(BuildContext context, WidgetRef ref,
-      {required bool force}) async {
-    await ref.read(accountDeletionControllerProvider.notifier).executeDelete(
-      force: force,
-      onSuccess: () async {
-        await ref.read(authenticationRepositoryProvider).signOut();
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(t.account.actions.deletedSnackbar)),
-          );
-          context.go('/');
-        }
-      },
-    );
+  Future<void> _executeDelete(
+    BuildContext context,
+    WidgetRef ref, {
+    required bool force,
+  }) async {
+    await ref
+        .read(accountDeletionControllerProvider.notifier)
+        .executeDelete(
+          force: force,
+          onSuccess: () async {
+            await ref.read(authenticationRepositoryProvider).signOut();
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(t.account.actions.deletedSnackbar)),
+              );
+              context.go('/');
+            }
+          },
+        );
 
     // Check for payout failure after execution
     final state = ref.read(accountDeletionControllerProvider);

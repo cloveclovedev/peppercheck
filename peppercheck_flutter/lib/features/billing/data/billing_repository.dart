@@ -72,7 +72,9 @@ class BillingRepository {
   Future<List<RefereeObligation>> fetchPendingObligations() async {
     final data = await _supabase
         .from('referee_obligations')
-        .select('id, status, source_request_id, fulfill_request_id, created_at, fulfilled_at')
+        .select(
+          'id, status, source_request_id, fulfill_request_id, created_at, fulfilled_at',
+        )
         .eq('status', 'pending')
         .order('created_at');
 

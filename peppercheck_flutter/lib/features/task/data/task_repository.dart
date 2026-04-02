@@ -105,7 +105,8 @@ class TaskRepository {
             // Map judgement (1:1 relationship: PostgREST returns a single object, not a list)
             if (reqJson['judgements'] is Map) {
               reqJson['judgement'] = Map<String, dynamic>.from(
-                  reqJson['judgements'] as Map);
+                reqJson['judgements'] as Map,
+              );
             }
 
             // Map referee profile
@@ -216,7 +217,8 @@ class TaskRepository {
           // Map judgement (1:1 relationship: PostgREST returns a single object, not a list)
           if (reqJson['judgements'] is Map) {
             reqJson['judgement'] = Map<String, dynamic>.from(
-                reqJson['judgements'] as Map);
+              reqJson['judgements'] as Map,
+            );
           }
 
           if (reqJson['profiles'] != null) {

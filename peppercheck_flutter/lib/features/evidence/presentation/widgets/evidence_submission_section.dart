@@ -66,7 +66,8 @@ class _EvidenceSubmissionSectionState
   }
 
   bool _isCurrentUserTasker() {
-    return Supabase.instance.client.auth.currentUser?.id == widget.task.taskerId;
+    return Supabase.instance.client.auth.currentUser?.id ==
+        widget.task.taskerId;
   }
 
   void _enterEditMode({required bool isResubmit}) {
@@ -92,7 +93,9 @@ class _EvidenceSubmissionSectionState
 
   void _updateEvidence() {
     final evidence = widget.task.evidence!;
-    ref.read(evidenceControllerProvider.notifier).updateEvidence(
+    ref
+        .read(evidenceControllerProvider.notifier)
+        .updateEvidence(
           taskId: widget.task.id,
           evidenceId: evidence.id,
           description: _descriptionController.text,
@@ -111,7 +114,9 @@ class _EvidenceSubmissionSectionState
 
   void _resubmitEvidence() {
     final evidence = widget.task.evidence!;
-    ref.read(evidenceControllerProvider.notifier).resubmit(
+    ref
+        .read(evidenceControllerProvider.notifier)
+        .resubmit(
           taskId: widget.task.id,
           evidenceId: evidence.id,
           description: _descriptionController.text,
@@ -138,8 +143,8 @@ class _EvidenceSubmissionSectionState
           final evidence = widget.task.evidence;
           final remainingCount = _isEditing && evidence != null
               ? evidence.assets
-                  .where((a) => !_assetIdsToRemove.contains(a.id))
-                  .length
+                    .where((a) => !_assetIdsToRemove.contains(a.id))
+                    .length
               : 0;
           final maxNew = 5 - remainingCount;
           if (_selectedImages.length > maxNew) {
@@ -179,12 +184,14 @@ class _EvidenceSubmissionSectionState
   }
 
   void _confirmTimeout() {
-    final request = widget.task.refereeRequests.cast<RefereeRequest?>().firstWhere(
-      (req) =>
-          req?.judgement?.status == 'evidence_timeout' &&
-          req!.judgement!.isConfirmed == false,
-      orElse: () => null,
-    );
+    final request = widget.task.refereeRequests
+        .cast<RefereeRequest?>()
+        .firstWhere(
+          (req) =>
+              req?.judgement?.status == 'evidence_timeout' &&
+              req!.judgement!.isConfirmed == false,
+          orElse: () => null,
+        );
     if (request == null) return;
 
     ref
@@ -368,10 +375,7 @@ class _EvidenceSubmissionSectionState
                       ),
               ),
               const SizedBox(width: AppSizes.spacingSmall),
-              TextButton(
-                onPressed: _cancelEdit,
-                child: Text(t.common.cancel),
-              ),
+              TextButton(onPressed: _cancelEdit, child: Text(t.common.cancel)),
             ],
           ),
         ],
@@ -466,8 +470,11 @@ class _EvidenceSubmissionSectionState
           children: [
             Row(
               children: [
-                Icon(Icons.warning_amber_rounded,
-                    color: AppColors.textError, size: 20),
+                Icon(
+                  Icons.warning_amber_rounded,
+                  color: AppColors.textError,
+                  size: 20,
+                ),
                 const SizedBox(width: AppSizes.spacingTiny),
                 Expanded(
                   child: Text(
@@ -496,8 +503,11 @@ class _EvidenceSubmissionSectionState
               const SizedBox(height: AppSizes.spacingSmall),
               Row(
                 children: [
-                  Icon(Icons.check_circle,
-                      color: AppColors.accentGreen, size: 16),
+                  Icon(
+                    Icons.check_circle,
+                    color: AppColors.accentGreen,
+                    size: 16,
+                  ),
                   const SizedBox(width: AppSizes.spacingTiny),
                   Text(
                     t.task.evidence.timeout.confirmed,

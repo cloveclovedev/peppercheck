@@ -157,15 +157,14 @@ class AppScaffold extends StatelessWidget {
         ];
       }
 
-      final bottomPadding = AppSizes.bottomNavigationBarHeight +
+      final bottomPadding =
+          AppSizes.bottomNavigationBarHeight +
           MediaQuery.paddingOf(context).bottom;
 
       final scrollView = CustomScrollView(
         slivers: [
           ...contentSlivers,
-          SliverPadding(
-            padding: EdgeInsets.only(bottom: bottomPadding),
-          ),
+          SliverPadding(padding: EdgeInsets.only(bottom: bottomPadding)),
         ],
       );
 

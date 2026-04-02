@@ -128,7 +128,9 @@ class InAppPurchaseController extends _$InAppPurchaseController {
             value: userId,
           ),
           callback: (payload) {
-            _logger.i('Subscription updated via Realtime: ${payload.newRecord}');
+            _logger.i(
+              'Subscription updated via Realtime: ${payload.newRecord}',
+            );
             ref.invalidate(subscriptionProvider);
             ref.invalidate(pointWalletProvider);
             state = const AsyncData(null);
