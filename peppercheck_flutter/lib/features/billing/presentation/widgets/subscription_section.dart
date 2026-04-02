@@ -1,19 +1,37 @@
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:peppercheck_flutter/app/theme/app_colors.dart';
 import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
+import 'package:peppercheck_flutter/app/utils/date_time_utils.dart';
 import 'package:peppercheck_flutter/common_widgets/action_button.dart';
 import 'package:peppercheck_flutter/common_widgets/base_section.dart';
 import 'package:peppercheck_flutter/features/billing/data/billing_providers.dart';
+import 'package:peppercheck_flutter/features/billing/domain/subscription_display_state.dart';
+import 'package:peppercheck_flutter/features/billing/presentation/current_purchase_provider.dart';
 import 'package:peppercheck_flutter/features/billing/presentation/in_app_purchase_controller.dart';
-import 'package:peppercheck_flutter/app/utils/date_time_utils.dart';
+import 'package:peppercheck_flutter/features/billing/presentation/widgets/plan_card.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class SubscriptionSection extends ConsumerWidget {
+class SubscriptionSection extends ConsumerStatefulWidget {
   const SubscriptionSection({super.key});
+
+  @override
+  ConsumerState<SubscriptionSection> createState() =>
+      _SubscriptionSectionState();
+}
+
+class _SubscriptionSectionState extends ConsumerState<SubscriptionSection> {
+  @override
+  void initState() {
+    super.initState();
+    // Fetch current Google Play purchase for upgrade/downgrade flow.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(inAppPurchaseControllerProvider.notifier).fetchCurrentPurchase();
+    });
+  }
 
   Future<void> _launchWebDashboard() async {
     final baseUrl =
@@ -24,90 +42,23 @@ class SubscriptionSection extends ConsumerWidget {
     }
   }
 
-  String _getPlanName(String? planId) {
-    if (planId == 'light') return t.billing.plans.light;
-    if (planId == 'standard') return t.billing.plans.standard;
-    if (planId == 'premium') return t.billing.plans.premium;
-    return t.billing.noPlan;
-  }
-
-  Color _getPlanColor(String? planId) {
-    if (planId == 'light') return AppColors.accentGreen;
-    if (planId == 'standard') return AppColors.accentBlue;
-    if (planId == 'premium') return AppColors.accentYellow;
-    return AppColors.textMuted;
-  }
-
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(subscriptionProvider);
+  Widget build(BuildContext context) {
+    final subscriptionAsync = ref.watch(subscriptionProvider);
     final purchaseState = ref.watch(inAppPurchaseControllerProvider);
 
     return BaseSection(
       title: t.billing.subscription,
-      child: state.when(
+      child: subscriptionAsync.when(
         data: (subscription) {
-          final status = subscription?.status;
-          final planId = subscription?.planId;
-          final expiry = subscription?.currentPeriodEnd;
-          final bool isActive = status == 'active';
+          final displayState = SubscriptionDisplayState.fromSubscription(
+            subscription,
+          );
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSizes.spacingMedium,
-                  vertical: AppSizes.spacingSmall,
-                ),
-                decoration: BoxDecoration(
-                  border: Border.all(color: AppColors.border),
-                  borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.star, color: _getPlanColor(planId), size: 32),
-                    const SizedBox(width: AppSizes.spacingMedium),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _getPlanName(planId),
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          if ((status != null && !isActive) ||
-                              expiry != null) ...[
-                            const SizedBox(height: 4),
-                            Wrap(
-                              crossAxisAlignment: WrapCrossAlignment.center,
-                              spacing: 8,
-                              children: [
-                                if (status != null && !isActive)
-                                  Text(
-                                    status,
-                                    style: const TextStyle(
-                                      color: AppColors.textSecondary,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                if (expiry != null)
-                                  Text(
-                                    '${t.billing.renews}: ${formatDate(DateTime.parse(expiry).toLocal())}',
-                                    style: const TextStyle(
-                                      color: AppColors.textSecondary,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              _StatusDisplay(displayState: displayState),
 
               if (purchaseState.value == true)
                 Padding(
@@ -123,10 +74,9 @@ class SubscriptionSection extends ConsumerWidget {
 
               const SizedBox(height: AppSizes.spacingSmall),
 
-              if (!isActive) ...[
-                const _ProductList(),
-                const SizedBox(height: AppSizes.spacingSmall),
-              ],
+              _PlanCardList(displayState: displayState),
+
+              const SizedBox(height: AppSizes.spacingSmall),
 
               ActionButton(
                 text: t.billing.manageSubscription,
@@ -155,8 +105,97 @@ class SubscriptionSection extends ConsumerWidget {
   }
 }
 
-class _ProductList extends ConsumerWidget {
-  const _ProductList();
+class _StatusDisplay extends StatelessWidget {
+  final SubscriptionDisplayState displayState;
+  const _StatusDisplay({required this.displayState});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.spacingMedium,
+        vertical: AppSizes.spacingSmall,
+      ),
+      decoration: BoxDecoration(
+        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.star, color: _iconColor, size: 32),
+          const SizedBox(width: AppSizes.spacingMedium),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildTitle(),
+                if (_subtitle != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    _subtitle!,
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color get _iconColor => switch (displayState) {
+    ActiveSubscription(:final planId) => planColor(planId),
+    ActiveWithPaymentIssue(:final planId) => planColor(planId),
+    NotSubscribed() => AppColors.textMuted,
+    NotSubscribedWithPaymentIssue() => AppColors.textMuted,
+  };
+
+  Widget _buildTitle() {
+    return switch (displayState) {
+      NotSubscribed() => Text(
+        t.billing.noPlan,
+        style: const TextStyle(fontWeight: FontWeight.bold),
+      ),
+      NotSubscribedWithPaymentIssue() => Text(
+        '${t.billing.noPlan}（${t.billing.paymentIssue}）',
+        style: const TextStyle(
+          fontWeight: FontWeight.bold,
+          color: AppColors.textError,
+        ),
+      ),
+      ActiveSubscription(:final planId, :final cancelAtPeriodEnd) => Text(
+        cancelAtPeriodEnd
+            ? '${planName(planId)}（${t.billing.noAutoRenewal}）'
+            : planName(planId),
+        style: const TextStyle(fontWeight: FontWeight.bold),
+      ),
+      ActiveWithPaymentIssue(:final planId) => Text(
+        '${planName(planId)}（${t.billing.paymentIssue}）',
+        style: const TextStyle(
+          fontWeight: FontWeight.bold,
+          color: AppColors.textError,
+        ),
+      ),
+    };
+  }
+
+  String? get _subtitle => switch (displayState) {
+    ActiveSubscription(:final periodEnd, :final cancelAtPeriodEnd) =>
+      '${cancelAtPeriodEnd ? t.billing.periodEnd : t.billing.renews}: ${formatDate(periodEnd.toLocal())}',
+    ActiveWithPaymentIssue(:final periodEnd) =>
+      '${t.billing.renews}: ${formatDate(periodEnd.toLocal())}',
+    NotSubscribed() => null,
+    NotSubscribedWithPaymentIssue() => null,
+  };
+}
+
+class _PlanCardList extends ConsumerWidget {
+  final SubscriptionDisplayState displayState;
+  const _PlanCardList({required this.displayState});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -164,20 +203,33 @@ class _ProductList extends ConsumerWidget {
 
     return productsState.when(
       data: (products) {
-        if (products.isEmpty) {
-          return const SizedBox.shrink();
-        }
+        if (products.isEmpty) return const SizedBox.shrink();
 
-        // Sort by price ascending (light < standard < premium)
         final sorted = List<ProductDetails>.from(products)
           ..sort((a, b) => a.rawPrice.compareTo(b.rawPrice));
+
+        final currentPlanId = switch (displayState) {
+          ActiveSubscription(:final planId) => planId,
+          ActiveWithPaymentIssue(:final planId) => planId,
+          NotSubscribed() => null,
+          NotSubscribedWithPaymentIssue() => null,
+        };
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: sorted.map((product) {
+            final pId = productIdToPlanId(product.id);
+            final isCurrent = pId == currentPlanId;
+
             return Padding(
               padding: const EdgeInsets.only(bottom: AppSizes.spacingSmall),
-              child: _ProductCard(product: product),
+              child: PlanCard(
+                product: product,
+                isCurrentPlan: isCurrent,
+                onTap: isCurrent
+                    ? null
+                    : () => _onPlanTap(ref, product, currentPlanId),
+              ),
             );
           }).toList(),
         );
@@ -186,45 +238,30 @@ class _ProductList extends ConsumerWidget {
       error: (e, st) => const SizedBox.shrink(),
     );
   }
-}
 
-class _ProductCard extends ConsumerWidget {
-  final ProductDetails product;
-  const _ProductCard({required this.product});
+  void _onPlanTap(
+    WidgetRef ref,
+    ProductDetails product,
+    String? currentPlanId,
+  ) {
+    final controller = ref.read(inAppPurchaseControllerProvider.notifier);
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return OutlinedButton(
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.all(AppSizes.spacingMedium),
-        side: const BorderSide(color: AppColors.border),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-        ),
-      ),
-      onPressed: () {
-        ref
-            .read(inAppPurchaseControllerProvider.notifier)
-            .buy(product: product);
-      },
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: Text(
-              product.title,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-          Text(
-            product.price,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              color: AppColors.accentBlue,
-            ),
-          ),
-        ],
-      ),
+    if (currentPlanId == null) {
+      // New purchase (not subscribed)
+      controller.buy(product: product);
+      return;
+    }
+
+    // Plan change (upgrade/downgrade)
+    final currentPurchase = ref.read(currentPurchaseProvider);
+    final newPlanId = productIdToPlanId(product.id);
+    final isUpgrade =
+        (planOrder[newPlanId] ?? 0) > (planOrder[currentPlanId] ?? 0);
+
+    controller.buy(
+      product: product,
+      oldPurchase: currentPurchase,
+      isUpgrade: isUpgrade,
     );
   }
 }
