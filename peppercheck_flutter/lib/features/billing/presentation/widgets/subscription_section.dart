@@ -42,7 +42,6 @@ class SubscriptionSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(subscriptionProvider);
     final purchaseState = ref.watch(inAppPurchaseControllerProvider);
-    final notifier = ref.watch(inAppPurchaseControllerProvider.notifier);
 
     return BaseSection(
       title: t.billing.subscription,
@@ -110,7 +109,7 @@ class SubscriptionSection extends ConsumerWidget {
                 ),
               ),
 
-              if (notifier.awaitingPlanUpdate)
+              if (purchaseState.value == true)
                 Padding(
                   padding: const EdgeInsets.only(top: 4.0),
                   child: Text(

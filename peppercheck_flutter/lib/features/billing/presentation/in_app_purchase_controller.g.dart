@@ -54,7 +54,7 @@ String _$availableProductsHash() => r'06c3364324f2de5e15c16a43fd427742e6373d3f';
 const inAppPurchaseControllerProvider = InAppPurchaseControllerProvider._();
 
 final class InAppPurchaseControllerProvider
-    extends $AsyncNotifierProvider<InAppPurchaseController, void> {
+    extends $AsyncNotifierProvider<InAppPurchaseController, bool> {
   const InAppPurchaseControllerProvider._()
     : super(
         from: null,
@@ -75,23 +75,23 @@ final class InAppPurchaseControllerProvider
 }
 
 String _$inAppPurchaseControllerHash() =>
-    r'acedade3b3b844d26aea2899350126c59a399535';
+    r'1a7aeb9aec51b81a8021fdcf4d05875204f6d6d6';
 
-abstract class _$InAppPurchaseController extends $AsyncNotifier<void> {
-  FutureOr<void> build();
+abstract class _$InAppPurchaseController extends $AsyncNotifier<bool> {
+  FutureOr<bool> build();
   @$mustCallSuper
   @override
   void runBuild() {
-    build();
-    final ref = this.ref as $Ref<AsyncValue<void>, void>;
+    final created = build();
+    final ref = this.ref as $Ref<AsyncValue<bool>, bool>;
     final element =
         ref.element
             as $ClassProviderElement<
-              AnyNotifier<AsyncValue<void>, void>,
-              AsyncValue<void>,
+              AnyNotifier<AsyncValue<bool>, bool>,
+              AsyncValue<bool>,
               Object?,
               Object?
             >;
-    element.handleValue(ref, null);
+    element.handleValue(ref, created);
   }
 }

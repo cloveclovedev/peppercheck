@@ -30,12 +30,9 @@ class InAppPurchaseController extends _$InAppPurchaseController {
   final _logger = Logger();
   StreamSubscription<List<PurchaseDetails>>? _purchaseSubscription;
   RealtimeChannel? _realtimeChannel;
-  bool _awaitingPlanUpdate = false;
-
-  bool get awaitingPlanUpdate => _awaitingPlanUpdate;
 
   @override
-  FutureOr<void> build() {
+  FutureOr<bool> build() {
     final repo = ref.watch(inAppPurchaseRepositoryProvider);
     _purchaseSubscription = repo.purchaseStream.listen(
       _onPurchaseUpdate,
@@ -51,6 +48,8 @@ class InAppPurchaseController extends _$InAppPurchaseController {
       _purchaseSubscription?.cancel();
       _removeRealtimeSubscription();
     });
+
+    return false;
   }
 
   Future<void> buy({
@@ -111,8 +110,7 @@ class InAppPurchaseController extends _$InAppPurchaseController {
           }
           // Signal UI to show "プラン更新中..." inline text.
           // Realtime subscription is already active (set up in buy()).
-          _awaitingPlanUpdate = true;
-          state = const AsyncData(null);
+          state = const AsyncData(true);
         } catch (e, st) {
           _logger.e('Purchase completion failed', error: e, stackTrace: st);
           _removeRealtimeSubscription();
@@ -120,7 +118,7 @@ class InAppPurchaseController extends _$InAppPurchaseController {
         }
       } else if (purchase.status == PurchaseStatus.canceled) {
         _removeRealtimeSubscription();
-        state = const AsyncData(null);
+        state = const AsyncData(false);
       }
     }
   }
@@ -146,10 +144,9 @@ class InAppPurchaseController extends _$InAppPurchaseController {
             _logger.i(
               'Subscription updated via Realtime: ${payload.newRecord}',
             );
-            _awaitingPlanUpdate = false;
             ref.invalidate(subscriptionProvider);
             ref.invalidate(pointWalletProvider);
-            state = const AsyncData(null);
+            state = const AsyncData(false);
             _removeRealtimeSubscription();
           },
         )
