@@ -11,6 +11,7 @@ import 'package:peppercheck_flutter/features/billing/data/billing_providers.dart
 import 'package:peppercheck_flutter/features/billing/domain/subscription_display_state.dart';
 import 'package:peppercheck_flutter/features/billing/presentation/current_purchase_provider.dart';
 import 'package:peppercheck_flutter/features/billing/presentation/in_app_purchase_controller.dart';
+import 'package:peppercheck_flutter/features/billing/presentation/plan_utils.dart';
 import 'package:peppercheck_flutter/features/billing/presentation/widgets/plan_card.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -74,7 +75,10 @@ class _SubscriptionSectionState extends ConsumerState<SubscriptionSection> {
 
               const SizedBox(height: AppSizes.spacingSmall),
 
-              _PlanCardList(displayState: displayState),
+              _PlanCardList(
+                displayState: displayState,
+                isProcessing: purchaseState.value == true,
+              ),
 
               const SizedBox(height: AppSizes.spacingSmall),
 
@@ -195,7 +199,8 @@ class _StatusDisplay extends StatelessWidget {
 
 class _PlanCardList extends ConsumerWidget {
   final SubscriptionDisplayState displayState;
-  const _PlanCardList({required this.displayState});
+  final bool isProcessing;
+  const _PlanCardList({required this.displayState, required this.isProcessing});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -226,7 +231,7 @@ class _PlanCardList extends ConsumerWidget {
               child: PlanCard(
                 product: product,
                 isCurrentPlan: isCurrent,
-                onTap: isCurrent
+                onTap: (isCurrent || isProcessing)
                     ? null
                     : () => _onPlanTap(ref, product, currentPlanId),
               ),

@@ -1,36 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:peppercheck_flutter/app/theme/app_colors.dart';
+import 'package:peppercheck_flutter/features/billing/presentation/plan_utils.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
-
-/// Maps a Google Play product ID to the corresponding plan ID.
-/// e.g. 'light_monthly' → 'light'
-String productIdToPlanId(String productId) {
-  return productId.replaceAll('_monthly', '');
-}
-
-/// Returns the i18n plan name for a given plan ID.
-String planName(String planId) {
-  return switch (planId) {
-    'light' => t.billing.plans.light,
-    'standard' => t.billing.plans.standard,
-    'premium' => t.billing.plans.premium,
-    _ => planId,
-  };
-}
-
-/// Returns the accent color for a given plan ID.
-Color planColor(String planId) {
-  return switch (planId) {
-    'light' => AppColors.accentGreen,
-    'standard' => AppColors.accentBlue,
-    'premium' => AppColors.accentYellow,
-    _ => AppColors.textMuted,
-  };
-}
-
-/// Plan order for upgrade/downgrade determination.
-const planOrder = {'light': 0, 'standard': 1, 'premium': 2};
 
 class PlanCard extends StatelessWidget {
   final ProductDetails product;
@@ -55,6 +27,7 @@ class PlanCard extends StatelessWidget {
         context,
         color: color,
         name: name,
+        isCurrentPlan: isCurrentPlan,
         backgroundColor: AppColors.backgroundDark.withValues(alpha: 0.3),
         onTap: null,
         trailing: Text(
@@ -68,6 +41,7 @@ class PlanCard extends StatelessWidget {
       context,
       color: color,
       name: name,
+      isCurrentPlan: isCurrentPlan,
       backgroundColor: AppColors.backgroundWhite,
       onTap: onTap,
       trailing: Text(
@@ -84,6 +58,7 @@ class PlanCard extends StatelessWidget {
     BuildContext context, {
     required Color color,
     required String name,
+    required bool isCurrentPlan,
     required Color backgroundColor,
     required VoidCallback? onTap,
     required Widget trailing,
@@ -106,7 +81,7 @@ class PlanCard extends StatelessWidget {
         children: [
           Icon(
             Icons.star,
-            color: onTap != null ? color : AppColors.textMuted,
+            color: isCurrentPlan ? AppColors.textMuted : color,
             size: 24,
           ),
           const SizedBox(width: 12),
@@ -115,9 +90,9 @@ class PlanCard extends StatelessWidget {
               name,
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                color: onTap != null
-                    ? AppColors.textPrimary
-                    : AppColors.textMuted,
+                color: isCurrentPlan
+                    ? AppColors.textMuted
+                    : AppColors.textPrimary,
               ),
             ),
           ),
