@@ -75,7 +75,7 @@ final class InAppPurchaseControllerProvider
 }
 
 String _$inAppPurchaseControllerHash() =>
-    r'b477be30ce103d53f77308431fb7e1b936ea4cfd';
+    r'acedade3b3b844d26aea2899350126c59a399535';
 
 abstract class _$InAppPurchaseController extends $AsyncNotifier<void> {
   FutureOr<void> build();
