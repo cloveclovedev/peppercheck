@@ -47,14 +47,14 @@ This eliminates the race condition because the Realtime channel is listening bef
 After `completePurchase()` succeeds, set a lightweight flag (`_awaitingPlanUpdate`) instead of using `AsyncLoading`. This flag drives a subtle inline text "プラン更新中..." below the subscription status, replacing the heavy overlay.
 
 Controller changes:
-- Add `bool _awaitingPlanUpdate = false` field.
-- Expose via a getter `bool get awaitingPlanUpdate => _awaitingPlanUpdate` on the controller notifier. The UI reads it via `ref.watch(inAppPurchaseControllerProvider.notifier).awaitingPlanUpdate`.
-- Set `true` after `completePurchase()` in `_onPurchaseUpdate`.
-- Set `false` when Realtime callback fires.
-- No timeout — if the flag stays `true`, it correctly indicates the RTDN chain has not completed. This is a real problem that should be visible, not hidden.
+- Change state type from `AsyncValue<void>` to `AsyncValue<bool>`. The bool represents "awaiting plan update" (`true` = waiting for RTDN, `false` = idle). This ensures state changes are reactive — a plain field on the notifier is not observable by Riverpod.
+- `build()` returns `false` (initial idle state).
+- Set `state = AsyncData(true)` after `completePurchase()` in `_onPurchaseUpdate`.
+- Set `state = AsyncData(false)` when Realtime callback fires.
+- No timeout — if the state stays `true`, it correctly indicates the RTDN chain has not completed. This is a real problem that should be visible, not hidden.
 
 UI changes:
-- In `subscription_section.dart`, watch the awaiting flag.
+- In `subscription_section.dart`, watch `inAppPurchaseControllerProvider` and check `purchaseState.value == true`.
 - When `true`, show a small `Text` with `t.billing.updatingPlan` below the subscription status row.
 - When `false` (or Realtime fires), the text disappears and `subscriptionProvider` shows updated data.
 
