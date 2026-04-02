@@ -27,7 +27,11 @@ class AccountDeletionController extends _$AccountDeletionController {
     if (state.hasError) {
       ref
           .read(loggerProvider)
-          .e('Account deletion error', error: state.error, stackTrace: state.stackTrace);
+          .e(
+            'Account deletion error',
+            error: state.error,
+            stackTrace: state.stackTrace,
+          );
     }
   }
 

@@ -134,11 +134,12 @@ class _TaskRefereesSectionState extends ConsumerState<TaskRefereesSection> {
                         ),
                         Text(
                           '${t.task.detail.labelStatus}: ${widget.task.refereeRequests[i].status}',
-                          style:
-                              const TextStyle(color: AppColors.textMuted),
+                          style: const TextStyle(color: AppColors.textMuted),
                         ),
                         if (widget.task.refereeRequests[i].isObligation &&
-                            _isCurrentUserMatchedReferee(widget.task.refereeRequests[i]))
+                            _isCurrentUserMatchedReferee(
+                              widget.task.refereeRequests[i],
+                            ))
                           Padding(
                             padding: const EdgeInsets.only(top: 4),
                             child: Text(
@@ -160,9 +161,8 @@ class _TaskRefereesSectionState extends ConsumerState<TaskRefereesSection> {
                       isLoading: _isCancelling,
                       onPressed: _isCancelling
                           ? null
-                          : () => _onCancelTapped(
-                                widget.task.refereeRequests[i],
-                              ),
+                          : () =>
+                                _onCancelTapped(widget.task.refereeRequests[i]),
                     ),
                 ],
               ),
@@ -196,8 +196,7 @@ class _CancelButton extends StatelessWidget {
       style: OutlinedButton.styleFrom(
         foregroundColor: contentColor,
         side: BorderSide(color: borderColor, width: 1),
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         minimumSize: Size.zero,
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,

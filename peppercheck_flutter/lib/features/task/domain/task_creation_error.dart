@@ -37,7 +37,9 @@ abstract class TaskCreationError with _$TaskCreationError {
     }
 
     // Parse "Due date must be at least X hours from now"
-    final dueDateRegex = RegExp(r'Due date must be at least (\d+) hours from now');
+    final dueDateRegex = RegExp(
+      r'Due date must be at least (\d+) hours from now',
+    );
     final dueDateMatch = dueDateRegex.firstMatch(errorMessage);
     if (dueDateMatch != null) {
       return TaskCreationError(

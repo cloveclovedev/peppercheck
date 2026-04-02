@@ -35,7 +35,9 @@ class TrialPointWalletSection extends ConsumerWidget {
                 decoration: BoxDecoration(
                   color: AppColors.accentGreenLight.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-                  border: Border.all(color: AppColors.accentGreen.withValues(alpha: 0.5)),
+                  border: Border.all(
+                    color: AppColors.accentGreen.withValues(alpha: 0.5),
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -67,9 +69,15 @@ class TrialPointWalletSection extends ConsumerWidget {
                         vertical: AppSizes.spacingSmall,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.accentYellowLight.withValues(alpha: 0.3),
-                        borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-                        border: Border.all(color: AppColors.accentYellow.withValues(alpha: 0.5)),
+                        color: AppColors.accentYellowLight.withValues(
+                          alpha: 0.3,
+                        ),
+                        borderRadius: BorderRadius.circular(
+                          AppSizes.radiusMedium,
+                        ),
+                        border: Border.all(
+                          color: AppColors.accentYellow.withValues(alpha: 0.5),
+                        ),
                       ),
                       child: Row(
                         children: [

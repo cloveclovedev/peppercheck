@@ -116,15 +116,10 @@ class MatchingRepository {
   }
 
   Future<void> deleteRefereeBlockedDate(String id) async {
-    await _supabase.rpc(
-      'delete_referee_blocked_date',
-      params: {'p_id': id},
-    );
+    await _supabase.rpc('delete_referee_blocked_date', params: {'p_id': id});
   }
 
-  Future<Map<String, dynamic>> cancelRefereeAssignment(
-    String requestId,
-  ) async {
+  Future<Map<String, dynamic>> cancelRefereeAssignment(String requestId) async {
     final response = await _supabase.rpc(
       'cancel_referee_assignment',
       params: {'p_request_id': requestId},

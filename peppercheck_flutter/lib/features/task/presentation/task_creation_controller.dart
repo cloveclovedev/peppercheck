@@ -131,11 +131,9 @@ class TaskCreationController extends _$TaskCreationController {
       // Success - clear any error and return to data state
       state = AsyncData(currentState.copyWith(creationError: null));
     } catch (error, stackTrace) {
-      ref.read(loggerProvider).e(
-        'Task creation failed',
-        error: error,
-        stackTrace: stackTrace,
-      );
+      ref
+          .read(loggerProvider)
+          .e('Task creation failed', error: error, stackTrace: stackTrace);
 
       // Parse and store creation error, but keep state as AsyncData
       final creationError = TaskCreationError.parse(error.toString());

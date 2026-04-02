@@ -37,7 +37,9 @@ class _TaskCreationScreenState extends ConsumerState<TaskCreationScreen> {
 
     // Listen for creation errors and show dialog
     ref.listen(
-      taskCreationControllerProvider(task).select((state) => state.value?.creationError),
+      taskCreationControllerProvider(
+        task,
+      ).select((state) => state.value?.creationError),
       (previous, next) {
         if (next != null) {
           showDialog(
@@ -85,7 +87,9 @@ class _TaskCreationScreenState extends ConsumerState<TaskCreationScreen> {
                         ? () async {
                             await controller.createTask();
                             if (context.mounted) {
-                              final currentState = ref.read(taskCreationControllerProvider(task));
+                              final currentState = ref.read(
+                                taskCreationControllerProvider(task),
+                              );
                               // Success check: if no creation error, close screen
                               if (currentState.value?.creationError == null) {
                                 Navigator.of(context).pop();
