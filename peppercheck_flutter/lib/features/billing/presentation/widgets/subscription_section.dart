@@ -220,23 +220,26 @@ class _PlanCardList extends ConsumerWidget {
           NotSubscribedWithPaymentIssue() => null,
         };
 
+        final cards = <Widget>[];
+        for (var i = 0; i < sorted.length; i++) {
+          if (i > 0) cards.add(const SizedBox(height: AppSizes.spacingTiny));
+          final product = sorted[i];
+          final pId = productIdToPlanId(product.id);
+          final isCurrent = pId == currentPlanId;
+          cards.add(
+            PlanCard(
+              product: product,
+              isCurrentPlan: isCurrent,
+              onTap: (isCurrent || isProcessing)
+                  ? null
+                  : () => _onPlanTap(ref, product, currentPlanId),
+            ),
+          );
+        }
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: sorted.map((product) {
-            final pId = productIdToPlanId(product.id);
-            final isCurrent = pId == currentPlanId;
-
-            return Padding(
-              padding: const EdgeInsets.only(bottom: AppSizes.spacingTiny),
-              child: PlanCard(
-                product: product,
-                isCurrentPlan: isCurrent,
-                onTap: (isCurrent || isProcessing)
-                    ? null
-                    : () => _onPlanTap(ref, product, currentPlanId),
-              ),
-            );
-          }).toList(),
+          children: cards,
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
