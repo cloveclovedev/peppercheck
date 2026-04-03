@@ -227,7 +227,7 @@ class _PlanCardList extends ConsumerWidget {
             final isCurrent = pId == currentPlanId;
 
             return Padding(
-              padding: const EdgeInsets.only(bottom: AppSizes.spacingSmall),
+              padding: const EdgeInsets.only(bottom: AppSizes.spacingTiny),
               child: PlanCard(
                 product: product,
                 isCurrentPlan: isCurrent,
