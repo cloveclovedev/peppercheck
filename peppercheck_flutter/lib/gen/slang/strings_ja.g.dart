@@ -167,9 +167,6 @@ class TranslationsBillingJa {
 	/// ja: 'お試し義務によるレフェリーです。リワードポイントは付与されません。'
 	String get obligationRefereeNotice => 'お試し義務によるレフェリーです。リワードポイントは付与されません。';
 
-	/// ja: 'プラン更新中...'
-	String get updatingPlan => 'プラン更新中...';
-
 	/// ja: 'お支払いに問題があります'
 	String get paymentIssue => 'お支払いに問題があります';
 
@@ -1061,7 +1058,6 @@ extension on Translations {
 			'billing.pendingObligations' => ({required Object count}) => '無料レフェリー義務: 残り${count} 件',
 			'billing.trialPointNotice' => 'お試しポイントを使用します。タスク完了後に無料レフェリー義務が発生します。',
 			'billing.obligationRefereeNotice' => 'お試し義務によるレフェリーです。リワードポイントは付与されません。',
-			'billing.updatingPlan' => 'プラン更新中...',
 			'billing.paymentIssue' => 'お支払いに問題があります',
 			'billing.noAutoRenewal' => '自動更新なし',
 			'billing.periodEnd' => '終了日',
