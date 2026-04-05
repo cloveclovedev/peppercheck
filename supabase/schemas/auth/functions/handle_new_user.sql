@@ -9,6 +9,8 @@ BEGIN
   INSERT INTO public.profiles (id)
   VALUES (NEW.id);
 
+  INSERT INTO public.notification_settings (user_id) VALUES (NEW.id);
+
   INSERT INTO public.user_ratings (user_id)
   VALUES (NEW.id);
 

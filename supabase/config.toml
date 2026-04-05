@@ -107,6 +107,8 @@ schema_paths = [
 
   # Notification
   "./schemas/notification/tables/user_fcm_tokens.sql",
+  "./schemas/notification/tables/notification_settings.sql",
+  "./schemas/notification/tables/notification_sent_log.sql",
 
 
 # views
@@ -280,6 +282,7 @@ schema_paths = [
   "./schemas/reward/policies/reward_payouts_policies.sql",
   "./schemas/reward/policies/reward_exchange_rates_policies.sql",
   "./schemas/notification/policies/user_fcm_tokens_policies.sql",
+  "./schemas/notification/policies/notification_settings_policies.sql",
 
 ]
 
