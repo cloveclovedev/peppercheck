@@ -476,6 +476,24 @@ class TranslationsNotificationJa {
 	/// ja: '報酬の振込に失敗しました。お手数ですが、アカウント設定をご確認ください。'
 	String get payout_failed_referee_body => '報酬の振込に失敗しました。お手数ですが、アカウント設定をご確認ください。';
 
+	/// ja: 'エビデンス提出期限が近づいています'
+	String get evidence_deadline_warning_tasker_title => 'エビデンス提出期限が近づいています';
+
+	/// ja: '「${taskTitle}」のエビデンス提出期限は${deadline}です。忘れずに提出してください！'
+	String evidence_deadline_warning_tasker_body({required Object taskTitle, required Object deadline}) => '「${taskTitle}」のエビデンス提出期限は${deadline}です。忘れずに提出してください！';
+
+	/// ja: '判定期限が近づいています'
+	String get judgement_deadline_warning_referee_title => '判定期限が近づいています';
+
+	/// ja: '「${taskTitle}」の判定期限は${deadline}です。判定を完了してください。'
+	String judgement_deadline_warning_referee_body({required Object taskTitle, required Object deadline}) => '「${taskTitle}」の判定期限は${deadline}です。判定を完了してください。';
+
+	/// ja: 'タスクの確認期限が近づいています'
+	String get auto_confirm_deadline_warning_tasker_title => 'タスクの確認期限が近づいています';
+
+	/// ja: '「${taskTitle}」の結果が${deadline}に自動確認されます。'
+	String auto_confirm_deadline_warning_tasker_body({required Object taskTitle, required Object deadline}) => '「${taskTitle}」の結果が${deadline}に自動確認されます。';
+
 	/// ja: 'お知らせ'
 	String get fallback_title => 'お知らせ';
 
@@ -1238,6 +1256,12 @@ extension on Translations {
 			'notification.payout_connect_required_referee_body' => '報酬が発生しています。受け取るには振込先の設定を完了してください。',
 			'notification.payout_failed_referee_title' => '報酬振込に失敗しました',
 			'notification.payout_failed_referee_body' => '報酬の振込に失敗しました。お手数ですが、アカウント設定をご確認ください。',
+			'notification.evidence_deadline_warning_tasker_title' => 'エビデンス提出期限が近づいています',
+			'notification.evidence_deadline_warning_tasker_body' => ({required Object taskTitle, required Object deadline}) => '「${taskTitle}」のエビデンス提出期限は${deadline}です。忘れずに提出してください！',
+			'notification.judgement_deadline_warning_referee_title' => '判定期限が近づいています',
+			'notification.judgement_deadline_warning_referee_body' => ({required Object taskTitle, required Object deadline}) => '「${taskTitle}」の判定期限は${deadline}です。判定を完了してください。',
+			'notification.auto_confirm_deadline_warning_tasker_title' => 'タスクの確認期限が近づいています',
+			'notification.auto_confirm_deadline_warning_tasker_body' => ({required Object taskTitle, required Object deadline}) => '「${taskTitle}」の結果が${deadline}に自動確認されます。',
 			'notification.fallback_title' => 'お知らせ',
 			'notification.fallback_body' => '新しい通知があります。',
 			'account.actions.title' => 'アカウント',

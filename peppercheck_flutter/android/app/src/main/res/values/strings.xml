@@ -42,4 +42,11 @@
     <string name="notification_payout_connect_required_referee_body">You have a pending reward. Please set up your payout account to receive it.</string>
     <string name="notification_payout_failed_referee_title">Payout failed</string>
     <string name="notification_payout_failed_referee_body">Your payout could not be processed. Please check your account settings.</string>
+    <!-- Deadline warnings -->
+    <string name="notification_evidence_deadline_warning_tasker_title">Evidence deadline approaching</string>
+    <string name="notification_evidence_deadline_warning_tasker_body">The evidence deadline for "%1$s" is %2$s. Don\'t forget to submit!</string>
+    <string name="notification_judgement_deadline_warning_referee_title">Judgement deadline approaching</string>
+    <string name="notification_judgement_deadline_warning_referee_body">The judgement deadline for "%1$s" is %2$s. Please complete your review.</string>
+    <string name="notification_auto_confirm_deadline_warning_tasker_title">Task confirmation deadline approaching</string>
+    <string name="notification_auto_confirm_deadline_warning_tasker_body">The result for "%1$s" will be auto-confirmed at %2$s.</string>
 </resources>

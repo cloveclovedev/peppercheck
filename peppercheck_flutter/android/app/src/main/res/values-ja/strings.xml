@@ -42,4 +42,11 @@
     <string name="notification_payout_connect_required_referee_body">報酬が発生しています。受け取るには振込先の設定を完了してください。</string>
     <string name="notification_payout_failed_referee_title">報酬振込に失敗しました</string>
     <string name="notification_payout_failed_referee_body">報酬の振込に失敗しました。お手数ですが、アカウント設定をご確認ください。</string>
+    <!-- Deadline warnings -->
+    <string name="notification_evidence_deadline_warning_tasker_title">エビデンス提出期限が近づいています</string>
+    <string name="notification_evidence_deadline_warning_tasker_body">「%1$s」のエビデンス提出期限は%2$sです。忘れずに提出してください！</string>
+    <string name="notification_judgement_deadline_warning_referee_title">判定期限が近づいています</string>
+    <string name="notification_judgement_deadline_warning_referee_body">「%1$s」の判定期限は%2$sです。判定を完了してください。</string>
+    <string name="notification_auto_confirm_deadline_warning_tasker_title">タスクの確認期限が近づいています</string>
+    <string name="notification_auto_confirm_deadline_warning_tasker_body">「%1$s」の結果が%2$sに自動確認されます。</string>
 </resources>

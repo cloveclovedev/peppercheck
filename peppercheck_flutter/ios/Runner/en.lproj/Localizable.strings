@@ -50,3 +50,11 @@
 "notification_payout_connect_required_referee_body" = "You have a pending reward. Please set up your payout account to receive it.";
 "notification_payout_failed_referee_title" = "Payout failed";
 "notification_payout_failed_referee_body" = "Your payout could not be processed. Please check your account settings.";
+
+/* Deadline warnings */
+"notification_evidence_deadline_warning_tasker_title" = "Evidence deadline approaching";
+"notification_evidence_deadline_warning_tasker_body" = "The evidence deadline for \"%1$@\" is %2$@. Don't forget to submit!";
+"notification_judgement_deadline_warning_referee_title" = "Judgement deadline approaching";
+"notification_judgement_deadline_warning_referee_body" = "The judgement deadline for \"%1$@\" is %2$@. Please complete your review.";
+"notification_auto_confirm_deadline_warning_tasker_title" = "Task confirmation deadline approaching";
+"notification_auto_confirm_deadline_warning_tasker_body" = "The result for \"%1$@\" will be auto-confirmed at %2$@.";
