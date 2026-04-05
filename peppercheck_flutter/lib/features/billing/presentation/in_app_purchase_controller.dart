@@ -132,11 +132,13 @@ class InAppPurchaseController extends _$InAppPurchaseController {
 
   /// Polls the DB for subscription changes after a purchase completes.
   /// Fire-and-forget: does not block the caller.
-  /// Polls up to 3 times at 3-second intervals, stops early if data changes.
+  /// Uses progressive intervals (1s, 1s, 2s, 2s, 3s) for faster initial feedback.
+  /// Stops early if data changes.
   Future<void> _scheduleSubscriptionRefresh() async {
+    const delays = [1, 1, 2, 2, 3];
     final prevData = ref.read(subscriptionProvider).value;
-    for (var i = 0; i < 3; i++) {
-      await Future.delayed(const Duration(seconds: 3));
+    for (final seconds in delays) {
+      await Future.delayed(Duration(seconds: seconds));
       ref.invalidate(subscriptionProvider);
       ref.invalidate(pointWalletProvider);
       try {
