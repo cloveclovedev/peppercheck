@@ -1,5 +1,6 @@
 import { Header } from '@/components/Header'
 import { Footer } from '@/components/Footer'
+import { ObfuscatedEmail } from '@/components/ObfuscatedEmail'
 import { getTranslations } from 'next-intl/server'
 import { createGenerateMetadata } from '@/lib/metadata'
 
@@ -14,6 +15,8 @@ export default async function TermsPage() {
     'interference',
     'scraping',
     'impersonation',
+    'obscene',
+    'pii',
   ] as const
 
   return (
@@ -37,7 +40,17 @@ export default async function TermsPage() {
             <p className="mt-3 text-[var(--color-text)]">{t('intro.body')}</p>
           </section>
 
-          {/* 2. Service Description */}
+          {/* 2. Eligibility */}
+          <section className="mt-10">
+            <h2 className="text-xl font-bold text-[var(--color-heading)]">
+              {t('eligibility.heading')}
+            </h2>
+            <p className="mt-3 text-[var(--color-text)]">
+              {t('eligibility.body')}
+            </p>
+          </section>
+
+          {/* 3. Service Description */}
           <section className="mt-10">
             <h2 className="text-xl font-bold text-[var(--color-heading)]">
               {t('service.heading')}
@@ -45,7 +58,7 @@ export default async function TermsPage() {
             <p className="mt-3 text-[var(--color-text)]">{t('service.body')}</p>
           </section>
 
-          {/* 3. Subscription Terms */}
+          {/* 4. Subscription Terms */}
           <section className="mt-10">
             <h2 className="text-xl font-bold text-[var(--color-heading)]">
               {t('subscription.heading')}
@@ -55,7 +68,7 @@ export default async function TermsPage() {
             </p>
           </section>
 
-          {/* 4. Prohibited Conduct */}
+          {/* 5. Prohibited Conduct */}
           <section className="mt-10">
             <h2 className="text-xl font-bold text-[var(--color-heading)]">
               {t('prohibited.heading')}
@@ -70,7 +83,7 @@ export default async function TermsPage() {
             </ul>
           </section>
 
-          {/* 5. Intellectual Property */}
+          {/* 6. Intellectual Property */}
           <section className="mt-10">
             <h2 className="text-xl font-bold text-[var(--color-heading)]">
               {t('ip.heading')}
@@ -78,7 +91,7 @@ export default async function TermsPage() {
             <p className="mt-3 text-[var(--color-text)]">{t('ip.body')}</p>
           </section>
 
-          {/* 6. Limitation of Liability */}
+          {/* 7. Limitation of Liability */}
           <section className="mt-10">
             <h2 className="text-xl font-bold text-[var(--color-heading)]">
               {t('disclaimer.heading')}
@@ -88,20 +101,39 @@ export default async function TermsPage() {
             </p>
           </section>
 
-          {/* 7. Governing Law */}
+          {/* 8. Dispute Resolution & Governing Law */}
           <section className="mt-10">
             <h2 className="text-xl font-bold text-[var(--color-heading)]">
-              {t('law.heading')}
+              {t('dispute.heading')}
             </h2>
-            <p className="mt-3 text-[var(--color-text)]">{t('law.body')}</p>
+            <p className="mt-3 text-[var(--color-text)]">
+              {t('dispute.support')}
+            </p>
+            <p className="mt-3 text-[var(--color-text)]">
+              {t('dispute.mediation')}
+            </p>
+            <p className="mt-3 text-[var(--color-text)]">
+              {t('dispute.jurisdiction')}
+            </p>
           </section>
 
-          {/* 8. Modification of Terms */}
+          {/* 9. Modification of Terms */}
           <section className="mt-10">
             <h2 className="text-xl font-bold text-[var(--color-heading)]">
               {t('changes.heading')}
             </h2>
             <p className="mt-3 text-[var(--color-text)]">{t('changes.body')}</p>
+          </section>
+
+          {/* 10. Contact Us */}
+          <section className="mt-10">
+            <h2 className="text-xl font-bold text-[var(--color-heading)]">
+              {t('contact.heading')}
+            </h2>
+            <p className="mt-3 text-[var(--color-text)]">{t('contact.body')}</p>
+            <p className="mt-2 font-semibold text-[var(--color-heading)]">
+              <ObfuscatedEmail />
+            </p>
           </section>
         </article>
       </main>

@@ -190,6 +190,12 @@
   "profile": {
     "title": "プロフィール"
   },
+  "support": {
+    "title": "お問い合わせ",
+    "termsOfService": "利用規約",
+    "privacyPolicy": "プライバシーポリシー",
+    "contactUs": "お問い合わせ"
+  },
   "matching": {
     "referee_availability": {
       "title": "受付可能時間",
