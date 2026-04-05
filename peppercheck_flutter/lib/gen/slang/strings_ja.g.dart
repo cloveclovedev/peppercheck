@@ -49,6 +49,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final TranslationsDashboardJa dashboard = TranslationsDashboardJa.internal(_root);
 	late final TranslationsTaskJa task = TranslationsTaskJa.internal(_root);
 	late final TranslationsProfileJa profile = TranslationsProfileJa.internal(_root);
+	late final TranslationsSupportJa support = TranslationsSupportJa.internal(_root);
 	late final TranslationsMatchingJa matching = TranslationsMatchingJa.internal(_root);
 	late final TranslationsNotificationJa notification = TranslationsNotificationJa.internal(_root);
 	late final TranslationsAccountJa account = TranslationsAccountJa.internal(_root);
@@ -319,6 +320,27 @@ class TranslationsProfileJa {
 
 	/// ja: 'プロフィール'
 	String get title => 'プロフィール';
+}
+
+// Path: support
+class TranslationsSupportJa {
+	TranslationsSupportJa.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// ja: 'お問い合わせ'
+	String get title => 'お問い合わせ';
+
+	/// ja: '利用規約'
+	String get termsOfService => '利用規約';
+
+	/// ja: 'プライバシーポリシー'
+	String get privacyPolicy => 'プライバシーポリシー';
+
+	/// ja: 'お問い合わせ'
+	String get contactUs => 'お問い合わせ';
 }
 
 // Path: matching
@@ -1155,6 +1177,10 @@ extension on Translations {
 			'task.judgement.reviewTimeout.confirmed' => '確認済み',
 			'task.judgement.reviewTimeout.success' => '確認しました',
 			'profile.title' => 'プロフィール',
+			'support.title' => 'お問い合わせ',
+			'support.termsOfService' => '利用規約',
+			'support.privacyPolicy' => 'プライバシーポリシー',
+			'support.contactUs' => 'お問い合わせ',
 			'matching.referee_availability.title' => '受付可能時間',
 			'matching.referee_availability.no_slots' => '受付可能時間が設定されていません',
 			'matching.referee_availability.add_slot' => '受付時間を追加',
