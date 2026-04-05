@@ -50,3 +50,11 @@
 "notification_payout_connect_required_referee_body" = "報酬が発生しています。受け取るには振込先の設定を完了してください。";
 "notification_payout_failed_referee_title" = "報酬振込に失敗しました";
 "notification_payout_failed_referee_body" = "報酬の振込に失敗しました。お手数ですが、アカウント設定をご確認ください。";
+
+/* Deadline warnings */
+"notification_evidence_deadline_warning_tasker_title" = "エビデンス提出期限が近づいています";
+"notification_evidence_deadline_warning_tasker_body" = "「%1$@」のエビデンス提出期限は%2$@です。忘れずに提出してください！";
+"notification_judgement_deadline_warning_referee_title" = "判定期限が近づいています";
+"notification_judgement_deadline_warning_referee_body" = "「%1$@」の判定期限は%2$@です。判定を完了してください。";
+"notification_auto_confirm_deadline_warning_tasker_title" = "タスクの確認期限が近づいています";
+"notification_auto_confirm_deadline_warning_tasker_body" = "「%1$@」の結果が%2$@に自動確認されます。";

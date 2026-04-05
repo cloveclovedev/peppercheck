@@ -11,16 +11,19 @@ import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
   List<String>? locArgs,
 }) {
   final taskTitle = (locArgs != null && locArgs.isNotEmpty) ? locArgs[0] : '';
+  final deadline = (locArgs != null && locArgs.length > 1) ? locArgs[1] : '';
 
   final title =
-      _resolveKey(titleLocKey, taskTitle) ?? t.notification.fallback_title;
+      _resolveKey(titleLocKey, taskTitle, deadline) ??
+      t.notification.fallback_title;
   final body =
-      _resolveKey(bodyLocKey, taskTitle) ?? t.notification.fallback_body;
+      _resolveKey(bodyLocKey, taskTitle, deadline) ??
+      t.notification.fallback_body;
 
   return (title: title, body: body);
 }
 
-String? _resolveKey(String? locKey, String taskTitle) {
+String? _resolveKey(String? locKey, String taskTitle, String deadline) {
   if (locKey == null) return null;
 
   switch (locKey) {
@@ -120,6 +123,28 @@ String? _resolveKey(String? locKey, String taskTitle) {
       return t.notification.payout_failed_referee_title;
     case 'notification_payout_failed_referee_body':
       return t.notification.payout_failed_referee_body;
+    // Deadline warnings
+    case 'notification_evidence_deadline_warning_tasker_title':
+      return t.notification.evidence_deadline_warning_tasker_title;
+    case 'notification_evidence_deadline_warning_tasker_body':
+      return t.notification.evidence_deadline_warning_tasker_body(
+        taskTitle: taskTitle,
+        deadline: deadline,
+      );
+    case 'notification_judgement_deadline_warning_referee_title':
+      return t.notification.judgement_deadline_warning_referee_title;
+    case 'notification_judgement_deadline_warning_referee_body':
+      return t.notification.judgement_deadline_warning_referee_body(
+        taskTitle: taskTitle,
+        deadline: deadline,
+      );
+    case 'notification_auto_confirm_deadline_warning_tasker_title':
+      return t.notification.auto_confirm_deadline_warning_tasker_title;
+    case 'notification_auto_confirm_deadline_warning_tasker_body':
+      return t.notification.auto_confirm_deadline_warning_tasker_body(
+        taskTitle: taskTitle,
+        deadline: deadline,
+      );
     default:
       return null;
   }

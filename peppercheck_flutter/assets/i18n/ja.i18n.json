@@ -260,6 +260,12 @@
     "payout_connect_required_referee_body": "報酬が発生しています。受け取るには振込先の設定を完了してください。",
     "payout_failed_referee_title": "報酬振込に失敗しました",
     "payout_failed_referee_body": "報酬の振込に失敗しました。お手数ですが、アカウント設定をご確認ください。",
+    "evidence_deadline_warning_tasker_title": "エビデンス提出期限が近づいています",
+    "evidence_deadline_warning_tasker_body": "「${taskTitle}」のエビデンス提出期限は${deadline}です。忘れずに提出してください！",
+    "judgement_deadline_warning_referee_title": "判定期限が近づいています",
+    "judgement_deadline_warning_referee_body": "「${taskTitle}」の判定期限は${deadline}です。判定を完了してください。",
+    "auto_confirm_deadline_warning_tasker_title": "タスクの確認期限が近づいています",
+    "auto_confirm_deadline_warning_tasker_body": "「${taskTitle}」の結果が${deadline}に自動確認されます。",
     "fallback_title": "お知らせ",
     "fallback_body": "新しい通知があります。"
   },
