@@ -40,7 +40,8 @@
     "paymentIssue": "お支払いに問題があります",
     "noAutoRenewal": "自動更新なし",
     "periodEnd": "終了日",
-    "currentPlan": "現在のプラン"
+    "currentPlan": "現在のプラン",
+    "canceledUntil": "解約済み・$dateまで利用可能"
   },
   "common": {
     "cancel": "キャンセル",

@@ -103,6 +103,16 @@ class InAppPurchaseController extends _$InAppPurchaseController {
     }
   }
 
+  /// Resets the processing state to idle.
+  /// Called when subscription data changes or when the screen is re-displayed,
+  /// to recover from a stuck "updating" state (e.g., if Realtime callback
+  /// did not fire).
+  void resetProcessingState() {
+    if (state.value == true) {
+      state = const AsyncData(false);
+    }
+  }
+
   Future<void> _onPurchaseUpdate(
     List<PurchaseDetails> purchaseDetailsList,
   ) async {
