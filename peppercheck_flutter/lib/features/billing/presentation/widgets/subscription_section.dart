@@ -180,10 +180,8 @@ class _StatusDisplay extends StatelessWidget {
           color: AppColors.textError,
         ),
       ),
-      ActiveSubscription(:final planId, :final cancelAtPeriodEnd) => Text(
-        cancelAtPeriodEnd
-            ? '${planName(planId)}（${t.billing.noAutoRenewal}）'
-            : planName(planId),
+      ActiveSubscription(:final planId) => Text(
+        planName(planId),
         style: const TextStyle(fontWeight: FontWeight.bold),
       ),
       ActiveWithPaymentIssue(:final planId) => Text(
@@ -198,7 +196,9 @@ class _StatusDisplay extends StatelessWidget {
 
   String? get _subtitle => switch (displayState) {
     ActiveSubscription(:final periodEnd, :final cancelAtPeriodEnd) =>
-      '${cancelAtPeriodEnd ? t.billing.periodEnd : t.billing.renews}: ${formatDate(periodEnd.toLocal())}',
+      cancelAtPeriodEnd
+          ? t.billing.canceledUntil(date: formatDate(periodEnd.toLocal()))
+          : '${t.billing.renews}: ${formatDate(periodEnd.toLocal())}',
     ActiveWithPaymentIssue(:final periodEnd) =>
       '${t.billing.renews}: ${formatDate(periodEnd.toLocal())}',
     NotSubscribed() => null,

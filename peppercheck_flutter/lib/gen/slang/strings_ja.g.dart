@@ -181,6 +181,9 @@ class TranslationsBillingJa {
 
 	/// ja: '現在のプラン'
 	String get currentPlan => '現在のプラン';
+
+	/// ja: '解約済み・$dateまで利用可能'
+	String canceledUntil({required Object date}) => '解約済み・${date}まで利用可能';
 }
 
 // Path: common
@@ -1063,6 +1066,7 @@ extension on Translations {
 			'billing.noAutoRenewal' => '自動更新なし',
 			'billing.periodEnd' => '終了日',
 			'billing.currentPlan' => '現在のプラン',
+			'billing.canceledUntil' => ({required Object date}) => '解約済み・${date}まで利用可能',
 			'common.cancel' => 'キャンセル',
 			'common.confirm' => '確認',
 			'common.save' => '保存',
