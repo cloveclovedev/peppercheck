@@ -191,6 +191,9 @@ schema_paths = [
   # Notification
   "./schemas/notification/functions/notify_event.sql",
   "./schemas/notification/functions/send_deadline_reminder.sql",
+  "./schemas/notification/functions/detect_evidence_deadline_warnings.sql",
+  "./schemas/notification/functions/detect_judgement_deadline_warnings.sql",
+  "./schemas/notification/functions/detect_auto_confirm_deadline_warnings.sql",
 
   # Account
   "./schemas/account/functions/check_account_deletable.sql",
