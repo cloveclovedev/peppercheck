@@ -36,6 +36,9 @@ jobs:
           touch assets/env/.env.staging
           touch assets/env/.env.production
 
+      - name: Format check
+        run: dart format --set-exit-if-changed --line-length 80 .
+
       - name: Analyze
         run: flutter analyze --no-fatal-infos
 

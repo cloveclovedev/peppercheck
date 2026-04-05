@@ -68,8 +68,5 @@ class PayoutFailedException implements Exception {
 
 @Riverpod(keepAlive: true)
 AccountRepository accountRepository(Ref ref) {
-  return AccountRepository(
-    Supabase.instance.client,
-    ref.watch(loggerProvider),
-  );
+  return AccountRepository(Supabase.instance.client, ref.watch(loggerProvider));
 }

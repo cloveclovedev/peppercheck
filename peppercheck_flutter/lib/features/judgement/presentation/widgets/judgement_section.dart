@@ -34,10 +34,12 @@ class _JudgementSectionState extends ConsumerState<JudgementSection> {
   @override
   void initState() {
     super.initState();
-    _confettiLeftController =
-        ConfettiController(duration: const Duration(seconds: 1));
-    _confettiRightController =
-        ConfettiController(duration: const Duration(seconds: 1));
+    _confettiLeftController = ConfettiController(
+      duration: const Duration(seconds: 1),
+    );
+    _confettiRightController = ConfettiController(
+      duration: const Duration(seconds: 1),
+    );
     _commentController.addListener(() => setState(() {}));
   }
 
@@ -86,15 +88,18 @@ class _JudgementSectionState extends ConsumerState<JudgementSection> {
   @override
   Widget build(BuildContext context) {
     final completedRequests = widget.task.refereeRequests
-        .where((req) =>
-            req.judgement != null &&
-            (req.judgement!.status == 'approved' ||
-                req.judgement!.status == 'rejected' ||
-                req.judgement!.status == 'review_timeout'))
+        .where(
+          (req) =>
+              req.judgement != null &&
+              (req.judgement!.status == 'approved' ||
+                  req.judgement!.status == 'rejected' ||
+                  req.judgement!.status == 'review_timeout'),
+        )
         .toList();
 
     final currentRequest = _getCurrentUserRequest();
-    final showForm = currentRequest?.judgement != null &&
+    final showForm =
+        currentRequest?.judgement != null &&
         currentRequest!.judgement!.status == 'in_review';
 
     if (completedRequests.isEmpty && !showForm) {
@@ -192,8 +197,11 @@ class _JudgementSectionState extends ConsumerState<JudgementSection> {
         children: [
           Row(
             children: [
-              Icon(Icons.warning_amber_rounded,
-                  color: AppColors.textError, size: 20),
+              Icon(
+                Icons.warning_amber_rounded,
+                color: AppColors.textError,
+                size: 20,
+              ),
               const SizedBox(width: AppSizes.spacingTiny),
               Expanded(
                 child: Text(
@@ -215,16 +223,20 @@ class _JudgementSectionState extends ConsumerState<JudgementSection> {
             PrimaryActionButton(
               text: t.task.judgement.reviewTimeout.confirm,
               icon: Icons.check,
-              onPressed:
-                  isLoading ? null : () => _confirmReviewTimeout(judgement),
+              onPressed: isLoading
+                  ? null
+                  : () => _confirmReviewTimeout(judgement),
               isLoading: isLoading,
             ),
           ] else if (isTasker && judgement.isConfirmed) ...[
             const SizedBox(height: AppSizes.spacingSmall),
             Row(
               children: [
-                Icon(Icons.check_circle,
-                    color: AppColors.accentGreen, size: 16),
+                Icon(
+                  Icons.check_circle,
+                  color: AppColors.accentGreen,
+                  size: 16,
+                ),
                 const SizedBox(width: AppSizes.spacingTiny),
                 Text(
                   t.task.judgement.reviewTimeout.confirmed,
@@ -270,9 +282,7 @@ class _JudgementSectionState extends ConsumerState<JudgementSection> {
               if (request.referee?.avatarUrl != null)
                 CircleAvatar(
                   radius: AppSizes.taskCardIconSize / 2,
-                  backgroundImage: NetworkImage(
-                    request.referee!.avatarUrl!,
-                  ),
+                  backgroundImage: NetworkImage(request.referee!.avatarUrl!),
                   backgroundColor: Colors.transparent,
                 )
               else
@@ -352,8 +362,8 @@ class _JudgementSectionState extends ConsumerState<JudgementSection> {
                   icon: Icons.check,
                   onPressed:
                       _commentController.text.trim().isNotEmpty && !isLoading
-                          ? () => _submit('approved')
-                          : null,
+                      ? () => _submit('approved')
+                      : null,
                   isLoading: isLoading,
                 ),
               ),
@@ -363,8 +373,8 @@ class _JudgementSectionState extends ConsumerState<JudgementSection> {
                   text: t.task.judgement.reject,
                   onPressed:
                       _commentController.text.trim().isNotEmpty && !isLoading
-                          ? () => _submit('rejected')
-                          : null,
+                      ? () => _submit('rejected')
+                      : null,
                   isLoading: isLoading,
                 ),
               ),
@@ -525,7 +535,9 @@ class _RejectButton extends StatelessWidget {
           backgroundColor: containerColor,
           foregroundColor: contentColor,
           side: BorderSide(color: borderColor, width: 2),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           minimumSize: Size.zero,
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,

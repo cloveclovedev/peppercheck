@@ -52,7 +52,9 @@ class EvidenceController extends _$EvidenceController {
   }) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
-      await ref.read(evidenceRepositoryProvider).updateEvidence(
+      await ref
+          .read(evidenceRepositoryProvider)
+          .updateEvidence(
             evidenceId: evidenceId,
             taskId: taskId,
             description: description,
@@ -74,7 +76,9 @@ class EvidenceController extends _$EvidenceController {
   }) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
-      await ref.read(evidenceRepositoryProvider).resubmitEvidence(
+      await ref
+          .read(evidenceRepositoryProvider)
+          .resubmitEvidence(
             evidenceId: evidenceId,
             taskId: taskId,
             description: description,
