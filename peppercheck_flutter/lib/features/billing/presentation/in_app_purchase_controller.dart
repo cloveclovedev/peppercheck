@@ -30,7 +30,6 @@ Future<List<ProductDetails>> availableProducts(Ref ref) async {
 class InAppPurchaseController extends _$InAppPurchaseController {
   final _logger = Logger();
   StreamSubscription<List<PurchaseDetails>>? _purchaseSubscription;
-  RealtimeChannel? _realtimeChannel;
 
   @override
   FutureOr<bool> build() {
@@ -47,7 +46,6 @@ class InAppPurchaseController extends _$InAppPurchaseController {
 
     ref.onDispose(() {
       _purchaseSubscription?.cancel();
-      _removeRealtimeSubscription();
     });
 
     return false;
@@ -63,11 +61,6 @@ class InAppPurchaseController extends _$InAppPurchaseController {
       final userId = Supabase.instance.client.auth.currentUser?.id;
       if (userId == null) throw Exception('User not authenticated');
 
-      // Subscribe to Realtime BEFORE initiating purchase to avoid race condition.
-      // The RTDN chain (Google → Pub/Sub → Edge Function → DB) can complete
-      // before a post-purchase subscribe, causing us to miss the update.
-      _subscribeToRealtimeUpdates();
-
       await repo.buySubscription(
         product: product,
         userId: userId,
@@ -75,7 +68,6 @@ class InAppPurchaseController extends _$InAppPurchaseController {
         isUpgrade: isUpgrade,
       );
     } catch (e, st) {
-      _removeRealtimeSubscription();
       state = AsyncError(e, st);
     }
   }
@@ -83,10 +75,8 @@ class InAppPurchaseController extends _$InAppPurchaseController {
   Future<void> restorePurchases() async {
     try {
       final repo = ref.read(inAppPurchaseRepositoryProvider);
-      _subscribeToRealtimeUpdates();
       await repo.restorePurchases();
     } catch (e, st) {
-      _removeRealtimeSubscription();
       state = AsyncError(e, st);
     }
   }
@@ -103,16 +93,6 @@ class InAppPurchaseController extends _$InAppPurchaseController {
     }
   }
 
-  /// Resets the processing state to idle.
-  /// Called when subscription data changes or when the screen is re-displayed,
-  /// to recover from a stuck "updating" state (e.g., if Realtime callback
-  /// did not fire).
-  void resetProcessingState() {
-    if (state.value == true) {
-      state = const AsyncData(false);
-    }
-  }
-
   Future<void> _onPurchaseUpdate(
     List<PurchaseDetails> purchaseDetailsList,
   ) async {
@@ -123,7 +103,6 @@ class InAppPurchaseController extends _$InAppPurchaseController {
         // No-op: Google Play dialog is visible, no need to change state.
       } else if (purchase.status == PurchaseStatus.error) {
         _logger.e('Purchase Error: ${purchase.error}');
-        _removeRealtimeSubscription();
         state = AsyncError(purchase.error!, StackTrace.current);
       } else if (purchase.status == PurchaseStatus.restored) {
         // Store restored Google Play purchase for upgrade/downgrade flow.
@@ -139,55 +118,37 @@ class InAppPurchaseController extends _$InAppPurchaseController {
           if (purchase.pendingCompletePurchase) {
             await repo.completePurchase(purchase);
           }
-          // Signal UI to show "プラン更新中..." inline text.
-          // Realtime subscription is already active (set up in buy()).
-          state = const AsyncData(true);
+          state = const AsyncData(false);
+          _scheduleSubscriptionRefresh();
         } catch (e, st) {
           _logger.e('Purchase completion failed', error: e, stackTrace: st);
-          _removeRealtimeSubscription();
           state = AsyncError(e, st);
         }
       } else if (purchase.status == PurchaseStatus.canceled) {
-        _removeRealtimeSubscription();
         state = const AsyncData(false);
       }
     }
   }
 
-  void _subscribeToRealtimeUpdates() {
-    _removeRealtimeSubscription();
-
-    final userId = Supabase.instance.client.auth.currentUser?.id;
-    if (userId == null) return;
-
-    _realtimeChannel = Supabase.instance.client
-        .channel('iap-subscription-status')
-        .onPostgresChanges(
-          event: PostgresChangeEvent.all,
-          schema: 'public',
-          table: 'user_subscriptions',
-          filter: PostgresChangeFilter(
-            type: PostgresChangeFilterType.eq,
-            column: 'user_id',
-            value: userId,
-          ),
-          callback: (payload) {
-            _logger.i(
-              'Subscription updated via Realtime: ${payload.newRecord}',
-            );
-            ref.invalidate(subscriptionProvider);
-            ref.invalidate(pointWalletProvider);
-            state = const AsyncData(false);
-            _removeRealtimeSubscription();
-          },
-        )
-        .subscribe();
-  }
-
-  void _removeRealtimeSubscription() {
-    if (_realtimeChannel != null) {
-      Supabase.instance.client.removeChannel(_realtimeChannel!);
-      _realtimeChannel = null;
+  /// Polls the DB for subscription changes after a purchase completes.
+  /// Fire-and-forget: does not block the caller.
+  /// Polls up to 3 times at 3-second intervals, stops early if data changes.
+  Future<void> _scheduleSubscriptionRefresh() async {
+    final prevData = ref.read(subscriptionProvider).value;
+    for (var i = 0; i < 3; i++) {
+      await Future.delayed(const Duration(seconds: 3));
+      ref.invalidate(subscriptionProvider);
+      ref.invalidate(pointWalletProvider);
+      try {
+        final newData = await ref.read(subscriptionProvider.future);
+        if (newData?.status != prevData?.status ||
+            newData?.planId != prevData?.planId) {
+          break;
+        }
+      } catch (e) {
+        _logger.e('Subscription refresh failed', error: e);
+        break;
+      }
     }
   }
 }

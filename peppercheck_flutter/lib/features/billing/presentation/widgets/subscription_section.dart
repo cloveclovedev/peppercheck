@@ -29,16 +29,6 @@ class _SubscriptionSectionState extends ConsumerState<SubscriptionSection> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Reset any stuck processing state from a previous session.
-      ref.read(inAppPurchaseControllerProvider.notifier).resetProcessingState();
-      // When subscription data changes (via Realtime or DB re-fetch),
-      // clear the processing state.
-      ref.listen(subscriptionProvider, (prev, next) {
-        ref
-            .read(inAppPurchaseControllerProvider.notifier)
-            .resetProcessingState();
-      });
-      // Fetch current Google Play purchase for upgrade/downgrade flow.
       ref.read(inAppPurchaseControllerProvider.notifier).fetchCurrentPurchase();
     });
   }
@@ -70,24 +60,9 @@ class _SubscriptionSectionState extends ConsumerState<SubscriptionSection> {
             children: [
               _StatusDisplay(displayState: displayState),
 
-              if (purchaseState.value == true)
-                Padding(
-                  padding: const EdgeInsets.only(top: 4.0),
-                  child: Text(
-                    t.billing.updatingPlan,
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-
               const SizedBox(height: AppSizes.spacingSmall),
 
-              _PlanCardList(
-                displayState: displayState,
-                isProcessing: purchaseState.value == true,
-              ),
+              _PlanCardList(displayState: displayState),
 
               const SizedBox(height: AppSizes.spacingSmall),
 
@@ -208,8 +183,7 @@ class _StatusDisplay extends StatelessWidget {
 
 class _PlanCardList extends ConsumerWidget {
   final SubscriptionDisplayState displayState;
-  final bool isProcessing;
-  const _PlanCardList({required this.displayState, required this.isProcessing});
+  const _PlanCardList({required this.displayState});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -239,7 +213,7 @@ class _PlanCardList extends ConsumerWidget {
             PlanCard(
               product: product,
               isCurrentPlan: isCurrent,
-              onTap: (isCurrent || isProcessing)
+              onTap: isCurrent
                   ? null
                   : () => _onPlanTap(ref, product, currentPlanId),
             ),
