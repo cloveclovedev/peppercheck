@@ -47,7 +47,7 @@ INSERT INTO public.tasks (id, tasker_id, title, due_date, status) VALUES
 INSERT INTO public.task_referee_requests (id, task_id, matching_strategy, status, matched_referee_id) VALUES
     ('d4444444-4444-4444-4444-444444444444',
      'c3333333-3333-3333-3333-333333333333',
-     'auto',
+     'standard',
      'matched',
      'b2222222-2222-2222-2222-222222222222');
 
