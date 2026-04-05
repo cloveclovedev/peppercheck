@@ -28,8 +28,17 @@ class _SubscriptionSectionState extends ConsumerState<SubscriptionSection> {
   @override
   void initState() {
     super.initState();
-    // Fetch current Google Play purchase for upgrade/downgrade flow.
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Reset any stuck processing state from a previous session.
+      ref.read(inAppPurchaseControllerProvider.notifier).resetProcessingState();
+      // When subscription data changes (via Realtime or DB re-fetch),
+      // clear the processing state.
+      ref.listen(subscriptionProvider, (prev, next) {
+        ref
+            .read(inAppPurchaseControllerProvider.notifier)
+            .resetProcessingState();
+      });
+      // Fetch current Google Play purchase for upgrade/downgrade flow.
       ref.read(inAppPurchaseControllerProvider.notifier).fetchCurrentPurchase();
     });
   }
