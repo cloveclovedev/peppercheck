@@ -83,7 +83,20 @@
     "pending": "保留中",
     "available": "出金可能額",
     "requestPayout": "出金を申請",
-    "payoutRequested": "出金申請済み"
+    "payoutRequested": "出金申請済み",
+    "paymentSummary": "サマリー",
+    "availablePoints": "利用可能",
+    "lockedPoints": "ロック中",
+    "trialPoints": "トライアルポイント",
+    "pendingObligations": "未履行のレフリー義務: $count件",
+    "rewardBalance": "報酬残高",
+    "totalEarned": "総収益",
+    "recentPayout": "直近",
+    "nextPayout": "次回振り込み予定",
+    "payoutStatusSuccess": "成功",
+    "payoutStatusPending": "保留中",
+    "payoutStatusFailed": "失敗",
+    "payoutStatusSkipped": "スキップ"
   },
   "task": {
     "status": {
