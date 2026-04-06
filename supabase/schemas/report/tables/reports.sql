@@ -23,8 +23,3 @@ ALTER TABLE public.reports OWNER TO postgres;
 CREATE INDEX idx_reports_task_id ON public.reports USING btree (task_id);
 CREATE INDEX idx_reports_status ON public.reports USING btree (status);
 CREATE INDEX idx_reports_created_at ON public.reports USING btree (created_at);
-
-CREATE TRIGGER on_reports_update_set_updated_at
-    BEFORE UPDATE ON public.reports
-    FOR EACH ROW
-    EXECUTE FUNCTION public.handle_updated_at();
