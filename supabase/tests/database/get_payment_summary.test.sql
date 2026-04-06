@@ -25,8 +25,8 @@ SELECT is(
 );
 
 SELECT is(
-    (SELECT public.get_payment_summary()->'trial_points'),
-    NULL,
+    (SELECT public.get_payment_summary()->>'trial_points'),
+    NULL::text,
     'Test 1: New user has null trial_points'
 );
 
@@ -37,8 +37,8 @@ SELECT is(
 );
 
 SELECT is(
-    (SELECT public.get_payment_summary()->'rewards'),
-    NULL,
+    (SELECT public.get_payment_summary()->>'rewards'),
+    NULL::text,
     'Test 1: New user has null rewards'
 );
 
@@ -91,8 +91,8 @@ WHERE user_id = 'a1111111-1111-1111-1111-111111111111';
 -- Test 4: Deactivated trial points return null
 -- ============================================================
 SELECT is(
-    (SELECT public.get_payment_summary()->'trial_points'),
-    NULL,
+    (SELECT public.get_payment_summary()->>'trial_points'),
+    NULL::text,
     'Test 4: Deactivated trial points return null'
 );
 
