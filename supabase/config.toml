@@ -202,6 +202,9 @@ schema_paths = [
   # Account
   "./schemas/account/functions/check_account_deletable.sql",
 
+  # Payment Summary
+  "./schemas/payment_summary/functions/get_payment_summary.sql",
+
 # triggers
   "./schemas/auth/triggers/on_auth_user_created.sql",
   
