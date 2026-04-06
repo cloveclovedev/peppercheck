@@ -1,12 +1,16 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(14);
+select plan(15);
 
 -- ============================================================
 -- Setup: create test user
 -- ============================================================
 INSERT INTO auth.users (id, email) VALUES
     ('a1111111-1111-1111-1111-111111111111', 'testuser@test.com');
+
+-- Deactivate the trial wallet auto-created by handle_new_user trigger
+-- so Test 1's trial_points=NULL assertion holds
+UPDATE public.trial_point_wallets SET is_active = false WHERE user_id = 'a1111111-1111-1111-1111-111111111111';
 
 -- Set JWT claims to simulate authenticated user
 SELECT set_config('request.jwt.claims', '{"sub": "a1111111-1111-1111-1111-111111111111"}', true);
@@ -178,6 +182,24 @@ SELECT is(
     (SELECT public.get_payment_summary()->'recent_payout'->>'status'),
     'failed',
     'Test 8: recent_payout is the latest record (failed, created at 16:00)'
+);
+
+-- ============================================================
+-- Test 9: next_payout_date is last day of current month
+-- ============================================================
+SELECT is(
+    (SELECT (public.get_payment_summary()->>'next_payout_date')::date),
+    (date_trunc('month', now()) + interval '1 month - 1 day')::date,
+    'Test 9: next_payout_date is last day of current month'
+);
+
+-- ============================================================
+-- Test 10: total_earned_currency matches active exchange rate
+-- ============================================================
+SELECT is(
+    (SELECT public.get_payment_summary()->>'total_earned_currency'),
+    'JPY',
+    'Test 10: total_earned_currency is JPY'
 );
 
 select * from finish();
