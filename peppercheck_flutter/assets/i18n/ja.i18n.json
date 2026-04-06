@@ -190,6 +190,28 @@
   "profile": {
     "title": "プロフィール"
   },
+  "report": {
+    "menuItem": "問題を報告",
+    "menuItemReported": "問題を報告（報告済み）",
+    "sheetTitle": "問題を報告",
+    "contentTypeTitle": "何を報告しますか？",
+    "contentType": {
+      "taskDescription": "タスクの説明文",
+      "evidence": "エビデンス",
+      "judgement": "評価・コメント"
+    },
+    "reasonTitle": "報告理由",
+    "reason": {
+      "inappropriateContent": "不適切なコンテンツ",
+      "harassment": "ハラスメント",
+      "spam": "スパム",
+      "other": "その他"
+    },
+    "detailHint": "詳細を入力（任意）",
+    "submit": "送信",
+    "successMessage": "報告を送信しました",
+    "errorMessage": "報告の送信に失敗しました: $message"
+  },
   "support": {
     "title": "お問い合わせ",
     "termsOfService": "利用規約",

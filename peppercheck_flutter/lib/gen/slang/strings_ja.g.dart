@@ -49,6 +49,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final TranslationsDashboardJa dashboard = TranslationsDashboardJa.internal(_root);
 	late final TranslationsTaskJa task = TranslationsTaskJa.internal(_root);
 	late final TranslationsProfileJa profile = TranslationsProfileJa.internal(_root);
+	late final TranslationsReportJa report = TranslationsReportJa.internal(_root);
 	late final TranslationsSupportJa support = TranslationsSupportJa.internal(_root);
 	late final TranslationsMatchingJa matching = TranslationsMatchingJa.internal(_root);
 	late final TranslationsNotificationJa notification = TranslationsNotificationJa.internal(_root);
@@ -320,6 +321,46 @@ class TranslationsProfileJa {
 
 	/// ja: 'プロフィール'
 	String get title => 'プロフィール';
+}
+
+// Path: report
+class TranslationsReportJa {
+	TranslationsReportJa.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// ja: '問題を報告'
+	String get menuItem => '問題を報告';
+
+	/// ja: '問題を報告（報告済み）'
+	String get menuItemReported => '問題を報告（報告済み）';
+
+	/// ja: '問題を報告'
+	String get sheetTitle => '問題を報告';
+
+	/// ja: '何を報告しますか？'
+	String get contentTypeTitle => '何を報告しますか？';
+
+	late final TranslationsReportContentTypeJa contentType = TranslationsReportContentTypeJa.internal(_root);
+
+	/// ja: '報告理由'
+	String get reasonTitle => '報告理由';
+
+	late final TranslationsReportReasonJa reason = TranslationsReportReasonJa.internal(_root);
+
+	/// ja: '詳細を入力（任意）'
+	String get detailHint => '詳細を入力（任意）';
+
+	/// ja: '送信'
+	String get submit => '送信';
+
+	/// ja: '報告を送信しました'
+	String get successMessage => '報告を送信しました';
+
+	/// ja: '報告の送信に失敗しました: $message'
+	String errorMessage({required Object message}) => '報告の送信に失敗しました: ${message}';
 }
 
 // Path: support
@@ -750,6 +791,45 @@ class TranslationsTaskJudgementJa {
 
 	late final TranslationsTaskJudgementConfirmJa confirm = TranslationsTaskJudgementConfirmJa.internal(_root);
 	late final TranslationsTaskJudgementReviewTimeoutJa reviewTimeout = TranslationsTaskJudgementReviewTimeoutJa.internal(_root);
+}
+
+// Path: report.contentType
+class TranslationsReportContentTypeJa {
+	TranslationsReportContentTypeJa.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// ja: 'タスクの説明文'
+	String get taskDescription => 'タスクの説明文';
+
+	/// ja: 'エビデンス'
+	String get evidence => 'エビデンス';
+
+	/// ja: '評価・コメント'
+	String get judgement => '評価・コメント';
+}
+
+// Path: report.reason
+class TranslationsReportReasonJa {
+	TranslationsReportReasonJa.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// ja: '不適切なコンテンツ'
+	String get inappropriateContent => '不適切なコンテンツ';
+
+	/// ja: 'ハラスメント'
+	String get harassment => 'ハラスメント';
+
+	/// ja: 'スパム'
+	String get spam => 'スパム';
+
+	/// ja: 'その他'
+	String get other => 'その他';
 }
 
 // Path: matching.referee_availability
@@ -1195,6 +1275,22 @@ extension on Translations {
 			'task.judgement.reviewTimeout.confirmed' => '確認済み',
 			'task.judgement.reviewTimeout.success' => '確認しました',
 			'profile.title' => 'プロフィール',
+			'report.menuItem' => '問題を報告',
+			'report.menuItemReported' => '問題を報告（報告済み）',
+			'report.sheetTitle' => '問題を報告',
+			'report.contentTypeTitle' => '何を報告しますか？',
+			'report.contentType.taskDescription' => 'タスクの説明文',
+			'report.contentType.evidence' => 'エビデンス',
+			'report.contentType.judgement' => '評価・コメント',
+			'report.reasonTitle' => '報告理由',
+			'report.reason.inappropriateContent' => '不適切なコンテンツ',
+			'report.reason.harassment' => 'ハラスメント',
+			'report.reason.spam' => 'スパム',
+			'report.reason.other' => 'その他',
+			'report.detailHint' => '詳細を入力（任意）',
+			'report.submit' => '送信',
+			'report.successMessage' => '報告を送信しました',
+			'report.errorMessage' => ({required Object message}) => '報告の送信に失敗しました: ${message}',
 			'support.title' => 'お問い合わせ',
 			'support.termsOfService' => '利用規約',
 			'support.privacyPolicy' => 'プライバシーポリシー',
