@@ -27,9 +27,9 @@ class ReportRepository {
       'task_id': taskId,
       'reporter_role': reporterRole,
       'content_type': contentType,
-      'content_id': contentId,
+      if (contentId != null) 'content_id': contentId,
       'reason': reason,
-      'detail': detail,
+      if (detail != null) 'detail': detail,
     });
   }
 

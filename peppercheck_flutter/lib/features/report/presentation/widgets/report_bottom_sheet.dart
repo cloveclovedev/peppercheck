@@ -96,7 +96,11 @@ class _ReportBottomSheetState extends ConsumerState<_ReportBottomSheet> {
           contentType: _selectedContentType!,
           contentId: _resolveContentId(),
           reason: _selectedReason!,
-          detail: _selectedReason == 'other' ? _detailController.text : null,
+          detail:
+              _selectedReason == 'other' &&
+                  _detailController.text.trim().isNotEmpty
+              ? _detailController.text.trim()
+              : null,
         );
 
     if (!mounted) return;
@@ -198,6 +202,7 @@ class _ReportBottomSheetState extends ConsumerState<_ReportBottomSheet> {
                     border: const OutlineInputBorder(),
                   ),
                   maxLines: 3,
+                  maxLength: 500,
                 ),
               ],
               const SizedBox(height: AppSizes.spacingMedium),
