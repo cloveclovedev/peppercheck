@@ -14,6 +14,7 @@ import 'package:peppercheck_flutter/features/judgement/presentation/widgets/judg
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:peppercheck_flutter/features/report/presentation/widgets/report_menu_button.dart';
 import 'package:peppercheck_flutter/features/task/presentation/providers/task_provider.dart';
 
 class TaskDetailScreen extends ConsumerWidget {
@@ -49,6 +50,7 @@ class TaskDetailScreen extends ConsumerWidget {
       child: AppScaffold.scrollable(
         title: t.task.detail.title,
         currentIndex: -1,
+        actions: [ReportMenuButton(task: displayTask)],
         onRefresh: () async {
           return ref.refresh(taskProvider(taskId).future);
         },

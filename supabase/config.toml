@@ -110,6 +110,10 @@ schema_paths = [
   "./schemas/notification/tables/notification_settings.sql",
   "./schemas/notification/tables/notification_sent_log.sql",
 
+  # Report
+  "./schemas/report/tables/enums.sql",
+  "./schemas/report/tables/reports.sql",
+
 
 # views
   "./schemas/judgement/views/*.sql",
@@ -258,6 +262,9 @@ schema_paths = [
   # Stripe
   "./schemas/stripe/triggers/on_stripe_accounts_update_set_updated_at.sql",
 
+  # Report
+  "./schemas/report/triggers/on_reports_update_set_updated_at.sql",
+
 # policies
   "./schemas/judgement/policies/judgement_threads_policies.sql",
   "./schemas/judgement/policies/judgement_thread_assets_policies.sql",
@@ -287,6 +294,7 @@ schema_paths = [
   "./schemas/reward/policies/reward_exchange_rates_policies.sql",
   "./schemas/notification/policies/user_fcm_tokens_policies.sql",
   "./schemas/notification/policies/notification_settings_policies.sql",
+  "./schemas/report/policies/reports_policies.sql",
 
 ]
 
