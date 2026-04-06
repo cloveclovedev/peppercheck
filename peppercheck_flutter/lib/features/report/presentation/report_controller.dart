@@ -18,8 +18,7 @@ class ReportController extends _$ReportController {
     required String reason,
     String? detail,
   }) async {
-    state = const AsyncLoading();
-    state = await AsyncValue.guard(() async {
+    try {
       await ref
           .read(reportRepositoryProvider)
           .submitReport(
@@ -30,8 +29,10 @@ class ReportController extends _$ReportController {
             reason: reason,
             detail: detail,
           );
-    });
-    return !state.hasError;
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 }
 

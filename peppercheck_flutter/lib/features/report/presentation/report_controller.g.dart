@@ -33,7 +33,7 @@ final class ReportControllerProvider
   ReportController create() => ReportController();
 }
 
-String _$reportControllerHash() => r'6b5a8ffbdcf67cce197b63c5816cf756de7c0b9d';
+String _$reportControllerHash() => r'4321ade724a18405bd44579ac0ac258e6a3be65f';
 
 abstract class _$ReportController extends $AsyncNotifier<void> {
   FutureOr<void> build();

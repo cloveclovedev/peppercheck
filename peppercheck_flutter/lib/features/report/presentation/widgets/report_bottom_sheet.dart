@@ -109,13 +109,8 @@ class _ReportBottomSheetState extends ConsumerState<_ReportBottomSheet> {
       Navigator.of(context).pop(true);
     } else {
       setState(() => _isSubmitting = false);
-      final errorState = ref.read(reportControllerProvider);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            t.report.errorMessage(message: errorState.error.toString()),
-          ),
-        ),
+        SnackBar(content: Text(t.report.errorMessage(message: ''))),
       );
     }
   }
@@ -175,6 +170,7 @@ class _ReportBottomSheetState extends ConsumerState<_ReportBottomSheet> {
                   value: option.value,
                   groupValue: _selectedContentType,
                   onChanged: (v) => setState(() => _selectedContentType = v),
+                  dense: true,
                 ),
               ),
               const SizedBox(height: AppSizes.spacingMedium),
@@ -190,6 +186,7 @@ class _ReportBottomSheetState extends ConsumerState<_ReportBottomSheet> {
                   value: reason,
                   groupValue: _selectedReason,
                   onChanged: (v) => setState(() => _selectedReason = v),
+                  dense: true,
                 ),
               ),
               // Detail field for "other"
