@@ -87,8 +87,11 @@ class _SummaryContent extends StatelessWidget {
                     _CardLabel(label: t.dashboard.rewardBalance),
                     const SizedBox(height: 4),
                     _CardValue(
-                      value:
-                          '${summary.rewards!.balance} pt (${_formatCurrency(summary.rewards!.amountMinor, summary.rewards!.currencyCode, summary.rewards!.currencyExponent)})',
+                      value: _formatCurrency(
+                        summary.rewards!.amountMinor,
+                        summary.rewards!.currencyCode,
+                        summary.rewards!.currencyExponent,
+                      ),
                     ),
                   ],
                 ),
@@ -124,7 +127,7 @@ class _SummaryContent extends StatelessWidget {
                 _PayoutRow(
                   label: t.dashboard.recentPayout,
                   value:
-                      '${_formatCurrency(summary.recentPayout!.amountMinor, summary.recentPayout!.currencyCode, summary.recentPayout!.currencyExponent)} (${_payoutStatusLabel(summary.recentPayout!.status)}) — ${summary.recentPayout!.batchDate}',
+                      '${_formatCurrency(summary.recentPayout!.amountMinor, summary.recentPayout!.currencyCode, summary.recentPayout!.currencyExponent)} (${_payoutStatusLabel(summary.recentPayout!.status)}) — ${_formatDate(summary.recentPayout!.batchDate)}',
                 ),
               ],
               if (summary.recentPayout != null &&
@@ -134,7 +137,7 @@ class _SummaryContent extends StatelessWidget {
               if (summary.rewards != null && summary.rewards!.balance > 0) ...[
                 _PayoutRow(
                   label: t.dashboard.nextPayout,
-                  value: summary.nextPayoutDate,
+                  value: _formatDate(summary.nextPayoutDate),
                 ),
               ],
             ],
@@ -218,6 +221,13 @@ class _SummaryContent extends StatelessWidget {
   ) {
     final double majorAmount = amountMinor / pow(10, exponent);
     return NumberFormat.simpleCurrency(name: currencyCode).format(majorAmount);
+  }
+
+  /// Format ISO date string (e.g. "2026-04-30") using locale-aware format
+  static String _formatDate(String isoDate) {
+    final date = DateTime.tryParse(isoDate);
+    if (date == null) return isoDate;
+    return DateFormat.yMd().format(date);
   }
 
   static String _payoutStatusLabel(String status) {
