@@ -4,9 +4,9 @@ import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
 import 'package:peppercheck_flutter/common_widgets/app_background.dart';
 import 'package:peppercheck_flutter/common_widgets/app_scaffold.dart';
 import 'package:peppercheck_flutter/features/billing/presentation/widgets/subscription_section.dart';
-import 'package:peppercheck_flutter/features/billing/presentation/widgets/trial_point_wallet_section.dart';
+import 'package:peppercheck_flutter/features/payment_dashboard/presentation/payment_summary_controller.dart';
+import 'package:peppercheck_flutter/features/payment_dashboard/presentation/widgets/payment_summary_section.dart';
 import 'package:peppercheck_flutter/features/payout/presentation/widgets/payout_setup_section.dart';
-import 'package:peppercheck_flutter/features/payout/presentation/widgets/reward_summary_section.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 
 class PaymentDashboardScreen extends ConsumerWidget {
@@ -17,18 +17,18 @@ class PaymentDashboardScreen extends ConsumerWidget {
     return AppBackground(
       child: AppScaffold.scrollable(
         title: t.nav.payments,
-        currentIndex: 1, // Payments is index 1
+        currentIndex: 1,
+        onRefresh: () async {
+          ref.invalidate(paymentSummaryControllerProvider);
+        },
         slivers: [
           SliverList(
             delegate: SliverChildListDelegate([
+              const PaymentSummarySection(),
+              const SizedBox(height: AppSizes.sectionGap),
               const SubscriptionSection(),
               const SizedBox(height: AppSizes.sectionGap),
-              const TrialPointWalletSection(),
-              const SizedBox(height: AppSizes.sectionGap),
               const PayoutSetupSection(),
-              const SizedBox(height: AppSizes.sectionGap),
-              const RewardSummarySection(),
-              // Bottom padding is handled by AppScaffold
             ]),
           ),
         ],

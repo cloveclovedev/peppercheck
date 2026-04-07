@@ -295,6 +295,51 @@ class TranslationsDashboardJa {
 
 	/// ja: '出金申請済み'
 	String get payoutRequested => '出金申請済み';
+
+	/// ja: 'サマリー'
+	String get paymentSummary => 'サマリー';
+
+	/// ja: '利用可能ポイント'
+	String get availablePoints => '利用可能ポイント';
+
+	/// ja: 'ロック中ポイント'
+	String get lockedPoints => 'ロック中ポイント';
+
+	/// ja: 'トライアルポイント'
+	String get trialPoints => 'トライアルポイント';
+
+	/// ja: '未履行のレフリー義務: $count件'
+	String pendingObligations({required Object count}) => '未履行のレフリー義務: ${count}件';
+
+	/// ja: '未履行のレフリー義務'
+	String get pendingObligationsLabel => '未履行のレフリー義務';
+
+	/// ja: '$count件'
+	String obligationCount({required Object count}) => '${count}件';
+
+	/// ja: '報酬残高'
+	String get rewardBalance => '報酬残高';
+
+	/// ja: '累計受取額'
+	String get totalEarned => '累計受取額';
+
+	/// ja: '直近'
+	String get recentPayout => '直近';
+
+	/// ja: '次回振り込み予定'
+	String get nextPayout => '次回振り込み予定';
+
+	/// ja: '成功'
+	String get payoutStatusSuccess => '成功';
+
+	/// ja: '保留中'
+	String get payoutStatusPending => '保留中';
+
+	/// ja: '失敗'
+	String get payoutStatusFailed => '失敗';
+
+	/// ja: 'スキップ'
+	String get payoutStatusSkipped => 'スキップ';
 }
 
 // Path: task
@@ -1196,6 +1241,21 @@ extension on Translations {
 			'dashboard.available' => '出金可能額',
 			'dashboard.requestPayout' => '出金を申請',
 			'dashboard.payoutRequested' => '出金申請済み',
+			'dashboard.paymentSummary' => 'サマリー',
+			'dashboard.availablePoints' => '利用可能ポイント',
+			'dashboard.lockedPoints' => 'ロック中ポイント',
+			'dashboard.trialPoints' => 'トライアルポイント',
+			'dashboard.pendingObligations' => ({required Object count}) => '未履行のレフリー義務: ${count}件',
+			'dashboard.pendingObligationsLabel' => '未履行のレフリー義務',
+			'dashboard.obligationCount' => ({required Object count}) => '${count}件',
+			'dashboard.rewardBalance' => '報酬残高',
+			'dashboard.totalEarned' => '累計受取額',
+			'dashboard.recentPayout' => '直近',
+			'dashboard.nextPayout' => '次回振り込み予定',
+			'dashboard.payoutStatusSuccess' => '成功',
+			'dashboard.payoutStatusPending' => '保留中',
+			'dashboard.payoutStatusFailed' => '失敗',
+			'dashboard.payoutStatusSkipped' => 'スキップ',
 			'task.status.draft' => '下書き',
 			'task.status.open' => 'マッチング開始',
 			'task.status.judging' => '判定中',
