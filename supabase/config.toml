@@ -569,7 +569,7 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 
 [functions.generate-upload-url]
 enabled = true
-verify_jwt = false
+verify_jwt = true
 import_map = "./functions/generate-upload-url/deno.json"
 # Uncomment to specify a custom file path to the entrypoint.
 # Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
@@ -640,7 +640,7 @@ entrypoint = "./functions/handle-google-play-rtdn/index.ts"
 
 [functions.send-notification]
 enabled = true
-verify_jwt = false  # TODO: enable after supabase cli bug fixed
+verify_jwt = true
 import_map = "./functions/send-notification/deno.json"
 # Uncomment to specify a custom file path to the entrypoint.
 # Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
@@ -651,7 +651,7 @@ entrypoint = "./functions/send-notification/index.ts"
 
 [functions.execute-pending-payouts]
 enabled = true
-verify_jwt = false
+verify_jwt = true
 import_map = "./functions/execute-pending-payouts/deno.json"
 
 [functions.delete-account]
