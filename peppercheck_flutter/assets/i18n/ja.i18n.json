@@ -89,6 +89,8 @@
     "lockedPoints": "ロック中ポイント",
     "trialPoints": "トライアルポイント",
     "pendingObligations": "未履行のレフリー義務: $count件",
+    "pendingObligationsLabel": "未履行のレフリー義務",
+    "obligationCount": "$count件",
     "rewardBalance": "報酬残高",
     "totalEarned": "累計受取額",
     "recentPayout": "直近",

@@ -62,13 +62,22 @@ class _SummaryContent extends StatelessWidget {
                     size: 16,
                   ),
                   const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      t.dashboard.pendingObligationsLabel,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
                   Text(
-                    t.dashboard.pendingObligations(
+                    t.dashboard.obligationCount(
                       count: summary.obligationsRemaining,
                     ),
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.textPrimary,
-                      fontWeight: FontWeight.w500,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.accentYellow,
                     ),
                   ),
                 ],
@@ -147,12 +156,14 @@ class _SummaryContent extends StatelessWidget {
     );
   }
 
-  /// Regular points: label bold + value bold, optional muted locked line
+  /// Regular points card with toll icon
   Widget _buildRegularPointsRow() {
     return _SummaryCard(
       children: [
         Row(
           children: [
+            Icon(Icons.toll, color: AppColors.accentGreen, size: 16),
+            const SizedBox(width: 6),
             Expanded(
               child: Text(
                 t.dashboard.availablePoints,
@@ -173,16 +184,19 @@ class _SummaryContent extends StatelessWidget {
         ),
         if (summary.points.locked > 0) ...[
           const SizedBox(height: 2),
-          Text(
-            '${t.dashboard.lockedPoints}: ${summary.points.locked} pt',
-            style: TextStyle(color: AppColors.textMuted, fontSize: 11),
+          Padding(
+            padding: const EdgeInsets.only(left: 22),
+            child: Text(
+              '${t.dashboard.lockedPoints}: ${summary.points.locked} pt',
+              style: TextStyle(color: AppColors.textMuted, fontSize: 11),
+            ),
           ),
         ],
       ],
     );
   }
 
-  /// Trial points: green card, same bold style
+  /// Trial points card with star icon
   Widget _buildTrialPointsRow() {
     return _SummaryCard(
       backgroundColor: AppColors.accentGreenLight.withValues(alpha: 0.3),
@@ -190,8 +204,8 @@ class _SummaryContent extends StatelessWidget {
       children: [
         Row(
           children: [
-            Icon(Icons.stars, color: AppColors.accentGreen, size: 20),
-            const SizedBox(width: 8),
+            Icon(Icons.stars, color: AppColors.accentGreen, size: 16),
+            const SizedBox(width: 6),
             Expanded(
               child: Text(
                 t.dashboard.trialPoints,

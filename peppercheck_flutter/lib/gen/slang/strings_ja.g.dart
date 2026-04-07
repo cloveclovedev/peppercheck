@@ -311,6 +311,12 @@ class TranslationsDashboardJa {
 	/// ja: '未履行のレフリー義務: $count件'
 	String pendingObligations({required Object count}) => '未履行のレフリー義務: ${count}件';
 
+	/// ja: '未履行のレフリー義務'
+	String get pendingObligationsLabel => '未履行のレフリー義務';
+
+	/// ja: '$count件'
+	String obligationCount({required Object count}) => '${count}件';
+
 	/// ja: '報酬残高'
 	String get rewardBalance => '報酬残高';
 
@@ -1240,6 +1246,8 @@ extension on Translations {
 			'dashboard.lockedPoints' => 'ロック中ポイント',
 			'dashboard.trialPoints' => 'トライアルポイント',
 			'dashboard.pendingObligations' => ({required Object count}) => '未履行のレフリー義務: ${count}件',
+			'dashboard.pendingObligationsLabel' => '未履行のレフリー義務',
+			'dashboard.obligationCount' => ({required Object count}) => '${count}件',
 			'dashboard.rewardBalance' => '報酬残高',
 			'dashboard.totalEarned' => '累計受取額',
 			'dashboard.recentPayout' => '直近',
