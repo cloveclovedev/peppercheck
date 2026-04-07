@@ -49,7 +49,7 @@ class _SummaryContent extends StatelessWidget {
         if (hasTrial) _buildTrialPointsRow() else _buildRegularPointsRow(),
         // Obligations card — independent of trial/regular points
         if (summary.obligationsRemaining > 0) ...[
-          const SizedBox(height: AppSizes.spacingSmall),
+          const SizedBox(height: AppSizes.spacingTiny),
           _SummaryCard(
             backgroundColor: AppColors.accentYellowLight.withValues(alpha: 0.3),
             borderColor: AppColors.accentYellow.withValues(alpha: 0.5),
@@ -77,7 +77,7 @@ class _SummaryContent extends StatelessWidget {
                     ),
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: AppColors.accentYellow,
+                      color: AppColors.textPrimary,
                     ),
                   ),
                 ],
@@ -87,7 +87,7 @@ class _SummaryContent extends StatelessWidget {
         ],
         // Rewards row — only if rewards exist
         if (summary.rewards != null) ...[
-          const SizedBox(height: AppSizes.spacingSmall),
+          const SizedBox(height: AppSizes.spacingTiny),
           Row(
             children: [
               Expanded(
@@ -105,7 +105,7 @@ class _SummaryContent extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: AppSizes.spacingSmall),
+              const SizedBox(width: AppSizes.spacingTiny),
               Expanded(
                 child: _SummaryCard(
                   children: [
@@ -129,7 +129,7 @@ class _SummaryContent extends StatelessWidget {
         // Payout info — conditional rows
         if (summary.recentPayout != null ||
             (summary.rewards != null && summary.rewards!.balance > 0)) ...[
-          const SizedBox(height: AppSizes.spacingSmall),
+          const SizedBox(height: AppSizes.spacingTiny),
           _SummaryCard(
             children: [
               if (summary.recentPayout != null) ...[
