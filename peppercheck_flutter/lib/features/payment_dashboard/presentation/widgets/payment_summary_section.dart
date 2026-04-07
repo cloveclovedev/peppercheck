@@ -223,11 +223,11 @@ class _SummaryContent extends StatelessWidget {
     return NumberFormat.simpleCurrency(name: currencyCode).format(majorAmount);
   }
 
-  /// Format ISO date string (e.g. "2026-04-30") using locale-aware format
+  /// Format ISO date string (e.g. "2026-04-30") as yyyy/M/d
   static String _formatDate(String isoDate) {
     final date = DateTime.tryParse(isoDate);
     if (date == null) return isoDate;
-    return DateFormat.yMd().format(date);
+    return DateFormat('yyyy/M/d').format(date);
   }
 
   static String _payoutStatusLabel(String status) {
