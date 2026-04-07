@@ -144,29 +144,33 @@ class _SummaryContent extends StatelessWidget {
     );
   }
 
-  /// Regular points: 2-column layout (available | locked) in one card
+  /// Regular points: single row with optional muted locked line
   Widget _buildRegularPointsRow() {
     return _SummaryCard(
       children: [
         Row(
           children: [
-            Expanded(
-              child: _LabelValue(
-                label: t.dashboard.availablePoints,
-                value: '${summary.points.available} pt',
-                valueColor: AppColors.accentGreen,
+            Text(
+              t.dashboard.availablePoints,
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+            ),
+            const Spacer(),
+            Text(
+              '${summary.points.available} pt',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: AppColors.accentGreen,
               ),
             ),
-            if (summary.points.locked > 0)
-              Expanded(
-                child: _LabelValue(
-                  label: t.dashboard.lockedPoints,
-                  value: '${summary.points.locked} pt',
-                  valueColor: AppColors.textSecondary,
-                ),
-              ),
           ],
         ),
+        if (summary.points.locked > 0) ...[
+          const SizedBox(height: 2),
+          Text(
+            '${t.dashboard.lockedPoints}: ${summary.points.locked} pt',
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
+          ),
+        ],
       ],
     );
   }
@@ -252,42 +256,6 @@ class _SummaryCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: children,
       ),
-    );
-  }
-}
-
-/// Compact label + bold value, stacked vertically
-class _LabelValue extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color? valueColor;
-
-  const _LabelValue({
-    required this.label,
-    required this.value,
-    this.valueColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: Theme.of(
-            context,
-          ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          value,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: valueColor ?? AppColors.textPrimary,
-          ),
-        ),
-      ],
     );
   }
 }
