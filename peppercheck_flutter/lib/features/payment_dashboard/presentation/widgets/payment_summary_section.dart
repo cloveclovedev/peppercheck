@@ -144,17 +144,21 @@ class _SummaryContent extends StatelessWidget {
     );
   }
 
-  /// Regular points: single row with optional muted locked line
+  /// Regular points: label bold + value bold, optional muted locked line
   Widget _buildRegularPointsRow() {
     return _SummaryCard(
       children: [
         Row(
           children: [
-            Text(
-              t.dashboard.availablePoints,
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+            Expanded(
+              child: Text(
+                t.dashboard.availablePoints,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
             ),
-            const Spacer(),
             Text(
               '${summary.points.available} pt',
               style: TextStyle(
@@ -168,14 +172,14 @@ class _SummaryContent extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             '${t.dashboard.lockedPoints}: ${summary.points.locked} pt',
-            style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
+            style: TextStyle(color: AppColors.textMuted, fontSize: 11),
           ),
         ],
       ],
     );
   }
 
-  /// Trial points: single-row green card
+  /// Trial points: green card, same bold style
   Widget _buildTrialPointsRow() {
     return _SummaryCard(
       backgroundColor: AppColors.accentGreenLight.withValues(alpha: 0.3),
@@ -183,13 +187,17 @@ class _SummaryContent extends StatelessWidget {
       children: [
         Row(
           children: [
-            Icon(Icons.stars, color: AppColors.accentGreen, size: 16),
-            const SizedBox(width: 6),
-            Text(
-              t.dashboard.trialPoints,
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+            Icon(Icons.stars, color: AppColors.accentGreen, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                t.dashboard.trialPoints,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
             ),
-            const Spacer(),
             Text(
               '${summary.trialPoints!.available} pt',
               style: TextStyle(
