@@ -314,8 +314,8 @@ class TranslationsDashboardJa {
 	/// ja: '報酬残高'
 	String get rewardBalance => '報酬残高';
 
-	/// ja: '総収益'
-	String get totalEarned => '総収益';
+	/// ja: '累計受取額'
+	String get totalEarned => '累計受取額';
 
 	/// ja: '直近'
 	String get recentPayout => '直近';
@@ -1241,7 +1241,7 @@ extension on Translations {
 			'dashboard.trialPoints' => 'トライアルポイント',
 			'dashboard.pendingObligations' => ({required Object count}) => '未履行のレフリー義務: ${count}件',
 			'dashboard.rewardBalance' => '報酬残高',
-			'dashboard.totalEarned' => '総収益',
+			'dashboard.totalEarned' => '累計受取額',
 			'dashboard.recentPayout' => '直近',
 			'dashboard.nextPayout' => '次回振り込み予定',
 			'dashboard.payoutStatusSuccess' => '成功',

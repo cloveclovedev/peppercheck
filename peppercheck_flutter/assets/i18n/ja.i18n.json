@@ -90,7 +90,7 @@
     "trialPoints": "トライアルポイント",
     "pendingObligations": "未履行のレフリー義務: $count件",
     "rewardBalance": "報酬残高",
-    "totalEarned": "総収益",
+    "totalEarned": "累計受取額",
     "recentPayout": "直近",
     "nextPayout": "次回振り込み予定",
     "payoutStatusSuccess": "成功",
