@@ -171,7 +171,7 @@ class _SummaryContent extends StatelessWidget {
     );
   }
 
-  /// Trial points: green card with available trial points
+  /// Trial points: single-row green card
   Widget _buildTrialPointsRow() {
     return _SummaryCard(
       backgroundColor: AppColors.accentGreenLight.withValues(alpha: 0.3),
@@ -181,10 +181,17 @@ class _SummaryContent extends StatelessWidget {
           children: [
             Icon(Icons.stars, color: AppColors.accentGreen, size: 16),
             const SizedBox(width: 6),
-            _LabelValue(
-              label: t.dashboard.trialPoints,
-              value: '${summary.trialPoints!.available} pt',
-              valueColor: AppColors.accentGreen,
+            Text(
+              t.dashboard.trialPoints,
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+            ),
+            const Spacer(),
+            Text(
+              '${summary.trialPoints!.available} pt',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: AppColors.accentGreen,
+              ),
             ),
           ],
         ),
