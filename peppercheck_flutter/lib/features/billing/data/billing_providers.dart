@@ -20,3 +20,10 @@ FutureOr<PointWallet> pointWallet(Ref ref) {
 FutureOr<TrialPointWallet?> trialPointWallet(Ref ref) {
   return ref.read(billingRepositoryProvider).fetchTrialPointWallet();
 }
+
+@riverpod
+FutureOr<int> matchingStrategyCost(Ref ref, String strategy) {
+  return ref
+      .read(billingRepositoryProvider)
+      .fetchMatchingStrategyCost(strategy);
+}
