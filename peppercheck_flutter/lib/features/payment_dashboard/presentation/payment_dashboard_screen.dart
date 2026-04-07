@@ -4,6 +4,7 @@ import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
 import 'package:peppercheck_flutter/common_widgets/app_background.dart';
 import 'package:peppercheck_flutter/common_widgets/app_scaffold.dart';
 import 'package:peppercheck_flutter/features/billing/presentation/widgets/subscription_section.dart';
+import 'package:peppercheck_flutter/features/payment_dashboard/presentation/payment_summary_controller.dart';
 import 'package:peppercheck_flutter/features/payment_dashboard/presentation/widgets/payment_summary_section.dart';
 import 'package:peppercheck_flutter/features/payout/presentation/widgets/payout_setup_section.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
@@ -17,6 +18,9 @@ class PaymentDashboardScreen extends ConsumerWidget {
       child: AppScaffold.scrollable(
         title: t.nav.payments,
         currentIndex: 1,
+        onRefresh: () async {
+          ref.invalidate(paymentSummaryControllerProvider);
+        },
         slivers: [
           SliverList(
             delegate: SliverChildListDelegate([

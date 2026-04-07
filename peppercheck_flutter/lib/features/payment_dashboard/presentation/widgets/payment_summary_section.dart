@@ -40,63 +40,38 @@ class _SummaryContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasTrial = summary.trialPoints != null;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Points card — always shown
-        _SummaryCard(
-          children: [
-            _IconRow(
-              icon: Icons.circle,
-              iconColor: AppColors.accentGreen,
-              iconSize: 8,
-              label: t.dashboard.availablePoints,
-              value: '${summary.points.available} pt',
-            ),
-            if (summary.points.locked > 0) ...[
-              const SizedBox(height: 4),
-              _IconRow(
-                icon: Icons.lock_outline,
-                iconColor: AppColors.textSecondary,
-                iconSize: 14,
-                label: t.dashboard.lockedPoints,
-                value: '${summary.points.locked} pt',
-              ),
-            ],
-          ],
-        ),
-        // Trial points card — only if active
-        if (summary.trialPoints != null) ...[
-          const SizedBox(height: AppSizes.spacingSmall),
-          _SummaryCard(
-            backgroundColor: AppColors.accentGreenLight.withValues(alpha: 0.3),
-            borderColor: AppColors.accentGreen.withValues(alpha: 0.5),
-            children: [
-              _IconRow(
-                icon: Icons.stars,
-                iconColor: AppColors.accentGreen,
-                iconSize: 20,
-                label: t.dashboard.trialPoints,
-                value: '${summary.trialPoints!.available} pt',
-              ),
-            ],
-          ),
-        ],
-        // Obligations card — only if remaining > 0
+        // Points area — trial and regular are mutually exclusive
+        if (hasTrial) _buildTrialPointsRow() else _buildRegularPointsRow(),
+        // Obligations card — independent of trial/regular points
         if (summary.obligationsRemaining > 0) ...[
           const SizedBox(height: AppSizes.spacingSmall),
           _SummaryCard(
             backgroundColor: AppColors.accentYellowLight.withValues(alpha: 0.3),
             borderColor: AppColors.accentYellow.withValues(alpha: 0.5),
             children: [
-              _IconRow(
-                icon: Icons.assignment_outlined,
-                iconColor: AppColors.accentYellow,
-                iconSize: 20,
-                label: t.dashboard.pendingObligations(
-                  count: summary.obligationsRemaining,
-                ),
-                value: '',
+              Row(
+                children: [
+                  Icon(
+                    Icons.assignment_outlined,
+                    color: AppColors.accentYellow,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    t.dashboard.pendingObligations(
+                      count: summary.obligationsRemaining,
+                    ),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -118,7 +93,7 @@ class _SummaryContent extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: AppSizes.spacingMedium),
+              const SizedBox(width: AppSizes.spacingSmall),
               Expanded(
                 child: _SummaryCard(
                   children: [
@@ -165,6 +140,54 @@ class _SummaryContent extends StatelessWidget {
             ],
           ),
         ],
+      ],
+    );
+  }
+
+  /// Regular points: 2-column layout (available | locked) in one card
+  Widget _buildRegularPointsRow() {
+    return _SummaryCard(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _LabelValue(
+                label: t.dashboard.availablePoints,
+                value: '${summary.points.available} pt',
+                valueColor: AppColors.accentGreen,
+              ),
+            ),
+            if (summary.points.locked > 0)
+              Expanded(
+                child: _LabelValue(
+                  label: t.dashboard.lockedPoints,
+                  value: '${summary.points.locked} pt',
+                  valueColor: AppColors.textSecondary,
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  /// Trial points: green card with available trial points
+  Widget _buildTrialPointsRow() {
+    return _SummaryCard(
+      backgroundColor: AppColors.accentGreenLight.withValues(alpha: 0.3),
+      borderColor: AppColors.accentGreen.withValues(alpha: 0.5),
+      children: [
+        Row(
+          children: [
+            Icon(Icons.stars, color: AppColors.accentGreen, size: 16),
+            const SizedBox(width: 6),
+            _LabelValue(
+              label: t.dashboard.trialPoints,
+              value: '${summary.trialPoints!.available} pt',
+              valueColor: AppColors.accentGreen,
+            ),
+          ],
+        ),
       ],
     );
   }
@@ -226,43 +249,37 @@ class _SummaryCard extends StatelessWidget {
   }
 }
 
-class _IconRow extends StatelessWidget {
-  final IconData icon;
-  final Color iconColor;
-  final double iconSize;
+/// Compact label + bold value, stacked vertically
+class _LabelValue extends StatelessWidget {
   final String label;
   final String value;
+  final Color? valueColor;
 
-  const _IconRow({
-    required this.icon,
-    required this.iconColor,
-    required this.iconSize,
+  const _LabelValue({
     required this.label,
     required this.value,
+    this.valueColor,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, color: iconColor, size: iconSize),
-        const SizedBox(width: 6),
         Text(
           label,
           style: Theme.of(
             context,
           ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
         ),
-        if (value.isNotEmpty) ...[
-          const Spacer(),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: valueColor ?? AppColors.textPrimary,
           ),
-        ],
+        ),
       ],
     );
   }

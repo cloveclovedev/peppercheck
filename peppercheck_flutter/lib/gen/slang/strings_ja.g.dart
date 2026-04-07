@@ -299,11 +299,11 @@ class TranslationsDashboardJa {
 	/// ja: 'サマリー'
 	String get paymentSummary => 'サマリー';
 
-	/// ja: '利用可能'
-	String get availablePoints => '利用可能';
+	/// ja: '利用可能ポイント'
+	String get availablePoints => '利用可能ポイント';
 
-	/// ja: 'ロック中'
-	String get lockedPoints => 'ロック中';
+	/// ja: 'ロック中ポイント'
+	String get lockedPoints => 'ロック中ポイント';
 
 	/// ja: 'トライアルポイント'
 	String get trialPoints => 'トライアルポイント';
@@ -1236,8 +1236,8 @@ extension on Translations {
 			'dashboard.requestPayout' => '出金を申請',
 			'dashboard.payoutRequested' => '出金申請済み',
 			'dashboard.paymentSummary' => 'サマリー',
-			'dashboard.availablePoints' => '利用可能',
-			'dashboard.lockedPoints' => 'ロック中',
+			'dashboard.availablePoints' => '利用可能ポイント',
+			'dashboard.lockedPoints' => 'ロック中ポイント',
 			'dashboard.trialPoints' => 'トライアルポイント',
 			'dashboard.pendingObligations' => ({required Object count}) => '未履行のレフリー義務: ${count}件',
 			'dashboard.rewardBalance' => '報酬残高',
