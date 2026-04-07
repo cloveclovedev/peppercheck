@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:peppercheck_flutter/app/theme/app_colors.dart';
 import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
 import 'package:peppercheck_flutter/common_widgets/base_section.dart';
+import 'package:peppercheck_flutter/features/billing/data/billing_providers.dart';
 import 'package:peppercheck_flutter/features/task/presentation/widgets/task_creation/strategy_button.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 
-class MatchingStrategySelectionSection extends StatelessWidget {
+class MatchingStrategySelectionSection extends ConsumerWidget {
   final List<String> selectedStrategies;
   final ValueChanged<List<String>> onStrategiesChange;
 
@@ -16,10 +18,8 @@ class MatchingStrategySelectionSection extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    // TODO: Calculate total fee dynamically based on billing_prices table sum.
-    // Currently using a hardcoded increment of 50 per strategy.
-    final totalFee = selectedStrategies.length * 50;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final costAsync = ref.watch(matchingStrategyCostProvider('standard'));
 
     return BaseSection(
       title: t.task.creation.sectionMatching,
@@ -31,7 +31,6 @@ class MatchingStrategySelectionSection extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               ...selectedStrategies.map((strategy) {
-                // TODO: Improve strategy localization mapping if we have many strategies
                 final label = strategy == 'standard'
                     ? t.task.creation.strategy.standard
                     : strategy;
@@ -80,11 +79,30 @@ class MatchingStrategySelectionSection extends StatelessWidget {
                   ),
                 ),
               const Spacer(),
-              Text(
-                '¥$totalFee',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.w500,
+              costAsync.when(
+                data: (costPerPlan) {
+                  final totalPoints = selectedStrategies.length * costPerPlan;
+                  return Text(
+                    '${totalPoints}pt',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  );
+                },
+                loading: () => Text(
+                  '--pt',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                error: (_, _) => Text(
+                  '--pt',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ],

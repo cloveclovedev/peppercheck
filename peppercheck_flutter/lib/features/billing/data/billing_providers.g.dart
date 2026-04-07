@@ -127,3 +127,73 @@ final class TrialPointWalletProvider
 }
 
 String _$trialPointWalletHash() => r'294173bcadda2f6b14342f18757fd764e4026e2a';
+
+@ProviderFor(matchingStrategyCost)
+const matchingStrategyCostProvider = MatchingStrategyCostFamily._();
+
+final class MatchingStrategyCostProvider
+    extends $FunctionalProvider<AsyncValue<int>, int, FutureOr<int>>
+    with $FutureModifier<int>, $FutureProvider<int> {
+  const MatchingStrategyCostProvider._({
+    required MatchingStrategyCostFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'matchingStrategyCostProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$matchingStrategyCostHash();
+
+  @override
+  String toString() {
+    return r'matchingStrategyCostProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<int> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<int> create(Ref ref) {
+    final argument = this.argument as String;
+    return matchingStrategyCost(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is MatchingStrategyCostProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$matchingStrategyCostHash() =>
+    r'09c8a49dc86d1d3a6a334a2aebbf21b4b30106fd';
+
+final class MatchingStrategyCostFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<int>, String> {
+  const MatchingStrategyCostFamily._()
+    : super(
+        retry: null,
+        name: r'matchingStrategyCostProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  MatchingStrategyCostProvider call(String strategy) =>
+      MatchingStrategyCostProvider._(argument: strategy, from: this);
+
+  @override
+  String toString() => r'matchingStrategyCostProvider';
+}
