@@ -207,7 +207,7 @@ async function handleSubscriptionNotification(
     throw upsertError
   }
 
-  // Grant points on PURCHASED or RENEWED
+  // Reset points on PURCHASED or RENEWED
   if (
     notificationType === NOTIFICATION_TYPE.PURCHASED ||
     notificationType === NOTIFICATION_TYPE.RENEWED

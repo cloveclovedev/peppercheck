@@ -234,7 +234,7 @@ async function handleInvoicePaymentSucceeded(
 
   const monthlyPoints = planData.monthly_points
   if (monthlyPoints <= 0) {
-    console.log(`Plan ${planId} has 0 points, skipping point grant.`)
+    console.log(`Plan ${planId} has 0 points, skipping point reset.`)
     return
   }
 
