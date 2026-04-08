@@ -31,10 +31,11 @@ BEGIN
         RETURN false;
     END IF;
 
-    -- 2. Read current wallet state
+    -- 2. Read current wallet state (FOR UPDATE to prevent concurrent lock_points race)
     SELECT balance, locked INTO v_old_balance, v_old_locked
     FROM public.point_wallets
-    WHERE user_id = p_user_id;
+    WHERE user_id = p_user_id
+    FOR UPDATE;
 
     IF NOT FOUND THEN
         -- Fallback: Create wallet if it doesn't exist
