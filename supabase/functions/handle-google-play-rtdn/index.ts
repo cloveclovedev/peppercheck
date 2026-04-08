@@ -230,7 +230,7 @@ async function handleSubscriptionNotification(
       // (purchaseToken stays the same for the life of the subscription)
       const invoiceId = `google:${purchaseToken}:${lineItem.expiryTime}`
       const { data: granted, error: rpcError } = await supabaseAdmin.rpc(
-        'grant_subscription_points',
+        'reset_subscription_points',
         {
           p_user_id: userId,
           p_amount: planData.monthly_points,
@@ -239,14 +239,14 @@ async function handleSubscriptionNotification(
       )
 
       if (rpcError) {
-        console.error(`grant_subscription_points failed:`, rpcError)
+        console.error(`reset_subscription_points failed:`, rpcError)
         throw rpcError
       }
 
       if (granted) {
-        console.log(`Granted ${planData.monthly_points} points to user ${userId}`)
+        console.log(`Reset points to ${planData.monthly_points} for user ${userId}`)
       } else {
-        console.log(`Points already granted for ${invoiceId}, skipping (idempotent)`)
+        console.log(`Points already reset for ${invoiceId}, skipping (idempotent)`)
       }
     }
   }
