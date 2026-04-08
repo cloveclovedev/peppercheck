@@ -1,12 +1,7 @@
 drop function if exists "public"."grant_subscription_points"(p_user_id uuid, p_amount integer, p_invoice_id text);
 
-alter type "public"."point_reason" rename to "point_reason__old_version_to_be_dropped";
-
-create type "public"."point_reason" as enum ('plan_renewal', 'plan_renewal_expiry', 'plan_upgrade', 'matching_request', 'matching_lock', 'matching_unlock', 'matching_settled', 'matching_refund', 'manual_adjustment', 'referral_bonus');
-
-alter table "public"."point_ledger" alter column reason type "public"."point_reason" using reason::text::"public"."point_reason";
-
-drop type "public"."point_reason__old_version_to_be_dropped";
+-- Add new enum value (ALTER TYPE ADD VALUE avoids dependency issues with functions using point_reason)
+ALTER TYPE public.point_reason ADD VALUE IF NOT EXISTS 'plan_renewal_expiry' AFTER 'plan_renewal';
 
 set check_function_bodies = off;
 
