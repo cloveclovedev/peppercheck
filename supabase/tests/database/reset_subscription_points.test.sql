@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(12);
+select plan(13);
 
 -- ============================================================
 -- Setup: create test user and wallet
@@ -130,6 +130,13 @@ SELECT is(
      AND description = 'Subscription renewal: inv-003'),
     0::bigint,
     'Test 4: No expiry ledger entry when available points = 0'
+);
+
+-- balance = p_amount(5) + locked(2) = 7
+SELECT is(
+    (SELECT balance FROM public.point_wallets WHERE user_id = 'd1111111-1111-1111-1111-111111111111'),
+    7,
+    'Test 4: Balance = plan_amount(5) + locked(2) = 7'
 );
 
 select * from finish();
