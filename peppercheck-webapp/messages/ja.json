@@ -47,6 +47,9 @@
     "subtitle": "あなたに最適なプランを選んでください。",
     "month": "/月",
     "subscribe": "{plan} に登録する",
+    "currentPlan": "現在のプラン: {plan}（{provider}経由）",
+    "activePlan": "現在のプラン",
+    "switchPlanNotAvailable": "プラン変更はアプリから行えます",
     "plans": {
       "light_plan": {
         "name": "ライトプラン",

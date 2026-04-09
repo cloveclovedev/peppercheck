@@ -47,6 +47,9 @@
     "subtitle": "Choose the plan that fits your needs.",
     "month": "/mo",
     "subscribe": "Subscribe to {plan}",
+    "currentPlan": "Current plan: {plan} (via {provider})",
+    "activePlan": "Current plan",
+    "switchPlanNotAvailable": "Plan changes are managed in the app",
     "plans": {
       "light_plan": {
         "name": "Light Plan",
