@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:peppercheck_flutter/app/theme/app_colors.dart';
 import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
 import 'package:peppercheck_flutter/app/utils/date_time_utils.dart';
-import 'package:peppercheck_flutter/common_widgets/action_button.dart';
 import 'package:peppercheck_flutter/common_widgets/base_section.dart';
 import 'package:peppercheck_flutter/features/billing/data/billing_providers.dart';
 import 'package:peppercheck_flutter/features/billing/domain/subscription_display_state.dart';
@@ -33,15 +31,6 @@ class _SubscriptionSectionState extends ConsumerState<SubscriptionSection> {
     });
   }
 
-  Future<void> _launchWebDashboard() async {
-    final baseUrl =
-        dotenv.env['WEB_DASHBOARD_URL'] ?? 'http://localhost:3000/dashboard';
-    final url = Uri.parse(baseUrl);
-    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
-      throw Exception('Could not launch $url');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final subscriptionAsync = ref.watch(subscriptionProvider);
@@ -64,13 +53,28 @@ class _SubscriptionSectionState extends ConsumerState<SubscriptionSection> {
 
               _PlanCardList(displayState: displayState),
 
-              const SizedBox(height: AppSizes.spacingSmall),
-
-              ActionButton(
-                text: t.billing.manageSubscription,
-                icon: Icons.open_in_new,
-                onPressed: _launchWebDashboard,
-              ),
+              if (displayState is ActiveSubscription ||
+                  displayState is ActiveWithPaymentIssue) ...[
+                const SizedBox(height: AppSizes.spacingTiny),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: GestureDetector(
+                    onTap: () => launchUrl(
+                      Uri.parse(
+                        'https://play.google.com/store/account/subscriptions',
+                      ),
+                      mode: LaunchMode.externalApplication,
+                    ),
+                    child: Text(
+                      t.billing.cancelViaGooglePlay,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
 
               if (purchaseState.hasError)
                 Padding(

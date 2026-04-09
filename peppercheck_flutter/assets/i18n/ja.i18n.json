@@ -40,7 +40,8 @@
     "noAutoRenewal": "自動更新なし",
     "periodEnd": "終了日",
     "currentPlan": "現在のプラン",
-    "canceledUntil": "解約済み・$dateまで利用可能"
+    "canceledUntil": "解約済み・$dateまで利用可能",
+    "cancelViaGooglePlay": "キャンセルはGoogle Playから →"
   },
   "common": {
     "cancel": "キャンセル",
