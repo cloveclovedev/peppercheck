@@ -59,17 +59,23 @@ class _SubscriptionSectionState extends ConsumerState<SubscriptionSection> {
                 Align(
                   alignment: Alignment.centerRight,
                   child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
                     onTap: () => launchUrl(
                       Uri.parse(
                         'https://play.google.com/store/account/subscriptions',
                       ),
                       mode: LaunchMode.externalApplication,
                     ),
-                    child: Text(
-                      t.billing.cancelViaGooglePlay,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: AppSizes.spacingTiny,
+                      ),
+                      child: Text(
+                        t.billing.cancelViaGooglePlay,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                     ),
                   ),
