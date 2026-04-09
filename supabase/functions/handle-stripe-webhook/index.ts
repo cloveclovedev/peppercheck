@@ -71,6 +71,7 @@ export const handler = async (req: Request, dependencies?: {
       }
       case 'invoice.payment_succeeded': {
         const invoice = event.data.object as Stripe.Invoice
+        // deno-lint-ignore no-explicit-any
         const invoiceAny = invoice as any
         // Check for subscription ID in both standard and nested locations
         const subscriptionId = invoiceAny.subscription ||
@@ -130,6 +131,7 @@ async function handleSubscriptionChange(
 
   const status = subscription.status
   // Use any cast to bypass type definition issues if fields are missing in the referenced version
+  // deno-lint-ignore no-explicit-any
   const subAny = subscription as any
   const currentPeriodStart = subAny.current_period_start
     ? new Date(subAny.current_period_start * 1000).toISOString()
@@ -143,6 +145,7 @@ async function handleSubscriptionChange(
   // Note: 'provider' is 'stripe'
   console.log(`Updating subscription for user ${userId}: plan=${planId}, status=${status}`)
 
+  // deno-lint-ignore no-explicit-any
   const { error } = await (supabaseAdmin.from('user_subscriptions') as any).upsert({
     user_id: userId,
     plan_id: planId,
@@ -178,10 +181,11 @@ async function handleInvoicePaymentSucceeded(
   stripe: Stripe,
   supabaseAdmin: ReturnType<typeof createClient>,
 ) {
+  // deno-lint-ignore no-explicit-any
   const invoiceAny = invoice as any
   const subscriptionId =
     (invoiceAny.subscription || invoiceAny.parent?.subscription_details?.subscription) as string
-  const userId = invoiceAny.subscription_details?.metadata?.supabase_uid ??
+  const _userId = invoiceAny.subscription_details?.metadata?.supabase_uid ??
     invoiceAny.metadata?.supabase_uid ??
     invoiceAny.parent?.subscription_details?.metadata?.supabase_uid
   // removing unused userId check if we don't use it, but actually we might want to use it as fallback if subscription retrieval fails?
@@ -215,8 +219,10 @@ async function handleInvoicePaymentSucceeded(
   }
 
   // 1. Get monthly points for the plan
-  const { data: planData, error: planError } = await (supabaseAdmin
-    .from('subscription_plans') as any)
+  // deno-lint-ignore no-explicit-any
+  const supabaseAdminAny = supabaseAdmin as any
+  const { data: planData, error: planError } = await supabaseAdminAny
+    .from('subscription_plans')
     .select('monthly_points')
     .eq('id', planId)
     .single()
@@ -228,27 +234,27 @@ async function handleInvoicePaymentSucceeded(
 
   const monthlyPoints = planData.monthly_points
   if (monthlyPoints <= 0) {
-    console.log(`Plan ${planId} has 0 points, skipping point grant.`)
+    console.log(`Plan ${planId} has 0 points, skipping point reset.`)
     return
   }
 
-  // 2. Grant points via idempotent RPC
-  const { data: granted, error: rpcError } = await supabaseAdmin.rpc('grant_subscription_points', {
+  // 2. Reset points via idempotent RPC
+  const { data: granted, error: rpcError } = await supabaseAdmin.rpc('reset_subscription_points', {
     p_user_id: uid,
     p_amount: monthlyPoints,
     p_invoice_id: invoice.id,
   })
 
   if (rpcError) {
-    console.error(`RPC grant_subscription_points failed: ${rpcError.message}`)
+    console.error(`RPC reset_subscription_points failed: ${rpcError.message}`)
     throw rpcError
   }
 
   if (granted) {
-    console.log(`Granting ${monthlyPoints} points to user ${uid} for plan ${planId}`)
+    console.log(`Reset points to ${monthlyPoints} for user ${uid}, plan ${planId}`)
   } else {
     console.log(
-      `Invoice ${invoice.id} already processed (idempotency check), skipping point grant.`,
+      `Invoice ${invoice.id} already processed (idempotency check), skipping point reset.`,
     )
   }
 }

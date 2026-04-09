@@ -1,13 +1,14 @@
 CREATE TYPE public.point_reason AS ENUM (
-    'plan_renewal',      -- Monthly subscription points grant
-    'plan_upgrade',      -- Prorated points adjustment on upgrade
-    'matching_request',  -- (Legacy) Consumed when requesting a referee matching
-    'matching_lock',     -- Points locked when requesting a referee matching
-    'matching_unlock',   -- Points unlocked (returned) on timeout
-    'matching_settled',  -- Points consumed at Confirm
-    'matching_refund',   -- Refunded if matching fails or task is cancelled
-    'manual_adjustment', -- Admin operation/Support
-    'referral_bonus'     -- Points earned from referring users
+    'plan_renewal',        -- Monthly subscription points grant
+    'plan_renewal_expiry', -- Unused points forfeited on renewal
+    'plan_upgrade',        -- Prorated points adjustment on upgrade
+    'matching_request',    -- (Legacy) Consumed when requesting a referee matching
+    'matching_lock',       -- Points locked when requesting a referee matching
+    'matching_unlock',     -- Points unlocked (returned) on timeout
+    'matching_settled',    -- Points consumed at Confirm
+    'matching_refund',     -- Refunded if matching fails or task is cancelled
+    'manual_adjustment',   -- Admin operation/Support
+    'referral_bonus'       -- Points earned from referring users
 );
 
 CREATE TABLE IF NOT EXISTS public.point_ledger (

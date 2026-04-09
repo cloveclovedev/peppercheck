@@ -176,7 +176,7 @@ schema_paths = [
   "./schemas/point/functions/consume_points.sql",
   "./schemas/point/functions/lock_points.sql",
   "./schemas/point/functions/unlock_points.sql",
-  "./schemas/point/functions/grant_subscription_points.sql",
+  "./schemas/point/functions/reset_subscription_points.sql",
 
   # Trial Point
   "./schemas/trial_point/functions/lock_trial_points.sql",
