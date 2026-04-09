@@ -251,11 +251,11 @@ class TranslationsPayoutJa {
 	/// ja: '依頼を受けたタスクについて進捗内容をレビューします。レビュー完了時に代金が支払われます。'
 	String get hintDescriptionCopy => '依頼を受けたタスクについて進捗内容をレビューします。レビュー完了時に代金が支払われます。';
 
-	/// ja: 'ウェブサイトは「https://peppercheck.com」を入力してください'
-	String get hintWebsite => 'ウェブサイトは「https://peppercheck.com」を入力してください';
+	/// ja: 'ウェブサイトは「https://peppercheck.dev」を入力してください'
+	String get hintWebsite => 'ウェブサイトは「https://peppercheck.dev」を入力してください';
 
-	/// ja: 'https://peppercheck.com'
-	String get hintWebsiteCopy => 'https://peppercheck.com';
+	/// ja: 'https://peppercheck.dev'
+	String get hintWebsiteCopy => 'https://peppercheck.dev';
 
 	/// ja: '入力例をコピーしました'
 	String get copiedInputExample => '入力例をコピーしました';
@@ -1229,8 +1229,8 @@ extension on Translations {
 			'payout.hintIndustry' => '業種は「その他の個人向けサービス」を選んでください',
 			'payout.hintDescription' => '商品の説明は「依頼を受けたタスクについて進捗内容をレビューします。レビュー完了時に代金が支払われます。」と入力してください',
 			'payout.hintDescriptionCopy' => '依頼を受けたタスクについて進捗内容をレビューします。レビュー完了時に代金が支払われます。',
-			'payout.hintWebsite' => 'ウェブサイトは「https://peppercheck.com」を入力してください',
-			'payout.hintWebsiteCopy' => 'https://peppercheck.com',
+			'payout.hintWebsite' => 'ウェブサイトは「https://peppercheck.dev」を入力してください',
+			'payout.hintWebsiteCopy' => 'https://peppercheck.dev',
 			'payout.copiedInputExample' => '入力例をコピーしました',
 			'payout.amount' => '金額',
 			'payout.invalidAmount' => '金額が不正です',
