@@ -286,10 +286,10 @@ async function handleAccountUpdated(
   if (error) {
     if (error.code === 'PGRST116') {
       console.log(`No stripe_accounts row for connect account ${connectAccountId}, skipping`)
-    } else {
-      console.error(`Failed to update stripe_accounts for ${connectAccountId}:`, error)
+      return
     }
-    return
+    console.error(`Failed to update stripe_accounts for ${connectAccountId}:`, error)
+    throw error
   }
 
   console.log(
