@@ -7,6 +7,7 @@ import 'package:peppercheck_flutter/app/app_logger.dart';
 import 'package:peppercheck_flutter/app/routing/app_router.dart';
 import 'package:peppercheck_flutter/features/notification/application/notification_text_resolver.dart';
 import 'package:peppercheck_flutter/features/notification/data/notification_repository.dart';
+import 'package:peppercheck_flutter/features/task/presentation/providers/task_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -163,6 +164,7 @@ class FcmService {
       return;
     }
 
+    ref.invalidate(taskProvider(taskId));
     final router = ref.read(routerProvider);
     router.push('/task_detail/$taskId');
   }

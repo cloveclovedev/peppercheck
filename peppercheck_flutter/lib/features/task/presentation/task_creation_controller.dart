@@ -4,6 +4,7 @@ import 'package:peppercheck_flutter/features/task/domain/task.dart';
 import 'package:peppercheck_flutter/features/task/presentation/task_creation_state.dart';
 import 'package:peppercheck_flutter/features/task/domain/task_creation_request.dart';
 import 'package:peppercheck_flutter/features/task/domain/task_creation_error.dart';
+import 'package:peppercheck_flutter/features/billing/data/billing_providers.dart';
 import 'package:peppercheck_flutter/features/home/presentation/home_controller.dart';
 import 'package:peppercheck_flutter/features/task/presentation/providers/task_provider.dart';
 
@@ -127,6 +128,8 @@ class TaskCreationController extends _$TaskCreationController {
 
       // Refresh the home screen lists
       ref.invalidate(activeUserTasksProvider);
+      ref.invalidate(pointWalletProvider);
+      ref.invalidate(trialPointWalletProvider);
 
       // Success - clear any error and return to data state
       state = AsyncData(currentState.copyWith(creationError: null));
