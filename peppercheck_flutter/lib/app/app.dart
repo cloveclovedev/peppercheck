@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:peppercheck_flutter/app/app_lifecycle_observer.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:peppercheck_flutter/app/routing/app_router.dart';
 import 'package:peppercheck_flutter/app/theme/app_theme.dart';
@@ -18,13 +19,15 @@ class MyApp extends ConsumerWidget {
     return TranslationProvider(
       child: Builder(
         builder: (context) {
-          return MaterialApp.router(
-            title: 'PepperCheck',
-            theme: AppTheme.light,
-            routerConfig: router,
-            locale: TranslationProvider.of(context).flutterLocale,
-            supportedLocales: AppLocaleUtils.supportedLocales,
-            localizationsDelegates: GlobalMaterialLocalizations.delegates,
+          return AppLifecycleObserver(
+            child: MaterialApp.router(
+              title: 'PepperCheck',
+              theme: AppTheme.light,
+              routerConfig: router,
+              locale: TranslationProvider.of(context).flutterLocale,
+              supportedLocales: AppLocaleUtils.supportedLocales,
+              localizationsDelegates: GlobalMaterialLocalizations.delegates,
+            ),
           );
         },
       ),
