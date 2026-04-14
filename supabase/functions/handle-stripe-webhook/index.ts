@@ -87,6 +87,10 @@ export const handler = async (req: Request, dependencies?: {
         }
         break
       }
+      case 'account.updated': {
+        await handleAccountUpdated(event, supabaseAdmin)
+        break
+      }
       default:
         console.log(`Unhandled event type: ${event.type}`)
     }
@@ -257,6 +261,40 @@ async function handleInvoicePaymentSucceeded(
       `Invoice ${invoice.id} already processed (idempotency check), skipping point reset.`,
     )
   }
+}
+
+async function handleAccountUpdated(
+  event: Stripe.Event,
+  supabaseAdmin: ReturnType<typeof createClient>,
+) {
+  const account = event.data.object as Stripe.Account
+  const connectAccountId = account.id
+
+  // deno-lint-ignore no-explicit-any
+  const supabaseAdminAny = supabaseAdmin as any
+  const { data, error } = await supabaseAdminAny
+    .from('stripe_accounts')
+    .update({
+      charges_enabled: account.charges_enabled,
+      payouts_enabled: account.payouts_enabled,
+      connect_requirements: account.requirements,
+    })
+    .eq('stripe_connect_account_id', connectAccountId)
+    .select('profile_id')
+    .single()
+
+  if (error) {
+    if (error.code === 'PGRST116') {
+      console.log(`No stripe_accounts row for connect account ${connectAccountId}, skipping`)
+      return
+    }
+    console.error(`Failed to update stripe_accounts for ${connectAccountId}:`, error)
+    throw error
+  }
+
+  console.log(
+    `Updated connect status for user ${data.profile_id}: charges=${account.charges_enabled}, payouts=${account.payouts_enabled}`,
+  )
 }
 
 if (import.meta.main) {
