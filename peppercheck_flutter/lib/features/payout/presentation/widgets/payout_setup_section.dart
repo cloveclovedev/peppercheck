@@ -43,6 +43,13 @@ class _PayoutSetupSectionState extends ConsumerState<PayoutSetupSection> {
                 ref.read(payoutControllerProvider.notifier).setupPayout();
               },
             ),
+          ] else if (state.value?.isPendingVerification == true) ...[
+            Text(
+              t.payout.verificationPendingDescription,
+              style: TextStyle(
+                color: AppColors.textPrimary.withValues(alpha: 0.6),
+              ),
+            ),
           ] else ...[
             if (state.value?.isInProgress == true)
               Text(
