@@ -87,7 +87,7 @@ class TaskCard extends StatelessWidget {
   }
 
   ({String text, Color color}) _getStatusStyle(Task task) {
-    switch (task.detailedStatus) {
+    switch (task.status) {
       case 'draft':
         return (
           text: t.task.status.draft,
