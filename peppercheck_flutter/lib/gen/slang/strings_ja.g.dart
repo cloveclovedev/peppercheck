@@ -224,8 +224,8 @@ class TranslationsPayoutJa {
 	/// ja: '出金設定を行う'
 	String get setupPayout => '出金設定を行う';
 
-	/// ja: '報酬を受け取るにはStripeの出金設定が必要です。'
-	String get payoutSetupDescription => '報酬を受け取るにはStripeの出金設定が必要です。';
+	/// ja: '報酬を受け取るには決済サービスStripeでの出金設定が必要です。'
+	String get payoutSetupDescription => '報酬を受け取るには決済サービスStripeでの出金設定が必要です。';
 
 	/// ja: '出金設定を変更'
 	String get changePayoutSettings => '出金設定を変更';
@@ -1232,7 +1232,7 @@ extension on Translations {
 			'common.error' => ({required Object message}) => 'エラー: ${message}',
 			'payout.title' => '出金設定',
 			'payout.setupPayout' => '出金設定を行う',
-			'payout.payoutSetupDescription' => '報酬を受け取るにはStripeの出金設定が必要です。',
+			'payout.payoutSetupDescription' => '報酬を受け取るには決済サービスStripeでの出金設定が必要です。',
 			'payout.changePayoutSettings' => '出金設定を変更',
 			'payout.payoutSetupComplete' => '出金設定は完了しています',
 			'payout.resumeSetup' => '出金設定を再開する',

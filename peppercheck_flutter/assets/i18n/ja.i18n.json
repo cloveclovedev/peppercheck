@@ -61,7 +61,7 @@
   "payout": {
     "title": "出金設定",
     "setupPayout": "出金設定を行う",
-    "payoutSetupDescription": "報酬を受け取るにはStripeの出金設定が必要です。",
+    "payoutSetupDescription": "報酬を受け取るには決済サービスStripeでの出金設定が必要です。",
     "changePayoutSettings": "出金設定を変更",
     "payoutSetupComplete": "出金設定は完了しています",
     "resumeSetup": "出金設定を再開する",
