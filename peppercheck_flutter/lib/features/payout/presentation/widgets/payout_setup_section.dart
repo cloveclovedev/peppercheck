@@ -83,11 +83,12 @@ class _PayoutSetupSectionState extends ConsumerState<PayoutSetupSection> {
                         fontSize: 10,
                       ),
                     ),
+                    const SizedBox(height: AppSizes.spacingTiny),
                     Text(
                       t.payout.taxGuidanceDisclaimer,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: AppColors.textPrimary.withValues(alpha: 0.6),
-                        fontSize: 10,
+                        fontSize: 8,
                       ),
                     ),
                   ],
