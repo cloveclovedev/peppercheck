@@ -109,13 +109,17 @@
     "status": {
       "draft": "下書き",
       "open": "マッチング開始",
-      "judging": "判定中",
+      "matching": "マッチング中",
+      "matchingComplete": "マッチング完了",
+      "matchingFailed": "マッチング失敗",
+      "awaitingEvidence": "エビデンス提出前",
+      "evidenceTimeout": "エビデンス提出期限切れ",
+      "inReview": "判定中",
+      "approved": "承認",
       "rejected": "却下",
-      "completed": "完了",
-      "closed": "終了",
-      "self_completed": "自己完結",
-      "expired": "期限切れ",
-      "done": "完了"
+      "reviewTimeout": "判定期限切れ",
+      "paymentProcessing": "支払い処理中",
+      "closed": "完了"
     },
     "detail": {
       "title": "タスク詳細",

@@ -674,26 +674,38 @@ class TranslationsTaskStatusJa {
 	/// ja: 'マッチング開始'
 	String get open => 'マッチング開始';
 
+	/// ja: 'マッチング中'
+	String get matching => 'マッチング中';
+
+	/// ja: 'マッチング完了'
+	String get matchingComplete => 'マッチング完了';
+
+	/// ja: 'マッチング失敗'
+	String get matchingFailed => 'マッチング失敗';
+
+	/// ja: 'エビデンス提出前'
+	String get awaitingEvidence => 'エビデンス提出前';
+
+	/// ja: 'エビデンス提出期限切れ'
+	String get evidenceTimeout => 'エビデンス提出期限切れ';
+
 	/// ja: '判定中'
-	String get judging => '判定中';
+	String get inReview => '判定中';
+
+	/// ja: '承認'
+	String get approved => '承認';
 
 	/// ja: '却下'
 	String get rejected => '却下';
 
-	/// ja: '完了'
-	String get completed => '完了';
+	/// ja: '判定期限切れ'
+	String get reviewTimeout => '判定期限切れ';
 
-	/// ja: '終了'
-	String get closed => '終了';
-
-	/// ja: '自己完結'
-	String get self_completed => '自己完結';
-
-	/// ja: '期限切れ'
-	String get expired => '期限切れ';
+	/// ja: '支払い処理中'
+	String get paymentProcessing => '支払い処理中';
 
 	/// ja: '完了'
-	String get done => '完了';
+	String get closed => '完了';
 }
 
 // Path: task.detail
@@ -1278,13 +1290,17 @@ extension on Translations {
 			'dashboard.payoutStatusSkipped' => 'スキップ',
 			'task.status.draft' => '下書き',
 			'task.status.open' => 'マッチング開始',
-			'task.status.judging' => '判定中',
+			'task.status.matching' => 'マッチング中',
+			'task.status.matchingComplete' => 'マッチング完了',
+			'task.status.matchingFailed' => 'マッチング失敗',
+			'task.status.awaitingEvidence' => 'エビデンス提出前',
+			'task.status.evidenceTimeout' => 'エビデンス提出期限切れ',
+			'task.status.inReview' => '判定中',
+			'task.status.approved' => '承認',
 			'task.status.rejected' => '却下',
-			'task.status.completed' => '完了',
-			'task.status.closed' => '終了',
-			'task.status.self_completed' => '自己完結',
-			'task.status.expired' => '期限切れ',
-			'task.status.done' => '完了',
+			'task.status.reviewTimeout' => '判定期限切れ',
+			'task.status.paymentProcessing' => '支払い処理中',
+			'task.status.closed' => '完了',
 			'task.detail.title' => 'タスク詳細',
 			'task.detail.sectionRequests' => 'リクエスト',
 			'task.detail.labelStatus' => 'ステータス',

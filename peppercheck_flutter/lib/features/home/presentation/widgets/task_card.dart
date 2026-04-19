@@ -95,32 +95,13 @@ class TaskCard extends StatelessWidget {
         );
       case 'open':
         return (text: t.task.status.open, color: AppColors.accentYellow);
-      case 'judging':
-        return (text: t.task.status.judging, color: AppColors.accentBlueLight);
       case 'rejected':
         return (text: t.task.status.rejected, color: AppColors.accentRed);
-      case 'completed':
-        return (
-          text: t.task.status.completed,
-          color: AppColors.accentGreenLight,
-        );
       case 'closed':
         return (
           text: t.task.status.closed,
           color: AppColors.accentGreen.withValues(alpha: 0.7),
         );
-      case 'self_completed':
-        return (
-          text: t.task.status.self_completed,
-          color: AppColors.accentGreen.withValues(alpha: 0.5),
-        );
-      case 'expired':
-        return (
-          text: t.task.status.expired,
-          color: AppColors.textPrimary.withValues(alpha: 0.4),
-        );
-      case 'done':
-        return (text: t.task.status.done, color: AppColors.accentGreenLight);
       default:
         return (text: task.status, color: AppColors.textPrimary);
     }
