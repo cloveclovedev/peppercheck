@@ -43,6 +43,17 @@ void main() {
         );
         expect(status.isPendingVerification, false);
       });
+
+      test('returns true even when chargesEnabled=false '
+          '(isPendingVerification takes priority over isNotStarted)', () {
+        final status = PayoutSetupStatus(
+          chargesEnabled: false,
+          payoutsEnabled: false,
+          pendingVerification: ['individual.verification.document'],
+        );
+        expect(status.isPendingVerification, true);
+        expect(status.isNotStarted, true);
+      });
     });
 
     group('isInProgress excludes pending verification', () {
