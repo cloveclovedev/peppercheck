@@ -10,15 +10,9 @@ import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 
 class TaskCard extends ConsumerWidget {
   final Task task;
-  final bool isMyTask;
   final VoidCallback? onTap;
 
-  const TaskCard({
-    super.key,
-    required this.task,
-    this.isMyTask = false,
-    this.onTap,
-  });
+  const TaskCard({super.key, required this.task, this.onTap});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

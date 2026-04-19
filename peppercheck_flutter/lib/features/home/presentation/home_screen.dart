@@ -31,7 +31,6 @@ class HomeScreen extends ConsumerWidget {
               _TaskSection(
                 title: t.home.myTasks,
                 tasksValue: ref.watch(activeUserTasksProvider),
-                isMyTask: true,
               ),
               const SizedBox(height: AppSizes.sectionGap),
 
@@ -39,7 +38,6 @@ class HomeScreen extends ConsumerWidget {
               _TaskSection(
                 title: t.home.refereeTasks,
                 tasksValue: ref.watch(activeRefereeTasksProvider),
-                isMyTask: false,
               ),
             ]),
           ),
@@ -52,13 +50,8 @@ class HomeScreen extends ConsumerWidget {
 class _TaskSection extends StatelessWidget {
   final String title;
   final AsyncValue<List<Task>> tasksValue;
-  final bool isMyTask;
 
-  const _TaskSection({
-    required this.title,
-    required this.tasksValue,
-    required this.isMyTask,
-  });
+  const _TaskSection({required this.title, required this.tasksValue});
 
   @override
   Widget build(BuildContext context) {
@@ -78,7 +71,7 @@ class _TaskSection extends StatelessWidget {
             children: [
               for (int i = 0; i < tasks.length; i++) ...[
                 if (i > 0) const SizedBox(height: AppSizes.cardGap),
-                TaskCard(task: tasks[i], isMyTask: isMyTask),
+                TaskCard(task: tasks[i]),
               ],
             ],
           );
