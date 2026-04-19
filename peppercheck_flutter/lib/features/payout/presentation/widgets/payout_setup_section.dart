@@ -59,25 +59,38 @@ class _PayoutSetupSectionState extends ConsumerState<PayoutSetupSection> {
                 ),
               ),
               const SizedBox(height: AppSizes.spacingTiny),
-              Text(
-                t.payout.taxGuidanceStripe,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.textPrimary.withValues(alpha: 0.6),
-                  fontSize: 10,
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(AppSizes.spacingSmall),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
+                  border: Border.all(color: AppColors.border),
                 ),
-              ),
-              Text(
-                t.payout.taxGuidanceTax,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.textPrimary.withValues(alpha: 0.6),
-                  fontSize: 10,
-                ),
-              ),
-              Text(
-                t.payout.taxGuidanceDisclaimer,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.textPrimary.withValues(alpha: 0.6),
-                  fontSize: 10,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      t.payout.taxGuidanceStripe,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.textPrimary.withValues(alpha: 0.6),
+                        fontSize: 10,
+                      ),
+                    ),
+                    Text(
+                      t.payout.taxGuidanceTax,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.textPrimary.withValues(alpha: 0.6),
+                        fontSize: 10,
+                      ),
+                    ),
+                    Text(
+                      t.payout.taxGuidanceDisclaimer,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.textPrimary.withValues(alpha: 0.6),
+                        fontSize: 10,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
