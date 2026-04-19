@@ -59,6 +59,8 @@ class _PayoutSetupSectionState extends ConsumerState<PayoutSetupSection> {
                 ),
               ),
             const SizedBox(height: AppSizes.spacingMedium),
+            _buildTaxGuidanceCard(context),
+            const SizedBox(height: AppSizes.spacingMedium),
             ActionButton(
               text: state.value?.isInProgress == true
                   ? t.payout.resumeSetup
@@ -204,5 +206,63 @@ class _PayoutSetupSectionState extends ConsumerState<PayoutSetupSection> {
     }
 
     return TextSpan(children: spans);
+  }
+
+  Widget _buildTaxGuidanceCard(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      elevation: 0,
+      color: AppColors.backgroundLight,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSizes.spacingMedium),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.info_outline,
+                  size: 16,
+                  color: AppColors.textSecondary,
+                ),
+                const SizedBox(width: AppSizes.spacingSmall),
+                Expanded(
+                  child: Text(
+                    t.payout.taxGuidanceStripe,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSizes.spacingSmall),
+            Padding(
+              padding: const EdgeInsets.only(left: 24),
+              child: Text(
+                t.payout.taxGuidanceTax,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSizes.spacingSmall),
+            Padding(
+              padding: const EdgeInsets.only(left: 24),
+              child: Text(
+                t.payout.taxGuidanceDisclaimer,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: AppColors.textMuted,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
