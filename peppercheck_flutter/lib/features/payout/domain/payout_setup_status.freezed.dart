@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$PayoutSetupStatus {
 
-@JsonKey(name: 'charges_enabled') bool get chargesEnabled;@JsonKey(name: 'payouts_enabled') bool get payoutsEnabled;
+@JsonKey(name: 'charges_enabled') bool get chargesEnabled;@JsonKey(name: 'payouts_enabled') bool get payoutsEnabled; List<String> get currentlyDue; List<String> get pendingVerification;
 /// Create a copy of PayoutSetupStatus
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $PayoutSetupStatusCopyWith<PayoutSetupStatus> get copyWith => _$PayoutSetupStatu
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is PayoutSetupStatus&&(identical(other.chargesEnabled, chargesEnabled) || other.chargesEnabled == chargesEnabled)&&(identical(other.payoutsEnabled, payoutsEnabled) || other.payoutsEnabled == payoutsEnabled));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PayoutSetupStatus&&(identical(other.chargesEnabled, chargesEnabled) || other.chargesEnabled == chargesEnabled)&&(identical(other.payoutsEnabled, payoutsEnabled) || other.payoutsEnabled == payoutsEnabled)&&const DeepCollectionEquality().equals(other.currentlyDue, currentlyDue)&&const DeepCollectionEquality().equals(other.pendingVerification, pendingVerification));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,chargesEnabled,payoutsEnabled);
+int get hashCode => Object.hash(runtimeType,chargesEnabled,payoutsEnabled,const DeepCollectionEquality().hash(currentlyDue),const DeepCollectionEquality().hash(pendingVerification));
 
 @override
 String toString() {
-  return 'PayoutSetupStatus(chargesEnabled: $chargesEnabled, payoutsEnabled: $payoutsEnabled)';
+  return 'PayoutSetupStatus(chargesEnabled: $chargesEnabled, payoutsEnabled: $payoutsEnabled, currentlyDue: $currentlyDue, pendingVerification: $pendingVerification)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $PayoutSetupStatusCopyWith<$Res>  {
   factory $PayoutSetupStatusCopyWith(PayoutSetupStatus value, $Res Function(PayoutSetupStatus) _then) = _$PayoutSetupStatusCopyWithImpl;
 @useResult
 $Res call({
-@JsonKey(name: 'charges_enabled') bool chargesEnabled,@JsonKey(name: 'payouts_enabled') bool payoutsEnabled
+@JsonKey(name: 'charges_enabled') bool chargesEnabled,@JsonKey(name: 'payouts_enabled') bool payoutsEnabled, List<String> currentlyDue, List<String> pendingVerification
 });
 
 
@@ -65,11 +65,13 @@ class _$PayoutSetupStatusCopyWithImpl<$Res>
 
 /// Create a copy of PayoutSetupStatus
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? chargesEnabled = null,Object? payoutsEnabled = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? chargesEnabled = null,Object? payoutsEnabled = null,Object? currentlyDue = null,Object? pendingVerification = null,}) {
   return _then(_self.copyWith(
 chargesEnabled: null == chargesEnabled ? _self.chargesEnabled : chargesEnabled // ignore: cast_nullable_to_non_nullable
 as bool,payoutsEnabled: null == payoutsEnabled ? _self.payoutsEnabled : payoutsEnabled // ignore: cast_nullable_to_non_nullable
-as bool,
+as bool,currentlyDue: null == currentlyDue ? _self.currentlyDue : currentlyDue // ignore: cast_nullable_to_non_nullable
+as List<String>,pendingVerification: null == pendingVerification ? _self.pendingVerification : pendingVerification // ignore: cast_nullable_to_non_nullable
+as List<String>,
   ));
 }
 
@@ -154,10 +156,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(name: 'charges_enabled')  bool chargesEnabled, @JsonKey(name: 'payouts_enabled')  bool payoutsEnabled)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(name: 'charges_enabled')  bool chargesEnabled, @JsonKey(name: 'payouts_enabled')  bool payoutsEnabled,  List<String> currentlyDue,  List<String> pendingVerification)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _PayoutSetupStatus() when $default != null:
-return $default(_that.chargesEnabled,_that.payoutsEnabled);case _:
+return $default(_that.chargesEnabled,_that.payoutsEnabled,_that.currentlyDue,_that.pendingVerification);case _:
   return orElse();
 
 }
@@ -175,10 +177,10 @@ return $default(_that.chargesEnabled,_that.payoutsEnabled);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(name: 'charges_enabled')  bool chargesEnabled, @JsonKey(name: 'payouts_enabled')  bool payoutsEnabled)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(name: 'charges_enabled')  bool chargesEnabled, @JsonKey(name: 'payouts_enabled')  bool payoutsEnabled,  List<String> currentlyDue,  List<String> pendingVerification)  $default,) {final _that = this;
 switch (_that) {
 case _PayoutSetupStatus():
-return $default(_that.chargesEnabled,_that.payoutsEnabled);case _:
+return $default(_that.chargesEnabled,_that.payoutsEnabled,_that.currentlyDue,_that.pendingVerification);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -195,10 +197,10 @@ return $default(_that.chargesEnabled,_that.payoutsEnabled);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(name: 'charges_enabled')  bool chargesEnabled, @JsonKey(name: 'payouts_enabled')  bool payoutsEnabled)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(name: 'charges_enabled')  bool chargesEnabled, @JsonKey(name: 'payouts_enabled')  bool payoutsEnabled,  List<String> currentlyDue,  List<String> pendingVerification)?  $default,) {final _that = this;
 switch (_that) {
 case _PayoutSetupStatus() when $default != null:
-return $default(_that.chargesEnabled,_that.payoutsEnabled);case _:
+return $default(_that.chargesEnabled,_that.payoutsEnabled,_that.currentlyDue,_that.pendingVerification);case _:
   return null;
 
 }
@@ -210,11 +212,25 @@ return $default(_that.chargesEnabled,_that.payoutsEnabled);case _:
 @JsonSerializable()
 
 class _PayoutSetupStatus extends PayoutSetupStatus {
-  const _PayoutSetupStatus({@JsonKey(name: 'charges_enabled') this.chargesEnabled = false, @JsonKey(name: 'payouts_enabled') this.payoutsEnabled = false}): super._();
+  const _PayoutSetupStatus({@JsonKey(name: 'charges_enabled') this.chargesEnabled = false, @JsonKey(name: 'payouts_enabled') this.payoutsEnabled = false, final  List<String> currentlyDue = const [], final  List<String> pendingVerification = const []}): _currentlyDue = currentlyDue,_pendingVerification = pendingVerification,super._();
   factory _PayoutSetupStatus.fromJson(Map<String, dynamic> json) => _$PayoutSetupStatusFromJson(json);
 
 @override@JsonKey(name: 'charges_enabled') final  bool chargesEnabled;
 @override@JsonKey(name: 'payouts_enabled') final  bool payoutsEnabled;
+ final  List<String> _currentlyDue;
+@override@JsonKey() List<String> get currentlyDue {
+  if (_currentlyDue is EqualUnmodifiableListView) return _currentlyDue;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_currentlyDue);
+}
+
+ final  List<String> _pendingVerification;
+@override@JsonKey() List<String> get pendingVerification {
+  if (_pendingVerification is EqualUnmodifiableListView) return _pendingVerification;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_pendingVerification);
+}
+
 
 /// Create a copy of PayoutSetupStatus
 /// with the given fields replaced by the non-null parameter values.
@@ -229,16 +245,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _PayoutSetupStatus&&(identical(other.chargesEnabled, chargesEnabled) || other.chargesEnabled == chargesEnabled)&&(identical(other.payoutsEnabled, payoutsEnabled) || other.payoutsEnabled == payoutsEnabled));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _PayoutSetupStatus&&(identical(other.chargesEnabled, chargesEnabled) || other.chargesEnabled == chargesEnabled)&&(identical(other.payoutsEnabled, payoutsEnabled) || other.payoutsEnabled == payoutsEnabled)&&const DeepCollectionEquality().equals(other._currentlyDue, _currentlyDue)&&const DeepCollectionEquality().equals(other._pendingVerification, _pendingVerification));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,chargesEnabled,payoutsEnabled);
+int get hashCode => Object.hash(runtimeType,chargesEnabled,payoutsEnabled,const DeepCollectionEquality().hash(_currentlyDue),const DeepCollectionEquality().hash(_pendingVerification));
 
 @override
 String toString() {
-  return 'PayoutSetupStatus(chargesEnabled: $chargesEnabled, payoutsEnabled: $payoutsEnabled)';
+  return 'PayoutSetupStatus(chargesEnabled: $chargesEnabled, payoutsEnabled: $payoutsEnabled, currentlyDue: $currentlyDue, pendingVerification: $pendingVerification)';
 }
 
 
@@ -249,7 +265,7 @@ abstract mixin class _$PayoutSetupStatusCopyWith<$Res> implements $PayoutSetupSt
   factory _$PayoutSetupStatusCopyWith(_PayoutSetupStatus value, $Res Function(_PayoutSetupStatus) _then) = __$PayoutSetupStatusCopyWithImpl;
 @override @useResult
 $Res call({
-@JsonKey(name: 'charges_enabled') bool chargesEnabled,@JsonKey(name: 'payouts_enabled') bool payoutsEnabled
+@JsonKey(name: 'charges_enabled') bool chargesEnabled,@JsonKey(name: 'payouts_enabled') bool payoutsEnabled, List<String> currentlyDue, List<String> pendingVerification
 });
 
 
@@ -266,11 +282,13 @@ class __$PayoutSetupStatusCopyWithImpl<$Res>
 
 /// Create a copy of PayoutSetupStatus
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? chargesEnabled = null,Object? payoutsEnabled = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? chargesEnabled = null,Object? payoutsEnabled = null,Object? currentlyDue = null,Object? pendingVerification = null,}) {
   return _then(_PayoutSetupStatus(
 chargesEnabled: null == chargesEnabled ? _self.chargesEnabled : chargesEnabled // ignore: cast_nullable_to_non_nullable
 as bool,payoutsEnabled: null == payoutsEnabled ? _self.payoutsEnabled : payoutsEnabled // ignore: cast_nullable_to_non_nullable
-as bool,
+as bool,currentlyDue: null == currentlyDue ? _self._currentlyDue : currentlyDue // ignore: cast_nullable_to_non_nullable
+as List<String>,pendingVerification: null == pendingVerification ? _self._pendingVerification : pendingVerification // ignore: cast_nullable_to_non_nullable
+as List<String>,
   ));
 }
 

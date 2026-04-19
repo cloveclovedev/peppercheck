@@ -66,6 +66,7 @@
     "payoutSetupComplete": "出金設定は完了しています",
     "resumeSetup": "出金設定を再開する",
     "payoutSetupInProgressDescription": "レフェリーをすることはできますが報酬を出金することはできません。出金設定を最後まで終わらせてください。",
+    "verificationPendingDescription": "審査中です。完了までしばらくお待ちください",
     "showHints": "入力のヒントを表示",
     "hideHints": "入力のヒントを隠す",
     "hintIndustry": "業種は「その他の個人向けサービス」を選んでください",

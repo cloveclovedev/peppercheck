@@ -239,6 +239,9 @@ class TranslationsPayoutJa {
 	/// ja: 'レフェリーをすることはできますが報酬を出金することはできません。出金設定を最後まで終わらせてください。'
 	String get payoutSetupInProgressDescription => 'レフェリーをすることはできますが報酬を出金することはできません。出金設定を最後まで終わらせてください。';
 
+	/// ja: '審査中です。完了までしばらくお待ちください'
+	String get verificationPendingDescription => '審査中です。完了までしばらくお待ちください';
+
 	/// ja: '入力のヒントを表示'
 	String get showHints => '入力のヒントを表示';
 
@@ -1237,6 +1240,7 @@ extension on Translations {
 			'payout.payoutSetupComplete' => '出金設定は完了しています',
 			'payout.resumeSetup' => '出金設定を再開する',
 			'payout.payoutSetupInProgressDescription' => 'レフェリーをすることはできますが報酬を出金することはできません。出金設定を最後まで終わらせてください。',
+			'payout.verificationPendingDescription' => '審査中です。完了までしばらくお待ちください',
 			'payout.showHints' => '入力のヒントを表示',
 			'payout.hideHints' => '入力のヒントを隠す',
 			'payout.hintIndustry' => '業種は「その他の個人向けサービス」を選んでください',

@@ -21,14 +21,27 @@ class StripePayoutRepository {
     try {
       final data = await _supabase
           .from('stripe_accounts')
-          .select('charges_enabled, payouts_enabled')
+          .select('charges_enabled, payouts_enabled, connect_requirements')
           .maybeSingle();
 
       if (data == null) {
         return const PayoutSetupStatus();
       }
 
-      return PayoutSetupStatus.fromJson(data);
+      final requirements =
+          data['connect_requirements'] as Map<String, dynamic>?;
+      final currentlyDue =
+          (requirements?['currently_due'] as List?)?.cast<String>() ?? [];
+      final pendingVerification =
+          (requirements?['pending_verification'] as List?)?.cast<String>() ??
+          [];
+
+      return PayoutSetupStatus(
+        chargesEnabled: data['charges_enabled'] as bool? ?? false,
+        payoutsEnabled: data['payouts_enabled'] as bool? ?? false,
+        currentlyDue: currentlyDue,
+        pendingVerification: pendingVerification,
+      );
     } catch (e, stack) {
       _logger.e(
         'Failed to fetch payout setup status',

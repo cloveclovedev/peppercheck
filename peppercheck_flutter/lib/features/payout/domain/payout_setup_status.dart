@@ -9,6 +9,8 @@ abstract class PayoutSetupStatus with _$PayoutSetupStatus {
   const factory PayoutSetupStatus({
     @JsonKey(name: 'charges_enabled') @Default(false) bool chargesEnabled,
     @JsonKey(name: 'payouts_enabled') @Default(false) bool payoutsEnabled,
+    @Default([]) List<String> currentlyDue,
+    @Default([]) List<String> pendingVerification,
   }) = _PayoutSetupStatus;
 
   const PayoutSetupStatus._();
@@ -17,6 +19,9 @@ abstract class PayoutSetupStatus with _$PayoutSetupStatus {
       _$PayoutSetupStatusFromJson(json);
 
   bool get isComplete => chargesEnabled && payoutsEnabled;
-  bool get isInProgress => chargesEnabled && !payoutsEnabled;
+  bool get isPendingVerification =>
+      !payoutsEnabled && currentlyDue.isEmpty && pendingVerification.isNotEmpty;
+  bool get isInProgress =>
+      chargesEnabled && !payoutsEnabled && !isPendingVerification;
   bool get isNotStarted => !chargesEnabled && !payoutsEnabled;
 }
