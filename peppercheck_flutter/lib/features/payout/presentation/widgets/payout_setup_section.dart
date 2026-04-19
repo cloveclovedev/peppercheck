@@ -51,14 +51,51 @@ class _PayoutSetupSectionState extends ConsumerState<PayoutSetupSection> {
                   color: AppColors.textPrimary.withValues(alpha: 0.6),
                 ),
               )
-            else
+            else ...[
               Text(
                 t.payout.payoutSetupDescription,
                 style: TextStyle(
                   color: AppColors.textPrimary.withValues(alpha: 0.6),
                 ),
               ),
-            const SizedBox(height: AppSizes.spacingMedium),
+              const SizedBox(height: AppSizes.spacingTiny),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(AppSizes.spacingSmall),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      t.payout.taxGuidanceStripe,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.textPrimary.withValues(alpha: 0.6),
+                        fontSize: 10,
+                      ),
+                    ),
+                    Text(
+                      t.payout.taxGuidanceTax,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.textPrimary.withValues(alpha: 0.6),
+                        fontSize: 10,
+                      ),
+                    ),
+                    const SizedBox(height: AppSizes.spacingTiny),
+                    Text(
+                      t.payout.taxGuidanceDisclaimer,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.textPrimary.withValues(alpha: 0.6),
+                        fontSize: 8,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            const SizedBox(height: AppSizes.spacingSmall),
             ActionButton(
               text: state.value?.isInProgress == true
                   ? t.payout.resumeSetup

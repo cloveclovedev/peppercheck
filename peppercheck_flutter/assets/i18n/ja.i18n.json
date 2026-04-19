@@ -61,7 +61,7 @@
   "payout": {
     "title": "出金設定",
     "setupPayout": "出金設定を行う",
-    "payoutSetupDescription": "報酬を受け取るには出金設定が必要です",
+    "payoutSetupDescription": "報酬を受け取るには決済サービスStripeでの出金設定が必要です。",
     "changePayoutSettings": "出金設定を変更",
     "payoutSetupComplete": "出金設定は完了しています",
     "resumeSetup": "出金設定を再開する",
@@ -74,6 +74,9 @@
     "hintWebsite": "ウェブサイトは「https://peppercheck.dev」を入力してください",
     "hintWebsiteCopy": "https://peppercheck.dev",
     "copiedInputExample": "入力例をコピーしました",
+    "taxGuidanceStripe": "設定時に「個人事業主」と表示されますが、これは決済システム上「法人ではない個人」を指す区分です。開業届の提出や勤務先への通知は一切ありません。",
+    "taxGuidanceTax": "本アプリの報酬は税務上「雑所得」に分類されます。年間20万円以下であれば、原則として確定申告は不要です。",
+    "taxGuidanceDisclaimer": "※ 一般的な税務情報であり、個別の税務アドバイスではありません。勤務先の就業規則については各自ご確認ください。",
     "amount": "金額",
     "invalidAmount": "金額が不正です",
     "insufficientFunds": "出金可能額を超えています",
