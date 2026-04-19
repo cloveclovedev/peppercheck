@@ -95,7 +95,7 @@ class _PayoutSetupSectionState extends ConsumerState<PayoutSetupSection> {
                 ),
               ),
             ],
-            const SizedBox(height: AppSizes.spacingMedium),
+            const SizedBox(height: AppSizes.spacingSmall),
             ActionButton(
               text: state.value?.isInProgress == true
                   ? t.payout.resumeSetup
