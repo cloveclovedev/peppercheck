@@ -263,6 +263,15 @@ class TranslationsPayoutJa {
 	/// ja: '入力例をコピーしました'
 	String get copiedInputExample => '入力例をコピーしました';
 
+	/// ja: 'Stripeの画面で「個人事業主」と表示されますが、これは決済システム上「法人ではない個人」を指す区分です。開業届の提出や勤務先への通知は一切ありません。'
+	String get taxGuidanceStripe => 'Stripeの画面で「個人事業主」と表示されますが、これは決済システム上「法人ではない個人」を指す区分です。開業届の提出や勤務先への通知は一切ありません。';
+
+	/// ja: '本アプリの報酬は税務上「雑所得」に分類されます。年間20万円以下であれば、原則として確定申告は不要です。'
+	String get taxGuidanceTax => '本アプリの報酬は税務上「雑所得」に分類されます。年間20万円以下であれば、原則として確定申告は不要です。';
+
+	/// ja: '※ 一般的な税務情報であり、個別の税務アドバイスではありません。勤務先の就業規則については各自ご確認ください。'
+	String get taxGuidanceDisclaimer => '※ 一般的な税務情報であり、個別の税務アドバイスではありません。勤務先の就業規則については各自ご確認ください。';
+
 	/// ja: '金額'
 	String get amount => '金額';
 
@@ -1236,6 +1245,9 @@ extension on Translations {
 			'payout.hintWebsite' => 'ウェブサイトは「https://peppercheck.dev」を入力してください',
 			'payout.hintWebsiteCopy' => 'https://peppercheck.dev',
 			'payout.copiedInputExample' => '入力例をコピーしました',
+			'payout.taxGuidanceStripe' => 'Stripeの画面で「個人事業主」と表示されますが、これは決済システム上「法人ではない個人」を指す区分です。開業届の提出や勤務先への通知は一切ありません。',
+			'payout.taxGuidanceTax' => '本アプリの報酬は税務上「雑所得」に分類されます。年間20万円以下であれば、原則として確定申告は不要です。',
+			'payout.taxGuidanceDisclaimer' => '※ 一般的な税務情報であり、個別の税務アドバイスではありません。勤務先の就業規則については各自ご確認ください。',
 			'payout.amount' => '金額',
 			'payout.invalidAmount' => '金額が不正です',
 			'payout.insufficientFunds' => '出金可能額を超えています',
