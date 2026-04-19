@@ -58,22 +58,26 @@ class _PayoutSetupSectionState extends ConsumerState<PayoutSetupSection> {
                   color: AppColors.textPrimary.withValues(alpha: 0.6),
                 ),
               ),
+              const SizedBox(height: AppSizes.spacingTiny),
               Text(
                 t.payout.taxGuidanceStripe,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: AppColors.textPrimary.withValues(alpha: 0.6),
+                  fontSize: 10,
                 ),
               ),
               Text(
                 t.payout.taxGuidanceTax,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: AppColors.textPrimary.withValues(alpha: 0.6),
+                  fontSize: 10,
                 ),
               ),
               Text(
                 t.payout.taxGuidanceDisclaimer,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: AppColors.textPrimary.withValues(alpha: 0.6),
+                  fontSize: 10,
                 ),
               ),
             ],
