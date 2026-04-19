@@ -224,8 +224,8 @@ class TranslationsPayoutJa {
 	/// ja: '出金設定を行う'
 	String get setupPayout => '出金設定を行う';
 
-	/// ja: '報酬を受け取るには出金設定が必要です'
-	String get payoutSetupDescription => '報酬を受け取るには出金設定が必要です';
+	/// ja: '報酬を受け取るにはStripeの出金設定が必要です。'
+	String get payoutSetupDescription => '報酬を受け取るにはStripeの出金設定が必要です。';
 
 	/// ja: '出金設定を変更'
 	String get changePayoutSettings => '出金設定を変更';
@@ -263,8 +263,8 @@ class TranslationsPayoutJa {
 	/// ja: '入力例をコピーしました'
 	String get copiedInputExample => '入力例をコピーしました';
 
-	/// ja: 'Stripeの画面で「個人事業主」と表示されますが、これは決済システム上「法人ではない個人」を指す区分です。開業届の提出や勤務先への通知は一切ありません。'
-	String get taxGuidanceStripe => 'Stripeの画面で「個人事業主」と表示されますが、これは決済システム上「法人ではない個人」を指す区分です。開業届の提出や勤務先への通知は一切ありません。';
+	/// ja: '設定時に「個人事業主」と表示されますが、これは決済システム上「法人ではない個人」を指す区分です。開業届の提出や勤務先への通知は一切ありません。'
+	String get taxGuidanceStripe => '設定時に「個人事業主」と表示されますが、これは決済システム上「法人ではない個人」を指す区分です。開業届の提出や勤務先への通知は一切ありません。';
 
 	/// ja: '本アプリの報酬は税務上「雑所得」に分類されます。年間20万円以下であれば、原則として確定申告は不要です。'
 	String get taxGuidanceTax => '本アプリの報酬は税務上「雑所得」に分類されます。年間20万円以下であれば、原則として確定申告は不要です。';
@@ -1232,7 +1232,7 @@ extension on Translations {
 			'common.error' => ({required Object message}) => 'エラー: ${message}',
 			'payout.title' => '出金設定',
 			'payout.setupPayout' => '出金設定を行う',
-			'payout.payoutSetupDescription' => '報酬を受け取るには出金設定が必要です',
+			'payout.payoutSetupDescription' => '報酬を受け取るにはStripeの出金設定が必要です。',
 			'payout.changePayoutSettings' => '出金設定を変更',
 			'payout.payoutSetupComplete' => '出金設定は完了しています',
 			'payout.resumeSetup' => '出金設定を再開する',
@@ -1245,7 +1245,7 @@ extension on Translations {
 			'payout.hintWebsite' => 'ウェブサイトは「https://peppercheck.dev」を入力してください',
 			'payout.hintWebsiteCopy' => 'https://peppercheck.dev',
 			'payout.copiedInputExample' => '入力例をコピーしました',
-			'payout.taxGuidanceStripe' => 'Stripeの画面で「個人事業主」と表示されますが、これは決済システム上「法人ではない個人」を指す区分です。開業届の提出や勤務先への通知は一切ありません。',
+			'payout.taxGuidanceStripe' => '設定時に「個人事業主」と表示されますが、これは決済システム上「法人ではない個人」を指す区分です。開業届の提出や勤務先への通知は一切ありません。',
 			'payout.taxGuidanceTax' => '本アプリの報酬は税務上「雑所得」に分類されます。年間20万円以下であれば、原則として確定申告は不要です。',
 			'payout.taxGuidanceDisclaimer' => '※ 一般的な税務情報であり、個別の税務アドバイスではありません。勤務先の就業規則については各自ご確認ください。',
 			'payout.amount' => '金額',
