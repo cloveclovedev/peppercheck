@@ -10,17 +10,40 @@ import 'package:peppercheck_flutter/features/home/presentation/widgets/task_card
 import 'package:peppercheck_flutter/features/task/domain/task.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  AppLifecycleListener? _listener;
+
+  @override
+  void initState() {
+    super.initState();
+    _listener = AppLifecycleListener(
+      onResume: () {
+        ref.invalidate(activeUserTasksProvider);
+        ref.invalidate(activeRefereeTasksProvider);
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _listener?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return AppBackground(
       child: AppScaffold.scrollable(
         title: t.home.title,
         currentIndex: 0,
         onRefresh: () async {
-          // Refresh both providers
           ref.invalidate(activeUserTasksProvider);
           ref.invalidate(activeRefereeTasksProvider);
         },

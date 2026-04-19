@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:peppercheck_flutter/features/evidence/data/evidence_repository.dart';
+import 'package:peppercheck_flutter/features/home/presentation/home_controller.dart';
 import 'package:peppercheck_flutter/features/task/presentation/providers/task_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -38,6 +39,8 @@ class EvidenceController extends _$EvidenceController {
           );
       // Invalidate task provider to refresh UI
       ref.invalidate(taskProvider(taskId));
+      ref.invalidate(activeUserTasksProvider);
+      ref.invalidate(activeRefereeTasksProvider);
       onSuccess();
     });
   }
@@ -62,6 +65,8 @@ class EvidenceController extends _$EvidenceController {
             assetIdsToRemove: assetIdsToRemove,
           );
       ref.invalidate(taskProvider(taskId));
+      ref.invalidate(activeUserTasksProvider);
+      ref.invalidate(activeRefereeTasksProvider);
       onSuccess();
     });
   }
@@ -86,6 +91,8 @@ class EvidenceController extends _$EvidenceController {
             assetIdsToRemove: assetIdsToRemove,
           );
       ref.invalidate(taskProvider(taskId));
+      ref.invalidate(activeUserTasksProvider);
+      ref.invalidate(activeRefereeTasksProvider);
       onSuccess();
     });
   }
@@ -102,6 +109,8 @@ class EvidenceController extends _$EvidenceController {
           .read(evidenceRepositoryProvider)
           .confirmEvidenceTimeout(judgementId: judgementId);
       ref.invalidate(taskProvider(taskId));
+      ref.invalidate(activeUserTasksProvider);
+      ref.invalidate(activeRefereeTasksProvider);
       onSuccess();
     });
   }
