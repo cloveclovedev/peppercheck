@@ -6,6 +6,7 @@ import 'package:peppercheck_flutter/common_widgets/base_section.dart';
 import 'package:peppercheck_flutter/features/matching/data/matching_repository.dart';
 import 'package:peppercheck_flutter/features/matching/domain/referee_request.dart';
 import 'package:peppercheck_flutter/features/task/domain/task.dart';
+import 'package:peppercheck_flutter/features/home/presentation/home_controller.dart';
 import 'package:peppercheck_flutter/features/task/presentation/providers/task_provider.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -69,6 +70,8 @@ class _TaskRefereesSectionState extends ConsumerState<TaskRefereesSection> {
       );
 
       ref.invalidate(taskProvider(widget.task.id));
+      ref.invalidate(activeUserTasksProvider);
+      ref.invalidate(activeRefereeTasksProvider);
     } catch (e) {
       if (!mounted) return;
 

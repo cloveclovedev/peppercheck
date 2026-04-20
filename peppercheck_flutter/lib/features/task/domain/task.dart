@@ -37,10 +37,80 @@ abstract class Task with _$Task {
 
   const Task._();
 
-  // TODO: Implement complex status logic using referee_requests and judgement status
-  String get detailedStatus {
-    // For now, it just returns the basic status.
-    // Future implementation will check refereeRequests, etc.
-    return status;
+  static const _terminalStatuses = {'declined', 'cancelled'};
+  static const _matchingStatuses = {'pending', 'matched'};
+
+  List<String> getDetailedStatuses(String currentUserId) {
+    if (status == 'draft') return ['draft'];
+    if (status == 'closed') return ['closed'];
+
+    final activeRequests = refereeRequests
+        .where((r) => !_terminalStatuses.contains(r.status))
+        .toList();
+
+    // Tasker view
+    if (currentUserId == taskerId) {
+      return _taskerStatuses(activeRequests);
+    }
+
+    // Referee view
+    return _refereeStatuses(activeRequests, currentUserId);
+  }
+
+  List<String> _taskerStatuses(List<RefereeRequest> active) {
+    if (active.isEmpty || active.every((r) => r.status == 'expired')) {
+      return active.isEmpty ? ['matching'] : ['matching_failed'];
+    }
+
+    if (active.any((r) => _matchingStatuses.contains(r.status))) {
+      return ['matching'];
+    }
+
+    final accepted = active
+        .where(
+          (r) =>
+              r.status == 'accepted' ||
+              r.status == 'payment_processing' ||
+              r.status == 'closed',
+        )
+        .toList();
+
+    if (accepted.isNotEmpty &&
+        accepted.every((r) => r.judgement?.status == 'awaiting_evidence')) {
+      return ['matching_complete'];
+    }
+
+    if (accepted.any((r) => r.judgement?.status == 'evidence_timeout')) {
+      return ['evidence_timeout'];
+    }
+
+    if (accepted.every((r) => r.status == 'closed')) {
+      return ['closed'];
+    }
+
+    // Per-referee statuses for judgement/payment phase
+    return accepted.map((r) {
+      if (r.status == 'payment_processing') return 'payment_processing';
+      if (r.status == 'closed') return 'closed';
+      return r.judgement?.status ?? 'matching';
+    }).toList();
+  }
+
+  List<String> _refereeStatuses(
+    List<RefereeRequest> active,
+    String currentUserId,
+  ) {
+    final myRequest = active
+        .where((r) => r.matchedRefereeId == currentUserId)
+        .firstOrNull;
+
+    if (myRequest == null) return ['matching'];
+
+    if (myRequest.status == 'payment_processing') {
+      return ['payment_processing'];
+    }
+    if (myRequest.status == 'closed') return ['closed'];
+
+    return [myRequest.judgement?.status ?? 'awaiting_evidence'];
   }
 }
