@@ -13,12 +13,12 @@ class EvidenceTimeoutRefereeSection extends StatelessWidget {
       title: t.task.evidence.timeout.title,
       child: Container(
         padding: const EdgeInsets.symmetric(
-          horizontal: AppSizes.cardPaddingHorizontal,
-          vertical: AppSizes.cardPaddingVertical,
+          horizontal: AppSizes.baseCardPaddingHorizontal,
+          vertical: AppSizes.baseCardPaddingVertical,
         ),
         decoration: BoxDecoration(
           color: AppColors.backgroundWhite,
-          borderRadius: BorderRadius.circular(AppSizes.cardBorderRadius),
+          borderRadius: BorderRadius.circular(AppSizes.baseCardBorderRadius),
         ),
         child: Row(
           children: [

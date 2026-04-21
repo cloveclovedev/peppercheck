@@ -27,24 +27,24 @@ class TaskCard extends ConsumerWidget {
 
     return Material(
       color: AppColors.backgroundWhite,
-      borderRadius: BorderRadius.circular(AppSizes.cardBorderRadius),
+      borderRadius: BorderRadius.circular(AppSizes.baseCardBorderRadius),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap:
             onTap ?? () => context.push('/task_detail/${task.id}', extra: task),
         child: Padding(
           padding: const EdgeInsets.symmetric(
-            horizontal: AppSizes.cardPaddingHorizontal,
-            vertical: AppSizes.cardPaddingVertical,
+            horizontal: AppSizes.baseCardPaddingHorizontal,
+            vertical: AppSizes.baseCardPaddingVertical,
           ),
           child: Row(
             children: [
               const Icon(
                 Icons.person,
                 color: AppColors.textSecondary,
-                size: AppSizes.taskCardIconSize,
+                size: AppSizes.baseCardIconSize,
               ),
-              const SizedBox(width: AppSizes.cardIconGap),
+              const SizedBox(width: AppSizes.baseCardIconGap),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
