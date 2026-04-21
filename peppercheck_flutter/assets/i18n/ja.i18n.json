@@ -41,7 +41,11 @@
     "periodEnd": "終了日",
     "currentPlan": "現在のプラン",
     "canceledUntil": "解約済み・$dateまで利用可能",
-    "cancelViaGooglePlay": "キャンセルはGoogle Playから →"
+    "cancelViaGooglePlay": "キャンセルはGoogle Playから →",
+    "choosePlan": "プランを選ぶ",
+    "changePlan": "プランを変更",
+    "checkPlan": "確認する",
+    "planSelectionTitle": "プランを選ぶ"
   },
   "common": {
     "cancel": "キャンセル",
