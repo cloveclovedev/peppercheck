@@ -1425,8 +1425,8 @@ class TranslationsAppExplanationSectionsPointsJa {
 	/// ja: 'ポイントでタスクを作成'
 	String get title => 'ポイントでタスクを作成';
 
-	/// ja: 'タスク作成にはポイントが必要です。 サブスクリプションに加入すると毎月ポイントが付与されます。 初めての方はトライアルポイントで無料で試せます。'
-	String get body => 'タスク作成にはポイントが必要です。\nサブスクリプションに加入すると毎月ポイントが付与されます。\n初めての方はトライアルポイントで無料で試せます。';
+	/// ja: 'タスク作成にはポイントが必要です。 サブスクリプションに加入すると毎月ポイントが付与されます。 ポイント代金の一部がレフリーへの報酬となります。 初めての方はトライアルポイントで無料で試せます。'
+	String get body => 'タスク作成にはポイントが必要です。\nサブスクリプションに加入すると毎月ポイントが付与されます。\nポイント代金の一部がレフリーへの報酬となります。\n初めての方はトライアルポイントで無料で試せます。';
 }
 
 // Path: appExplanation.sections.referee
@@ -1758,7 +1758,7 @@ extension on Translations {
 			'appExplanation.sections.flow.title' => 'タスク完了までのフロー',
 			'appExplanation.sections.flow.body' => '達成基準と締切を決めてタスクを作成します。\nシステムが自動でタスクとレフリーをマッチングします。\nレフリーは提出されたエビデンスをもとに、タスクが達成されたかどうかを判定します。',
 			'appExplanation.sections.points.title' => 'ポイントでタスクを作成',
-			'appExplanation.sections.points.body' => 'タスク作成にはポイントが必要です。\nサブスクリプションに加入すると毎月ポイントが付与されます。\n初めての方はトライアルポイントで無料で試せます。',
+			'appExplanation.sections.points.body' => 'タスク作成にはポイントが必要です。\nサブスクリプションに加入すると毎月ポイントが付与されます。\nポイント代金の一部がレフリーへの報酬となります。\n初めての方はトライアルポイントで無料で試せます。',
 			'appExplanation.sections.referee.title' => 'レフリーをして、報酬を獲得',
 			'appExplanation.sections.referee.body' => 'あなた自身も他のユーザーのレフリーを担当できます。\n受付可能時間を設定するとマッチング対象になり、判定を完了するごとに報酬が貯まっていきます。\n貯まった報酬は決済プラットフォームStripeを通じて指定した銀行口座に出金されます。',
 			'appExplanation.learnMore' => '詳しくは peppercheck.dev で',
