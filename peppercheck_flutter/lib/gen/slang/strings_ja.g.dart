@@ -1392,11 +1392,11 @@ class TranslationsAppExplanationSectionsConceptJa {
 
 	// Translations
 
-	/// ja: '社会的責任感を、目標達成の力に'
-	String get title => '社会的責任感を、目標達成の力に';
+	/// ja: '目標達成のモチベーションをサポート'
+	String get title => '目標達成のモチベーションをサポート';
 
-	/// ja: '自分との約束は破ってしまいがち。PepperCheckは、達成したいタスクを第三者のレフリーに確認してもらうことで、その「社会的責任感」を目標達成のエネルギーに変えるアプリです。'
-	String get body => '自分との約束は破ってしまいがち。PepperCheckは、達成したいタスクを第三者のレフリーに確認してもらうことで、その「社会的責任感」を目標達成のエネルギーに変えるアプリです。';
+	/// ja: '自分との約束は破ってしまいがち。 PepperCheckは、達成したいタスクを第三者のレフリーに確認してもらうことで、「対人関係から生ずる責任感」を目標達成のエネルギーに変えるアプリです。'
+	String get body => '自分との約束は破ってしまいがち。\nPepperCheckは、達成したいタスクを第三者のレフリーに確認してもらうことで、「対人関係から生ずる責任感」を目標達成のエネルギーに変えるアプリです。';
 }
 
 // Path: appExplanation.sections.flow
@@ -1410,8 +1410,8 @@ class TranslationsAppExplanationSectionsFlowJa {
 	/// ja: 'タスク完了までのフロー'
 	String get title => 'タスク完了までのフロー';
 
-	/// ja: '達成基準と締切を決めてタスクを作成します。システムが自動でレフリーをマッチングし、レフリーは提出されたエビデンスをもとに、タスクが達成されたかどうかを判定します。'
-	String get body => '達成基準と締切を決めてタスクを作成します。システムが自動でレフリーをマッチングし、レフリーは提出されたエビデンスをもとに、タスクが達成されたかどうかを判定します。';
+	/// ja: '達成基準と締切を決めてタスクを作成します。 システムが自動でレフリーをマッチングし、レフリーは提出されたエビデンスをもとに、タスクが達成されたかどうかを判定します。'
+	String get body => '達成基準と締切を決めてタスクを作成します。\nシステムが自動でレフリーをマッチングし、レフリーは提出されたエビデンスをもとに、タスクが達成されたかどうかを判定します。';
 }
 
 // Path: appExplanation.sections.points
@@ -1425,8 +1425,8 @@ class TranslationsAppExplanationSectionsPointsJa {
 	/// ja: 'ポイントでタスクを作成'
 	String get title => 'ポイントでタスクを作成';
 
-	/// ja: 'タスク作成にはポイントが必要で、サブスクリプションに加入すると毎月ポイントが付与されます。初めての方はトライアルポイントで無料で試せます。'
-	String get body => 'タスク作成にはポイントが必要で、サブスクリプションに加入すると毎月ポイントが付与されます。初めての方はトライアルポイントで無料で試せます。';
+	/// ja: 'タスク作成にはポイントが必要です。 サブスクリプションに加入すると毎月ポイントが付与されます。 初めての方はトライアルポイントで無料で試せます。'
+	String get body => 'タスク作成にはポイントが必要です。\nサブスクリプションに加入すると毎月ポイントが付与されます。\n初めての方はトライアルポイントで無料で試せます。';
 }
 
 // Path: appExplanation.sections.referee
@@ -1440,8 +1440,8 @@ class TranslationsAppExplanationSectionsRefereeJa {
 	/// ja: 'レフリーをして、報酬を獲得'
 	String get title => 'レフリーをして、報酬を獲得';
 
-	/// ja: 'あなた自身も他のユーザーのレフリーを担当できます。受付可能時間を設定するとマッチング対象になり、判定を完了するごとに報酬が貯まっていきます。貯まった報酬は決済プラットフォームStripeを通じて指定した銀行口座に出金されます。'
-	String get body => 'あなた自身も他のユーザーのレフリーを担当できます。受付可能時間を設定するとマッチング対象になり、判定を完了するごとに報酬が貯まっていきます。貯まった報酬は決済プラットフォームStripeを通じて指定した銀行口座に出金されます。';
+	/// ja: 'あなた自身も他のユーザーのレフリーを担当できます。 受付可能時間を設定するとマッチング対象になり、判定を完了するごとに報酬が貯まっていきます。 貯まった報酬は決済プラットフォームStripeを通じて指定した銀行口座に出金されます。'
+	String get body => 'あなた自身も他のユーザーのレフリーを担当できます。\n受付可能時間を設定するとマッチング対象になり、判定を完了するごとに報酬が貯まっていきます。\n貯まった報酬は決済プラットフォームStripeを通じて指定した銀行口座に出金されます。';
 }
 
 /// The flat map containing all translations for locale <ja>.
@@ -1753,14 +1753,14 @@ extension on Translations {
 			'account.actions.payoutFailedDescription' => ({required Object amount}) => '未払いの報酬 ¥${amount} を受け取れませんでした。報酬を放棄してアカウントを削除しますか？',
 			'account.actions.deletedSnackbar' => 'アカウントが削除されました',
 			'appExplanation.sheetTitle' => 'PepperCheckとは',
-			'appExplanation.sections.concept.title' => '社会的責任感を、目標達成の力に',
-			'appExplanation.sections.concept.body' => '自分との約束は破ってしまいがち。PepperCheckは、達成したいタスクを第三者のレフリーに確認してもらうことで、その「社会的責任感」を目標達成のエネルギーに変えるアプリです。',
+			'appExplanation.sections.concept.title' => '目標達成のモチベーションをサポート',
+			'appExplanation.sections.concept.body' => '自分との約束は破ってしまいがち。\nPepperCheckは、達成したいタスクを第三者のレフリーに確認してもらうことで、「対人関係から生ずる責任感」を目標達成のエネルギーに変えるアプリです。',
 			'appExplanation.sections.flow.title' => 'タスク完了までのフロー',
-			'appExplanation.sections.flow.body' => '達成基準と締切を決めてタスクを作成します。システムが自動でレフリーをマッチングし、レフリーは提出されたエビデンスをもとに、タスクが達成されたかどうかを判定します。',
+			'appExplanation.sections.flow.body' => '達成基準と締切を決めてタスクを作成します。\nシステムが自動でレフリーをマッチングし、レフリーは提出されたエビデンスをもとに、タスクが達成されたかどうかを判定します。',
 			'appExplanation.sections.points.title' => 'ポイントでタスクを作成',
-			'appExplanation.sections.points.body' => 'タスク作成にはポイントが必要で、サブスクリプションに加入すると毎月ポイントが付与されます。初めての方はトライアルポイントで無料で試せます。',
+			'appExplanation.sections.points.body' => 'タスク作成にはポイントが必要です。\nサブスクリプションに加入すると毎月ポイントが付与されます。\n初めての方はトライアルポイントで無料で試せます。',
 			'appExplanation.sections.referee.title' => 'レフリーをして、報酬を獲得',
-			'appExplanation.sections.referee.body' => 'あなた自身も他のユーザーのレフリーを担当できます。受付可能時間を設定するとマッチング対象になり、判定を完了するごとに報酬が貯まっていきます。貯まった報酬は決済プラットフォームStripeを通じて指定した銀行口座に出金されます。',
+			'appExplanation.sections.referee.body' => 'あなた自身も他のユーザーのレフリーを担当できます。\n受付可能時間を設定するとマッチング対象になり、判定を完了するごとに報酬が貯まっていきます。\n貯まった報酬は決済プラットフォームStripeを通じて指定した銀行口座に出金されます。',
 			'appExplanation.learnMore' => '詳しくは peppercheck.dev で',
 			_ => null,
 		};
