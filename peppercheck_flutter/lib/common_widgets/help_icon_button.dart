@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:peppercheck_flutter/app/theme/app_colors.dart';
-import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
 import 'package:peppercheck_flutter/common_widgets/base_dialog.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 
@@ -30,7 +29,10 @@ class HelpIconButton extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       onTap: () => _showHelp(context),
       child: Padding(
-        padding: const EdgeInsets.all(AppSizes.spacingMicro),
+        // Asymmetric vertical padding (3 top / 1 bottom) nudges the icon
+        // down 1px so its visual center aligns with the text cap-height,
+        // not the line-box center. Total bbox is unchanged (20×20 at 16px).
+        padding: const EdgeInsets.fromLTRB(2, 3, 2, 1),
         child: Icon(
           Icons.help_outline,
           size: iconSize,

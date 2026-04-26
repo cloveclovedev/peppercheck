@@ -304,7 +304,7 @@ class _SummaryContent extends StatelessWidget {
                   HelpIconButton(
                     title: t.dashboard.lockedPointsHelp.title,
                     body: t.dashboard.lockedPointsHelp.body,
-                    iconSize: 12,
+                    iconSize: 14,
                   ),
                 ],
               ),
