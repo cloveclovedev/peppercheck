@@ -166,7 +166,7 @@ class _JudgementSectionState extends ConsumerState<JudgementSection> {
       child: Column(
         children: [
           for (int i = 0; i < completedRequests.length; i++) ...[
-            if (i > 0) const SizedBox(height: AppSizes.cardGap),
+            if (i > 0) const SizedBox(height: AppSizes.baseCardGap),
             if (completedRequests[i].judgement!.status == 'review_timeout')
               _buildReviewTimeoutCard(completedRequests[i])
             else
@@ -185,12 +185,12 @@ class _JudgementSectionState extends ConsumerState<JudgementSection> {
 
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppSizes.cardPaddingHorizontal,
-        vertical: AppSizes.cardPaddingVertical,
+        horizontal: AppSizes.baseCardPaddingHorizontal,
+        vertical: AppSizes.baseCardPaddingVertical,
       ),
       decoration: BoxDecoration(
         color: AppColors.backgroundWhite,
-        borderRadius: BorderRadius.circular(AppSizes.cardBorderRadius),
+        borderRadius: BorderRadius.circular(AppSizes.baseCardBorderRadius),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -267,12 +267,12 @@ class _JudgementSectionState extends ConsumerState<JudgementSection> {
 
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppSizes.cardPaddingHorizontal,
-        vertical: AppSizes.cardPaddingVertical,
+        horizontal: AppSizes.baseCardPaddingHorizontal,
+        vertical: AppSizes.baseCardPaddingVertical,
       ),
       decoration: BoxDecoration(
         color: AppColors.backgroundWhite,
-        borderRadius: BorderRadius.circular(AppSizes.cardBorderRadius),
+        borderRadius: BorderRadius.circular(AppSizes.baseCardBorderRadius),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -281,7 +281,7 @@ class _JudgementSectionState extends ConsumerState<JudgementSection> {
             children: [
               if (request.referee?.avatarUrl != null)
                 CircleAvatar(
-                  radius: AppSizes.taskCardIconSize / 2,
+                  radius: AppSizes.baseCardIconSize / 2,
                   backgroundImage: NetworkImage(request.referee!.avatarUrl!),
                   backgroundColor: Colors.transparent,
                 )
@@ -289,9 +289,9 @@ class _JudgementSectionState extends ConsumerState<JudgementSection> {
                 const Icon(
                   Icons.person,
                   color: AppColors.textSecondary,
-                  size: AppSizes.taskCardIconSize,
+                  size: AppSizes.baseCardIconSize,
                 ),
-              const SizedBox(width: AppSizes.cardIconGap),
+              const SizedBox(width: AppSizes.baseCardIconGap),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -317,7 +317,7 @@ class _JudgementSectionState extends ConsumerState<JudgementSection> {
                   child: Icon(
                     Icons.check_circle,
                     color: AppColors.accentGreen,
-                    size: AppSizes.taskCardIconSize,
+                    size: AppSizes.baseCardIconSize,
                   ),
                 ),
             ],
@@ -598,7 +598,7 @@ class _RatingIconButton extends StatelessWidget {
       icon: Icon(
         isSelected ? selectedIcon : icon,
         color: fgColor,
-        size: AppSizes.taskCardIconSize,
+        size: AppSizes.baseCardIconSize,
       ),
       style: IconButton.styleFrom(
         backgroundColor: isSelected

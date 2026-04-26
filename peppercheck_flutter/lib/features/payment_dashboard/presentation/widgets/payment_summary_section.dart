@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:peppercheck_flutter/app/theme/app_colors.dart';
 import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
+import 'package:peppercheck_flutter/common_widgets/base_card.dart';
 import 'package:peppercheck_flutter/common_widgets/base_section.dart';
 import 'package:peppercheck_flutter/features/payment_dashboard/domain/payment_summary.dart';
 import 'package:peppercheck_flutter/features/payment_dashboard/presentation/payment_summary_controller.dart';
@@ -49,78 +50,104 @@ class _SummaryContent extends StatelessWidget {
         if (hasTrial) _buildTrialPointsRow() else _buildRegularPointsRow(),
         // Obligations card — independent of trial/regular points
         if (summary.obligationsRemaining > 0) ...[
-          const SizedBox(height: AppSizes.spacingTiny),
-          _SummaryCard(
-            backgroundColor: AppColors.accentYellowLight.withValues(alpha: 0.3),
-            borderColor: AppColors.accentYellow.withValues(alpha: 0.5),
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.assignment_outlined,
-                    color: AppColors.accentYellow,
-                    size: 16,
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      t.dashboard.pendingObligationsLabel,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                  ),
-                  Text(
-                    t.dashboard.obligationCount(
-                      count: summary.obligationsRemaining,
-                    ),
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
+          const SizedBox(height: AppSizes.baseCardGap),
+          BaseCard(
+            child: Row(
+              children: [
+                Icon(
+                  Icons.assignment_outlined,
+                  color: AppColors.accentYellow,
+                  size: AppSizes.baseCardIconSize,
+                ),
+                const SizedBox(width: AppSizes.baseCardIconGap),
+                Expanded(
+                  child: Text(
+                    t.dashboard.pendingObligationsLabel,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w500,
                       color: AppColors.textPrimary,
                     ),
                   ),
-                ],
-              ),
-            ],
+                ),
+                Text(
+                  t.dashboard.obligationCount(
+                    count: summary.obligationsRemaining,
+                  ),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.accentYellow,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
         // Rewards row — only if rewards exist
         if (summary.rewards != null) ...[
-          const SizedBox(height: AppSizes.spacingTiny),
+          const SizedBox(height: AppSizes.baseCardGap),
           Row(
             children: [
               Expanded(
-                child: _SummaryCard(
-                  children: [
-                    _CardLabel(label: t.dashboard.rewardBalance),
-                    const SizedBox(height: 4),
-                    _CardValue(
-                      value: _formatCurrency(
-                        summary.rewards!.amountMinor,
-                        summary.rewards!.currencyCode,
-                        summary.rewards!.currencyExponent,
+                child: BaseCard(
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.account_balance_wallet,
+                        color: AppColors.textSecondary,
+                        size: AppSizes.baseCardIconSize,
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: AppSizes.baseCardIconGap),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _CardLabel(label: t.dashboard.rewardBalance),
+                            const SizedBox(height: 4),
+                            _CardValue(
+                              value: _formatCurrency(
+                                summary.rewards!.amountMinor,
+                                summary.rewards!.currencyCode,
+                                summary.rewards!.currencyExponent,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              const SizedBox(width: AppSizes.spacingTiny),
+              const SizedBox(width: AppSizes.baseCardGap),
               Expanded(
-                child: _SummaryCard(
-                  children: [
-                    _CardLabel(label: t.dashboard.totalEarned),
-                    const SizedBox(height: 4),
-                    _CardValue(
-                      value: summary.totalEarnedCurrency != null
-                          ? _formatCurrency(
-                              summary.totalEarnedMinor,
-                              summary.totalEarnedCurrency!,
-                              summary.rewards!.currencyExponent,
-                            )
-                          : '—',
-                    ),
-                  ],
+                child: BaseCard(
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.trending_up,
+                        color: AppColors.textSecondary,
+                        size: AppSizes.baseCardIconSize,
+                      ),
+                      const SizedBox(width: AppSizes.baseCardIconGap),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _CardLabel(label: t.dashboard.totalEarned),
+                            const SizedBox(height: 4),
+                            _CardValue(
+                              value: summary.totalEarnedCurrency != null
+                                  ? _formatCurrency(
+                                      summary.totalEarnedMinor,
+                                      summary.totalEarnedCurrency!,
+                                      summary.rewards!.currencyExponent,
+                                    )
+                                  : '—',
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -129,27 +156,43 @@ class _SummaryContent extends StatelessWidget {
         // Payout info — conditional rows
         if (summary.recentPayout != null ||
             (summary.rewards != null && summary.rewards!.balance > 0)) ...[
-          const SizedBox(height: AppSizes.spacingTiny),
-          _SummaryCard(
-            children: [
-              if (summary.recentPayout != null) ...[
-                _PayoutRow(
-                  label: t.dashboard.recentPayout,
-                  value:
-                      '${_formatCurrency(summary.recentPayout!.amountMinor, summary.recentPayout!.currencyCode, summary.recentPayout!.currencyExponent)} (${_payoutStatusLabel(summary.recentPayout!.status)}) — ${_formatDate(summary.recentPayout!.batchDate)}',
+          const SizedBox(height: AppSizes.baseCardGap),
+          BaseCard(
+            child: Row(
+              children: [
+                Icon(
+                  Icons.send,
+                  color: AppColors.textSecondary,
+                  size: AppSizes.baseCardIconSize,
+                ),
+                const SizedBox(width: AppSizes.baseCardIconGap),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (summary.recentPayout != null) ...[
+                        _PayoutRow(
+                          label: t.dashboard.recentPayout,
+                          value:
+                              '${_formatCurrency(summary.recentPayout!.amountMinor, summary.recentPayout!.currencyCode, summary.recentPayout!.currencyExponent)} (${_payoutStatusLabel(summary.recentPayout!.status)}) — ${_formatDate(summary.recentPayout!.batchDate)}',
+                        ),
+                      ],
+                      if (summary.recentPayout != null &&
+                          summary.rewards != null &&
+                          summary.rewards!.balance > 0)
+                        const SizedBox(height: 4),
+                      if (summary.rewards != null &&
+                          summary.rewards!.balance > 0) ...[
+                        _PayoutRow(
+                          label: t.dashboard.nextPayout,
+                          value: _formatDate(summary.nextPayoutDate),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
               ],
-              if (summary.recentPayout != null &&
-                  summary.rewards != null &&
-                  summary.rewards!.balance > 0)
-                const SizedBox(height: 4),
-              if (summary.rewards != null && summary.rewards!.balance > 0) ...[
-                _PayoutRow(
-                  label: t.dashboard.nextPayout,
-                  value: _formatDate(summary.nextPayoutDate),
-                ),
-              ],
-            ],
+            ),
           ),
         ],
       ],
@@ -158,73 +201,85 @@ class _SummaryContent extends StatelessWidget {
 
   /// Regular points card with toll icon
   Widget _buildRegularPointsRow() {
-    return _SummaryCard(
-      children: [
-        Row(
-          children: [
-            Icon(Icons.toll, color: AppColors.accentGreen, size: 16),
-            const SizedBox(width: 6),
-            Expanded(
-              child: Text(
-                t.dashboard.availablePoints,
-                style: TextStyle(
+    return BaseCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.toll,
+                color: AppColors.accentGreen,
+                size: AppSizes.baseCardIconSize,
+              ),
+              const SizedBox(width: AppSizes.baseCardIconGap),
+              Expanded(
+                child: Text(
+                  t.dashboard.availablePoints,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+              Text(
+                '${summary.points.available} pt',
+                style: const TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
+                  color: AppColors.accentGreen,
+                ),
+              ),
+            ],
+          ),
+          if (summary.points.locked > 0) ...[
+            const SizedBox(height: 2),
+            Padding(
+              padding: EdgeInsets.only(
+                left: AppSizes.baseCardIconSize + AppSizes.baseCardIconGap,
+              ),
+              child: Text(
+                '${t.dashboard.lockedPoints}: ${summary.points.locked} pt',
+                style: const TextStyle(
+                  color: AppColors.textMuted,
+                  fontSize: 11,
                 ),
               ),
             ),
-            Text(
-              '${summary.points.available} pt',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: AppColors.accentGreen,
-              ),
-            ),
           ],
-        ),
-        if (summary.points.locked > 0) ...[
-          const SizedBox(height: 2),
-          Padding(
-            padding: const EdgeInsets.only(left: 22),
-            child: Text(
-              '${t.dashboard.lockedPoints}: ${summary.points.locked} pt',
-              style: TextStyle(color: AppColors.textMuted, fontSize: 11),
-            ),
-          ),
         ],
-      ],
+      ),
     );
   }
 
-  /// Trial points card with star icon
+  /// Trial points card with star icon — same BaseCard default style, no colored background
   Widget _buildTrialPointsRow() {
-    return _SummaryCard(
-      backgroundColor: AppColors.accentGreenLight.withValues(alpha: 0.3),
-      borderColor: AppColors.accentGreen.withValues(alpha: 0.5),
-      children: [
-        Row(
-          children: [
-            Icon(Icons.stars, color: AppColors.accentGreen, size: 16),
-            const SizedBox(width: 6),
-            Expanded(
-              child: Text(
-                t.dashboard.trialPoints,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
+    return BaseCard(
+      child: Row(
+        children: [
+          Icon(
+            Icons.stars,
+            color: AppColors.accentGreen,
+            size: AppSizes.baseCardIconSize,
+          ),
+          const SizedBox(width: AppSizes.baseCardIconGap),
+          Expanded(
+            child: Text(
+              t.dashboard.trialPoints,
+              style: const TextStyle(
+                fontWeight: FontWeight.w500,
+                color: AppColors.textPrimary,
               ),
             ),
-            Text(
-              '${summary.trialPoints!.available} pt',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: AppColors.accentGreen,
-              ),
+          ),
+          Text(
+            '${summary.trialPoints!.available} pt',
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: AppColors.accentGreen,
             ),
-          ],
-        ),
-      ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -237,7 +292,6 @@ class _SummaryContent extends StatelessWidget {
     return NumberFormat.simpleCurrency(name: currencyCode).format(majorAmount);
   }
 
-  /// Format ISO date string (e.g. "2026-04-30") as yyyy/M/d
   static String _formatDate(String isoDate) {
     final date = DateTime.tryParse(isoDate);
     if (date == null) return isoDate;
@@ -257,38 +311,6 @@ class _SummaryContent extends StatelessWidget {
       default:
         return status;
     }
-  }
-}
-
-class _SummaryCard extends StatelessWidget {
-  final List<Widget> children;
-  final Color? backgroundColor;
-  final Color? borderColor;
-
-  const _SummaryCard({
-    required this.children,
-    this.backgroundColor,
-    this.borderColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSizes.spacingMedium,
-        vertical: AppSizes.spacingSmall,
-      ),
-      decoration: BoxDecoration(
-        color: backgroundColor ?? AppColors.backgroundLight,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: borderColor ?? AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: children,
-      ),
-    );
   }
 }
 

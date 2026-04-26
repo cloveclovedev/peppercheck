@@ -11,6 +11,13 @@ class AppTheme {
         error: AppColors.textError,
       ),
       scaffoldBackgroundColor: AppColors.background,
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: AppColors.backgroundLight,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+      ),
       dialogTheme: const DialogThemeData(
         backgroundColor: AppColors.backgroundWhite,
         surfaceTintColor: Colors.transparent,

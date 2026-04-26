@@ -100,21 +100,23 @@ class _TaskRefereesSectionState extends ConsumerState<TaskRefereesSection> {
       child: Column(
         children: [
           for (int i = 0; i < widget.task.refereeRequests.length; i++) ...[
-            if (i > 0) const SizedBox(height: AppSizes.cardGap),
+            if (i > 0) const SizedBox(height: AppSizes.baseCardGap),
             Container(
               padding: const EdgeInsets.symmetric(
-                horizontal: AppSizes.cardPaddingHorizontal,
-                vertical: AppSizes.cardPaddingVertical,
+                horizontal: AppSizes.baseCardPaddingHorizontal,
+                vertical: AppSizes.baseCardPaddingVertical,
               ),
               decoration: BoxDecoration(
                 color: AppColors.backgroundWhite,
-                borderRadius: BorderRadius.circular(AppSizes.cardBorderRadius),
+                borderRadius: BorderRadius.circular(
+                  AppSizes.baseCardBorderRadius,
+                ),
               ),
               child: Row(
                 children: [
                   if (widget.task.refereeRequests[i].referee?.avatarUrl != null)
                     CircleAvatar(
-                      radius: AppSizes.taskCardIconSize / 2,
+                      radius: AppSizes.baseCardIconSize / 2,
                       backgroundImage: NetworkImage(
                         widget.task.refereeRequests[i].referee!.avatarUrl!,
                       ),
@@ -124,9 +126,9 @@ class _TaskRefereesSectionState extends ConsumerState<TaskRefereesSection> {
                     const Icon(
                       Icons.person,
                       color: AppColors.textSecondary,
-                      size: AppSizes.taskCardIconSize,
+                      size: AppSizes.baseCardIconSize,
                     ),
-                  const SizedBox(width: AppSizes.cardIconGap),
+                  const SizedBox(width: AppSizes.baseCardIconGap),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,

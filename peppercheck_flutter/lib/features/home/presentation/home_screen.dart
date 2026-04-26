@@ -93,7 +93,7 @@ class _TaskSection extends StatelessWidget {
           return Column(
             children: [
               for (int i = 0; i < tasks.length; i++) ...[
-                if (i > 0) const SizedBox(height: AppSizes.cardGap),
+                if (i > 0) const SizedBox(height: AppSizes.baseCardGap),
                 TaskCard(task: tasks[i]),
               ],
             ],

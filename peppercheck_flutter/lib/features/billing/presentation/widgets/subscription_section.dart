@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:peppercheck_flutter/app/theme/app_colors.dart';
 import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
 import 'package:peppercheck_flutter/app/utils/date_time_utils.dart';
+import 'package:peppercheck_flutter/common_widgets/base_card.dart';
+import 'package:peppercheck_flutter/common_widgets/base_card_action.dart';
 import 'package:peppercheck_flutter/common_widgets/base_section.dart';
 import 'package:peppercheck_flutter/features/billing/data/billing_providers.dart';
 import 'package:peppercheck_flutter/features/billing/domain/subscription_display_state.dart';
 import 'package:peppercheck_flutter/features/billing/presentation/current_purchase_provider.dart';
 import 'package:peppercheck_flutter/features/billing/presentation/in_app_purchase_controller.dart';
 import 'package:peppercheck_flutter/features/billing/presentation/plan_utils.dart';
-import 'package:peppercheck_flutter/features/billing/presentation/widgets/plan_card.dart';
+import 'package:peppercheck_flutter/features/billing/presentation/widgets/plan_selection_bottom_sheet.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class SubscriptionSection extends ConsumerStatefulWidget {
   const SubscriptionSection({super.key});
@@ -35,6 +35,8 @@ class _SubscriptionSectionState extends ConsumerState<SubscriptionSection> {
   Widget build(BuildContext context) {
     final subscriptionAsync = ref.watch(subscriptionProvider);
     final purchaseState = ref.watch(inAppPurchaseControllerProvider);
+    // Pre-warm product list so it's ready when the user taps the CTA.
+    ref.watch(availableProductsProvider);
 
     return BaseSection(
       title: t.billing.subscription,
@@ -47,44 +49,10 @@ class _SubscriptionSectionState extends ConsumerState<SubscriptionSection> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _StatusDisplay(displayState: displayState),
-
-              const SizedBox(height: AppSizes.spacingSmall),
-
-              _PlanCardList(displayState: displayState),
-
-              if (displayState is ActiveSubscription ||
-                  displayState is ActiveWithPaymentIssue) ...[
-                const SizedBox(height: AppSizes.spacingTiny),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () => launchUrl(
-                      Uri.parse(
-                        'https://play.google.com/store/account/subscriptions',
-                      ),
-                      mode: LaunchMode.externalApplication,
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: AppSizes.spacingTiny,
-                      ),
-                      child: Text(
-                        t.billing.cancelViaGooglePlay,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-
+              _SubscriptionStatusCard(displayState: displayState),
               if (purchaseState.hasError)
                 Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
+                  padding: const EdgeInsets.only(top: AppSizes.spacingSmall),
                   child: Text(
                     'Purchase Error: ${purchaseState.error}',
                     style: const TextStyle(color: AppColors.textError),
@@ -103,32 +71,24 @@ class _SubscriptionSectionState extends ConsumerState<SubscriptionSection> {
   }
 }
 
-class _StatusDisplay extends StatelessWidget {
+class _SubscriptionStatusCard extends ConsumerWidget {
   final SubscriptionDisplayState displayState;
-  const _StatusDisplay({required this.displayState});
+  const _SubscriptionStatusCard({required this.displayState});
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSizes.spacingMedium,
-        vertical: AppSizes.spacingSmall,
-      ),
-      decoration: BoxDecoration(
-        border: Border.all(color: AppColors.border),
-        borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-      ),
+  Widget build(BuildContext context, WidgetRef ref) {
+    return BaseCard(
       child: Row(
         children: [
-          Icon(Icons.star, color: _iconColor, size: 32),
-          const SizedBox(width: AppSizes.spacingMedium),
+          Icon(Icons.star, color: _iconColor, size: AppSizes.baseCardIconSize),
+          const SizedBox(width: AppSizes.baseCardIconGap),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildTitle(),
                 if (_subtitle != null) ...[
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
                   Text(
                     _subtitle!,
                     style: const TextStyle(
@@ -139,6 +99,12 @@ class _StatusDisplay extends StatelessWidget {
                 ],
               ],
             ),
+          ),
+          const SizedBox(width: AppSizes.baseCardIconGap),
+          BaseCardAction(
+            label: _ctaLabel,
+            color: _ctaColor,
+            onPressed: () => _onCtaTap(context, ref),
           ),
         ],
       ),
@@ -156,7 +122,10 @@ class _StatusDisplay extends StatelessWidget {
     return switch (displayState) {
       NotSubscribed() => Text(
         t.billing.noPlan,
-        style: const TextStyle(fontWeight: FontWeight.bold),
+        style: const TextStyle(
+          fontWeight: FontWeight.w500,
+          color: AppColors.textPrimary,
+        ),
       ),
       NotSubscribedWithPaymentIssue() => Text(
         '${t.billing.noPlan}（${t.billing.paymentIssue}）',
@@ -167,7 +136,10 @@ class _StatusDisplay extends StatelessWidget {
       ),
       ActiveSubscription(:final planId) => Text(
         planName(planId),
-        style: const TextStyle(fontWeight: FontWeight.bold),
+        style: const TextStyle(
+          fontWeight: FontWeight.w500,
+          color: AppColors.textPrimary,
+        ),
       ),
       ActiveWithPaymentIssue(:final planId) => Text(
         '${planName(planId)}（${t.billing.paymentIssue}）',
@@ -189,78 +161,60 @@ class _StatusDisplay extends StatelessWidget {
     NotSubscribed() => null,
     NotSubscribedWithPaymentIssue() => null,
   };
-}
 
-class _PlanCardList extends ConsumerWidget {
-  final SubscriptionDisplayState displayState;
-  const _PlanCardList({required this.displayState});
+  String get _ctaLabel => switch (displayState) {
+    NotSubscribed() => t.billing.choosePlan,
+    NotSubscribedWithPaymentIssue() => t.billing.checkPlan,
+    ActiveSubscription() => t.billing.changePlan,
+    ActiveWithPaymentIssue() => t.billing.checkPlan,
+  };
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final productsState = ref.watch(availableProductsProvider);
+  Color get _ctaColor => switch (displayState) {
+    NotSubscribedWithPaymentIssue() => AppColors.textError,
+    ActiveWithPaymentIssue() => AppColors.textError,
+    _ => AppColors.accentBlue,
+  };
 
-    return productsState.when(
-      data: (products) {
-        if (products.isEmpty) return const SizedBox.shrink();
+  Future<void> _onCtaTap(BuildContext context, WidgetRef ref) async {
+    final productsAsync = ref.read(availableProductsProvider);
+    final products = productsAsync.value;
+    if (products == null || products.isEmpty) return;
 
-        final sorted = List<ProductDetails>.from(products)
-          ..sort((a, b) => a.rawPrice.compareTo(b.rawPrice));
+    final currentPlanId = switch (displayState) {
+      ActiveSubscription(:final planId) => planId,
+      ActiveWithPaymentIssue(:final planId) => planId,
+      NotSubscribed() => null,
+      NotSubscribedWithPaymentIssue() => null,
+    };
 
-        final currentPlanId = switch (displayState) {
-          ActiveSubscription(:final planId) => planId,
-          ActiveWithPaymentIssue(:final planId) => planId,
-          NotSubscribed() => null,
-          NotSubscribedWithPaymentIssue() => null,
-        };
+    final showCancelLink =
+        displayState is ActiveSubscription ||
+        displayState is ActiveWithPaymentIssue;
 
-        final cards = <Widget>[];
-        for (var i = 0; i < sorted.length; i++) {
-          if (i > 0) cards.add(const SizedBox(height: AppSizes.spacingTiny));
-          final product = sorted[i];
-          final pId = productIdToPlanId(product.id);
-          final isCurrent = pId == currentPlanId;
-          cards.add(
-            PlanCard(
-              product: product,
-              isCurrentPlan: isCurrent,
-              onTap: isCurrent
-                  ? null
-                  : () => _onPlanTap(ref, product, currentPlanId),
-            ),
-          );
-        }
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: cards,
-        );
-      },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, st) => const SizedBox.shrink(),
+    final selected = await showPlanSelectionBottomSheet(
+      context,
+      products: products,
+      currentPlanId: currentPlanId,
+      showCancelLink: showCancelLink,
     );
-  }
 
-  void _onPlanTap(
-    WidgetRef ref,
-    ProductDetails product,
-    String? currentPlanId,
-  ) {
+    if (selected == null) return;
+
     final controller = ref.read(inAppPurchaseControllerProvider.notifier);
 
     if (currentPlanId == null) {
-      // New purchase (not subscribed)
-      controller.buy(product: product);
+      controller.buy(product: selected);
       return;
     }
 
     // Plan change (upgrade/downgrade)
     final currentPurchase = ref.read(currentPurchaseProvider);
-    final newPlanId = productIdToPlanId(product.id);
+    final newPlanId = productIdToPlanId(selected.id);
     final isUpgrade =
         (planOrder[newPlanId] ?? 0) > (planOrder[currentPlanId] ?? 0);
 
     controller.buy(
-      product: product,
+      product: selected,
       oldPurchase: currentPurchase,
       isUpgrade: isUpgrade,
     );

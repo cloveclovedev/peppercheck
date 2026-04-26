@@ -185,6 +185,18 @@ class TranslationsBillingJa {
 
 	/// ja: 'キャンセルはGoogle Playから →'
 	String get cancelViaGooglePlay => 'キャンセルはGoogle Playから →';
+
+	/// ja: 'プランを選ぶ'
+	String get choosePlan => 'プランを選ぶ';
+
+	/// ja: 'プランを変更'
+	String get changePlan => 'プランを変更';
+
+	/// ja: '確認する'
+	String get checkPlan => '確認する';
+
+	/// ja: 'プランを選ぶ'
+	String get planSelectionTitle => 'プランを選ぶ';
 }
 
 // Path: common
@@ -628,6 +640,15 @@ class TranslationsBillingPlansJa {
 
 	/// ja: 'プレミアムプラン'
 	String get premium => 'プレミアムプラン';
+
+	/// ja: '5 pt / 月'
+	String get lightDescription => '5 pt / 月';
+
+	/// ja: '10 pt / 月'
+	String get standardDescription => '10 pt / 月';
+
+	/// ja: '20 pt / 月'
+	String get premiumDescription => '20 pt / 月';
 }
 
 // Path: common.days
@@ -1222,6 +1243,9 @@ extension on Translations {
 			'billing.plans.light' => 'ライトプラン',
 			'billing.plans.standard' => 'スタンダードプラン',
 			'billing.plans.premium' => 'プレミアムプラン',
+			'billing.plans.lightDescription' => '5 pt / 月',
+			'billing.plans.standardDescription' => '10 pt / 月',
+			'billing.plans.premiumDescription' => '20 pt / 月',
 			'billing.noPlan' => '未加入',
 			'billing.trialSectionTitle' => 'お試し',
 			'billing.trialPoints' => ({required Object count}) => 'お試しポイント: 残り${count} pt',
@@ -1234,6 +1258,10 @@ extension on Translations {
 			'billing.currentPlan' => '現在のプラン',
 			'billing.canceledUntil' => ({required Object date}) => '解約済み・${date}まで利用可能',
 			'billing.cancelViaGooglePlay' => 'キャンセルはGoogle Playから →',
+			'billing.choosePlan' => 'プランを選ぶ',
+			'billing.changePlan' => 'プランを変更',
+			'billing.checkPlan' => '確認する',
+			'billing.planSelectionTitle' => 'プランを選ぶ',
 			'common.cancel' => 'キャンセル',
 			'common.confirm' => '確認',
 			'common.save' => '保存',
