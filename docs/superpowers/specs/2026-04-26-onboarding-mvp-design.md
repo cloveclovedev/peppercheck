@@ -116,6 +116,8 @@ class BaseSection extends StatelessWidget {
 
 When `trailing` is non-null, the title row is rendered as a `Row` with the title on the left and `trailing` aligned to the right, sharing the existing horizontal padding. When `trailing` is null, behavior is unchanged.
 
+The trailing widget must not increase the title row's height — it's expected to fit within the existing row bounds (see HelpIconButton sizing constraint below). The title's vertical baseline and the section's overall height stay unchanged.
+
 This lets `HelpIconButton` slot in cleanly without duplicating title-row layout in every callsite. For `BaseCard`-based cards (payment summary), callers compose the `?` icon manually within the card content (no API change to `BaseCard`).
 
 ### 2. `HelpIconButton` (new)
@@ -133,7 +135,16 @@ class HelpIconButton extends StatelessWidget {
 
 Renders a small `Icons.help_outline` (or visually equivalent) icon. On tap, calls `showDialog` with a `BaseDialog` containing the provided title + body and a single "閉じる" action.
 
-Tap target: padded to ≥ 24×24 logical pixels even if the icon glyph is smaller, so the touch area is comfortable.
+#### Sizing constraint (must-have)
+
+The `?` icon's introduction must NOT cause the host section/card to grow in any dimension. Specifically:
+
+- **Icon glyph size**: ~16px (small) — at most as tall as the title text it sits next to. Never larger than the existing title's cap height + a small margin.
+- **Tap target**: a minimum touch area is provided via the padded hit area, but the **entire icon + hit area must fit within the existing title row's vertical bounds**. The host section/card's overall height stays unchanged compared to today.
+- **Do NOT use** Flutter's `IconButton` directly — its default 48×48 padding will inflate the row. Use a custom `GestureDetector` (or a tightly constrained `InkWell` with `BoxConstraints(minWidth: 0, minHeight: 0)`) so the visual size and the hit area are decoupled cleanly.
+- **Horizontal placement**: trailing-aligned in the title row. If horizontal space is tight, the tap area extends to the right edge of the row but does not push other content.
+
+This is a hard constraint: existing section/card dimensions are part of the design and must be preserved.
 
 #### Help content design principle
 
@@ -326,3 +337,4 @@ Verification at each step: visual check on Android emulator, no regressions to e
 - **Discoverability of "PepperCheckとは？" link**: Small low-emphasis link below the CTA may go unnoticed. If feedback shows low engagement, escalate post-launch (auto-show, larger placement, or move to a more prominent position).
 - **Single-screen fit on small devices**: The compact horizontal layout is designed for the BottomSheet to fit without scrolling on common phones, but small devices (≤ 5") may still overflow. The underlying `SingleChildScrollView` is the fallback.
 - **Visual regression on `BaseSection`**: When adding `trailing`, existing usages (no `trailing`) must render byte-identical to today. Verify on at least one existing section before declaring done.
+- **Card/section growth from `?` icon**: A naive `IconButton` placement will inflate row height by ~24px. Verify that adding the `?` icon to an existing section/card preserves its current outer dimensions exactly. Spot-check by overlaying screenshots before/after.
