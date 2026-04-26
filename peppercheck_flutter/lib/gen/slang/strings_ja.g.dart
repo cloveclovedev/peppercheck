@@ -1365,8 +1365,8 @@ class TranslationsMatchingRefereeAvailabilityHelpJa {
 	/// ja: '受付可能時間とは？'
 	String get title => '受付可能時間とは？';
 
-	/// ja: 'レフリーとしてタスクを担当できる曜日・時間帯です。 この時間が締切のタスクがマッチング対象になります。'
-	String get body => 'レフリーとしてタスクを担当できる曜日・時間帯です。\nこの時間が締切のタスクがマッチング対象になります。';
+	/// ja: 'レフリーとしてタスクを担当できる曜日・時間帯です。 この時間内に締切が設定されたタスクがマッチング対象になります。'
+	String get body => 'レフリーとしてタスクを担当できる曜日・時間帯です。\nこの時間内に締切が設定されたタスクがマッチング対象になります。';
 }
 
 // Path: matching.referee_blocked_dates.help
@@ -1674,7 +1674,7 @@ extension on Translations {
 			'matching.referee_availability.dialog_dow' => '曜日',
 			'matching.referee_availability.invalid_time_range' => '終了時間は開始時間より後である必要があります',
 			'matching.referee_availability.help.title' => '受付可能時間とは？',
-			'matching.referee_availability.help.body' => 'レフリーとしてタスクを担当できる曜日・時間帯です。\nこの時間が締切のタスクがマッチング対象になります。',
+			'matching.referee_availability.help.body' => 'レフリーとしてタスクを担当できる曜日・時間帯です。\nこの時間内に締切が設定されたタスクがマッチング対象になります。',
 			'matching.referee_blocked_dates.title' => 'ブロック日',
 			'matching.referee_blocked_dates.no_dates' => 'ブロック日が設定されていません',
 			'matching.referee_blocked_dates.add_date' => 'ブロック日を追加',
