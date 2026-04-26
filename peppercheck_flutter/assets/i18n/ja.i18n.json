@@ -1,6 +1,7 @@
 {
   "login": {
-    "title": "PEPPERCHECK"
+    "title": "PEPPERCHECK",
+    "aboutLink": "PepperCheckとは？"
   },
   "home": {
     "title": "Home",
@@ -54,6 +55,7 @@
     "cancel": "キャンセル",
     "confirm": "確認",
     "save": "保存",
+    "close": "閉じる",
     "days": {
       "sunday": "日曜日",
       "monday": "月曜日",
@@ -110,7 +112,31 @@
     "payoutStatusSuccess": "成功",
     "payoutStatusPending": "保留中",
     "payoutStatusFailed": "失敗",
-    "payoutStatusSkipped": "スキップ"
+    "payoutStatusSkipped": "スキップ",
+    "availablePointsHelp": {
+      "title": "利用可能ポイントとは？",
+      "body": "タスク作成に使えるポイント残高です。\nサブスクリプションに加入すると毎月付与されます。"
+    },
+    "lockedPointsHelp": {
+      "title": "ロック中ポイントとは？",
+      "body": "進行中のタスクで仮押さえされているポイントです。\nタスクの結果に応じて、消費または返却されます。"
+    },
+    "trialPointsHelp": {
+      "title": "トライアルポイントとは？",
+      "body": "初めての方が無料でPepperCheckを試せるポイントです。\nタスク作成に使うと、他のユーザーのレフリーを無料で1回務める「レフリー義務」が発生します。"
+    },
+    "pendingObligationsHelp": {
+      "title": "レフリー義務とは？",
+      "body": "トライアルポイントでタスクを作成した代わりに、他のユーザーのレフリーを無料で担当する義務です。\n義務を履行することで、サービスの公平性を保っています。"
+    },
+    "rewardBalanceHelp": {
+      "title": "報酬残高とは？",
+      "body": "レフリーとして獲得した未出金の報酬残高です。\n決済プラットフォームStripeを通じて指定した銀行口座に出金されます。"
+    },
+    "totalEarnedHelp": {
+      "title": "累計受取額とは？",
+      "body": "これまでにレフリー業務で獲得した報酬の累計額です。"
+    }
   },
   "task": {
     "status": {
@@ -247,7 +273,8 @@
     "title": "お問い合わせ",
     "termsOfService": "利用規約",
     "privacyPolicy": "プライバシーポリシー",
-    "contactUs": "お問い合わせ"
+    "contactUs": "お問い合わせ",
+    "aboutPeppercheck": "PepperCheckについて"
   },
   "matching": {
     "referee_availability": {
@@ -258,7 +285,11 @@
       "dialog_start_time": "開始時間",
       "dialog_end_time": "終了時間",
       "dialog_dow": "曜日",
-      "invalid_time_range": "終了時間は開始時間より後である必要があります"
+      "invalid_time_range": "終了時間は開始時間より後である必要があります",
+      "help": {
+        "title": "受付可能時間とは？",
+        "body": "レフリーとしてタスクを担当できる曜日・時間帯です。\nこの時間内に締切が設定されたタスクがマッチング対象になります。"
+      }
     },
     "referee_blocked_dates": {
       "title": "ブロック日",
@@ -271,7 +302,11 @@
       "reason": "理由（任意）",
       "reason_hint": "理由を入力してください",
       "select_date_range": "日付範囲を選択",
-      "invalid_date_range": "終了日は開始日以降である必要があります"
+      "invalid_date_range": "終了日は開始日以降である必要があります",
+      "help": {
+        "title": "ブロック日とは？",
+        "body": "レフリー業務を一時的に停止したい日を指定できます。\nブロック日と重なるタスクは、受付可能時間内であってもマッチング対象から外れます。"
+      }
     }
   },
   "notification": {
@@ -343,5 +378,27 @@
       "payoutFailedDescription": "未払いの報酬 ¥$amount を受け取れませんでした。報酬を放棄してアカウントを削除しますか？",
       "deletedSnackbar": "アカウントが削除されました"
     }
+  },
+  "appExplanation": {
+    "sheetTitle": "PepperCheckとは",
+    "sections": {
+      "concept": {
+        "title": "目標達成のモチベーションをサポート",
+        "body": "自分との約束は破ってしまいがち。\nPepperCheckは、達成したいタスクを第三者のレフリーに確認してもらうことで、「対人関係から生ずる責任感」を目標達成のエネルギーに変えるアプリです。"
+      },
+      "flow": {
+        "title": "タスク完了までのフロー",
+        "body": "達成基準と締切を決めてタスクを作成します。\nシステムが自動でタスクとレフリーをマッチングします。\nレフリーは提出されたエビデンスをもとに、タスクが達成されたかどうかを判定します。"
+      },
+      "points": {
+        "title": "ポイントでタスクを作成",
+        "body": "タスク作成にはポイントが必要です。\nサブスクリプションに加入すると毎月ポイントが付与されます。\nポイント代金の一部がレフリーへの報酬となります。\n初めての方はトライアルポイントで無料で試せます。"
+      },
+      "referee": {
+        "title": "レフリーをして、報酬を獲得",
+        "body": "あなた自身も他のユーザーのレフリーを担当できます。\n受付可能時間を設定するとマッチング対象になり、判定を完了するごとに報酬が貯まっていきます。\n貯まった報酬は決済プラットフォームStripeを通じて指定した銀行口座に出金されます。"
+      }
+    },
+    "learnMore": "詳しくは peppercheck.dev で"
   }
 }

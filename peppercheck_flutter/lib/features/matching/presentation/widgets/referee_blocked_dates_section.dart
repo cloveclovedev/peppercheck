@@ -4,6 +4,7 @@ import 'package:peppercheck_flutter/app/theme/app_colors.dart';
 import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
 import 'package:peppercheck_flutter/common_widgets/action_button.dart';
 import 'package:peppercheck_flutter/common_widgets/base_section.dart';
+import 'package:peppercheck_flutter/common_widgets/help_icon_button.dart';
 import 'package:peppercheck_flutter/features/matching/presentation/controllers/referee_blocked_dates_controller.dart';
 import 'package:peppercheck_flutter/features/matching/presentation/widgets/blocked_date_card.dart';
 import 'package:peppercheck_flutter/features/matching/presentation/widgets/blocked_date_dialog.dart';
@@ -18,6 +19,10 @@ class RefereeBlockedDatesSection extends ConsumerWidget {
 
     return BaseSection(
       title: t.matching.referee_blocked_dates.title,
+      trailing: HelpIconButton(
+        title: t.matching.referee_blocked_dates.help.title,
+        body: t.matching.referee_blocked_dates.help.body,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

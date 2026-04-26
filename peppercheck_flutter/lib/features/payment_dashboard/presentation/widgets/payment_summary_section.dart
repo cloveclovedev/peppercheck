@@ -7,6 +7,7 @@ import 'package:peppercheck_flutter/app/theme/app_colors.dart';
 import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
 import 'package:peppercheck_flutter/common_widgets/base_card.dart';
 import 'package:peppercheck_flutter/common_widgets/base_section.dart';
+import 'package:peppercheck_flutter/common_widgets/help_icon_button.dart';
 import 'package:peppercheck_flutter/features/payment_dashboard/domain/payment_summary.dart';
 import 'package:peppercheck_flutter/features/payment_dashboard/presentation/payment_summary_controller.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
@@ -61,12 +62,24 @@ class _SummaryContent extends StatelessWidget {
                 ),
                 const SizedBox(width: AppSizes.baseCardIconGap),
                 Expanded(
-                  child: Text(
-                    t.dashboard.pendingObligationsLabel,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.textPrimary,
-                    ),
+                  child: Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          t.dashboard.pendingObligationsLabel,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.textPrimary,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: AppSizes.spacingTiny),
+                      HelpIconButton(
+                        title: t.dashboard.pendingObligationsHelp.title,
+                        body: t.dashboard.pendingObligationsHelp.body,
+                      ),
+                    ],
                   ),
                 ),
                 Text(
@@ -101,7 +114,20 @@ class _SummaryContent extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _CardLabel(label: t.dashboard.rewardBalance),
+                            Row(
+                              children: [
+                                Flexible(
+                                  child: _CardLabel(
+                                    label: t.dashboard.rewardBalance,
+                                  ),
+                                ),
+                                const SizedBox(width: AppSizes.spacingTiny),
+                                HelpIconButton(
+                                  title: t.dashboard.rewardBalanceHelp.title,
+                                  body: t.dashboard.rewardBalanceHelp.body,
+                                ),
+                              ],
+                            ),
                             const SizedBox(height: 4),
                             _CardValue(
                               value: _formatCurrency(
@@ -132,7 +158,20 @@ class _SummaryContent extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _CardLabel(label: t.dashboard.totalEarned),
+                            Row(
+                              children: [
+                                Flexible(
+                                  child: _CardLabel(
+                                    label: t.dashboard.totalEarned,
+                                  ),
+                                ),
+                                const SizedBox(width: AppSizes.spacingTiny),
+                                HelpIconButton(
+                                  title: t.dashboard.totalEarnedHelp.title,
+                                  body: t.dashboard.totalEarnedHelp.body,
+                                ),
+                              ],
+                            ),
                             const SizedBox(height: 4),
                             _CardValue(
                               value: summary.totalEarnedCurrency != null
@@ -214,12 +253,24 @@ class _SummaryContent extends StatelessWidget {
               ),
               const SizedBox(width: AppSizes.baseCardIconGap),
               Expanded(
-                child: Text(
-                  t.dashboard.availablePoints,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textPrimary,
-                  ),
+                child: Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        t.dashboard.availablePoints,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textPrimary,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: AppSizes.spacingTiny),
+                    HelpIconButton(
+                      title: t.dashboard.availablePointsHelp.title,
+                      body: t.dashboard.availablePointsHelp.body,
+                    ),
+                  ],
                 ),
               ),
               Text(
@@ -237,12 +288,25 @@ class _SummaryContent extends StatelessWidget {
               padding: EdgeInsets.only(
                 left: AppSizes.baseCardIconSize + AppSizes.baseCardIconGap,
               ),
-              child: Text(
-                '${t.dashboard.lockedPoints}: ${summary.points.locked} pt',
-                style: const TextStyle(
-                  color: AppColors.textMuted,
-                  fontSize: 11,
-                ),
+              child: Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      '${t.dashboard.lockedPoints}: ${summary.points.locked} pt',
+                      style: const TextStyle(
+                        color: AppColors.textMuted,
+                        fontSize: 11,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: AppSizes.spacingTiny),
+                  HelpIconButton(
+                    title: t.dashboard.lockedPointsHelp.title,
+                    body: t.dashboard.lockedPointsHelp.body,
+                    iconSize: 14,
+                  ),
+                ],
               ),
             ),
           ],
@@ -263,12 +327,24 @@ class _SummaryContent extends StatelessWidget {
           ),
           const SizedBox(width: AppSizes.baseCardIconGap),
           Expanded(
-            child: Text(
-              t.dashboard.trialPoints,
-              style: const TextStyle(
-                fontWeight: FontWeight.w500,
-                color: AppColors.textPrimary,
-              ),
+            child: Row(
+              children: [
+                Flexible(
+                  child: Text(
+                    t.dashboard.trialPoints,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textPrimary,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: AppSizes.spacingTiny),
+                HelpIconButton(
+                  title: t.dashboard.trialPointsHelp.title,
+                  body: t.dashboard.trialPointsHelp.body,
+                ),
+              ],
             ),
           ),
           Text(
@@ -322,6 +398,8 @@ class _CardLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       label,
+      overflow: TextOverflow.ellipsis,
+      maxLines: 1,
       style: Theme.of(
         context,
       ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
