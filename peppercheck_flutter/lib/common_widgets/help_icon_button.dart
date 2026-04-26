@@ -9,24 +9,31 @@ import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 /// Sized to fit within an existing title/label row without inflating its
 /// height. Uses [GestureDetector] (not [IconButton]) to avoid Material's
 /// default 48×48 padding which would push the host row taller.
+///
+/// Pass [iconSize] to scale the glyph for smaller adjacent text (e.g. 12px
+/// to sit next to a font-11 muted sub-label).
 class HelpIconButton extends StatelessWidget {
   final String title;
   final String body;
+  final double iconSize;
 
-  const HelpIconButton({super.key, required this.title, required this.body});
-
-  static const double _iconSize = 16.0;
+  const HelpIconButton({
+    super.key,
+    required this.title,
+    required this.body,
+    this.iconSize = 16.0,
+  });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => _showHelp(context),
-      child: const Padding(
-        padding: EdgeInsets.all(AppSizes.spacingMicro),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSizes.spacingMicro),
         child: Icon(
           Icons.help_outline,
-          size: _iconSize,
+          size: iconSize,
           color: AppColors.textMuted,
         ),
       ),
