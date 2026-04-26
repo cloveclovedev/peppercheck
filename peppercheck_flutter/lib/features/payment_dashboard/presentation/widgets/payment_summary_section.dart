@@ -397,6 +397,8 @@ class _CardLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       label,
+      overflow: TextOverflow.ellipsis,
+      maxLines: 1,
       style: Theme.of(
         context,
       ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
