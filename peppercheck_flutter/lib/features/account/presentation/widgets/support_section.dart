@@ -3,6 +3,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:peppercheck_flutter/app/theme/app_colors.dart';
 import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
 import 'package:peppercheck_flutter/common_widgets/base_section.dart';
+import 'package:peppercheck_flutter/features/about/presentation/app_explanation_bottom_sheet.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -15,6 +16,11 @@ class SupportSection extends StatelessWidget {
       title: t.support.title,
       child: Column(
         children: [
+          _LinkTile(
+            title: t.support.aboutPeppercheck,
+            onTap: () => showAppExplanationBottomSheet(context),
+          ),
+          const SizedBox(height: AppSizes.spacingSmall),
           _LinkTile(
             title: t.support.termsOfService,
             onTap: () => _launchLegalPage('terms'),
