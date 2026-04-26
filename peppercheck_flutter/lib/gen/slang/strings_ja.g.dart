@@ -54,6 +54,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final TranslationsMatchingJa matching = TranslationsMatchingJa.internal(_root);
 	late final TranslationsNotificationJa notification = TranslationsNotificationJa.internal(_root);
 	late final TranslationsAccountJa account = TranslationsAccountJa.internal(_root);
+	late final TranslationsAppExplanationJa appExplanation = TranslationsAppExplanationJa.internal(_root);
 }
 
 // Path: login
@@ -66,6 +67,9 @@ class TranslationsLoginJa {
 
 	/// ja: 'PEPPERCHECK'
 	String get title => 'PEPPERCHECK';
+
+	/// ja: 'PepperCheckとは？'
+	String get aboutLink => 'PepperCheckとは？';
 }
 
 // Path: home
@@ -215,6 +219,9 @@ class TranslationsCommonJa {
 
 	/// ja: '保存'
 	String get save => '保存';
+
+	/// ja: '閉じる'
+	String get close => '閉じる';
 
 	late final TranslationsCommonDaysJa days = TranslationsCommonDaysJa.internal(_root);
 
@@ -367,6 +374,13 @@ class TranslationsDashboardJa {
 
 	/// ja: 'スキップ'
 	String get payoutStatusSkipped => 'スキップ';
+
+	late final TranslationsDashboardAvailablePointsHelpJa availablePointsHelp = TranslationsDashboardAvailablePointsHelpJa.internal(_root);
+	late final TranslationsDashboardLockedPointsHelpJa lockedPointsHelp = TranslationsDashboardLockedPointsHelpJa.internal(_root);
+	late final TranslationsDashboardTrialPointsHelpJa trialPointsHelp = TranslationsDashboardTrialPointsHelpJa.internal(_root);
+	late final TranslationsDashboardPendingObligationsHelpJa pendingObligationsHelp = TranslationsDashboardPendingObligationsHelpJa.internal(_root);
+	late final TranslationsDashboardRewardBalanceHelpJa rewardBalanceHelp = TranslationsDashboardRewardBalanceHelpJa.internal(_root);
+	late final TranslationsDashboardTotalEarnedHelpJa totalEarnedHelp = TranslationsDashboardTotalEarnedHelpJa.internal(_root);
 }
 
 // Path: task
@@ -454,6 +468,9 @@ class TranslationsSupportJa {
 
 	/// ja: 'お問い合わせ'
 	String get contactUs => 'お問い合わせ';
+
+	/// ja: 'PepperCheckについて'
+	String get aboutPeppercheck => 'PepperCheckについて';
 }
 
 // Path: matching
@@ -624,6 +641,23 @@ class TranslationsAccountJa {
 	late final TranslationsAccountActionsJa actions = TranslationsAccountActionsJa.internal(_root);
 }
 
+// Path: appExplanation
+class TranslationsAppExplanationJa {
+	TranslationsAppExplanationJa.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// ja: 'PepperCheckとは'
+	String get sheetTitle => 'PepperCheckとは';
+
+	late final TranslationsAppExplanationSectionsJa sections = TranslationsAppExplanationSectionsJa.internal(_root);
+
+	/// ja: '詳しくは peppercheck.dev で'
+	String get learnMore => '詳しくは peppercheck.dev で';
+}
+
 // Path: billing.plans
 class TranslationsBillingPlansJa {
 	TranslationsBillingPlansJa.internal(this._root);
@@ -679,6 +713,96 @@ class TranslationsCommonDaysJa {
 
 	/// ja: '土曜日'
 	String get saturday => '土曜日';
+}
+
+// Path: dashboard.availablePointsHelp
+class TranslationsDashboardAvailablePointsHelpJa {
+	TranslationsDashboardAvailablePointsHelpJa.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// ja: '利用可能ポイントとは？'
+	String get title => '利用可能ポイントとは？';
+
+	/// ja: 'タスク作成に使えるポイント残高です。サブスクリプションに加入すると毎月付与されます。'
+	String get body => 'タスク作成に使えるポイント残高です。サブスクリプションに加入すると毎月付与されます。';
+}
+
+// Path: dashboard.lockedPointsHelp
+class TranslationsDashboardLockedPointsHelpJa {
+	TranslationsDashboardLockedPointsHelpJa.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// ja: 'ロック中ポイントとは？'
+	String get title => 'ロック中ポイントとは？';
+
+	/// ja: '進行中のタスクで仮押さえされているポイントです。タスクの結果に応じて、消費または返却されます。'
+	String get body => '進行中のタスクで仮押さえされているポイントです。タスクの結果に応じて、消費または返却されます。';
+}
+
+// Path: dashboard.trialPointsHelp
+class TranslationsDashboardTrialPointsHelpJa {
+	TranslationsDashboardTrialPointsHelpJa.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// ja: 'トライアルポイントとは？'
+	String get title => 'トライアルポイントとは？';
+
+	/// ja: '初めての方が無料でPepperCheckを試せるポイントです。タスク作成に使うと、他のユーザーのレフリーを無料で1回務める「レフリー義務」が発生します。'
+	String get body => '初めての方が無料でPepperCheckを試せるポイントです。タスク作成に使うと、他のユーザーのレフリーを無料で1回務める「レフリー義務」が発生します。';
+}
+
+// Path: dashboard.pendingObligationsHelp
+class TranslationsDashboardPendingObligationsHelpJa {
+	TranslationsDashboardPendingObligationsHelpJa.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// ja: 'レフリー義務とは？'
+	String get title => 'レフリー義務とは？';
+
+	/// ja: 'トライアルポイントでタスクを作成した代わりに、他のユーザーのレフリーを無料で担当する義務です。義務を履行することで、サービスの公平性を保っています。'
+	String get body => 'トライアルポイントでタスクを作成した代わりに、他のユーザーのレフリーを無料で担当する義務です。義務を履行することで、サービスの公平性を保っています。';
+}
+
+// Path: dashboard.rewardBalanceHelp
+class TranslationsDashboardRewardBalanceHelpJa {
+	TranslationsDashboardRewardBalanceHelpJa.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// ja: '報酬残高とは？'
+	String get title => '報酬残高とは？';
+
+	/// ja: 'レフリーとして獲得した未出金の報酬残高です。決済プラットフォームStripeを通じて指定した銀行口座に出金されます。'
+	String get body => 'レフリーとして獲得した未出金の報酬残高です。決済プラットフォームStripeを通じて指定した銀行口座に出金されます。';
+}
+
+// Path: dashboard.totalEarnedHelp
+class TranslationsDashboardTotalEarnedHelpJa {
+	TranslationsDashboardTotalEarnedHelpJa.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// ja: '累計受取額とは？'
+	String get title => '累計受取額とは？';
+
+	/// ja: 'これまでにレフリー業務で獲得した報酬の累計額です。'
+	String get body => 'これまでにレフリー業務で獲得した報酬の累計額です。';
 }
 
 // Path: task.status
@@ -956,6 +1080,8 @@ class TranslationsMatchingRefereeAvailabilityJa {
 
 	/// ja: '終了時間は開始時間より後である必要があります'
 	String get invalid_time_range => '終了時間は開始時間より後である必要があります';
+
+	late final TranslationsMatchingRefereeAvailabilityHelpJa help = TranslationsMatchingRefereeAvailabilityHelpJa.internal(_root);
 }
 
 // Path: matching.referee_blocked_dates
@@ -998,6 +1124,8 @@ class TranslationsMatchingRefereeBlockedDatesJa {
 
 	/// ja: '終了日は開始日以降である必要があります'
 	String get invalid_date_range => '終了日は開始日以降である必要があります';
+
+	late final TranslationsMatchingRefereeBlockedDatesHelpJa help = TranslationsMatchingRefereeBlockedDatesHelpJa.internal(_root);
 }
 
 // Path: account.actions
@@ -1061,6 +1189,19 @@ class TranslationsAccountActionsJa {
 
 	/// ja: 'アカウントが削除されました'
 	String get deletedSnackbar => 'アカウントが削除されました';
+}
+
+// Path: appExplanation.sections
+class TranslationsAppExplanationSectionsJa {
+	TranslationsAppExplanationSectionsJa.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+	late final TranslationsAppExplanationSectionsConceptJa concept = TranslationsAppExplanationSectionsConceptJa.internal(_root);
+	late final TranslationsAppExplanationSectionsFlowJa flow = TranslationsAppExplanationSectionsFlowJa.internal(_root);
+	late final TranslationsAppExplanationSectionsPointsJa points = TranslationsAppExplanationSectionsPointsJa.internal(_root);
+	late final TranslationsAppExplanationSectionsRefereeJa referee = TranslationsAppExplanationSectionsRefereeJa.internal(_root);
 }
 
 // Path: task.detail.cancelAssignment
@@ -1213,6 +1354,96 @@ class TranslationsTaskJudgementReviewTimeoutJa {
 	String get success => '確認しました';
 }
 
+// Path: matching.referee_availability.help
+class TranslationsMatchingRefereeAvailabilityHelpJa {
+	TranslationsMatchingRefereeAvailabilityHelpJa.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// ja: '受付可能時間とは？'
+	String get title => '受付可能時間とは？';
+
+	/// ja: 'レフリーとしてタスクを担当できる曜日・時間帯です。この時間が締切のタスクがマッチング対象になります。'
+	String get body => 'レフリーとしてタスクを担当できる曜日・時間帯です。この時間が締切のタスクがマッチング対象になります。';
+}
+
+// Path: matching.referee_blocked_dates.help
+class TranslationsMatchingRefereeBlockedDatesHelpJa {
+	TranslationsMatchingRefereeBlockedDatesHelpJa.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// ja: 'ブロック日とは？'
+	String get title => 'ブロック日とは？';
+
+	/// ja: 'レフリー業務を一時的に停止したい日を指定できます。ブロック日と重なるタスクは、受付可能時間内であってもマッチング対象から外れます。'
+	String get body => 'レフリー業務を一時的に停止したい日を指定できます。ブロック日と重なるタスクは、受付可能時間内であってもマッチング対象から外れます。';
+}
+
+// Path: appExplanation.sections.concept
+class TranslationsAppExplanationSectionsConceptJa {
+	TranslationsAppExplanationSectionsConceptJa.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// ja: '社会的責任感を、目標達成の力に'
+	String get title => '社会的責任感を、目標達成の力に';
+
+	/// ja: '自分との約束は破ってしまいがち。PepperCheckは、達成したいタスクを第三者のレフリーに確認してもらうことで、その「社会的責任感」を目標達成のエネルギーに変えるアプリです。'
+	String get body => '自分との約束は破ってしまいがち。PepperCheckは、達成したいタスクを第三者のレフリーに確認してもらうことで、その「社会的責任感」を目標達成のエネルギーに変えるアプリです。';
+}
+
+// Path: appExplanation.sections.flow
+class TranslationsAppExplanationSectionsFlowJa {
+	TranslationsAppExplanationSectionsFlowJa.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// ja: 'タスク完了までのフロー'
+	String get title => 'タスク完了までのフロー';
+
+	/// ja: '達成基準と締切を決めてタスクを作成します。システムが自動でレフリーをマッチングし、レフリーは提出されたエビデンスをもとに、タスクが達成されたかどうかを判定します。'
+	String get body => '達成基準と締切を決めてタスクを作成します。システムが自動でレフリーをマッチングし、レフリーは提出されたエビデンスをもとに、タスクが達成されたかどうかを判定します。';
+}
+
+// Path: appExplanation.sections.points
+class TranslationsAppExplanationSectionsPointsJa {
+	TranslationsAppExplanationSectionsPointsJa.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// ja: 'ポイントでタスクを作成'
+	String get title => 'ポイントでタスクを作成';
+
+	/// ja: 'タスク作成にはポイントが必要で、サブスクリプションに加入すると毎月ポイントが付与されます。初めての方はトライアルポイントで無料で試せます。'
+	String get body => 'タスク作成にはポイントが必要で、サブスクリプションに加入すると毎月ポイントが付与されます。初めての方はトライアルポイントで無料で試せます。';
+}
+
+// Path: appExplanation.sections.referee
+class TranslationsAppExplanationSectionsRefereeJa {
+	TranslationsAppExplanationSectionsRefereeJa.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// ja: 'レフリーをして、報酬を獲得'
+	String get title => 'レフリーをして、報酬を獲得';
+
+	/// ja: 'あなた自身も他のユーザーのレフリーを担当できます。受付可能時間を設定するとマッチング対象になり、判定を完了するごとに報酬が貯まっていきます。貯まった報酬は決済プラットフォームStripeを通じて指定した銀行口座に出金されます。'
+	String get body => 'あなた自身も他のユーザーのレフリーを担当できます。受付可能時間を設定するとマッチング対象になり、判定を完了するごとに報酬が貯まっていきます。貯まった報酬は決済プラットフォームStripeを通じて指定した銀行口座に出金されます。';
+}
+
 /// The flat map containing all translations for locale <ja>.
 /// Only for edge cases! For simple maps, use the map function of this library.
 ///
@@ -1222,6 +1453,7 @@ extension on Translations {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
 			'login.title' => 'PEPPERCHECK',
+			'login.aboutLink' => 'PepperCheckとは？',
 			'home.title' => 'Home',
 			'home.myTasks' => '自分のタスク',
 			'home.refereeTasks' => '判定依頼',
@@ -1265,6 +1497,7 @@ extension on Translations {
 			'common.cancel' => 'キャンセル',
 			'common.confirm' => '確認',
 			'common.save' => '保存',
+			'common.close' => '閉じる',
 			'common.days.sunday' => '日曜日',
 			'common.days.monday' => '月曜日',
 			'common.days.tuesday' => '火曜日',
@@ -1316,6 +1549,18 @@ extension on Translations {
 			'dashboard.payoutStatusPending' => '保留中',
 			'dashboard.payoutStatusFailed' => '失敗',
 			'dashboard.payoutStatusSkipped' => 'スキップ',
+			'dashboard.availablePointsHelp.title' => '利用可能ポイントとは？',
+			'dashboard.availablePointsHelp.body' => 'タスク作成に使えるポイント残高です。サブスクリプションに加入すると毎月付与されます。',
+			'dashboard.lockedPointsHelp.title' => 'ロック中ポイントとは？',
+			'dashboard.lockedPointsHelp.body' => '進行中のタスクで仮押さえされているポイントです。タスクの結果に応じて、消費または返却されます。',
+			'dashboard.trialPointsHelp.title' => 'トライアルポイントとは？',
+			'dashboard.trialPointsHelp.body' => '初めての方が無料でPepperCheckを試せるポイントです。タスク作成に使うと、他のユーザーのレフリーを無料で1回務める「レフリー義務」が発生します。',
+			'dashboard.pendingObligationsHelp.title' => 'レフリー義務とは？',
+			'dashboard.pendingObligationsHelp.body' => 'トライアルポイントでタスクを作成した代わりに、他のユーザーのレフリーを無料で担当する義務です。義務を履行することで、サービスの公平性を保っています。',
+			'dashboard.rewardBalanceHelp.title' => '報酬残高とは？',
+			'dashboard.rewardBalanceHelp.body' => 'レフリーとして獲得した未出金の報酬残高です。決済プラットフォームStripeを通じて指定した銀行口座に出金されます。',
+			'dashboard.totalEarnedHelp.title' => '累計受取額とは？',
+			'dashboard.totalEarnedHelp.body' => 'これまでにレフリー業務で獲得した報酬の累計額です。',
 			'task.status.draft' => '下書き',
 			'task.status.open' => 'マッチング開始',
 			'task.status.matching' => 'マッチング中',
@@ -1419,6 +1664,7 @@ extension on Translations {
 			'support.termsOfService' => '利用規約',
 			'support.privacyPolicy' => 'プライバシーポリシー',
 			'support.contactUs' => 'お問い合わせ',
+			'support.aboutPeppercheck' => 'PepperCheckについて',
 			'matching.referee_availability.title' => '受付可能時間',
 			'matching.referee_availability.no_slots' => '受付可能時間が設定されていません',
 			'matching.referee_availability.add_slot' => '受付時間を追加',
@@ -1427,6 +1673,8 @@ extension on Translations {
 			'matching.referee_availability.dialog_end_time' => '終了時間',
 			'matching.referee_availability.dialog_dow' => '曜日',
 			'matching.referee_availability.invalid_time_range' => '終了時間は開始時間より後である必要があります',
+			'matching.referee_availability.help.title' => '受付可能時間とは？',
+			'matching.referee_availability.help.body' => 'レフリーとしてタスクを担当できる曜日・時間帯です。この時間が締切のタスクがマッチング対象になります。',
 			'matching.referee_blocked_dates.title' => 'ブロック日',
 			'matching.referee_blocked_dates.no_dates' => 'ブロック日が設定されていません',
 			'matching.referee_blocked_dates.add_date' => 'ブロック日を追加',
@@ -1438,6 +1686,8 @@ extension on Translations {
 			'matching.referee_blocked_dates.reason_hint' => '理由を入力してください',
 			'matching.referee_blocked_dates.select_date_range' => '日付範囲を選択',
 			'matching.referee_blocked_dates.invalid_date_range' => '終了日は開始日以降である必要があります',
+			'matching.referee_blocked_dates.help.title' => 'ブロック日とは？',
+			'matching.referee_blocked_dates.help.body' => 'レフリー業務を一時的に停止したい日を指定できます。ブロック日と重なるタスクは、受付可能時間内であってもマッチング対象から外れます。',
 			'notification.request_matched_tasker_title' => 'マッチング成立！',
 			'notification.request_matched_tasker_body' => ({required Object taskTitle}) => '「${taskTitle}」のレフリーが見つかりました！',
 			'notification.task_assigned_referee_title' => '新しい担当タスクが届きました！',
@@ -1502,6 +1752,16 @@ extension on Translations {
 			'account.actions.payoutFailedTitle' => '報酬の振り込みに失敗しました',
 			'account.actions.payoutFailedDescription' => ({required Object amount}) => '未払いの報酬 ¥${amount} を受け取れませんでした。報酬を放棄してアカウントを削除しますか？',
 			'account.actions.deletedSnackbar' => 'アカウントが削除されました',
+			'appExplanation.sheetTitle' => 'PepperCheckとは',
+			'appExplanation.sections.concept.title' => '社会的責任感を、目標達成の力に',
+			'appExplanation.sections.concept.body' => '自分との約束は破ってしまいがち。PepperCheckは、達成したいタスクを第三者のレフリーに確認してもらうことで、その「社会的責任感」を目標達成のエネルギーに変えるアプリです。',
+			'appExplanation.sections.flow.title' => 'タスク完了までのフロー',
+			'appExplanation.sections.flow.body' => '達成基準と締切を決めてタスクを作成します。システムが自動でレフリーをマッチングし、レフリーは提出されたエビデンスをもとに、タスクが達成されたかどうかを判定します。',
+			'appExplanation.sections.points.title' => 'ポイントでタスクを作成',
+			'appExplanation.sections.points.body' => 'タスク作成にはポイントが必要で、サブスクリプションに加入すると毎月ポイントが付与されます。初めての方はトライアルポイントで無料で試せます。',
+			'appExplanation.sections.referee.title' => 'レフリーをして、報酬を獲得',
+			'appExplanation.sections.referee.body' => 'あなた自身も他のユーザーのレフリーを担当できます。受付可能時間を設定するとマッチング対象になり、判定を完了するごとに報酬が貯まっていきます。貯まった報酬は決済プラットフォームStripeを通じて指定した銀行口座に出金されます。',
+			'appExplanation.learnMore' => '詳しくは peppercheck.dev で',
 			_ => null,
 		};
 	}
