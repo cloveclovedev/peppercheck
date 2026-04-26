@@ -114,7 +114,15 @@ class BaseSection extends StatelessWidget {
 }
 ```
 
-When `trailing` is non-null, the title row is rendered as a `Row` with the title on the left and `trailing` aligned to the right, sharing the existing horizontal padding. When `trailing` is null, behavior is unchanged.
+When `trailing` is non-null, it is placed **adjacent to the title text** (not right-aligned to the section edge), separated by a small gap (`AppSizes.spacingTiny` or similar). Layout:
+
+```
+[title text] [gap] [trailing]
+```
+
+Adjacent placement makes the relationship between the title and the trailing widget visually clear (e.g., a `?` icon obviously belongs to the title it sits next to). Right-edge placement creates visual distance and ambiguity ("which label is this `?` for?"), so it is explicitly avoided.
+
+When `trailing` is null, behavior is unchanged.
 
 The trailing widget must not increase the title row's height — it's expected to fit within the existing row bounds (see HelpIconButton sizing constraint below). The title's vertical baseline and the section's overall height stay unchanged.
 
@@ -142,7 +150,7 @@ The `?` icon's introduction must NOT cause the host section/card to grow in any 
 - **Icon glyph size**: ~16px (small) — at most as tall as the title text it sits next to. Never larger than the existing title's cap height + a small margin.
 - **Tap target**: a minimum touch area is provided via the padded hit area, but the **entire icon + hit area must fit within the existing title row's vertical bounds**. The host section/card's overall height stays unchanged compared to today.
 - **Do NOT use** Flutter's `IconButton` directly — its default 48×48 padding will inflate the row. Use a custom `GestureDetector` (or a tightly constrained `InkWell` with `BoxConstraints(minWidth: 0, minHeight: 0)`) so the visual size and the hit area are decoupled cleanly.
-- **Horizontal placement**: trailing-aligned in the title row. If horizontal space is tight, the tap area extends to the right edge of the row but does not push other content.
+- **Horizontal placement**: adjacent to the relevant title/label text (small gap, ~`AppSizes.spacingTiny`). Not aligned to the row's right edge — this preserves the visual association between the icon and the text it documents. Tap area can extend slightly beyond the visible icon for comfort but does not push neighboring content.
 
 This is a hard constraint: existing section/card dimensions are part of the design and must be preserved.
 
@@ -254,7 +262,7 @@ Two `?` icons via the new `BaseSection.trailing` slot:
 
 #### 6b. Payments screen — payment summary point cards
 
-Each summary point card receives a `?` icon. Payment cards are built on `BaseCard` (not `BaseSection`), so the icon is composed manually inside the card content — typically as a trailing element of the card's title/label row. Exact composition is decided per-card at implementation time within the existing card layout. Cards covered:
+Each summary point card receives a `?` icon. Payment cards are built on `BaseCard` (not `BaseSection`), so the icon is composed manually inside the card content. **Placement: adjacent to the card's label text, before the value** (e.g., `[icon] [label] [?] ... [value]`). Same adjacency principle as `BaseSection.trailing`: visual association with the label, no extra row growth. Cards covered:
 
 | Card | `?` content |
 |------|------------|
