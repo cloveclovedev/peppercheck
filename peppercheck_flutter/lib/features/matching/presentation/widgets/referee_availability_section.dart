@@ -4,6 +4,7 @@ import 'package:peppercheck_flutter/app/theme/app_colors.dart';
 import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
 import 'package:peppercheck_flutter/common_widgets/action_button.dart';
 import 'package:peppercheck_flutter/common_widgets/base_section.dart';
+import 'package:peppercheck_flutter/common_widgets/help_icon_button.dart';
 import 'package:peppercheck_flutter/features/matching/presentation/controllers/referee_availability_controller.dart';
 import 'package:peppercheck_flutter/features/matching/presentation/widgets/time_slot_card.dart';
 import 'package:peppercheck_flutter/features/matching/presentation/widgets/time_slot_dialog.dart';
@@ -18,6 +19,10 @@ class RefereeAvailabilitySection extends ConsumerWidget {
 
     return BaseSection(
       title: t.matching.referee_availability.title,
+      trailing: HelpIconButton(
+        title: t.matching.referee_availability.help.title,
+        body: t.matching.referee_availability.help.body,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
