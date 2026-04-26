@@ -28,7 +28,10 @@
     "plans": {
       "light": "ライトプラン",
       "standard": "スタンダードプラン",
-      "premium": "プレミアムプラン"
+      "premium": "プレミアムプラン",
+      "lightDescription": "5 pt / 月",
+      "standardDescription": "10 pt / 月",
+      "premiumDescription": "20 pt / 月"
     },
     "noPlan": "未加入",
     "trialSectionTitle": "お試し",

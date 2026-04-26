@@ -63,10 +63,7 @@ class _SummaryContent extends StatelessWidget {
                 Expanded(
                   child: Text(
                     t.dashboard.pendingObligationsLabel,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
+                    style: const TextStyle(color: AppColors.textPrimary),
                   ),
                 ),
                 Text(
@@ -216,10 +213,7 @@ class _SummaryContent extends StatelessWidget {
               Expanded(
                 child: Text(
                   t.dashboard.availablePoints,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
+                  style: const TextStyle(color: AppColors.textPrimary),
                 ),
               ),
               Text(
@@ -265,10 +259,7 @@ class _SummaryContent extends StatelessWidget {
           Expanded(
             child: Text(
               t.dashboard.trialPoints,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
+              style: const TextStyle(color: AppColors.textPrimary),
             ),
           ),
           Text(

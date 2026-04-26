@@ -7,14 +7,14 @@ import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
 /// Provides the visual shell (background, border, radius, padding, tap handling)
 /// while leaving content entirely to [child].
 ///
-/// Default style matches the app's standard card appearance (radius 12, border,
-/// backgroundLight). Override properties to match other card styles:
+/// Default style matches TaskCard (radius 12, no border, backgroundWhite).
+/// Override properties for other styles:
 ///
 /// ```dart
-/// // TaskCard-style (no border, white background):
+/// // Bordered card with warm background:
 /// BaseCard(
-///   borderColor: null,
-///   backgroundColor: AppColors.backgroundWhite,
+///   borderColor: AppColors.border,
+///   backgroundColor: AppColors.backgroundLight,
 ///   child: ...,
 /// )
 /// ```
@@ -33,7 +33,7 @@ class BaseCard extends StatelessWidget {
     super.key,
     required this.child,
     this.backgroundColor,
-    this.borderColor = AppColors.border,
+    this.borderColor,
     this.borderRadius = AppSizes.baseCardBorderRadius,
     this.padding = const EdgeInsets.symmetric(
       horizontal: AppSizes.baseCardPaddingHorizontal,
@@ -46,14 +46,14 @@ class BaseCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final decoration = BoxDecoration(
-      color: backgroundColor ?? AppColors.backgroundLight,
+      color: backgroundColor ?? AppColors.backgroundWhite,
       borderRadius: BorderRadius.circular(borderRadius),
       border: borderColor != null ? Border.all(color: borderColor!) : null,
     );
 
     if (onTap != null) {
       return Material(
-        color: backgroundColor ?? AppColors.backgroundLight,
+        color: backgroundColor ?? AppColors.backgroundWhite,
         borderRadius: BorderRadius.circular(borderRadius),
         child: InkWell(
           borderRadius: BorderRadius.circular(borderRadius),

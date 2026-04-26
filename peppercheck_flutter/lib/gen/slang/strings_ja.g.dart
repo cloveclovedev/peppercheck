@@ -640,6 +640,15 @@ class TranslationsBillingPlansJa {
 
 	/// ja: 'プレミアムプラン'
 	String get premium => 'プレミアムプラン';
+
+	/// ja: '5 pt / 月'
+	String get lightDescription => '5 pt / 月';
+
+	/// ja: '10 pt / 月'
+	String get standardDescription => '10 pt / 月';
+
+	/// ja: '20 pt / 月'
+	String get premiumDescription => '20 pt / 月';
 }
 
 // Path: common.days
@@ -1234,6 +1243,9 @@ extension on Translations {
 			'billing.plans.light' => 'ライトプラン',
 			'billing.plans.standard' => 'スタンダードプラン',
 			'billing.plans.premium' => 'プレミアムプラン',
+			'billing.plans.lightDescription' => '5 pt / 月',
+			'billing.plans.standardDescription' => '10 pt / 月',
+			'billing.plans.premiumDescription' => '20 pt / 月',
 			'billing.noPlan' => '未加入',
 			'billing.trialSectionTitle' => 'お試し',
 			'billing.trialPoints' => ({required Object count}) => 'お試しポイント: 残り${count} pt',

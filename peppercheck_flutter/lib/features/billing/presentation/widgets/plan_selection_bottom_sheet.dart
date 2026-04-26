@@ -46,7 +46,9 @@ class _PlanSelectionSheet extends StatelessWidget {
 
     return Padding(
       padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
+        bottom:
+            MediaQuery.of(context).viewInsets.bottom +
+            MediaQuery.of(context).viewPadding.bottom,
       ),
       child: SingleChildScrollView(
         child: Padding(
@@ -137,12 +139,29 @@ class _PlanSelectionSheet extends StatelessWidget {
           ),
           const SizedBox(width: AppSizes.baseCardIconGap),
           Expanded(
-            child: Text(
-              planName(planId),
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: isCurrent ? AppColors.textMuted : AppColors.textPrimary,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  planName(planId),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: isCurrent
+                        ? AppColors.textMuted
+                        : AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  planDescription(planId),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isCurrent
+                        ? AppColors.textMuted
+                        : AppColors.textSecondary,
+                  ),
+                ),
+              ],
             ),
           ),
           if (isCurrent)

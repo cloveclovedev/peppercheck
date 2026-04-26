@@ -18,6 +18,16 @@ String planName(String planId) {
   };
 }
 
+/// Returns the i18n plan description for a given plan ID.
+String planDescription(String planId) {
+  return switch (planId) {
+    'light' => t.billing.plans.lightDescription,
+    'standard' => t.billing.plans.standardDescription,
+    'premium' => t.billing.plans.premiumDescription,
+    _ => '',
+  };
+}
+
 /// Returns the accent color for a given plan ID.
 Color planColor(String planId) {
   return switch (planId) {
