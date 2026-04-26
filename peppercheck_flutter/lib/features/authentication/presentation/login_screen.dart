@@ -3,11 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:peppercheck_flutter/features/authentication/presentation/authentication_controller.dart';
-import 'package:peppercheck_flutter/gen/assets.gen.dart';
 import 'package:peppercheck_flutter/app/theme/app_colors.dart';
 import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
 import 'package:peppercheck_flutter/common_widgets/app_background.dart';
+import 'package:peppercheck_flutter/features/about/presentation/app_explanation_bottom_sheet.dart';
+import 'package:peppercheck_flutter/features/authentication/presentation/authentication_controller.dart';
+import 'package:peppercheck_flutter/gen/assets.gen.dart';
 
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 
@@ -68,6 +69,24 @@ class LoginScreen extends ConsumerWidget {
                             Assets.images.androidNeutralRdCtn,
                             height: 50,
                           ),
+                  ),
+                  const SizedBox(height: AppSizes.spacingMedium),
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => showAppExplanationBottomSheet(context),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: AppSizes.spacingTiny,
+                      ),
+                      child: Text(
+                        t.login.aboutLink,
+                        style: const TextStyle(
+                          color: AppColors.textSecondary,
+                          decoration: TextDecoration.underline,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
                   ),
                   const Spacer(flex: 40),
                 ],
