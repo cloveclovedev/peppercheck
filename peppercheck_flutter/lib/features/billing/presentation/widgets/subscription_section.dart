@@ -123,7 +123,7 @@ class _SubscriptionStatusCard extends ConsumerWidget {
       NotSubscribed() => Text(
         t.billing.noPlan,
         style: const TextStyle(
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w500,
           color: AppColors.textPrimary,
         ),
       ),
@@ -137,7 +137,7 @@ class _SubscriptionStatusCard extends ConsumerWidget {
       ActiveSubscription(:final planId) => Text(
         planName(planId),
         style: const TextStyle(
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w500,
           color: AppColors.textPrimary,
         ),
       ),
