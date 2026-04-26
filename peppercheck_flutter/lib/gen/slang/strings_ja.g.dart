@@ -1410,8 +1410,8 @@ class TranslationsAppExplanationSectionsFlowJa {
 	/// ja: 'タスク完了までのフロー'
 	String get title => 'タスク完了までのフロー';
 
-	/// ja: '達成基準と締切を決めてタスクを作成します。 システムが自動でレフリーをマッチングし、レフリーは提出されたエビデンスをもとに、タスクが達成されたかどうかを判定します。'
-	String get body => '達成基準と締切を決めてタスクを作成します。\nシステムが自動でレフリーをマッチングし、レフリーは提出されたエビデンスをもとに、タスクが達成されたかどうかを判定します。';
+	/// ja: '達成基準と締切を決めてタスクを作成します。 システムが自動でタスクとレフリーをマッチングします。 レフリーは提出されたエビデンスをもとに、タスクが達成されたかどうかを判定します。'
+	String get body => '達成基準と締切を決めてタスクを作成します。\nシステムが自動でタスクとレフリーをマッチングします。\nレフリーは提出されたエビデンスをもとに、タスクが達成されたかどうかを判定します。';
 }
 
 // Path: appExplanation.sections.points
@@ -1756,7 +1756,7 @@ extension on Translations {
 			'appExplanation.sections.concept.title' => '目標達成のモチベーションをサポート',
 			'appExplanation.sections.concept.body' => '自分との約束は破ってしまいがち。\nPepperCheckは、達成したいタスクを第三者のレフリーに確認してもらうことで、「対人関係から生ずる責任感」を目標達成のエネルギーに変えるアプリです。',
 			'appExplanation.sections.flow.title' => 'タスク完了までのフロー',
-			'appExplanation.sections.flow.body' => '達成基準と締切を決めてタスクを作成します。\nシステムが自動でレフリーをマッチングし、レフリーは提出されたエビデンスをもとに、タスクが達成されたかどうかを判定します。',
+			'appExplanation.sections.flow.body' => '達成基準と締切を決めてタスクを作成します。\nシステムが自動でタスクとレフリーをマッチングします。\nレフリーは提出されたエビデンスをもとに、タスクが達成されたかどうかを判定します。',
 			'appExplanation.sections.points.title' => 'ポイントでタスクを作成',
 			'appExplanation.sections.points.body' => 'タスク作成にはポイントが必要です。\nサブスクリプションに加入すると毎月ポイントが付与されます。\n初めての方はトライアルポイントで無料で試せます。',
 			'appExplanation.sections.referee.title' => 'レフリーをして、報酬を獲得',
