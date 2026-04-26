@@ -726,8 +726,8 @@ class TranslationsDashboardAvailablePointsHelpJa {
 	/// ja: '利用可能ポイントとは？'
 	String get title => '利用可能ポイントとは？';
 
-	/// ja: 'タスク作成に使えるポイント残高です。サブスクリプションに加入すると毎月付与されます。'
-	String get body => 'タスク作成に使えるポイント残高です。サブスクリプションに加入すると毎月付与されます。';
+	/// ja: 'タスク作成に使えるポイント残高です。 サブスクリプションに加入すると毎月付与されます。'
+	String get body => 'タスク作成に使えるポイント残高です。\nサブスクリプションに加入すると毎月付与されます。';
 }
 
 // Path: dashboard.lockedPointsHelp
@@ -741,8 +741,8 @@ class TranslationsDashboardLockedPointsHelpJa {
 	/// ja: 'ロック中ポイントとは？'
 	String get title => 'ロック中ポイントとは？';
 
-	/// ja: '進行中のタスクで仮押さえされているポイントです。タスクの結果に応じて、消費または返却されます。'
-	String get body => '進行中のタスクで仮押さえされているポイントです。タスクの結果に応じて、消費または返却されます。';
+	/// ja: '進行中のタスクで仮押さえされているポイントです。 タスクの結果に応じて、消費または返却されます。'
+	String get body => '進行中のタスクで仮押さえされているポイントです。\nタスクの結果に応じて、消費または返却されます。';
 }
 
 // Path: dashboard.trialPointsHelp
@@ -756,8 +756,8 @@ class TranslationsDashboardTrialPointsHelpJa {
 	/// ja: 'トライアルポイントとは？'
 	String get title => 'トライアルポイントとは？';
 
-	/// ja: '初めての方が無料でPepperCheckを試せるポイントです。タスク作成に使うと、他のユーザーのレフリーを無料で1回務める「レフリー義務」が発生します。'
-	String get body => '初めての方が無料でPepperCheckを試せるポイントです。タスク作成に使うと、他のユーザーのレフリーを無料で1回務める「レフリー義務」が発生します。';
+	/// ja: '初めての方が無料でPepperCheckを試せるポイントです。 タスク作成に使うと、他のユーザーのレフリーを無料で1回務める「レフリー義務」が発生します。'
+	String get body => '初めての方が無料でPepperCheckを試せるポイントです。\nタスク作成に使うと、他のユーザーのレフリーを無料で1回務める「レフリー義務」が発生します。';
 }
 
 // Path: dashboard.pendingObligationsHelp
@@ -771,8 +771,8 @@ class TranslationsDashboardPendingObligationsHelpJa {
 	/// ja: 'レフリー義務とは？'
 	String get title => 'レフリー義務とは？';
 
-	/// ja: 'トライアルポイントでタスクを作成した代わりに、他のユーザーのレフリーを無料で担当する義務です。義務を履行することで、サービスの公平性を保っています。'
-	String get body => 'トライアルポイントでタスクを作成した代わりに、他のユーザーのレフリーを無料で担当する義務です。義務を履行することで、サービスの公平性を保っています。';
+	/// ja: 'トライアルポイントでタスクを作成した代わりに、他のユーザーのレフリーを無料で担当する義務です。 義務を履行することで、サービスの公平性を保っています。'
+	String get body => 'トライアルポイントでタスクを作成した代わりに、他のユーザーのレフリーを無料で担当する義務です。\n義務を履行することで、サービスの公平性を保っています。';
 }
 
 // Path: dashboard.rewardBalanceHelp
@@ -786,8 +786,8 @@ class TranslationsDashboardRewardBalanceHelpJa {
 	/// ja: '報酬残高とは？'
 	String get title => '報酬残高とは？';
 
-	/// ja: 'レフリーとして獲得した未出金の報酬残高です。決済プラットフォームStripeを通じて指定した銀行口座に出金されます。'
-	String get body => 'レフリーとして獲得した未出金の報酬残高です。決済プラットフォームStripeを通じて指定した銀行口座に出金されます。';
+	/// ja: 'レフリーとして獲得した未出金の報酬残高です。 決済プラットフォームStripeを通じて指定した銀行口座に出金されます。'
+	String get body => 'レフリーとして獲得した未出金の報酬残高です。\n決済プラットフォームStripeを通じて指定した銀行口座に出金されます。';
 }
 
 // Path: dashboard.totalEarnedHelp
@@ -1365,8 +1365,8 @@ class TranslationsMatchingRefereeAvailabilityHelpJa {
 	/// ja: '受付可能時間とは？'
 	String get title => '受付可能時間とは？';
 
-	/// ja: 'レフリーとしてタスクを担当できる曜日・時間帯です。この時間が締切のタスクがマッチング対象になります。'
-	String get body => 'レフリーとしてタスクを担当できる曜日・時間帯です。この時間が締切のタスクがマッチング対象になります。';
+	/// ja: 'レフリーとしてタスクを担当できる曜日・時間帯です。 この時間が締切のタスクがマッチング対象になります。'
+	String get body => 'レフリーとしてタスクを担当できる曜日・時間帯です。\nこの時間が締切のタスクがマッチング対象になります。';
 }
 
 // Path: matching.referee_blocked_dates.help
@@ -1380,8 +1380,8 @@ class TranslationsMatchingRefereeBlockedDatesHelpJa {
 	/// ja: 'ブロック日とは？'
 	String get title => 'ブロック日とは？';
 
-	/// ja: 'レフリー業務を一時的に停止したい日を指定できます。ブロック日と重なるタスクは、受付可能時間内であってもマッチング対象から外れます。'
-	String get body => 'レフリー業務を一時的に停止したい日を指定できます。ブロック日と重なるタスクは、受付可能時間内であってもマッチング対象から外れます。';
+	/// ja: 'レフリー業務を一時的に停止したい日を指定できます。 ブロック日と重なるタスクは、受付可能時間内であってもマッチング対象から外れます。'
+	String get body => 'レフリー業務を一時的に停止したい日を指定できます。\nブロック日と重なるタスクは、受付可能時間内であってもマッチング対象から外れます。';
 }
 
 // Path: appExplanation.sections.concept
@@ -1550,15 +1550,15 @@ extension on Translations {
 			'dashboard.payoutStatusFailed' => '失敗',
 			'dashboard.payoutStatusSkipped' => 'スキップ',
 			'dashboard.availablePointsHelp.title' => '利用可能ポイントとは？',
-			'dashboard.availablePointsHelp.body' => 'タスク作成に使えるポイント残高です。サブスクリプションに加入すると毎月付与されます。',
+			'dashboard.availablePointsHelp.body' => 'タスク作成に使えるポイント残高です。\nサブスクリプションに加入すると毎月付与されます。',
 			'dashboard.lockedPointsHelp.title' => 'ロック中ポイントとは？',
-			'dashboard.lockedPointsHelp.body' => '進行中のタスクで仮押さえされているポイントです。タスクの結果に応じて、消費または返却されます。',
+			'dashboard.lockedPointsHelp.body' => '進行中のタスクで仮押さえされているポイントです。\nタスクの結果に応じて、消費または返却されます。',
 			'dashboard.trialPointsHelp.title' => 'トライアルポイントとは？',
-			'dashboard.trialPointsHelp.body' => '初めての方が無料でPepperCheckを試せるポイントです。タスク作成に使うと、他のユーザーのレフリーを無料で1回務める「レフリー義務」が発生します。',
+			'dashboard.trialPointsHelp.body' => '初めての方が無料でPepperCheckを試せるポイントです。\nタスク作成に使うと、他のユーザーのレフリーを無料で1回務める「レフリー義務」が発生します。',
 			'dashboard.pendingObligationsHelp.title' => 'レフリー義務とは？',
-			'dashboard.pendingObligationsHelp.body' => 'トライアルポイントでタスクを作成した代わりに、他のユーザーのレフリーを無料で担当する義務です。義務を履行することで、サービスの公平性を保っています。',
+			'dashboard.pendingObligationsHelp.body' => 'トライアルポイントでタスクを作成した代わりに、他のユーザーのレフリーを無料で担当する義務です。\n義務を履行することで、サービスの公平性を保っています。',
 			'dashboard.rewardBalanceHelp.title' => '報酬残高とは？',
-			'dashboard.rewardBalanceHelp.body' => 'レフリーとして獲得した未出金の報酬残高です。決済プラットフォームStripeを通じて指定した銀行口座に出金されます。',
+			'dashboard.rewardBalanceHelp.body' => 'レフリーとして獲得した未出金の報酬残高です。\n決済プラットフォームStripeを通じて指定した銀行口座に出金されます。',
 			'dashboard.totalEarnedHelp.title' => '累計受取額とは？',
 			'dashboard.totalEarnedHelp.body' => 'これまでにレフリー業務で獲得した報酬の累計額です。',
 			'task.status.draft' => '下書き',
@@ -1674,7 +1674,7 @@ extension on Translations {
 			'matching.referee_availability.dialog_dow' => '曜日',
 			'matching.referee_availability.invalid_time_range' => '終了時間は開始時間より後である必要があります',
 			'matching.referee_availability.help.title' => '受付可能時間とは？',
-			'matching.referee_availability.help.body' => 'レフリーとしてタスクを担当できる曜日・時間帯です。この時間が締切のタスクがマッチング対象になります。',
+			'matching.referee_availability.help.body' => 'レフリーとしてタスクを担当できる曜日・時間帯です。\nこの時間が締切のタスクがマッチング対象になります。',
 			'matching.referee_blocked_dates.title' => 'ブロック日',
 			'matching.referee_blocked_dates.no_dates' => 'ブロック日が設定されていません',
 			'matching.referee_blocked_dates.add_date' => 'ブロック日を追加',
@@ -1687,7 +1687,7 @@ extension on Translations {
 			'matching.referee_blocked_dates.select_date_range' => '日付範囲を選択',
 			'matching.referee_blocked_dates.invalid_date_range' => '終了日は開始日以降である必要があります',
 			'matching.referee_blocked_dates.help.title' => 'ブロック日とは？',
-			'matching.referee_blocked_dates.help.body' => 'レフリー業務を一時的に停止したい日を指定できます。ブロック日と重なるタスクは、受付可能時間内であってもマッチング対象から外れます。',
+			'matching.referee_blocked_dates.help.body' => 'レフリー業務を一時的に停止したい日を指定できます。\nブロック日と重なるタスクは、受付可能時間内であってもマッチング対象から外れます。',
 			'notification.request_matched_tasker_title' => 'マッチング成立！',
 			'notification.request_matched_tasker_body' => ({required Object taskTitle}) => '「${taskTitle}」のレフリーが見つかりました！',
 			'notification.task_assigned_referee_title' => '新しい担当タスクが届きました！',

@@ -22,6 +22,8 @@ class BaseDialog extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         side: const BorderSide(color: AppColors.border),
       ),
+      contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+      actionsPadding: const EdgeInsets.fromLTRB(8, 0, 16, 8),
       title: Text(
         title,
         style: Theme.of(context).textTheme.titleMedium?.copyWith(

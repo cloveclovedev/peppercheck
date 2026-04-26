@@ -40,7 +40,7 @@ class HelpIconButton extends StatelessWidget {
         title: title,
         content: Text(
           body,
-          style: Theme.of(dialogContext).textTheme.bodyMedium?.copyWith(
+          style: Theme.of(dialogContext).textTheme.bodySmall?.copyWith(
             color: AppColors.textPrimary,
             height: 1.5,
           ),
