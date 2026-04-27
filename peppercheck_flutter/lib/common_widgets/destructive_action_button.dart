@@ -6,6 +6,7 @@ class DestructiveActionButton extends StatelessWidget {
   final IconData? icon;
   final VoidCallback? onPressed;
   final bool isLoading;
+  final double borderRadius;
 
   const DestructiveActionButton({
     super.key,
@@ -13,6 +14,7 @@ class DestructiveActionButton extends StatelessWidget {
     this.icon,
     this.onPressed,
     this.isLoading = false,
+    this.borderRadius = 20,
   });
 
   @override
@@ -35,7 +37,9 @@ class DestructiveActionButton extends StatelessWidget {
         backgroundColor: containerColor,
         foregroundColor: contentColor,
         side: BorderSide(color: borderColor, width: 2),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(borderRadius),
+        ),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         minimumSize: Size.zero,
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
