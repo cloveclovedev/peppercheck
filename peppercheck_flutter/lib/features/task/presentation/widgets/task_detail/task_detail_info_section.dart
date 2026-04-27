@@ -6,6 +6,7 @@ import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
 import 'package:peppercheck_flutter/common_widgets/action_button.dart';
 import 'package:peppercheck_flutter/common_widgets/base_section.dart';
 import 'package:peppercheck_flutter/features/task/domain/task.dart';
+import 'package:peppercheck_flutter/features/task/presentation/widgets/task_detail/delete_task_button.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 
 class TaskDetailInfoSection extends StatelessWidget {
@@ -47,6 +48,8 @@ class TaskDetailInfoSection extends StatelessWidget {
                 context.push('/create_task', extra: task);
               },
             ),
+            const SizedBox(height: AppSizes.spacingSmall),
+            DeleteTaskButton(task: task),
           ],
         ],
       ),
