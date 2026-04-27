@@ -147,7 +147,7 @@ Naming note: per `.claude/rules/flutter.md`, do NOT name the method `update`. Us
 Wraps the existing `BaseDialog` (`common_widgets/base_dialog.dart`):
 
 - `title`: `t.task.deletion.confirmTitle` ("このタスクを削除しますか?")
-- `content`: empty `SizedBox.shrink()` (no body text)
+- `content`: `SizedBox.shrink()` — `BaseDialog.content` is required, so this is the workaround for a title-only dialog. The internal `EdgeInsets.fromLTRB(24, 16, 24, 8)` padding still applies, leaving small whitespace below the title; this is acceptable for the minimalist design.
 - `actions`:
   - Cancel: inline `TextButton` with `foregroundColor: AppColors.textSecondary`, label `t.common.cancel`, pops dialog
   - Delete: inline `TextButton` with `foregroundColor: AppColors.textError`, label `t.task.deletion.deleteButton`, pops dialog and triggers the `onConfirm` callback
@@ -186,6 +186,8 @@ DestructiveActionButton(
 ```
 
 The "delete blocked" reason text above the button (`account_actions_section.dart:52-59`) stays as-is.
+
+After the replacement, the now-unused local color variables (`containerColor`, `contentColor`, `borderColor` at lines 39-47) become dead code and should be removed. `_buildDeleteButton` simplifies to: the `Column` with the conditional reason text + the new `DestructiveActionButton`.
 
 ### Success flow
 
