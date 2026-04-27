@@ -37,9 +37,20 @@ class _EvidenceSubmissionSectionState
   List<String> _assetIdsToRemove = [];
 
   @override
+  void initState() {
+    super.initState();
+    _descriptionController.addListener(_onDescriptionChanged);
+  }
+
+  @override
   void dispose() {
+    _descriptionController.removeListener(_onDescriptionChanged);
     _descriptionController.dispose();
     super.dispose();
+  }
+
+  void _onDescriptionChanged() {
+    if (mounted) setState(() {});
   }
 
   bool _canReopen() {
@@ -221,7 +232,7 @@ class _EvidenceSubmissionSectionState
         children: [
           BaseTextField(
             value: _descriptionController.text,
-            onValueChange: (val) => _descriptionController.text = val,
+            onValueChange: (_) {},
             label: t.task.evidence.description,
             maxLines: 1,
             controller: _descriptionController,
@@ -534,7 +545,7 @@ class _EvidenceSubmissionSectionState
         children: [
           BaseTextField(
             value: _descriptionController.text,
-            onValueChange: (val) => _descriptionController.text = val,
+            onValueChange: (_) {},
             label: t.task.evidence.description,
             maxLines: 1,
             controller: _descriptionController,
