@@ -927,11 +927,11 @@ class TranslationsTaskDeletionJa {
 
 	// Translations
 
-	/// ja: 'タスク削除'
-	String get button => 'タスク削除';
+	/// ja: 'タスクを削除'
+	String get button => 'タスクを削除';
 
-	/// ja: 'このタスクを削除しますか?'
-	String get confirmTitle => 'このタスクを削除しますか?';
+	/// ja: 'このタスクを削除しますか？'
+	String get confirmTitle => 'このタスクを削除しますか？';
 
 	/// ja: '削除'
 	String get deleteButton => '削除';
@@ -1629,8 +1629,8 @@ extension on Translations {
 			'task.creation.error.unknown' => 'エラーが発生しました',
 			'task.creation.error.unknownDetail' => ({required Object message}) => '${message}',
 			'task.creation.error.buttonOk' => 'OK',
-			'task.deletion.button' => 'タスク削除',
-			'task.deletion.confirmTitle' => 'このタスクを削除しますか?',
+			'task.deletion.button' => 'タスクを削除',
+			'task.deletion.confirmTitle' => 'このタスクを削除しますか？',
 			'task.deletion.deleteButton' => '削除',
 			'task.deletion.deletedSnackbar' => '削除しました',
 			'task.deletion.failedSnackbar' => '削除できませんでした',
