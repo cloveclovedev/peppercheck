@@ -11,6 +11,7 @@ Deletion must be restricted to drafts only. Tasks that have transitioned to `ope
 ## Decision Log
 
 - **UI placement**: Below the existing "タスク編集" button inside `TaskDetailInfoSection`, only when `task.status == 'draft'`. Reuses the visual style of the account deletion button (`OutlinedButton`, red-tinted, `Icons.delete_outline`) so destructive actions look consistent across the app.
+- **Common widget extraction**: A new `DestructiveActionButton` is added in `common_widgets/` (red-tinted variant of `ActionButton`). Both the new task delete button and the existing account deletion button (`account_actions_section.dart`) migrate to it in this PR. The dialog uses the existing `BaseDialog`. The cancel `TextButton` inside the dialog is written inline — generalizing it (only ~5 lines per usage) is not worth the extra widget file.
 - **Confirmation dialog**: Single-step, minimal — title only ("このタスクを削除しますか?"), no body warning text. Drafts are low-stakes; the two-step confirmation used for account deletion would be excessive. Cancel + Delete buttons.
 - **Backend**: New RPC `public.delete_task(p_task_id uuid)` rather than a direct `supabase.from('tasks').delete()`. Rationale: matches the existing `create_task` / `update_task` RPC pattern so all task CRUD lives in one discoverable place. A bare RLS-only approach would scatter the status check into policy logic that is harder to find.
 - **Defense in depth**: Existing RLS DELETE policy (`tasker_id = auth.uid()`) is kept as-is. With `SECURITY INVOKER`, the RPC respects RLS, so ownership is enforced twice (RPC explicit check + RLS).
@@ -94,7 +95,27 @@ After adding tests, run the full test suite to verify no regressions (per `.clau
 
 ## Flutter Layer
 
-### New files
+### New common widget
+
+#### `lib/common_widgets/destructive_action_button.dart`
+
+Red-tinted variant of the existing `ActionButton` (`common_widgets/action_button.dart`). Same API (`text`, `icon`, `onPressed`, `isLoading`), but uses `AppColors.textError` for foreground / border / icon, and a red-tinted background:
+
+```dart
+final containerColor = active
+    ? AppColors.textError.withValues(alpha: 0.1)
+    : AppColors.textPrimary.withValues(alpha: 0.05);
+final contentColor = active
+    ? AppColors.textError
+    : AppColors.textPrimary.withValues(alpha: 0.4);
+final borderColor = active
+    ? AppColors.textError.withValues(alpha: 0.5)
+    : AppColors.textPrimary.withValues(alpha: 0.2);
+```
+
+Width, padding, border radius, icon-text layout, and loading-spinner behavior all mirror `ActionButton` for visual consistency.
+
+### New feature files
 
 #### 1. `task_repository.dart` — add `deleteTask` method
 
@@ -114,24 +135,22 @@ Naming note: per `.claude/rules/flutter.md`, do NOT name the method `update`. Us
 
 #### 3. `lib/features/task/presentation/widgets/task_detail/delete_task_button.dart`
 
-`ConsumerWidget` taking a `Task`. Visually identical to `account_actions_section.dart:60-92`:
+`ConsumerWidget` taking a `Task`. Wraps the new `DestructiveActionButton`:
 
-- `OutlinedButton`, full width
-- `AppColors.textError` foreground, red-tinted background, red border
-- `Icons.delete_outline` 16px + label
-- Disabled (`onPressed: null`) while `taskDeletionControllerProvider` is loading
-
-On tap → show `DeleteTaskConfirmationDialog`. On confirm → call controller's `deleteTask(task.id, onSuccess: ...)`.
+- Label: `t.task.deletion.button` ("タスク削除")
+- Icon: `Icons.delete_outline`
+- `isLoading` from `taskDeletionControllerProvider` AsyncValue
+- On tap → show `DeleteTaskConfirmationDialog`. On confirm → call controller's `deleteTask(task.id, onSuccess: ...)`.
 
 #### 4. `lib/features/task/presentation/widgets/task_detail/delete_task_confirmation_dialog.dart`
 
-Minimal `AlertDialog`:
+Wraps the existing `BaseDialog` (`common_widgets/base_dialog.dart`):
 
-- Title: `t.task.deletion.confirmTitle` ("このタスクを削除しますか?")
-- No content body
-- Actions: Cancel (textSecondary), Delete (textError)
-
-Style matches `delete_account_confirmation_dialog.dart` (same `backgroundColor`, `shape`, button colors). Reuse `t.common.cancel` for the cancel button to avoid duplicating the existing key.
+- `title`: `t.task.deletion.confirmTitle` ("このタスクを削除しますか?")
+- `content`: empty `SizedBox.shrink()` (no body text)
+- `actions`:
+  - Cancel: inline `TextButton` with `foregroundColor: AppColors.textSecondary`, label `t.common.cancel`, pops dialog
+  - Delete: inline `TextButton` with `foregroundColor: AppColors.textError`, label `t.task.deletion.deleteButton`, pops dialog and triggers the `onConfirm` callback
 
 ### Changed files
 
@@ -153,6 +172,20 @@ if (task.status == 'draft') ...[
 ```
 
 No conversion of `TaskDetailInfoSection` itself is needed; `DeleteTaskButton` handles its own Riverpod wiring as a `ConsumerWidget`.
+
+#### `account_actions_section.dart` — migrate to `DestructiveActionButton`
+
+Replace the inline red-tinted `OutlinedButton` (`account_actions_section.dart:60-92`) with `DestructiveActionButton`:
+
+```dart
+DestructiveActionButton(
+  text: t.account.actions.deleteAccount,
+  icon: Icons.delete_outline,
+  onPressed: active ? () => _showConfirmation(context, ref) : null,
+)
+```
+
+The "delete blocked" reason text above the button (`account_actions_section.dart:52-59`) stays as-is.
 
 ### Success flow
 
