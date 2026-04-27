@@ -194,6 +194,13 @@
         "buttonOk": "OK"
       }
     },
+    "deletion": {
+      "button": "タスク削除",
+      "confirmTitle": "このタスクを削除しますか?",
+      "deleteButton": "削除",
+      "deletedSnackbar": "削除しました",
+      "failedSnackbar": "削除できませんでした"
+    },
     "evidence": {
       "title": "エビデンス",
       "submit": "エビデンスを提出",
