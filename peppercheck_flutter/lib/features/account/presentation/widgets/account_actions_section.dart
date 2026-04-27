@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:peppercheck_flutter/app/theme/app_colors.dart';
 import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
 import 'package:peppercheck_flutter/common_widgets/base_section.dart';
+import 'package:peppercheck_flutter/common_widgets/destructive_action_button.dart';
 import 'package:peppercheck_flutter/features/account/data/account_repository.dart';
 import 'package:peppercheck_flutter/features/account/presentation/account_deletion_controller.dart';
 import 'package:peppercheck_flutter/features/account/presentation/widgets/delete_account_confirmation_dialog.dart';
@@ -34,18 +35,6 @@ class AccountActionsSection extends ConsumerWidget {
     bool deletable,
     List<String> reasons,
   ) {
-    final bool active = deletable;
-
-    final containerColor = active
-        ? AppColors.textError.withValues(alpha: 0.1)
-        : AppColors.textPrimary.withValues(alpha: 0.05);
-    final contentColor = active
-        ? AppColors.textError
-        : AppColors.textPrimary.withValues(alpha: 0.4);
-    final borderColor = active
-        ? AppColors.textError.withValues(alpha: 0.5)
-        : AppColors.textPrimary.withValues(alpha: 0.2);
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -57,38 +46,10 @@ class AccountActionsSection extends ConsumerWidget {
               style: TextStyle(color: AppColors.textError),
             ),
           ),
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton(
-            onPressed: active ? () => _showConfirmation(context, ref) : null,
-            style: OutlinedButton.styleFrom(
-              backgroundColor: containerColor,
-              foregroundColor: contentColor,
-              side: BorderSide(color: borderColor, width: 2),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              elevation: 0,
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.delete_outline, size: 16, color: contentColor),
-                const SizedBox(width: 6),
-                Text(
-                  t.account.actions.deleteAccount,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: contentColor,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
+        DestructiveActionButton(
+          text: t.account.actions.deleteAccount,
+          icon: Icons.delete_outline,
+          onPressed: deletable ? () => _showConfirmation(context, ref) : null,
         ),
       ],
     );
