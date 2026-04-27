@@ -393,6 +393,7 @@ class TranslationsTaskJa {
 	late final TranslationsTaskStatusJa status = TranslationsTaskStatusJa.internal(_root);
 	late final TranslationsTaskDetailJa detail = TranslationsTaskDetailJa.internal(_root);
 	late final TranslationsTaskCreationJa creation = TranslationsTaskCreationJa.internal(_root);
+	late final TranslationsTaskDeletionJa deletion = TranslationsTaskDeletionJa.internal(_root);
 	late final TranslationsTaskEvidenceJa evidence = TranslationsTaskEvidenceJa.internal(_root);
 	late final TranslationsTaskJudgementJa judgement = TranslationsTaskJudgementJa.internal(_root);
 }
@@ -916,6 +917,30 @@ class TranslationsTaskCreationJa {
 
 	late final TranslationsTaskCreationStrategyJa strategy = TranslationsTaskCreationStrategyJa.internal(_root);
 	late final TranslationsTaskCreationErrorJa error = TranslationsTaskCreationErrorJa.internal(_root);
+}
+
+// Path: task.deletion
+class TranslationsTaskDeletionJa {
+	TranslationsTaskDeletionJa.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// ja: 'タスクを削除'
+	String get button => 'タスクを削除';
+
+	/// ja: 'このタスクを削除しますか？'
+	String get confirmTitle => 'このタスクを削除しますか？';
+
+	/// ja: '削除'
+	String get deleteButton => '削除';
+
+	/// ja: '削除しました'
+	String get deletedSnackbar => '削除しました';
+
+	/// ja: '削除できませんでした'
+	String get failedSnackbar => '削除できませんでした';
 }
 
 // Path: task.evidence
@@ -1604,6 +1629,11 @@ extension on Translations {
 			'task.creation.error.unknown' => 'エラーが発生しました',
 			'task.creation.error.unknownDetail' => ({required Object message}) => '${message}',
 			'task.creation.error.buttonOk' => 'OK',
+			'task.deletion.button' => 'タスクを削除',
+			'task.deletion.confirmTitle' => 'このタスクを削除しますか？',
+			'task.deletion.deleteButton' => '削除',
+			'task.deletion.deletedSnackbar' => '削除しました',
+			'task.deletion.failedSnackbar' => '削除できませんでした',
 			'task.evidence.title' => 'エビデンス',
 			'task.evidence.submit' => 'エビデンスを提出',
 			'task.evidence.submitted' => '提出済みエビデンス',

@@ -166,7 +166,8 @@ schema_paths = [
   # Task extra functions
   "./schemas/task/functions/create_task.sql",
   "./schemas/task/functions/update_task.sql",
-  
+  "./schemas/task/functions/delete_task.sql",
+
   # Task Utils
   "./schemas/task/functions/utils/validate_task_inputs.sql",
   "./schemas/task/functions/utils/validate_task_open_requirements.sql",
