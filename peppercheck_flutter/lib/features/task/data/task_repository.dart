@@ -60,6 +60,15 @@ class TaskRepository {
     }
   }
 
+  Future<void> deleteTask(String taskId) async {
+    try {
+      await _client.rpc('delete_task', params: {'p_task_id': taskId});
+    } catch (e, st) {
+      _logger.e('deleteTask failed', error: e, stackTrace: st);
+      rethrow;
+    }
+  }
+
   Future<List<Task>> fetchActiveUserTasks() async {
     try {
       final userId = _client.auth.currentUser?.id;
