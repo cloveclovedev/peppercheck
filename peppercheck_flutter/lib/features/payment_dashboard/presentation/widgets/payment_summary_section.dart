@@ -127,7 +127,6 @@ class _SummaryContent extends StatelessWidget {
                               ),
                             ],
                           ),
-                          const SizedBox(height: AppSizes.spacingMicro),
                           _CardValue(
                             value: summary.rewards != null
                                 ? _formatCurrency(
@@ -173,7 +172,6 @@ class _SummaryContent extends StatelessWidget {
                               ),
                             ],
                           ),
-                          const SizedBox(height: AppSizes.spacingMicro),
                           _CardValue(
                             value:
                                 summary.rewards != null &&
