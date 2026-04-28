@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:peppercheck_flutter/app/theme/app_colors.dart';
 import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
+import 'package:peppercheck_flutter/common_widgets/base_dialog.dart';
 import 'package:peppercheck_flutter/common_widgets/destructive_action_button.dart';
 import 'package:peppercheck_flutter/features/home/presentation/home_controller.dart';
 import 'package:peppercheck_flutter/features/matching/data/matching_repository.dart';
@@ -47,16 +49,20 @@ class _WithdrawMatchingButtonState
   Future<void> _onPressed() async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(t.task.detail.cancelAssignment.dialogTitle),
+      builder: (dialogContext) => BaseDialog(
+        title: t.task.detail.cancelAssignment.dialogTitle,
         content: Text(t.task.detail.cancelAssignment.dialogMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.textSecondary,
+            ),
             child: Text(t.common.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.textError),
             child: Text(t.common.confirm),
           ),
         ],
