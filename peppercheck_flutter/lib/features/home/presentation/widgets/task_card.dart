@@ -17,9 +17,7 @@ class TaskCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final dueDateFormatted = task.dueDate != null
-        ? DateFormat(
-            'MM/dd H:mm',
-          ).format(DateTime.parse(task.dueDate!).toLocal())
+        ? DateFormat('M/d H:mm').format(DateTime.parse(task.dueDate!).toLocal())
         : '';
 
     final currentUserId = ref.watch(currentUserProvider)?.id ?? '';
@@ -60,7 +58,7 @@ class TaskCard extends ConsumerWidget {
                     ),
                     const SizedBox(height: AppSizes.taskCardTitleInfoGap),
                     Text(
-                      '$dueDateFormatted   ¥${task.feeAmount?.toInt() ?? 0}', // TODO: Multi currency
+                      dueDateFormatted,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: AppColors.textSecondary,
                       ),

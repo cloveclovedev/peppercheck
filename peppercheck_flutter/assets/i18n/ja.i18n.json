@@ -5,7 +5,7 @@
   },
   "home": {
     "title": "Home",
-    "myTasks": "自分のタスク",
+    "myTasks": "タスク",
     "refereeTasks": "判定依頼",
     "noTasks": "タスクはありません"
   },
