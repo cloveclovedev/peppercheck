@@ -97,7 +97,7 @@ class _MyRefereeRequestSectionState
     if (myRequest == null) return const SizedBox.shrink();
 
     final tasker = widget.task.tasker;
-    final username = tasker?.username ?? '';
+    final username = tasker?.username ?? '...';
     final avatarUrl = tasker?.avatarUrl;
     final strategyLabel = _strategyLabel(myRequest.matchingStrategy);
     final statusLabel = _statusLabel(myRequest.status);
@@ -144,17 +144,16 @@ class _MyRefereeRequestSectionState
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  if (myRequest.isObligation)
-                    Padding(
-                      padding: const EdgeInsets.only(top: AppSizes.spacingTiny),
-                      child: Text(
-                        t.billing.obligationRefereeNotice,
-                        style: const TextStyle(
-                          color: AppColors.textMuted,
-                          fontSize: 11,
-                        ),
+                  if (myRequest.isObligation) ...[
+                    const SizedBox(height: AppSizes.spacingTiny),
+                    Text(
+                      t.billing.obligationRefereeNotice,
+                      style: const TextStyle(
+                        color: AppColors.textMuted,
+                        fontSize: 11,
                       ),
                     ),
+                  ],
                 ],
               ),
             ),
