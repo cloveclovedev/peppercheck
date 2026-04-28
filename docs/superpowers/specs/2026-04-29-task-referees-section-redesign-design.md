@@ -38,26 +38,30 @@ This document reflects the revised design.
 
 ```
 TaskDetailScreen
-├── TaskDetailInfoSection                       (always)
+├── TaskDetailInfoSection                        (always)
 │   ├── Title / Description / Criteria / Due date
-│   ├── (refree view) tasker info row           (avatar + username)
-│   ├── (refree view + isObligation) obligation notice (muted)
-│   └── (refree view + can-withdraw) DestructiveActionButton "マッチングを辞退"
+│   ├── (refree view) tasker info row            (avatar + username)
+│   └── (refree view + isObligation) obligation notice (muted)
 ├── if (currentUserId == task.taskerId)
-│   └── TaskerRefereesSection                   (StatelessWidget)
-│       └── _RefereeCard × 1 or 2               (private; avatar + username only)
+│   └── TaskerRefereesSection                    (StatelessWidget)
+│       └── _RefereeCard × 1 or 2                (private; avatar + username only)
 ├── EvidenceSubmissionSection / EvidenceTimeoutRefereeSection (existing, role-gated)
-└── JudgementSection                            (existing)
+├── JudgementSection                             (existing)
+└── WithdrawMatchingButton                       (renders only when can-withdraw)
 ```
+
+The withdraw control deliberately lives outside any section as a small right-aligned button at the very bottom of the screen. Embedding it inside `TaskDetailInfoSection` was tested but felt too persistently prominent during the multi-day judgement workflow; an end-of-screen button stays discoverable without dominating the read.
 
 Files:
 
 - Edit: `peppercheck_flutter/lib/features/task/presentation/widgets/task_detail/tasker_referees_section.dart` — strip strategy/status from the card.
-- Edit: `peppercheck_flutter/lib/features/task/presentation/widgets/task_detail/task_detail_info_section.dart` — append refree-side rows (tasker info, obligation notice, withdraw button) when the viewer is the matched referee.
-- Edit: `peppercheck_flutter/lib/features/task/presentation/task_detail_screen.dart` — drop the role-based dispatch; render `TaskerRefereesSection` only when the viewer is the tasker.
-- Delete: `peppercheck_flutter/lib/features/task/presentation/widgets/task_detail/my_referee_request_section.dart` (no longer needed).
+- Edit: `peppercheck_flutter/lib/features/task/presentation/widgets/task_detail/task_detail_info_section.dart` — append refree-side rows (tasker info, obligation notice) when the viewer is the matched referee.
+- New: `peppercheck_flutter/lib/features/task/presentation/widgets/task_detail/withdraw_matching_button.dart` — content-sized destructive button, right-aligned at the bottom of the screen.
+- Edit: `peppercheck_flutter/lib/features/task/presentation/task_detail_screen.dart` — drop the role-based dispatch; render `TaskerRefereesSection` only when the viewer is the tasker; render `WithdrawMatchingButton` after `JudgementSection`.
+- Edit: `peppercheck_flutter/lib/common_widgets/destructive_action_button.dart` — add `fullWidth` parameter (default `true`) so the existing destructive button can also be used at content size.
+- Delete: `peppercheck_flutter/lib/features/task/presentation/widgets/task_detail/my_referee_request_section.dart` (interim widget from earlier iteration; no longer needed).
 - New: `peppercheck_flutter/lib/features/matching/matching_constants.dart` — house `kRefereeCancelDeadlineHours`.
-- Edit: `peppercheck_flutter/assets/i18n/ja.i18n.json` — rename `cancelAssignment.*` strings to "マッチングを辞退" wording, add `labelTasker`, remove unused `sectionRefereesReferee`, `matchingStrategy.*`, `refereeStatus.*` keys.
+- Edit: `peppercheck_flutter/assets/i18n/ja.i18n.json` — rename `cancelAssignment.*` strings, add `labelTasker` and `cancelAssignment.dialogConfirm`, remove unused `sectionRefereesReferee`, `matchingStrategy.*`, `refereeStatus.*` keys.
 
 ## Component Specs
 
@@ -83,7 +87,7 @@ The component remains a single `BaseSection`. It now needs to know whether the v
 When the viewer is the matched referee for this task — i.e., there is a `RefereeRequest r` in `task.refereeRequests` with `r.matchedRefereeId == currentUserId` — the section's child `Column` appends the following items below the existing fields:
 
 1. **Tasker info row** (always, when refree view):
-   - Label `t.task.detail.labelTasker` ("依頼者") in the same muted small style as other field labels.
+   - Label `t.task.detail.labelTasker` in the same muted small style as other field labels.
    - Below: a `BaseCard`-styled `Row` with avatar (`AppSizes.avatarSizeMedium`, fallback person icon) and bold username (`bodySmall`).
    - Username fallback: `'...'` when `task.tasker?.username` is null.
 
@@ -91,17 +95,26 @@ When the viewer is the matched referee for this task — i.e., there is a `Refer
    - Single muted `Text` with `t.billing.obligationRefereeNotice`.
    - `style: bodySmall.copyWith(color: AppColors.textMuted)` — slightly smaller than primary content; inline annotation feel.
 
-3. **Withdraw button** (only if `myRequest.status == 'accepted'` and the cancel deadline has not yet passed):
-   - `DestructiveActionButton` with text `t.task.detail.cancelAssignment.button` ("マッチングを辞退") and icon `Icons.cancel_outlined`.
-   - Tap shows a confirmation dialog. On confirm, calls `matchingRepository.cancelRefereeAssignment(myRequest.id)`, shows snackbar, and invalidates `taskProvider(task.id)`, `activeUserTasksProvider`, `activeRefereeTasksProvider`.
-   - Cancel-deadline gate:
-     ```
-     canWithdraw = task.dueDate != null
-                   && DateTime.parse(task.dueDate!).isAfter(
-                        DateTime.now().add(Duration(hours: kRefereeCancelDeadlineHours)),
-                      )
-     ```
-     If `task.dueDate` is null (defensive), `canWithdraw` is treated as `true` — the server-side validation is the authoritative gate.
+The withdraw button does NOT live here — see `WithdrawMatchingButton` below.
+
+### `WithdrawMatchingButton`
+
+- A standalone `ConsumerStatefulWidget` rendered as the last child of `TaskDetailScreen`'s `Column` (after `JudgementSection`).
+- Self-gates rendering: returns `SizedBox.shrink()` when the viewer is not the matched referee or when withdrawal is no longer available.
+- Visual: `DestructiveActionButton(fullWidth: false)` with no icon, wrapped in `Align(alignment: Alignment.centerRight)` — produces a small right-aligned destructive button at the bottom of the screen.
+- Tap shows a `BaseDialog` confirmation. On confirm, calls `matchingRepository.cancelRefereeAssignment(myRequest.id)`, shows a snackbar, and invalidates `taskProvider(task.id)`, `activeUserTasksProvider`, `activeRefereeTasksProvider`.
+- Dialog confirm button uses `t.task.detail.cancelAssignment.dialogConfirm` (the action verb), not the generic "確認".
+- Withdrawal gate (`_canWithdraw`):
+  - Must have `myRequest.status == 'accepted'`.
+  - Must not be in an irreversible judgement state. Specifically, hides when `myRequest.judgement?.status` is one of `approved`, `review_timeout`, `evidence_timeout`, `confirmed`. Withdrawal stays available during `awaiting_evidence`, `in_review`, and `rejected` (the tasker may resubmit evidence after a rejection).
+  - Must still be before the cancel deadline:
+    ```
+    task.dueDate == null
+        || DateTime.parse(task.dueDate!).isAfter(
+             DateTime.now().add(Duration(hours: kRefereeCancelDeadlineHours)),
+           )
+    ```
+  - If `task.dueDate` is null, the deadline check is treated as passing. The server-side validation is the authoritative gate; the client value exists for UX only.
 
 ### `kRefereeCancelDeadlineHours`
 
@@ -131,7 +144,8 @@ When the viewer is the matched referee for this task — i.e., there is a `Refer
 
 ### Keys to add
 
-- `task.detail.labelTasker`: "依頼者"
+- `task.detail.labelTasker` ("依頼者")
+- `task.detail.cancelAssignment.dialogConfirm` ("辞退") — used as the dialog confirm button so it reads as the action verb rather than a generic "確認"
 
 ### Keys to update (value change only, key names preserved)
 
@@ -156,26 +170,30 @@ When the viewer is the matched referee for this task — i.e., there is a `Refer
 | Tasker | 1 referee, status=`pending`, referee=null | `TaskerRefereesSection` left card only: default person icon + "マッチング中" |
 | Tasker | 1 referee, status=`accepted`, referee=alice | `TaskerRefereesSection` left card only: alice avatar + username |
 | Tasker | 2 referees | Two cards side by side, equal width |
-| Referee | self matched, status=`accepted`, isObligation=false, due_date > now+12h | `TaskDetailInfoSection` shows tasker info row + 「マッチングを辞退」 button. No `TaskerRefereesSection`. |
-| Referee | self matched, isObligation=true | Same as above + obligation notice between tasker info row and button. |
-| Referee | self matched, status=`accepted`, due_date <= now+12h | Tasker info row visible; **no** withdraw button (deadline passed). Obligation notice visible if applicable. |
-| Referee | self matched, status=`closed` or `payment_processing` | Tasker info row visible; **no** withdraw button. |
-| Either | task has no refereeRequests | `TaskerRefereesSection` (tasker) is hidden. `TaskDetailInfoSection` does not append refree-side content (refree role check fails). |
+| Referee | self matched, status=`accepted`, isObligation=false, due_date > now+12h, judgement=`awaiting_evidence` | `TaskDetailInfoSection` shows tasker info row. `WithdrawMatchingButton` renders a small destructive button at the bottom of the screen. No `TaskerRefereesSection`. |
+| Referee | self matched, isObligation=true | Same as above + obligation notice below the tasker info row. |
+| Referee | self matched, status=`accepted`, due_date <= now+12h | Tasker info row visible; withdraw button hidden (deadline passed). |
+| Referee | self matched, judgement=`approved` / `review_timeout` / `evidence_timeout` / `confirmed` | Tasker info row visible; withdraw button hidden (irreversible state). |
+| Referee | self matched, judgement=`in_review` or `rejected` | Withdraw button still visible (referee may still need to act on resubmitted evidence). |
+| Referee | self matched, status=`closed` or `payment_processing` | Tasker info row visible; withdraw button hidden. |
+| Either | task has no refereeRequests | `TaskerRefereesSection` (tasker) is hidden. `TaskDetailInfoSection` does not append refree-side content (refree role check fails). `WithdrawMatchingButton` self-hides. |
 
 ## Testing
 
 The repository has no widget-test precedent for this screen. Verification is manual on the Android emulator, plus a debug build check.
 
 - [ ] `flutter build apk --debug -t lib/main_debug.dart` succeeds.
-- [ ] Tasker view, 1 referee → left half card only (avatar + bold username).
+- [ ] Tasker view, 1 referee → left-half card only (avatar + bold username).
 - [ ] Tasker view, 2 referees → two equal-width cards.
-- [ ] Tasker view, `pending` request → "マッチング中" placeholder + default icon.
+- [ ] Tasker view, `pending` request → placeholder text + default icon.
 - [ ] Referee view → no `TaskerRefereesSection` rendered.
-- [ ] Referee view → `TaskDetailInfoSection` contains tasker info row at the bottom of the existing fields.
+- [ ] Referee view → `TaskDetailInfoSection` contains the tasker info row at the bottom of the existing fields.
 - [ ] Referee view, `isObligation=true` → obligation notice visible below the tasker row.
-- [ ] Referee view, `accepted` and `due_date > now+12h` → 「マッチングを辞退」 button visible. Tap → confirmation dialog → withdraw succeeds, providers invalidate, snackbar shows.
-- [ ] Referee view, `accepted` but `due_date <= now+12h` → button absent.
-- [ ] Referee view, `closed` or `payment_processing` → button absent.
+- [ ] Referee view, `accepted` + `due_date > now+12h` + judgement `awaiting_evidence` → withdraw button visible at the bottom of the screen, right-aligned. Tap → `BaseDialog` confirmation → withdraw succeeds, providers invalidate, snackbar shows.
+- [ ] Referee view, judgement `approved` → withdraw button hidden.
+- [ ] Referee view, judgement `rejected` or `in_review` → withdraw button still visible (gate allows pre-terminal states).
+- [ ] Referee view, `due_date <= now+12h` → withdraw button hidden.
+- [ ] Referee view, `closed` or `payment_processing` → withdraw button hidden.
 - [ ] No leftover references to `MyRefereeRequestSection`, `sectionRefereesReferee`, `matchingStrategy.*`, or `refereeStatus.*`.
 
 ## Follow-ups
