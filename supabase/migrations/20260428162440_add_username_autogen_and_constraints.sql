@@ -1,8 +1,42 @@
--- Functions
-CREATE OR REPLACE FUNCTION public.handle_new_user() RETURNS trigger
-    LANGUAGE plpgsql SECURITY DEFINER
-    SET search_path TO ''
-    AS $$
+-- DML, not detected by schema diff
+-- Backfill username for existing rows where username IS NULL
+DO $$
+DECLARE
+  r RECORD;
+  v_username TEXT;
+  v_attempts INT;
+BEGIN
+  FOR r IN SELECT id FROM public.profiles WHERE username IS NULL LOOP
+    v_attempts := 0;
+    LOOP
+      v_username := 'user_' || encode(extensions.gen_random_bytes(4), 'hex');
+      BEGIN
+        UPDATE public.profiles SET username = v_username WHERE id = r.id;
+        EXIT;
+      EXCEPTION WHEN unique_violation THEN
+        v_attempts := v_attempts + 1;
+        IF v_attempts >= 5 THEN
+          RAISE EXCEPTION 'Could not generate unique username for user % after % attempts', r.id, v_attempts;
+        END IF;
+      END;
+    END LOOP;
+  END LOOP;
+END $$;
+
+alter table "public"."profiles" alter column "username" set not null;
+
+alter table "public"."profiles" add constraint "profiles_username_length_check" CHECK (((char_length(username) >= 2) AND (char_length(username) <= 20))) not valid;
+
+alter table "public"."profiles" validate constraint "profiles_username_length_check";
+
+set check_function_bodies = off;
+
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
 DECLARE
   v_initial_grant integer;
   v_username TEXT;
@@ -47,6 +81,7 @@ BEGIN
 
   RETURN NEW;
 END;
-$$;
+$function$
+;
 
-ALTER FUNCTION public.handle_new_user() OWNER TO postgres;
+

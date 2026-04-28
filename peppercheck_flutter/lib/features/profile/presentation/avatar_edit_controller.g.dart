@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'judgement_controller.dart';
+part of 'avatar_edit_controller.dart';
 
 // **************************************************************************
 // RiverpodGenerator
@@ -9,34 +9,34 @@ part of 'judgement_controller.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 
-@ProviderFor(JudgementController)
-const judgementControllerProvider = JudgementControllerProvider._();
+@ProviderFor(AvatarEditController)
+const avatarEditControllerProvider = AvatarEditControllerProvider._();
 
-final class JudgementControllerProvider
-    extends $AsyncNotifierProvider<JudgementController, void> {
-  const JudgementControllerProvider._()
+final class AvatarEditControllerProvider
+    extends $AsyncNotifierProvider<AvatarEditController, void> {
+  const AvatarEditControllerProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
-        name: r'judgementControllerProvider',
+        name: r'avatarEditControllerProvider',
         isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
 
   @override
-  String debugGetCreateSourceHash() => _$judgementControllerHash();
+  String debugGetCreateSourceHash() => _$avatarEditControllerHash();
 
   @$internal
   @override
-  JudgementController create() => JudgementController();
+  AvatarEditController create() => AvatarEditController();
 }
 
-String _$judgementControllerHash() =>
-    r'56ae197117d46f64837de579c1cf44175b06bad5';
+String _$avatarEditControllerHash() =>
+    r'ba84b0e78953ccf0c194162314123cd203333300';
 
-abstract class _$JudgementController extends $AsyncNotifier<void> {
+abstract class _$AvatarEditController extends $AsyncNotifier<void> {
   FutureOr<void> build();
   @$mustCallSuper
   @override

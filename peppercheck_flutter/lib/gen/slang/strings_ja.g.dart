@@ -411,6 +411,9 @@ class TranslationsProfileJa {
 
 	/// ja: 'プロフィール'
 	String get title => 'プロフィール';
+
+	late final TranslationsProfileHeaderJa header = TranslationsProfileHeaderJa.internal(_root);
+	late final TranslationsProfileEditJa edit = TranslationsProfileEditJa.internal(_root);
 }
 
 // Path: report
@@ -1038,6 +1041,47 @@ class TranslationsTaskJudgementJa {
 	late final TranslationsTaskJudgementReviewTimeoutJa reviewTimeout = TranslationsTaskJudgementReviewTimeoutJa.internal(_root);
 }
 
+// Path: profile.header
+class TranslationsProfileHeaderJa {
+	TranslationsProfileHeaderJa.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// ja: 'プロフィール設定'
+	String get sectionTitle => 'プロフィール設定';
+
+	/// ja: '編集'
+	String get editUsernameButton => '編集';
+}
+
+// Path: profile.edit
+class TranslationsProfileEditJa {
+	TranslationsProfileEditJa.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// ja: 'ユーザー名'
+	String get usernameTitle => 'ユーザー名';
+
+	/// ja: '2〜20文字'
+	String get usernameHint => '2〜20文字';
+
+	/// ja: '切り抜き'
+	String get cropTitle => '切り抜き';
+
+	/// ja: '保存'
+	String get save => '保存';
+
+	/// ja: 'キャンセル'
+	String get cancel => 'キャンセル';
+
+	late final TranslationsProfileEditErrorsJa errors = TranslationsProfileEditErrorsJa.internal(_root);
+}
+
 // Path: report.contentType
 class TranslationsReportContentTypeJa {
 	TranslationsReportContentTypeJa.internal(this._root);
@@ -1382,6 +1426,36 @@ class TranslationsTaskJudgementReviewTimeoutJa {
 	String get success => '確認しました';
 }
 
+// Path: profile.edit.errors
+class TranslationsProfileEditErrorsJa {
+	TranslationsProfileEditErrorsJa.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// ja: '2文字以上で入力してください'
+	String get tooShort => '2文字以上で入力してください';
+
+	/// ja: '20文字以内で入力してください'
+	String get tooLong => '20文字以内で入力してください';
+
+	/// ja: '英数字・ひらがな・カタカナ・漢字・_・- のみ使えます'
+	String get invalidChars => '英数字・ひらがな・カタカナ・漢字・_・- のみ使えます';
+
+	/// ja: 'このユーザー名は既に使われています'
+	String get taken => 'このユーザー名は既に使われています';
+
+	/// ja: '画像のアップロードに失敗しました'
+	String get uploadFailed => '画像のアップロードに失敗しました';
+
+	/// ja: '設定から写真へのアクセスを許可してください'
+	String get galleryPermission => '設定から写真へのアクセスを許可してください';
+
+	/// ja: 'エラーが発生しました。しばらくしてからお試しください'
+	String get generic => 'エラーが発生しました。しばらくしてからお試しください';
+}
+
 // Path: matching.referee_availability.help
 class TranslationsMatchingRefereeAvailabilityHelpJa {
 	TranslationsMatchingRefereeAvailabilityHelpJa.internal(this._root);
@@ -1678,6 +1752,20 @@ extension on Translations {
 			'task.judgement.reviewTimeout.confirmed' => '確認済み',
 			'task.judgement.reviewTimeout.success' => '確認しました',
 			'profile.title' => 'プロフィール',
+			'profile.header.sectionTitle' => 'プロフィール設定',
+			'profile.header.editUsernameButton' => '編集',
+			'profile.edit.usernameTitle' => 'ユーザー名',
+			'profile.edit.usernameHint' => '2〜20文字',
+			'profile.edit.cropTitle' => '切り抜き',
+			'profile.edit.save' => '保存',
+			'profile.edit.cancel' => 'キャンセル',
+			'profile.edit.errors.tooShort' => '2文字以上で入力してください',
+			'profile.edit.errors.tooLong' => '20文字以内で入力してください',
+			'profile.edit.errors.invalidChars' => '英数字・ひらがな・カタカナ・漢字・_・- のみ使えます',
+			'profile.edit.errors.taken' => 'このユーザー名は既に使われています',
+			'profile.edit.errors.uploadFailed' => '画像のアップロードに失敗しました',
+			'profile.edit.errors.galleryPermission' => '設定から写真へのアクセスを許可してください',
+			'profile.edit.errors.generic' => 'エラーが発生しました。しばらくしてからお試しください',
 			'report.menuItem' => '問題を報告',
 			'report.menuItemReported' => '問題を報告（報告済み）',
 			'report.sheetTitle' => '問題を報告',

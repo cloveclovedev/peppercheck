@@ -34,6 +34,10 @@ class AppSizes {
   static const double baseCardIconSize = 20.0;
   static const double baseCardIconGap = 12.0;
 
+  // Profile header avatar. 48dp fits neatly inside a BaseCard row while
+  // remaining visually distinct from the 20dp baseCardIconSize.
+  static const double avatarSizeLarge = 36.0;
+
   // Task Card specific
   static const double taskCardTitleInfoGap = 2.0;
   static const double taskCardStatusGap = 8.0;

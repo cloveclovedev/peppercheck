@@ -1,7 +1,7 @@
 -- Table: profiles
 CREATE TABLE IF NOT EXISTS public.profiles (
     id uuid NOT NULL,
-    username text,
+    username text NOT NULL,
     avatar_url text,
     created_at timestamp with time zone DEFAULT now(),
     stripe_connect_account_id text,
@@ -16,6 +16,10 @@ ALTER TABLE ONLY public.profiles
 
 ALTER TABLE ONLY public.profiles
     ADD CONSTRAINT profiles_username_key UNIQUE (username);
+
+ALTER TABLE ONLY public.profiles
+    ADD CONSTRAINT profiles_username_length_check
+    CHECK (char_length(username) BETWEEN 2 AND 20);
 
 -- Indexes
 CREATE INDEX idx_profiles_timezone ON public.profiles USING btree (timezone);

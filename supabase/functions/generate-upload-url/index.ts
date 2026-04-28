@@ -1,15 +1,15 @@
 // Setup type definitions for built-in Supabase Runtime APIs
-import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
+import 'jsr:@supabase/functions-js@^2/edge-runtime.d.ts'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { PutObjectCommand, S3Client } from 'npm:@aws-sdk/client-s3@3'
 import { getSignedUrl } from 'npm:@aws-sdk/s3-request-presigner@3'
 
 interface UploadRequest {
-  task_id: string
+  task_id?: string // required only when kind === 'evidence'
   filename: string
   content_type: string
   file_size_bytes: number
-  kind: string // "evidence" for now, expandable later
+  kind: string // "evidence" | "avatar"
 }
 
 interface UploadResponse {
@@ -47,21 +47,30 @@ function validateContentType(filename: string, contentType: string): boolean {
   return allowedExts ? allowedExts.includes(ext || '') : false
 }
 
-// Generate R2 key based on kind and due_date
-function generateR2Key(kind: string, filename: string, dueDateString: string): string {
-  // due_dateをパースして日付ベースのパスを生成
-  const date = new Date(dueDateString)
-  const year = date.getUTCFullYear()
-  const month = String(date.getUTCMonth() + 1).padStart(2, '0')
-  const day = String(date.getUTCDate()).padStart(2, '0')
-  const uuid = crypto.randomUUID()
+interface KeyOpts {
+  dueDateString?: string
+  userId?: string
+}
 
+// Generate R2 key based on kind
+function generateR2Key(kind: string, filename: string, opts: KeyOpts): string {
+  const uuid = crypto.randomUUID()
   const ext = filename.toLowerCase().split('.').pop()
   const cleanFilename = `${uuid}.${ext}`
 
   switch (kind) {
-    case 'evidence':
+    case 'evidence': {
+      if (!opts.dueDateString) throw new Error('evidence requires dueDateString')
+      const date = new Date(opts.dueDateString)
+      const year = date.getUTCFullYear()
+      const month = String(date.getUTCMonth() + 1).padStart(2, '0')
+      const day = String(date.getUTCDate()).padStart(2, '0')
       return `${kind}/${year}-${month}-${day}/${cleanFilename}`
+    }
+    case 'avatar': {
+      if (!opts.userId) throw new Error('avatar requires userId')
+      return `avatar/${opts.userId}/${cleanFilename}`
+    }
     default:
       throw new Error(`Unsupported kind: ${kind}`)
   }
@@ -128,10 +137,9 @@ Deno.serve(async (req: Request) => {
 
     const { task_id, filename, content_type, file_size_bytes, kind } = body
 
-    // Validation
-    if (!task_id || !filename || !content_type || !file_size_bytes || !kind) {
+    // Common required fields (task_id is checked per-kind below)
+    if (!filename || !content_type || !file_size_bytes || !kind) {
       const missingFields = []
-      if (!task_id) missingFields.push('task_id')
       if (!filename) missingFields.push('filename')
       if (!content_type) missingFields.push('content_type')
       if (!file_size_bytes) missingFields.push('file_size_bytes')
@@ -173,31 +181,50 @@ Deno.serve(async (req: Request) => {
       )
     }
 
-    // Verify user owns the task
-    const { data: task, error: taskError } = await supabaseClient
-      .from('tasks')
-      .select('id, tasker_id, due_date')
-      .eq('id', task_id)
-      .eq('tasker_id', user.id)
-      .single()
+    // Kind-aware dispatch: verify ownership and generate R2 key
+    let r2Key: string
 
-    if (taskError || !task) {
-      console.error('Task verification error:', taskError)
-      return new Response(
-        JSON.stringify({
-          error: 'Task not found or you do not have permission to upload evidence for this task',
-        }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-      )
-    }
+    if (kind === 'evidence') {
+      if (!task_id) {
+        return new Response(
+          JSON.stringify({ error: 'task_id is required for evidence uploads' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        )
+      }
 
-    // due_dateが存在するかチェック
-    if (!task.due_date) {
+      const { data: task, error: taskError } = await supabaseClient
+        .from('tasks')
+        .select('id, tasker_id, due_date')
+        .eq('id', task_id)
+        .eq('tasker_id', user.id)
+        .single()
+
+      if (taskError || !task) {
+        console.error('Task verification error:', taskError)
+        return new Response(
+          JSON.stringify({
+            error: 'Task not found or you do not have permission to upload evidence for this task',
+          }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        )
+      }
+
+      if (!task.due_date) {
+        return new Response(
+          JSON.stringify({
+            error:
+              `Task with id ${task_id} does not have a due_date, which is required for file uploads.`,
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        )
+      }
+
+      r2Key = generateR2Key(kind, filename, { dueDateString: task.due_date })
+    } else if (kind === 'avatar') {
+      r2Key = generateR2Key(kind, filename, { userId: user.id })
+    } else {
       return new Response(
-        JSON.stringify({
-          error:
-            `Task with id ${task_id} does not have a due_date, which is required for file uploads.`,
-        }),
+        JSON.stringify({ error: `Unsupported kind: ${kind}` }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
     }
@@ -222,9 +249,6 @@ Deno.serve(async (req: Request) => {
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
     }
-
-    // Generate R2 key
-    const r2Key = generateR2Key(kind, filename, task.due_date)
 
     // Initialize S3 client for R2
     const s3Client = new S3Client({

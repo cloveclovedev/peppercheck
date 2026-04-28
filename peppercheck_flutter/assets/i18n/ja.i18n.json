@@ -253,7 +253,27 @@
     }
   },
   "profile": {
-    "title": "プロフィール"
+    "title": "プロフィール",
+    "header": {
+      "sectionTitle": "プロフィール設定",
+      "editUsernameButton": "編集"
+    },
+    "edit": {
+      "usernameTitle": "ユーザー名",
+      "usernameHint": "2〜20文字",
+      "cropTitle": "切り抜き",
+      "save": "保存",
+      "cancel": "キャンセル",
+      "errors": {
+        "tooShort": "2文字以上で入力してください",
+        "tooLong": "20文字以内で入力してください",
+        "invalidChars": "英数字・ひらがな・カタカナ・漢字・_・- のみ使えます",
+        "taken": "このユーザー名は既に使われています",
+        "uploadFailed": "画像のアップロードに失敗しました",
+        "galleryPermission": "設定から写真へのアクセスを許可してください",
+        "generic": "エラーが発生しました。しばらくしてからお試しください"
+      }
+    }
   },
   "report": {
     "menuItem": "問題を報告",
