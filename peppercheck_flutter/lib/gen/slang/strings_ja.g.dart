@@ -83,8 +83,8 @@ class TranslationsHomeJa {
 	/// ja: 'ホーム'
 	String get title => 'ホーム';
 
-	/// ja: '自分のタスク'
-	String get myTasks => '自分のタスク';
+	/// ja: 'タスク'
+	String get myTasks => 'タスク';
 
 	/// ja: '判定依頼'
 	String get refereeTasks => '判定依頼';
@@ -1483,7 +1483,7 @@ extension on Translations {
 			'login.title' => 'PEPPERCHECK',
 			'login.aboutLink' => 'PepperCheckとは？',
 			'home.title' => 'ホーム',
-			'home.myTasks' => '自分のタスク',
+			'home.myTasks' => 'タスク',
 			'home.refereeTasks' => '判定依頼',
 			'home.noTasks' => 'タスクはありません',
 			'nav.home' => 'Home',
