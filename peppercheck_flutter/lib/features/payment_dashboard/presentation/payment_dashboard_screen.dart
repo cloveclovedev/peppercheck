@@ -16,7 +16,7 @@ class PaymentDashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return AppBackground(
       child: AppScaffold.scrollable(
-        title: t.nav.payments,
+        title: t.dashboard.title,
         currentIndex: 1,
         onRefresh: () async {
           ref.invalidate(paymentSummaryControllerProvider);
