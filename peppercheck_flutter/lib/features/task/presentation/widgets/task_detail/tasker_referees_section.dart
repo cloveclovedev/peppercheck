@@ -46,8 +46,6 @@ class _RefereeCard extends StatelessWidget {
     final referee = request.referee;
     final username = referee?.username ?? t.task.detail.refereePending;
     final avatarUrl = referee?.avatarUrl;
-    final strategyLabel = _strategyLabel(request.matchingStrategy);
-    final statusLabel = _statusLabel(request.status);
 
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -62,7 +60,7 @@ class _RefereeCard extends StatelessWidget {
         children: [
           if (avatarUrl != null)
             CircleAvatar(
-              radius: AppSizes.baseCardIconSize / 2,
+              radius: AppSizes.avatarSizeMedium / 2,
               backgroundImage: NetworkImage(avatarUrl),
               backgroundColor: Colors.transparent,
             )
@@ -70,66 +68,21 @@ class _RefereeCard extends StatelessWidget {
             const Icon(
               Icons.person,
               color: AppColors.textSecondary,
-              size: AppSizes.baseCardIconSize,
+              size: AppSizes.avatarSizeMedium,
             ),
           const SizedBox(width: AppSizes.baseCardIconGap),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  username,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  '$strategyLabel ($statusLabel)',
-                  style: const TextStyle(color: AppColors.textMuted),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+            child: Text(
+              username,
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
       ),
     );
-  }
-}
-
-String _strategyLabel(String value) {
-  switch (value) {
-    case 'standard':
-      return t.task.detail.matchingStrategy.standard;
-    case 'premium':
-      return t.task.detail.matchingStrategy.premium;
-    case 'direct':
-      return t.task.detail.matchingStrategy.direct;
-    default:
-      return value;
-  }
-}
-
-String _statusLabel(String value) {
-  switch (value) {
-    case 'pending':
-      return t.task.detail.refereeStatus.pending;
-    case 'matched':
-      return t.task.detail.refereeStatus.matched;
-    case 'accepted':
-      return t.task.detail.refereeStatus.accepted;
-    case 'declined':
-      return t.task.detail.refereeStatus.declined;
-    case 'expired':
-      return t.task.detail.refereeStatus.expired;
-    case 'payment_processing':
-      return t.task.detail.refereeStatus.paymentProcessing;
-    case 'closed':
-      return t.task.detail.refereeStatus.closed;
-    case 'cancelled':
-      return t.task.detail.refereeStatus.cancelled;
-    default:
-      return value;
   }
 }
