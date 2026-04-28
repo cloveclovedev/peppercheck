@@ -130,7 +130,11 @@ class _AvatarTile extends StatelessWidget {
                   ? NetworkImage(avatarUrl!)
                   : null,
               child: avatarUrl == null
-                  ? const Icon(Icons.person, size: size * 0.6)
+                  ? const Icon(
+                      Icons.person,
+                      size: size * 0.6,
+                      color: AppColors.textSecondary,
+                    )
                   : null,
             ),
             if (isUploading)

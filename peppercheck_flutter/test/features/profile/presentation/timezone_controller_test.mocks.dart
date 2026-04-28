@@ -5,8 +5,10 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i4;
 
-import 'package:logger/logger.dart' as _i5;
+import 'package:image_cropper/image_cropper.dart' as _i5;
+import 'package:logger/logger.dart' as _i7;
 import 'package:mockito/mockito.dart' as _i1;
+import 'package:mockito/src/dummies.dart' as _i6;
 import 'package:peppercheck_flutter/features/profile/data/profile_repository.dart'
     as _i3;
 import 'package:peppercheck_flutter/features/profile/domain/profile.dart'
@@ -57,12 +59,40 @@ class MockProfileRepository extends _i1.Mock implements _i3.ProfileRepository {
             returnValueForMissingStub: _i4.Future<void>.value(),
           )
           as _i4.Future<void>);
+
+  @override
+  _i4.Future<void> updateUsername(String? userId, String? username) =>
+      (super.noSuchMethod(
+            Invocation.method(#updateUsername, [userId, username]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<String> updateAvatar(String? userId, _i5.CroppedFile? cropped) =>
+      (super.noSuchMethod(
+            Invocation.method(#updateAvatar, [userId, cropped]),
+            returnValue: _i4.Future<String>.value(
+              _i6.dummyValue<String>(
+                this,
+                Invocation.method(#updateAvatar, [userId, cropped]),
+              ),
+            ),
+            returnValueForMissingStub: _i4.Future<String>.value(
+              _i6.dummyValue<String>(
+                this,
+                Invocation.method(#updateAvatar, [userId, cropped]),
+              ),
+            ),
+          )
+          as _i4.Future<String>);
 }
 
 /// A class which mocks [Logger].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockLogger extends _i1.Mock implements _i5.Logger {
+class MockLogger extends _i1.Mock implements _i7.Logger {
   @override
   _i4.Future<void> get init =>
       (super.noSuchMethod(
@@ -194,7 +224,7 @@ class MockLogger extends _i1.Mock implements _i5.Logger {
 
   @override
   void log(
-    _i5.Level? level,
+    _i7.Level? level,
     dynamic message, {
     DateTime? time,
     Object? error,
