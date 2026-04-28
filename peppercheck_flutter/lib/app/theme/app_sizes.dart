@@ -41,6 +41,9 @@ class AppSizes {
   // Mid-size avatar used in task detail referee/requester cards.
   static const double avatarSizeMedium = 24.0;
 
+  // Width of the white ring around overlapping avatars in a stack.
+  static const double avatarStackRingWidth = 1.0;
+
   // Task Card specific
   static const double taskCardTitleInfoGap = 2.0;
   static const double taskCardStatusGap = 8.0;
