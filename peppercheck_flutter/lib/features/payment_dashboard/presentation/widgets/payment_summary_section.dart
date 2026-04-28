@@ -127,7 +127,7 @@ class _SummaryContent extends StatelessWidget {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: AppSizes.spacingMicro),
                           _CardValue(
                             value: summary.rewards != null
                                 ? _formatCurrency(
@@ -173,7 +173,7 @@ class _SummaryContent extends StatelessWidget {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: AppSizes.spacingMicro),
                           _CardValue(
                             value:
                                 summary.rewards != null &&
@@ -417,7 +417,7 @@ class _CardValue extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       value,
-      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
         fontWeight: FontWeight.bold,
         color: AppColors.textPrimary,
       ),
