@@ -418,28 +418,66 @@ class _EvidenceSubmissionSectionState
             ),
             const SizedBox(height: AppSizes.spacingSmall),
 
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: evidence.assets.map((asset) {
-                if (asset.publicUrl != null) {
-                  return Image.network(
-                    asset.publicUrl!,
-                    width: 100,
-                    height: 100,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) =>
-                        const Icon(Icons.broken_image),
-                  );
-                } else {
-                  return Container(
-                    width: 100,
-                    height: 100,
-                    color: Colors.grey,
-                    child: const Icon(Icons.image),
-                  );
-                }
-              }).toList(),
+            Builder(
+              builder: (context) {
+                final imageUrls = evidence.assets
+                    .where((a) => a.publicUrl != null)
+                    .map((a) => a.publicUrl!)
+                    .toList(growable: false);
+                return Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: evidence.assets.map((asset) {
+                    if (asset.publicUrl != null) {
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              fullscreenDialog: true,
+                              builder: (_) => _FullscreenImageViewer(
+                                imageUrls: imageUrls,
+                                initialIndex: imageUrls.indexOf(
+                                  asset.publicUrl!,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(
+                            AppSizes.radiusSmall,
+                          ),
+                          child: Image.network(
+                            asset.publicUrl!,
+                            width: 100,
+                            height: 100,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                Container(
+                                  width: 100,
+                                  height: 100,
+                                  color: Colors.grey,
+                                  child: const Icon(Icons.broken_image),
+                                ),
+                          ),
+                        ),
+                      );
+                    } else {
+                      return ClipRRect(
+                        borderRadius: BorderRadius.circular(
+                          AppSizes.radiusSmall,
+                        ),
+                        child: Container(
+                          width: 100,
+                          height: 100,
+                          color: Colors.grey,
+                          child: const Icon(Icons.image),
+                        ),
+                      );
+                    }
+                  }).toList(),
+                );
+              },
             ),
             if (_isInReview() && _isCurrentUserTasker()) ...[
               const SizedBox(height: AppSizes.spacingSmall),
@@ -634,6 +672,120 @@ class _EvidenceSubmissionSectionState
                 : null,
             isLoading: isLoading,
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FullscreenImageViewer extends StatefulWidget {
+  final List<String> imageUrls;
+  final int initialIndex;
+
+  const _FullscreenImageViewer({
+    required this.imageUrls,
+    required this.initialIndex,
+  });
+
+  @override
+  State<_FullscreenImageViewer> createState() => _FullscreenImageViewerState();
+}
+
+class _FullscreenImageViewerState extends State<_FullscreenImageViewer> {
+  late final PageController _pageController;
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+    _pageController = PageController(initialPage: widget.initialIndex);
+    _pageController.addListener(_handlePageChanged);
+  }
+
+  void _handlePageChanged() {
+    final page = _pageController.page;
+    if (page == null) return;
+    final newIndex = page.round();
+    if (newIndex != _currentIndex) {
+      setState(() => _currentIndex = newIndex);
+    }
+  }
+
+  @override
+  void dispose() {
+    _pageController.removeListener(_handlePageChanged);
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black87,
+      body: Stack(
+        children: [
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => Navigator.of(context).pop(),
+            child: PageView.builder(
+              controller: _pageController,
+              itemCount: widget.imageUrls.length,
+              itemBuilder: (context, index) {
+                return Image.network(
+                  widget.imageUrls[index],
+                  fit: BoxFit.contain,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return const Center(
+                      child: CircularProgressIndicator(color: Colors.white),
+                    );
+                  },
+                  errorBuilder: (context, error, stackTrace) => const Center(
+                    child: Icon(
+                      Icons.broken_image,
+                      color: Colors.white,
+                      size: 64,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          SafeArea(
+            child: Align(
+              alignment: Alignment.topRight,
+              child: IconButton(
+                icon: const Icon(Icons.close, color: Colors.white),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ),
+          ),
+          if (widget.imageUrls.length > 1)
+            SafeArea(
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                    bottom: AppSizes.spacingStandard,
+                  ),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSizes.spacingMedium,
+                      vertical: AppSizes.spacingTiny,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
+                    ),
+                    child: Text(
+                      '${_currentIndex + 1} / ${widget.imageUrls.length}',
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
