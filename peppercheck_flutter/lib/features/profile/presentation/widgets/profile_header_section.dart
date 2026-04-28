@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:peppercheck_flutter/app/theme/app_colors.dart';
 import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
+import 'package:peppercheck_flutter/common_widgets/base_card.dart';
 import 'package:peppercheck_flutter/common_widgets/base_section.dart';
 import 'package:peppercheck_flutter/features/profile/presentation/avatar_edit_controller.dart';
 import 'package:peppercheck_flutter/features/profile/presentation/providers/current_profile_provider.dart';
@@ -32,31 +33,42 @@ class ProfileHeaderSection extends ConsumerWidget {
           if (profile == null) {
             return const SizedBox.shrink();
           }
-          return Row(
-            children: [
-              _AvatarTile(
-                avatarUrl: profile.avatarUrl,
-                isUploading: isUploadingAvatar,
-                onTap: isUploadingAvatar
-                    ? null
-                    : () => _onAvatarTap(context, ref),
-              ),
-              const SizedBox(width: AppSizes.spacingMedium),
-              Expanded(
-                child: Text(
-                  profile.username ?? '',
-                  style: Theme.of(context).textTheme.titleMedium,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+          return BaseCard(
+            child: Row(
+              children: [
+                _AvatarTile(
+                  avatarUrl: profile.avatarUrl,
+                  isUploading: isUploadingAvatar,
+                  onTap: isUploadingAvatar
+                      ? null
+                      : () => _onAvatarTap(context, ref),
                 ),
-              ),
-              TextButton.icon(
-                icon: const Icon(Icons.edit, size: 16),
-                label: Text(t.profile.header.editUsernameButton),
-                onPressed: () =>
-                    _onEditUsername(context, profile.username ?? ''),
-              ),
-            ],
+                const SizedBox(width: AppSizes.spacingMedium),
+                Expanded(
+                  child: Text(
+                    profile.username ?? '',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textPrimary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                InkWell(
+                  onTap: () => _onEditUsername(context, profile.username ?? ''),
+                  customBorder: const CircleBorder(),
+                  child: const Padding(
+                    padding: EdgeInsets.all(AppSizes.timeSlotCardIconPadding),
+                    child: Icon(
+                      Icons.edit,
+                      color: AppColors.textSecondary,
+                      size: AppSizes.timeSlotCardIconSize,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           );
         },
       ),
@@ -143,14 +155,14 @@ class _AvatarTile extends StatelessWidget {
               bottom: -2,
               right: -2,
               child: Container(
-                padding: const EdgeInsets.all(4),
+                padding: const EdgeInsets.all(3),
                 decoration: const BoxDecoration(
                   color: Colors.black87,
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
                   Icons.camera_alt,
-                  size: 14,
+                  size: 10,
                   color: Colors.white,
                 ),
               ),
