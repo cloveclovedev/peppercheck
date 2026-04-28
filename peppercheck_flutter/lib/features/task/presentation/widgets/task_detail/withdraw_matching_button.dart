@@ -36,8 +36,26 @@ class _WithdrawMatchingButtonState
     return null;
   }
 
+  // Judgement states from which the referee's involvement cannot be undone:
+  // approved is awaiting tasker confirmation, the timeouts and confirmed are
+  // terminal. (rejected stays withdrawable since the tasker may resubmit
+  // evidence and the referee would re-review.)
+  static const _terminalJudgementStatuses = {
+    'approved',
+    'review_timeout',
+    'evidence_timeout',
+    'confirmed',
+  };
+
   bool _canWithdraw(RefereeRequest myRequest) {
     if (myRequest.status != 'accepted') return false;
+
+    final judgementStatus = myRequest.judgement?.status;
+    if (judgementStatus != null &&
+        _terminalJudgementStatuses.contains(judgementStatus)) {
+      return false;
+    }
+
     if (widget.task.dueDate == null) return true;
     final due = DateTime.parse(widget.task.dueDate!);
     final cutoff = DateTime.now().add(
