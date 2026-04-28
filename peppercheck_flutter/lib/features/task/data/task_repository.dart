@@ -87,6 +87,7 @@ class TaskRepository {
           .from('tasks')
           .select('''
             *,
+            tasker_profile:profiles!tasker_id (*),
             task_referee_requests (
               *,
               judgements (*),
@@ -202,6 +203,7 @@ class TaskRepository {
           .from('tasks')
           .select('''
             *,
+            tasker_profile:profiles!tasker_id (*),
             task_referee_requests (
               *,
               judgements (*),
