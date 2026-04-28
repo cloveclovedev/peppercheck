@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:peppercheck_flutter/app/theme/app_colors.dart';
 import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
 import 'package:peppercheck_flutter/common_widgets/base_section.dart';
-import 'package:peppercheck_flutter/features/profile/presentation/profile_edit_controller.dart';
+import 'package:peppercheck_flutter/features/profile/presentation/avatar_edit_controller.dart';
 import 'package:peppercheck_flutter/features/profile/presentation/providers/current_profile_provider.dart';
 import 'package:peppercheck_flutter/features/profile/presentation/widgets/edit_username_dialog.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
@@ -14,11 +14,11 @@ class ProfileHeaderSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profileAsync = ref.watch(currentProfileProvider);
-    final editState = ref.watch(profileEditControllerProvider);
-    final isUploadingAvatar = editState.isLoading;
+    final avatarState = ref.watch(avatarEditControllerProvider);
+    final isUploadingAvatar = avatarState.isLoading;
 
     return BaseSection(
-      title: '',
+      title: t.profile.header.sectionTitle,
       child: profileAsync.when(
         loading: () => const SizedBox(
           height: AppSizes.avatarSizeLarge,
@@ -65,7 +65,7 @@ class ProfileHeaderSection extends ConsumerWidget {
 
   void _onAvatarTap(BuildContext context, WidgetRef ref) {
     ref
-        .read(profileEditControllerProvider.notifier)
+        .read(avatarEditControllerProvider.notifier)
         .pickCropAndUpdateAvatar(
           onSuccess: () {},
           onError: (errorKey) {

@@ -1049,6 +1049,9 @@ class TranslationsProfileHeaderJa {
 
 	// Translations
 
+	/// ja: 'プロフィール設定'
+	String get sectionTitle => 'プロフィール設定';
+
 	/// ja: '編集'
 	String get editUsernameButton => '編集';
 }
@@ -1749,6 +1752,7 @@ extension on Translations {
 			'task.judgement.reviewTimeout.confirmed' => '確認済み',
 			'task.judgement.reviewTimeout.success' => '確認しました',
 			'profile.title' => 'プロフィール',
+			'profile.header.sectionTitle' => 'プロフィール設定',
 			'profile.header.editUsernameButton' => '編集',
 			'profile.edit.usernameTitle' => 'ユーザー名',
 			'profile.edit.usernameHint' => '2〜20文字',

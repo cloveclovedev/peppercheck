@@ -7,10 +7,10 @@ import 'package:peppercheck_flutter/app/app_logger.dart';
 import 'package:peppercheck_flutter/features/authentication/data/auth_state_provider.dart';
 import 'package:peppercheck_flutter/features/profile/data/profile_errors.dart';
 import 'package:peppercheck_flutter/features/profile/data/profile_repository.dart';
-import 'package:peppercheck_flutter/features/profile/presentation/profile_edit_controller.dart';
+import 'package:peppercheck_flutter/features/profile/presentation/username_edit_controller.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'profile_edit_controller_test.mocks.dart';
+import 'username_edit_controller_test.mocks.dart';
 
 @GenerateNiceMocks([MockSpec<ProfileRepository>(), MockSpec<Logger>()])
 void main() {
@@ -49,10 +49,10 @@ void main() {
       var successCalled = false;
 
       await container
-          .read(profileEditControllerProvider.notifier)
+          .read(usernameEditControllerProvider.notifier)
           .updateUsername(username: 'a', onSuccess: () => successCalled = true);
 
-      final state = container.read(profileEditControllerProvider);
+      final state = container.read(usernameEditControllerProvider);
       expect(state.hasError, isTrue);
       expect(state.error, equals('tooShort'));
       verifyNever(mockProfileRepository.updateUsername(any, any));
@@ -62,10 +62,10 @@ void main() {
     test('rejects values longer than 20 characters', () async {
       final container = makeContainer();
       await container
-          .read(profileEditControllerProvider.notifier)
+          .read(usernameEditControllerProvider.notifier)
           .updateUsername(username: 'a' * 21, onSuccess: () {});
 
-      final state = container.read(profileEditControllerProvider);
+      final state = container.read(usernameEditControllerProvider);
       expect(state.hasError, isTrue);
       expect(state.error, equals('tooLong'));
       verifyNever(mockProfileRepository.updateUsername(any, any));
@@ -74,10 +74,10 @@ void main() {
     test('rejects values containing emoji', () async {
       final container = makeContainer();
       await container
-          .read(profileEditControllerProvider.notifier)
+          .read(usernameEditControllerProvider.notifier)
           .updateUsername(username: 'hello🍀', onSuccess: () {});
 
-      final state = container.read(profileEditControllerProvider);
+      final state = container.read(usernameEditControllerProvider);
       expect(state.hasError, isTrue);
       expect(state.error, equals('invalidChars'));
       verifyNever(mockProfileRepository.updateUsername(any, any));
@@ -86,10 +86,10 @@ void main() {
     test('rejects values containing punctuation/symbols', () async {
       final container = makeContainer();
       await container
-          .read(profileEditControllerProvider.notifier)
+          .read(usernameEditControllerProvider.notifier)
           .updateUsername(username: 'tanaka@home', onSuccess: () {});
 
-      final state = container.read(profileEditControllerProvider);
+      final state = container.read(usernameEditControllerProvider);
       expect(state.hasError, isTrue);
       expect(state.error, equals('invalidChars'));
     });
@@ -101,13 +101,13 @@ void main() {
       ).thenAnswer((_) async {});
 
       await container
-          .read(profileEditControllerProvider.notifier)
+          .read(usernameEditControllerProvider.notifier)
           .updateUsername(username: 'たなか花子', onSuccess: () {});
 
       verify(
         mockProfileRepository.updateUsername('user-123', 'たなか花子'),
       ).called(1);
-      expect(container.read(profileEditControllerProvider).hasError, isFalse);
+      expect(container.read(usernameEditControllerProvider).hasError, isFalse);
     });
 
     test('trims whitespace before validation and submission', () async {
@@ -117,7 +117,7 @@ void main() {
       ).thenAnswer((_) async {});
 
       await container
-          .read(profileEditControllerProvider.notifier)
+          .read(usernameEditControllerProvider.notifier)
           .updateUsername(username: '  tanaka  ', onSuccess: () {});
 
       verify(
@@ -133,7 +133,7 @@ void main() {
 
       var successCalled = false;
       await container
-          .read(profileEditControllerProvider.notifier)
+          .read(usernameEditControllerProvider.notifier)
           .updateUsername(
             username: 'tanaka',
             onSuccess: () => successCalled = true,
@@ -143,7 +143,7 @@ void main() {
         mockProfileRepository.updateUsername('user-123', 'tanaka'),
       ).called(1);
       expect(successCalled, isTrue);
-      expect(container.read(profileEditControllerProvider).hasError, isFalse);
+      expect(container.read(usernameEditControllerProvider).hasError, isFalse);
     });
 
     test('surfaces UsernameAlreadyTakenException as error state', () async {
@@ -154,13 +154,13 @@ void main() {
 
       var successCalled = false;
       await container
-          .read(profileEditControllerProvider.notifier)
+          .read(usernameEditControllerProvider.notifier)
           .updateUsername(
             username: 'existing',
             onSuccess: () => successCalled = true,
           );
 
-      final state = container.read(profileEditControllerProvider);
+      final state = container.read(usernameEditControllerProvider);
       expect(state.hasError, isTrue);
       expect(state.error, isA<UsernameAlreadyTakenException>());
       expect(successCalled, isFalse);

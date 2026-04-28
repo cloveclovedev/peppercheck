@@ -255,6 +255,7 @@
   "profile": {
     "title": "プロフィール",
     "header": {
+      "sectionTitle": "プロフィール設定",
       "editUsernameButton": "編集"
     },
     "edit": {

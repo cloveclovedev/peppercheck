@@ -1,13 +1,11 @@
 import 'dart:async';
 
-import 'package:image_cropper/image_cropper.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:peppercheck_flutter/features/authentication/data/auth_state_provider.dart';
 import 'package:peppercheck_flutter/features/profile/data/profile_repository.dart';
 import 'package:peppercheck_flutter/features/profile/presentation/providers/current_profile_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-part 'profile_edit_controller.g.dart';
+part 'username_edit_controller.g.dart';
 
 /// Validates a username synchronously. Returns an error key on failure,
 /// or null if the value is valid. Shared between the dialog (real-time
@@ -25,9 +23,15 @@ String? validateUsername(String value) {
 }
 
 @riverpod
-class ProfileEditController extends _$ProfileEditController {
+class UsernameEditController extends _$UsernameEditController {
   @override
   FutureOr<void> build() {}
+
+  /// Resets controller state to the initial clean state.
+  /// Call this when the dialog opens to clear any error from a previous session.
+  void reset() {
+    state = const AsyncData(null);
+  }
 
   Future<void> updateUsername({
     required String username,
@@ -62,61 +66,5 @@ class ProfileEditController extends _$ProfileEditController {
       ref.invalidate(currentProfileProvider);
       onSuccess();
     });
-  }
-
-  Future<void> pickCropAndUpdateAvatar({
-    required void Function() onSuccess,
-    required void Function(String errorKey) onError,
-  }) async {
-    final picker = ImagePicker();
-    final XFile? picked;
-    try {
-      picked = await picker.pickImage(source: ImageSource.gallery);
-    } catch (_) {
-      onError('galleryPermission');
-      return;
-    }
-    if (picked == null) return; // user cancelled
-
-    final cropper = ImageCropper();
-    final cropped = await cropper.cropImage(
-      sourcePath: picked.path,
-      maxWidth: 512,
-      maxHeight: 512,
-      compressFormat: ImageCompressFormat.jpg,
-      compressQuality: 85,
-      uiSettings: [
-        AndroidUiSettings(
-          toolbarTitle: 'crop',
-          aspectRatioPresets: const [CropAspectRatioPreset.square],
-          lockAspectRatio: true,
-          cropStyle: CropStyle.circle,
-        ),
-        IOSUiSettings(
-          title: 'crop',
-          aspectRatioPresets: const [CropAspectRatioPreset.square],
-          aspectRatioLockEnabled: true,
-          cropStyle: CropStyle.circle,
-        ),
-      ],
-    );
-    if (cropped == null) return; // user cancelled cropper
-
-    final user = ref.read(currentUserProvider);
-    if (user == null) {
-      onError('generic');
-      return;
-    }
-
-    state = const AsyncLoading();
-    state = await AsyncValue.guard(() async {
-      await ref.read(profileRepositoryProvider).updateAvatar(user.id, cropped);
-      ref.invalidate(currentProfileProvider);
-      onSuccess();
-    });
-
-    if (state.hasError) {
-      onError('uploadFailed');
-    }
   }
 }
