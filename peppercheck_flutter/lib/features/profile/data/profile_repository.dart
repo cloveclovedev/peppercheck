@@ -1,5 +1,6 @@
 import 'package:logger/logger.dart';
 import 'package:peppercheck_flutter/app/app_logger.dart';
+import 'package:peppercheck_flutter/features/profile/data/profile_errors.dart';
 import 'package:peppercheck_flutter/features/profile/domain/profile.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -34,6 +35,24 @@ class ProfileRepository {
           .eq('id', userId);
     } catch (e, st) {
       _logger.e('Update timezone failed', error: e, stackTrace: st);
+      rethrow;
+    }
+  }
+
+  Future<void> updateUsername(String userId, String username) async {
+    try {
+      await _supabase
+          .from('profiles')
+          .update({'username': username})
+          .eq('id', userId);
+    } on PostgrestException catch (e, st) {
+      if (e.code == '23505') {
+        throw const UsernameAlreadyTakenException();
+      }
+      _logger.e('Update username failed', error: e, stackTrace: st);
+      rethrow;
+    } catch (e, st) {
+      _logger.e('Update username failed', error: e, stackTrace: st);
       rethrow;
     }
   }
