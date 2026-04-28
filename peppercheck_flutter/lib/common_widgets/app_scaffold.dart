@@ -122,7 +122,10 @@ class AppScaffold extends StatelessWidget {
                   label: t.nav.home,
                 ),
                 NavigationDestination(
-                  icon: Icon(Icons.payments, color: AppColors.textPrimary),
+                  icon: Icon(
+                    Icons.account_balance_wallet,
+                    color: AppColors.textPrimary,
+                  ),
                   label: t.nav.payments,
                 ),
                 NavigationDestination(
