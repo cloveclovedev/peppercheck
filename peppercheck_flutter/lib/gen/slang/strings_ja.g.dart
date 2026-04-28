@@ -874,9 +874,20 @@ class TranslationsTaskDetailJa {
 	/// ja: 'リクエスト'
 	String get sectionRequests => 'リクエスト';
 
+	/// ja: 'レフリー'
+	String get sectionRefereesTasker => 'レフリー';
+
+	/// ja: 'リクエスト元'
+	String get sectionRefereesReferee => 'リクエスト元';
+
+	/// ja: 'マッチング中'
+	String get refereePending => 'マッチング中';
+
 	/// ja: 'ステータス'
 	String get labelStatus => 'ステータス';
 
+	late final TranslationsTaskDetailMatchingStrategyJa matchingStrategy = TranslationsTaskDetailMatchingStrategyJa.internal(_root);
+	late final TranslationsTaskDetailRefereeStatusJa refereeStatus = TranslationsTaskDetailRefereeStatusJa.internal(_root);
 	late final TranslationsTaskDetailCancelAssignmentJa cancelAssignment = TranslationsTaskDetailCancelAssignmentJa.internal(_root);
 }
 
@@ -1274,6 +1285,57 @@ class TranslationsAppExplanationSectionsJa {
 	late final TranslationsAppExplanationSectionsFlowJa flow = TranslationsAppExplanationSectionsFlowJa.internal(_root);
 	late final TranslationsAppExplanationSectionsPointsJa points = TranslationsAppExplanationSectionsPointsJa.internal(_root);
 	late final TranslationsAppExplanationSectionsRefereeJa referee = TranslationsAppExplanationSectionsRefereeJa.internal(_root);
+}
+
+// Path: task.detail.matchingStrategy
+class TranslationsTaskDetailMatchingStrategyJa {
+	TranslationsTaskDetailMatchingStrategyJa.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// ja: 'スタンダード'
+	String get standard => 'スタンダード';
+
+	/// ja: 'プレミアム'
+	String get premium => 'プレミアム';
+
+	/// ja: 'ダイレクト'
+	String get direct => 'ダイレクト';
+}
+
+// Path: task.detail.refereeStatus
+class TranslationsTaskDetailRefereeStatusJa {
+	TranslationsTaskDetailRefereeStatusJa.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// ja: 'マッチング中'
+	String get pending => 'マッチング中';
+
+	/// ja: 'マッチング完了'
+	String get matched => 'マッチング完了';
+
+	/// ja: '受諾'
+	String get accepted => '受諾';
+
+	/// ja: '拒否'
+	String get declined => '拒否';
+
+	/// ja: '期限切れ'
+	String get expired => '期限切れ';
+
+	/// ja: '決済処理中'
+	String get paymentProcessing => '決済処理中';
+
+	/// ja: '完了'
+	String get closed => '完了';
+
+	/// ja: 'キャンセル'
+	String get cancelled => 'キャンセル';
 }
 
 // Path: task.detail.cancelAssignment
@@ -1679,7 +1741,21 @@ extension on Translations {
 			'task.status.closed' => '完了',
 			'task.detail.title' => 'タスク詳細',
 			'task.detail.sectionRequests' => 'リクエスト',
+			'task.detail.sectionRefereesTasker' => 'レフリー',
+			'task.detail.sectionRefereesReferee' => 'リクエスト元',
+			'task.detail.refereePending' => 'マッチング中',
 			'task.detail.labelStatus' => 'ステータス',
+			'task.detail.matchingStrategy.standard' => 'スタンダード',
+			'task.detail.matchingStrategy.premium' => 'プレミアム',
+			'task.detail.matchingStrategy.direct' => 'ダイレクト',
+			'task.detail.refereeStatus.pending' => 'マッチング中',
+			'task.detail.refereeStatus.matched' => 'マッチング完了',
+			'task.detail.refereeStatus.accepted' => '受諾',
+			'task.detail.refereeStatus.declined' => '拒否',
+			'task.detail.refereeStatus.expired' => '期限切れ',
+			'task.detail.refereeStatus.paymentProcessing' => '決済処理中',
+			'task.detail.refereeStatus.closed' => '完了',
+			'task.detail.refereeStatus.cancelled' => 'キャンセル',
 			'task.detail.cancelAssignment.button' => '担当をキャンセル',
 			'task.detail.cancelAssignment.dialogTitle' => '担当のキャンセル',
 			'task.detail.cancelAssignment.dialogMessage' => '担当をキャンセルしますか？',

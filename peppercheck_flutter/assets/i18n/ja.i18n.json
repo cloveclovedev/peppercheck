@@ -158,7 +158,25 @@
     "detail": {
       "title": "タスク詳細",
       "sectionRequests": "リクエスト",
+      "sectionRefereesTasker": "レフリー",
+      "sectionRefereesReferee": "リクエスト元",
+      "refereePending": "マッチング中",
       "labelStatus": "ステータス",
+      "matchingStrategy": {
+        "standard": "スタンダード",
+        "premium": "プレミアム",
+        "direct": "ダイレクト"
+      },
+      "refereeStatus": {
+        "pending": "マッチング中",
+        "matched": "マッチング完了",
+        "accepted": "受諾",
+        "declined": "拒否",
+        "expired": "期限切れ",
+        "paymentProcessing": "決済処理中",
+        "closed": "完了",
+        "cancelled": "キャンセル"
+      },
       "cancelAssignment": {
         "button": "担当をキャンセル",
         "dialogTitle": "担当のキャンセル",
