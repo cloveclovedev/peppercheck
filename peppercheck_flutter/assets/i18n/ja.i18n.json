@@ -157,13 +157,16 @@
     },
     "detail": {
       "title": "タスク詳細",
-      "sectionRequests": "リクエスト",
+      "sectionRefereesTasker": "レフリー",
+      "refereePending": "マッチング中",
       "labelStatus": "ステータス",
+      "labelTasker": "依頼者",
       "cancelAssignment": {
-        "button": "担当をキャンセル",
-        "dialogTitle": "担当のキャンセル",
-        "dialogMessage": "担当をキャンセルしますか？",
-        "success": "担当をキャンセルしました",
+        "button": "マッチングを辞退",
+        "dialogTitle": "マッチングの辞退",
+        "dialogMessage": "マッチングを辞退しますか？",
+        "dialogConfirm": "辞退",
+        "success": "マッチングを辞退しました",
         "error": "エラーが発生しました: $message"
       }
     },

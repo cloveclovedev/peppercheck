@@ -871,11 +871,17 @@ class TranslationsTaskDetailJa {
 	/// ja: 'タスク詳細'
 	String get title => 'タスク詳細';
 
-	/// ja: 'リクエスト'
-	String get sectionRequests => 'リクエスト';
+	/// ja: 'レフリー'
+	String get sectionRefereesTasker => 'レフリー';
+
+	/// ja: 'マッチング中'
+	String get refereePending => 'マッチング中';
 
 	/// ja: 'ステータス'
 	String get labelStatus => 'ステータス';
+
+	/// ja: '依頼者'
+	String get labelTasker => '依頼者';
 
 	late final TranslationsTaskDetailCancelAssignmentJa cancelAssignment = TranslationsTaskDetailCancelAssignmentJa.internal(_root);
 }
@@ -1284,17 +1290,20 @@ class TranslationsTaskDetailCancelAssignmentJa {
 
 	// Translations
 
-	/// ja: '担当をキャンセル'
-	String get button => '担当をキャンセル';
+	/// ja: 'マッチングを辞退'
+	String get button => 'マッチングを辞退';
 
-	/// ja: '担当のキャンセル'
-	String get dialogTitle => '担当のキャンセル';
+	/// ja: 'マッチングの辞退'
+	String get dialogTitle => 'マッチングの辞退';
 
-	/// ja: '担当をキャンセルしますか？'
-	String get dialogMessage => '担当をキャンセルしますか？';
+	/// ja: 'マッチングを辞退しますか？'
+	String get dialogMessage => 'マッチングを辞退しますか？';
 
-	/// ja: '担当をキャンセルしました'
-	String get success => '担当をキャンセルしました';
+	/// ja: '辞退'
+	String get dialogConfirm => '辞退';
+
+	/// ja: 'マッチングを辞退しました'
+	String get success => 'マッチングを辞退しました';
 
 	/// ja: 'エラーが発生しました: $message'
 	String error({required Object message}) => 'エラーが発生しました: ${message}';
@@ -1678,12 +1687,15 @@ extension on Translations {
 			'task.status.paymentProcessing' => '支払い処理中',
 			'task.status.closed' => '完了',
 			'task.detail.title' => 'タスク詳細',
-			'task.detail.sectionRequests' => 'リクエスト',
+			'task.detail.sectionRefereesTasker' => 'レフリー',
+			'task.detail.refereePending' => 'マッチング中',
 			'task.detail.labelStatus' => 'ステータス',
-			'task.detail.cancelAssignment.button' => '担当をキャンセル',
-			'task.detail.cancelAssignment.dialogTitle' => '担当のキャンセル',
-			'task.detail.cancelAssignment.dialogMessage' => '担当をキャンセルしますか？',
-			'task.detail.cancelAssignment.success' => '担当をキャンセルしました',
+			'task.detail.labelTasker' => '依頼者',
+			'task.detail.cancelAssignment.button' => 'マッチングを辞退',
+			'task.detail.cancelAssignment.dialogTitle' => 'マッチングの辞退',
+			'task.detail.cancelAssignment.dialogMessage' => 'マッチングを辞退しますか？',
+			'task.detail.cancelAssignment.dialogConfirm' => '辞退',
+			'task.detail.cancelAssignment.success' => 'マッチングを辞退しました',
 			'task.detail.cancelAssignment.error' => ({required Object message}) => 'エラーが発生しました: ${message}',
 			'task.creation.title' => 'タスク作成',
 			'task.creation.titleEdit' => 'タスク編集',
