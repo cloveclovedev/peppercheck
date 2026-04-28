@@ -1,19 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:peppercheck_flutter/app/theme/app_colors.dart';
 import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
 import 'package:peppercheck_flutter/common_widgets/action_button.dart';
 import 'package:peppercheck_flutter/common_widgets/base_section.dart';
-import 'package:peppercheck_flutter/common_widgets/destructive_action_button.dart';
-import 'package:peppercheck_flutter/features/home/presentation/home_controller.dart';
-import 'package:peppercheck_flutter/features/matching/data/matching_repository.dart';
 import 'package:peppercheck_flutter/features/matching/domain/referee_request.dart';
-import 'package:peppercheck_flutter/features/matching/matching_constants.dart';
 import 'package:peppercheck_flutter/features/profile/domain/profile.dart';
 import 'package:peppercheck_flutter/features/task/domain/task.dart';
-import 'package:peppercheck_flutter/features/task/presentation/providers/task_provider.dart';
 import 'package:peppercheck_flutter/features/task/presentation/widgets/task_detail/delete_task_button.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -73,10 +67,6 @@ class TaskDetailInfoSection extends StatelessWidget {
                   context,
                 ).textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
               ),
-            ],
-            if (_canWithdraw(task, myRequest)) ...[
-              const SizedBox(height: AppSizes.spacingSmall),
-              _WithdrawMatchingButton(taskId: task.id, requestId: myRequest.id),
             ],
           ],
         ],
@@ -171,92 +161,4 @@ RefereeRequest? _findMyRefereeRequest(Task task) {
     if (r.matchedRefereeId == userId) return r;
   }
   return null;
-}
-
-bool _canWithdraw(Task task, RefereeRequest myRequest) {
-  if (myRequest.status != 'accepted') return false;
-  if (task.dueDate == null) return true;
-  final due = DateTime.parse(task.dueDate!);
-  final cutoff = DateTime.now().add(
-    const Duration(hours: kRefereeCancelDeadlineHours),
-  );
-  return due.isAfter(cutoff);
-}
-
-class _WithdrawMatchingButton extends ConsumerStatefulWidget {
-  final String taskId;
-  final String requestId;
-
-  const _WithdrawMatchingButton({
-    required this.taskId,
-    required this.requestId,
-  });
-
-  @override
-  ConsumerState<_WithdrawMatchingButton> createState() =>
-      _WithdrawMatchingButtonState();
-}
-
-class _WithdrawMatchingButtonState
-    extends ConsumerState<_WithdrawMatchingButton> {
-  bool _isLoading = false;
-
-  Future<void> _onPressed() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(t.task.detail.cancelAssignment.dialogTitle),
-        content: Text(t.task.detail.cancelAssignment.dialogMessage),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(t.common.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(t.common.confirm),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true) return;
-    if (!mounted) return;
-
-    setState(() => _isLoading = true);
-    try {
-      await ref
-          .read(matchingRepositoryProvider)
-          .cancelRefereeAssignment(widget.requestId);
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(t.task.detail.cancelAssignment.success)),
-      );
-
-      ref.invalidate(taskProvider(widget.taskId));
-      ref.invalidate(activeUserTasksProvider);
-      ref.invalidate(activeRefereeTasksProvider);
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            t.task.detail.cancelAssignment.error(message: e.toString()),
-          ),
-        ),
-      );
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return DestructiveActionButton(
-      text: t.task.detail.cancelAssignment.button,
-      icon: Icons.cancel_outlined,
-      isLoading: _isLoading,
-      onPressed: _isLoading ? null : _onPressed,
-    );
-  }
 }

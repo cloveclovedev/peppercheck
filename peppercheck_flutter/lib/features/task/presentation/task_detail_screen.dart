@@ -8,6 +8,7 @@ import 'package:peppercheck_flutter/common_widgets/app_scaffold.dart';
 import 'package:peppercheck_flutter/features/task/domain/task.dart';
 import 'package:peppercheck_flutter/features/task/presentation/widgets/task_detail/task_detail_info_section.dart';
 import 'package:peppercheck_flutter/features/task/presentation/widgets/task_detail/tasker_referees_section.dart';
+import 'package:peppercheck_flutter/features/task/presentation/widgets/task_detail/withdraw_matching_button.dart';
 import 'package:peppercheck_flutter/features/evidence/presentation/widgets/evidence_submission_section.dart';
 import 'package:peppercheck_flutter/features/evidence/presentation/widgets/evidence_timeout_referee_section.dart';
 import 'package:peppercheck_flutter/features/judgement/presentation/widgets/judgement_section.dart';
@@ -76,6 +77,7 @@ class TaskDetailScreen extends ConsumerWidget {
                 ],
                 JudgementSection(task: displayTask),
                 const SizedBox(height: AppSizes.sectionGap),
+                WithdrawMatchingButton(task: displayTask),
               ],
             ),
           ),
