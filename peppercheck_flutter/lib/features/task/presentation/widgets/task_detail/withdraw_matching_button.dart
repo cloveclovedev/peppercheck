@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:peppercheck_flutter/app/theme/app_colors.dart';
 import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
+import 'package:peppercheck_flutter/common_widgets/destructive_action_button.dart';
 import 'package:peppercheck_flutter/features/home/presentation/home_controller.dart';
 import 'package:peppercheck_flutter/features/matching/data/matching_repository.dart';
 import 'package:peppercheck_flutter/features/matching/domain/referee_request.dart';
@@ -102,44 +102,15 @@ class _WithdrawMatchingButtonState
       return const SizedBox.shrink();
     }
 
-    final color = AppColors.textError;
-
     return Padding(
-      padding: const EdgeInsets.only(
-        top: AppSizes.spacingMedium,
-        bottom: AppSizes.spacingLarge,
-      ),
+      padding: const EdgeInsets.only(bottom: AppSizes.spacingLarge),
       child: Align(
         alignment: Alignment.centerRight,
-        child: OutlinedButton(
+        child: DestructiveActionButton(
+          text: t.task.detail.cancelAssignment.button,
+          isLoading: _isLoading,
           onPressed: _isLoading ? null : _onPressed,
-          style: OutlinedButton.styleFrom(
-            foregroundColor: color,
-            side: BorderSide(color: color.withValues(alpha: 0.5), width: 1),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            minimumSize: Size.zero,
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            elevation: 0,
-          ),
-          child: _isLoading
-              ? SizedBox(
-                  width: 14,
-                  height: 14,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(color),
-                  ),
-                )
-              : Text(
-                  t.task.detail.cancelAssignment.button,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: color,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+          fullWidth: false,
         ),
       ),
     );

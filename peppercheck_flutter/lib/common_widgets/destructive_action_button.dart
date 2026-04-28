@@ -8,6 +8,10 @@ class DestructiveActionButton extends StatelessWidget {
   final bool isLoading;
   final double borderRadius;
 
+  /// When true (default), the button stretches to fill its parent's width.
+  /// Set to false for a content-sized button that the caller positions.
+  final bool fullWidth;
+
   const DestructiveActionButton({
     super.key,
     required this.text,
@@ -15,6 +19,7 @@ class DestructiveActionButton extends StatelessWidget {
     this.onPressed,
     this.isLoading = false,
     this.borderRadius = 20,
+    this.fullWidth = true,
   });
 
   @override
@@ -73,6 +78,7 @@ class DestructiveActionButton extends StatelessWidget {
             ),
     );
 
+    if (!fullWidth) return button;
     return SizedBox(width: double.infinity, child: button);
   }
 }
