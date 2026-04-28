@@ -4,14 +4,14 @@
     "aboutLink": "PepperCheckとは？"
   },
   "home": {
-    "title": "Home",
+    "title": "ホーム",
     "myTasks": "自分のタスク",
     "refereeTasks": "判定依頼",
     "noTasks": "タスクはありません"
   },
   "nav": {
     "home": "Home",
-    "payments": "Payments",
+    "payments": "Wallet",
     "profile": "Profile"
   },
   "billing": {
@@ -93,6 +93,7 @@
     "enterAmountDescription": "出金したい金額を入力してください"
   },
   "dashboard": {
+    "title": "ウォレット",
     "totalEarnings": "総収益",
     "pending": "保留中",
     "available": "出金可能額",

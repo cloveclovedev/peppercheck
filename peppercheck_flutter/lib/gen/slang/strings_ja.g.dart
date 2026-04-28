@@ -80,8 +80,8 @@ class TranslationsHomeJa {
 
 	// Translations
 
-	/// ja: 'Home'
-	String get title => 'Home';
+	/// ja: 'ホーム'
+	String get title => 'ホーム';
 
 	/// ja: '自分のタスク'
 	String get myTasks => '自分のタスク';
@@ -104,8 +104,8 @@ class TranslationsNavJa {
 	/// ja: 'Home'
 	String get home => 'Home';
 
-	/// ja: 'Payments'
-	String get payments => 'Payments';
+	/// ja: 'Wallet'
+	String get payments => 'Wallet';
 
 	/// ja: 'Profile'
 	String get profile => 'Profile';
@@ -314,6 +314,9 @@ class TranslationsDashboardJa {
 	final Translations _root; // ignore: unused_field
 
 	// Translations
+
+	/// ja: 'ウォレット'
+	String get title => 'ウォレット';
 
 	/// ja: '総収益'
 	String get totalEarnings => '総収益';
@@ -1479,12 +1482,12 @@ extension on Translations {
 		return switch (path) {
 			'login.title' => 'PEPPERCHECK',
 			'login.aboutLink' => 'PepperCheckとは？',
-			'home.title' => 'Home',
+			'home.title' => 'ホーム',
 			'home.myTasks' => '自分のタスク',
 			'home.refereeTasks' => '判定依頼',
 			'home.noTasks' => 'タスクはありません',
 			'nav.home' => 'Home',
-			'nav.payments' => 'Payments',
+			'nav.payments' => 'Wallet',
 			'nav.profile' => 'Profile',
 			'billing.title' => '支払い設定',
 			'billing.paymentMethod' => '支払い方法',
@@ -1554,6 +1557,7 @@ extension on Translations {
 			'payout.invalidAmount' => '金額が不正です',
 			'payout.insufficientFunds' => '出金可能額を超えています',
 			'payout.enterAmountDescription' => '出金したい金額を入力してください',
+			'dashboard.title' => 'ウォレット',
 			'dashboard.totalEarnings' => '総収益',
 			'dashboard.pending' => '保留中',
 			'dashboard.available' => '出金可能額',
