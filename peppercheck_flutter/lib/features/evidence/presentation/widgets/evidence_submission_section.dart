@@ -418,28 +418,66 @@ class _EvidenceSubmissionSectionState
             ),
             const SizedBox(height: AppSizes.spacingSmall),
 
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: evidence.assets.map((asset) {
-                if (asset.publicUrl != null) {
-                  return Image.network(
-                    asset.publicUrl!,
-                    width: 100,
-                    height: 100,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) =>
-                        const Icon(Icons.broken_image),
-                  );
-                } else {
-                  return Container(
-                    width: 100,
-                    height: 100,
-                    color: Colors.grey,
-                    child: const Icon(Icons.image),
-                  );
-                }
-              }).toList(),
+            Builder(
+              builder: (context) {
+                final imageUrls = evidence.assets
+                    .where((a) => a.publicUrl != null)
+                    .map((a) => a.publicUrl!)
+                    .toList(growable: false);
+                return Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: evidence.assets.map((asset) {
+                    if (asset.publicUrl != null) {
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              fullscreenDialog: true,
+                              builder: (_) => _FullscreenImageViewer(
+                                imageUrls: imageUrls,
+                                initialIndex: imageUrls.indexOf(
+                                  asset.publicUrl!,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(
+                            AppSizes.radiusSmall,
+                          ),
+                          child: Image.network(
+                            asset.publicUrl!,
+                            width: 100,
+                            height: 100,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                Container(
+                                  width: 100,
+                                  height: 100,
+                                  color: Colors.grey,
+                                  child: const Icon(Icons.broken_image),
+                                ),
+                          ),
+                        ),
+                      );
+                    } else {
+                      return ClipRRect(
+                        borderRadius: BorderRadius.circular(
+                          AppSizes.radiusSmall,
+                        ),
+                        child: Container(
+                          width: 100,
+                          height: 100,
+                          color: Colors.grey,
+                          child: const Icon(Icons.image),
+                        ),
+                      );
+                    }
+                  }).toList(),
+                );
+              },
             ),
             if (_isInReview() && _isCurrentUserTasker()) ...[
               const SizedBox(height: AppSizes.spacingSmall),
