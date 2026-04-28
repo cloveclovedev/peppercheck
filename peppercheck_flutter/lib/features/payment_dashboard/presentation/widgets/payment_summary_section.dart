@@ -95,103 +95,105 @@ class _SummaryContent extends StatelessWidget {
             ),
           ),
         ],
-        // Rewards row — only if rewards exist
-        if (summary.rewards != null) ...[
-          const SizedBox(height: AppSizes.baseCardGap),
-          Row(
-            children: [
-              Expanded(
-                child: BaseCard(
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.account_balance_wallet,
-                        color: AppColors.textSecondary,
-                        size: AppSizes.baseCardIconSize,
-                      ),
-                      const SizedBox(width: AppSizes.baseCardIconGap),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Flexible(
-                                  child: _CardLabel(
-                                    label: t.dashboard.rewardBalance,
-                                  ),
+        // Rewards row — always shown; ¥0 when no rewards data exists
+        const SizedBox(height: AppSizes.baseCardGap),
+        Row(
+          children: [
+            Expanded(
+              child: BaseCard(
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.account_balance_wallet,
+                      color: AppColors.textSecondary,
+                      size: AppSizes.baseCardIconSize,
+                    ),
+                    const SizedBox(width: AppSizes.baseCardIconGap),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Flexible(
+                                child: _CardLabel(
+                                  label: t.dashboard.rewardBalance,
                                 ),
-                                const SizedBox(width: AppSizes.spacingTiny),
-                                HelpIconButton(
-                                  title: t.dashboard.rewardBalanceHelp.title,
-                                  body: t.dashboard.rewardBalanceHelp.body,
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            _CardValue(
-                              value: _formatCurrency(
-                                summary.rewards!.amountMinor,
-                                summary.rewards!.currencyCode,
-                                summary.rewards!.currencyExponent,
                               ),
-                            ),
-                          ],
-                        ),
+                              const SizedBox(width: AppSizes.spacingTiny),
+                              HelpIconButton(
+                                title: t.dashboard.rewardBalanceHelp.title,
+                                body: t.dashboard.rewardBalanceHelp.body,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          _CardValue(
+                            value: summary.rewards != null
+                                ? _formatCurrency(
+                                    summary.rewards!.amountMinor,
+                                    summary.rewards!.currencyCode,
+                                    summary.rewards!.currencyExponent,
+                                  )
+                                : _formatCurrency(0, 'JPY', 0),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: AppSizes.baseCardGap),
-              Expanded(
-                child: BaseCard(
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.trending_up,
-                        color: AppColors.textSecondary,
-                        size: AppSizes.baseCardIconSize,
-                      ),
-                      const SizedBox(width: AppSizes.baseCardIconGap),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Flexible(
-                                  child: _CardLabel(
-                                    label: t.dashboard.totalEarned,
-                                  ),
+            ),
+            const SizedBox(width: AppSizes.baseCardGap),
+            Expanded(
+              child: BaseCard(
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.trending_up,
+                      color: AppColors.textSecondary,
+                      size: AppSizes.baseCardIconSize,
+                    ),
+                    const SizedBox(width: AppSizes.baseCardIconGap),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Flexible(
+                                child: _CardLabel(
+                                  label: t.dashboard.totalEarned,
                                 ),
-                                const SizedBox(width: AppSizes.spacingTiny),
-                                HelpIconButton(
-                                  title: t.dashboard.totalEarnedHelp.title,
-                                  body: t.dashboard.totalEarnedHelp.body,
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            _CardValue(
-                              value: summary.totalEarnedCurrency != null
-                                  ? _formatCurrency(
-                                      summary.totalEarnedMinor,
-                                      summary.totalEarnedCurrency!,
-                                      summary.rewards!.currencyExponent,
-                                    )
-                                  : '—',
-                            ),
-                          ],
-                        ),
+                              ),
+                              const SizedBox(width: AppSizes.spacingTiny),
+                              HelpIconButton(
+                                title: t.dashboard.totalEarnedHelp.title,
+                                body: t.dashboard.totalEarnedHelp.body,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          _CardValue(
+                            value:
+                                summary.rewards != null &&
+                                    summary.totalEarnedCurrency != null
+                                ? _formatCurrency(
+                                    summary.totalEarnedMinor,
+                                    summary.totalEarnedCurrency!,
+                                    summary.rewards!.currencyExponent,
+                                  )
+                                : _formatCurrency(0, 'JPY', 0),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
         // Payout info — conditional rows
         if (summary.recentPayout != null ||
             (summary.rewards != null && summary.rewards!.balance > 0)) ...[
