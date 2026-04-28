@@ -8,7 +8,6 @@ import 'package:peppercheck_flutter/common_widgets/app_scaffold.dart';
 import 'package:peppercheck_flutter/features/task/domain/task.dart';
 import 'package:peppercheck_flutter/features/task/presentation/widgets/task_detail/task_detail_info_section.dart';
 import 'package:peppercheck_flutter/features/task/presentation/widgets/task_detail/tasker_referees_section.dart';
-import 'package:peppercheck_flutter/features/task/presentation/widgets/task_detail/my_referee_request_section.dart';
 import 'package:peppercheck_flutter/features/evidence/presentation/widgets/evidence_submission_section.dart';
 import 'package:peppercheck_flutter/features/evidence/presentation/widgets/evidence_timeout_referee_section.dart';
 import 'package:peppercheck_flutter/features/judgement/presentation/widgets/judgement_section.dart';
@@ -63,11 +62,10 @@ class TaskDetailScreen extends ConsumerWidget {
                 TaskDetailInfoSection(task: displayTask),
                 const SizedBox(height: AppSizes.sectionGap),
                 if (Supabase.instance.client.auth.currentUser?.id ==
-                    displayTask.taskerId)
-                  TaskerRefereesSection(task: displayTask)
-                else
-                  MyRefereeRequestSection(task: displayTask),
-                const SizedBox(height: AppSizes.sectionGap),
+                    displayTask.taskerId) ...[
+                  TaskerRefereesSection(task: displayTask),
+                  const SizedBox(height: AppSizes.sectionGap),
+                ],
                 if (_shouldShowEvidenceSection(displayTask)) ...[
                   EvidenceSubmissionSection(task: displayTask),
                   const SizedBox(height: AppSizes.sectionGap),
