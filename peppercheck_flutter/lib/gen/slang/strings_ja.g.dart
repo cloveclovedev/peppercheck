@@ -163,14 +163,14 @@ class TranslationsBillingJa {
 	/// ja: 'お試しポイント: 残り$count pt'
 	String trialPoints({required Object count}) => 'お試しポイント: 残り${count} pt';
 
-	/// ja: '無料レフェリー義務: 残り$count 件'
-	String pendingObligations({required Object count}) => '無料レフェリー義務: 残り${count} 件';
+	/// ja: '無料レフリー義務: 残り$count 件'
+	String pendingObligations({required Object count}) => '無料レフリー義務: 残り${count} 件';
 
-	/// ja: 'お試しポイントを使用します。タスク完了後に無料レフェリー義務が発生します。'
-	String get trialPointNotice => 'お試しポイントを使用します。タスク完了後に無料レフェリー義務が発生します。';
+	/// ja: 'お試しポイントを使用します。タスク完了後に無料レフリー義務が発生します。'
+	String get trialPointNotice => 'お試しポイントを使用します。タスク完了後に無料レフリー義務が発生します。';
 
-	/// ja: 'お試し義務によるレフェリーです。リワードポイントは付与されません。'
-	String get obligationRefereeNotice => 'お試し義務によるレフェリーです。リワードポイントは付与されません。';
+	/// ja: 'お試し義務によるレフリーです。リワードポイントは付与されません。'
+	String get obligationRefereeNotice => 'お試し義務によるレフリーです。リワードポイントは付与されません。';
 
 	/// ja: 'お支払いに問題があります'
 	String get paymentIssue => 'お支払いに問題があります';
@@ -255,8 +255,8 @@ class TranslationsPayoutJa {
 	/// ja: '出金設定を再開する'
 	String get resumeSetup => '出金設定を再開する';
 
-	/// ja: 'レフェリーをすることはできますが報酬を出金することはできません。出金設定を最後まで終わらせてください。'
-	String get payoutSetupInProgressDescription => 'レフェリーをすることはできますが報酬を出金することはできません。出金設定を最後まで終わらせてください。';
+	/// ja: 'レフリーをすることはできますが報酬を出金することはできません。出金設定を最後まで終わらせてください。'
+	String get payoutSetupInProgressDescription => 'レフリーをすることはできますが報酬を出金することはできません。出金設定を最後まで終わらせてください。';
 
 	/// ja: '審査中です。完了までしばらくお待ちください'
 	String get verificationPendingDescription => '審査中です。完了までしばらくお待ちください';
@@ -1167,14 +1167,14 @@ class TranslationsAccountActionsJa {
 	/// ja: 'アカウントを削除'
 	String get deleteAccount => 'アカウントを削除';
 
-	/// ja: '進行中のタスクまたはレフェリーリクエストがあるため、アカウントを削除できません。'
-	String get deleteBlocked => '進行中のタスクまたはレフェリーリクエストがあるため、アカウントを削除できません。';
+	/// ja: '進行中のタスクまたはレフリーリクエストがあるため、アカウントを削除できません。'
+	String get deleteBlocked => '進行中のタスクまたはレフリーリクエストがあるため、アカウントを削除できません。';
 
 	/// ja: '進行中のタスクがあります'
 	String get deleteBlockedOpenTasks => '進行中のタスクがあります';
 
-	/// ja: 'アクティブなレフェリーリクエストがあります'
-	String get deleteBlockedActiveReferee => 'アクティブなレフェリーリクエストがあります';
+	/// ja: 'アクティブなレフリーリクエストがあります'
+	String get deleteBlockedActiveReferee => 'アクティブなレフリーリクエストがあります';
 
 	/// ja: 'アカウントの削除'
 	String get confirmTitle => 'アカウントの削除';
@@ -1506,9 +1506,9 @@ extension on Translations {
 			'billing.noPlan' => '未加入',
 			'billing.trialSectionTitle' => 'お試し',
 			'billing.trialPoints' => ({required Object count}) => 'お試しポイント: 残り${count} pt',
-			'billing.pendingObligations' => ({required Object count}) => '無料レフェリー義務: 残り${count} 件',
-			'billing.trialPointNotice' => 'お試しポイントを使用します。タスク完了後に無料レフェリー義務が発生します。',
-			'billing.obligationRefereeNotice' => 'お試し義務によるレフェリーです。リワードポイントは付与されません。',
+			'billing.pendingObligations' => ({required Object count}) => '無料レフリー義務: 残り${count} 件',
+			'billing.trialPointNotice' => 'お試しポイントを使用します。タスク完了後に無料レフリー義務が発生します。',
+			'billing.obligationRefereeNotice' => 'お試し義務によるレフリーです。リワードポイントは付与されません。',
 			'billing.paymentIssue' => 'お支払いに問題があります',
 			'billing.noAutoRenewal' => '自動更新なし',
 			'billing.periodEnd' => '終了日',
@@ -1537,7 +1537,7 @@ extension on Translations {
 			'payout.changePayoutSettings' => '出金設定を変更',
 			'payout.payoutSetupComplete' => '出金設定は完了しています',
 			'payout.resumeSetup' => '出金設定を再開する',
-			'payout.payoutSetupInProgressDescription' => 'レフェリーをすることはできますが報酬を出金することはできません。出金設定を最後まで終わらせてください。',
+			'payout.payoutSetupInProgressDescription' => 'レフリーをすることはできますが報酬を出金することはできません。出金設定を最後まで終わらせてください。',
 			'payout.verificationPendingDescription' => '審査中です。完了までしばらくお待ちください',
 			'payout.showHints' => '入力のヒントを表示',
 			'payout.hideHints' => '入力のヒントを隠す',
@@ -1766,9 +1766,9 @@ extension on Translations {
 			'notification.fallback_body' => '新しい通知があります。',
 			'account.actions.title' => 'アカウント',
 			'account.actions.deleteAccount' => 'アカウントを削除',
-			'account.actions.deleteBlocked' => '進行中のタスクまたはレフェリーリクエストがあるため、アカウントを削除できません。',
+			'account.actions.deleteBlocked' => '進行中のタスクまたはレフリーリクエストがあるため、アカウントを削除できません。',
 			'account.actions.deleteBlockedOpenTasks' => '進行中のタスクがあります',
-			'account.actions.deleteBlockedActiveReferee' => 'アクティブなレフェリーリクエストがあります',
+			'account.actions.deleteBlockedActiveReferee' => 'アクティブなレフリーリクエストがあります',
 			'account.actions.confirmTitle' => 'アカウントの削除',
 			'account.actions.confirmDeletedLabel' => '削除されるデータ',
 			'account.actions.confirmDeletedItems' => 'プロフィール、ポイント残高、サブスクリプション、通知設定',
