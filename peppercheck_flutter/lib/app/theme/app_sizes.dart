@@ -39,7 +39,7 @@ class AppSizes {
   static const double avatarSizeLarge = 36.0;
 
   // Mid-size avatar used in task detail referee/requester cards.
-  static const double avatarSizeMedium = 28.0;
+  static const double avatarSizeMedium = 24.0;
 
   // Task Card specific
   static const double taskCardTitleInfoGap = 2.0;
