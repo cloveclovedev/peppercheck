@@ -1299,6 +1299,9 @@ class TranslationsTaskDetailCancelAssignmentJa {
 	/// ja: 'マッチングを辞退しますか？'
 	String get dialogMessage => 'マッチングを辞退しますか？';
 
+	/// ja: '辞退'
+	String get dialogConfirm => '辞退';
+
 	/// ja: 'マッチングを辞退しました'
 	String get success => 'マッチングを辞退しました';
 
@@ -1691,6 +1694,7 @@ extension on Translations {
 			'task.detail.cancelAssignment.button' => 'マッチングを辞退',
 			'task.detail.cancelAssignment.dialogTitle' => 'マッチングの辞退',
 			'task.detail.cancelAssignment.dialogMessage' => 'マッチングを辞退しますか？',
+			'task.detail.cancelAssignment.dialogConfirm' => '辞退',
 			'task.detail.cancelAssignment.success' => 'マッチングを辞退しました',
 			'task.detail.cancelAssignment.error' => ({required Object message}) => 'エラーが発生しました: ${message}',
 			'task.creation.title' => 'タスク作成',

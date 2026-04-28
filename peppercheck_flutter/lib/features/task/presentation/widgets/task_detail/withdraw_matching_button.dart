@@ -63,7 +63,7 @@ class _WithdrawMatchingButtonState
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
             style: TextButton.styleFrom(foregroundColor: AppColors.textError),
-            child: Text(t.common.confirm),
+            child: Text(t.task.detail.cancelAssignment.dialogConfirm),
           ),
         ],
       ),

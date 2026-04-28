@@ -165,6 +165,7 @@
         "button": "マッチングを辞退",
         "dialogTitle": "マッチングの辞退",
         "dialogMessage": "マッチングを辞退しますか？",
+        "dialogConfirm": "辞退",
         "success": "マッチングを辞退しました",
         "error": "エラーが発生しました: $message"
       }
