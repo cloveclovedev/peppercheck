@@ -281,7 +281,7 @@ class _JudgementSectionState extends ConsumerState<JudgementSection> {
             children: [
               if (request.referee?.avatarUrl != null)
                 CircleAvatar(
-                  radius: AppSizes.baseCardIconSize / 2,
+                  radius: AppSizes.avatarSizeMedium / 2,
                   backgroundImage: NetworkImage(request.referee!.avatarUrl!),
                   backgroundColor: Colors.transparent,
                 )
@@ -289,7 +289,7 @@ class _JudgementSectionState extends ConsumerState<JudgementSection> {
                 const Icon(
                   Icons.person,
                   color: AppColors.textSecondary,
-                  size: AppSizes.baseCardIconSize,
+                  size: AppSizes.avatarSizeMedium,
                 ),
               const SizedBox(width: AppSizes.baseCardIconGap),
               Expanded(
