@@ -157,7 +157,6 @@
     },
     "detail": {
       "title": "タスク詳細",
-      "sectionRequests": "リクエスト",
       "sectionRefereesTasker": "レフリー",
       "sectionRefereesReferee": "リクエスト元",
       "refereePending": "マッチング中",

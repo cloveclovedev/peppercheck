@@ -871,9 +871,6 @@ class TranslationsTaskDetailJa {
 	/// ja: 'タスク詳細'
 	String get title => 'タスク詳細';
 
-	/// ja: 'リクエスト'
-	String get sectionRequests => 'リクエスト';
-
 	/// ja: 'レフリー'
 	String get sectionRefereesTasker => 'レフリー';
 
@@ -1740,7 +1737,6 @@ extension on Translations {
 			'task.status.paymentProcessing' => '支払い処理中',
 			'task.status.closed' => '完了',
 			'task.detail.title' => 'タスク詳細',
-			'task.detail.sectionRequests' => 'リクエスト',
 			'task.detail.sectionRefereesTasker' => 'レフリー',
 			'task.detail.sectionRefereesReferee' => 'リクエスト元',
 			'task.detail.refereePending' => 'マッチング中',
