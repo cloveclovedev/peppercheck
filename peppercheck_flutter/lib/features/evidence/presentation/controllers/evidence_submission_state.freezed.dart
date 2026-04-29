@@ -85,10 +85,7 @@ switch (_that) {
 case _Idle():
 return idle(_that);case _Preparing():
 return preparing(_that);case _Uploading():
-return uploading(_that);case _:
-  throw StateError('Unexpected subclass');
-
-}
+return uploading(_that);}
 }
 /// A variant of `map` that fallback to returning `null`.
 ///
@@ -153,10 +150,7 @@ switch (_that) {
 case _Idle():
 return idle();case _Preparing():
 return preparing(_that.current,_that.total);case _Uploading():
-return uploading(_that.current,_that.total);case _:
-  throw StateError('Unexpected subclass');
-
-}
+return uploading(_that.current,_that.total);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///

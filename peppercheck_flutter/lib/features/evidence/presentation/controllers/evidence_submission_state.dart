@@ -3,7 +3,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'evidence_submission_state.freezed.dart';
 
 @freezed
-abstract class EvidenceSubmissionState with _$EvidenceSubmissionState {
+sealed class EvidenceSubmissionState with _$EvidenceSubmissionState {
   const EvidenceSubmissionState._();
 
   const factory EvidenceSubmissionState.idle() = _Idle;
@@ -19,7 +19,6 @@ abstract class EvidenceSubmissionState with _$EvidenceSubmissionState {
   bool get isLoading => switch (this) {
     _Idle() => false,
     _Preparing() || _Uploading() => true,
-    _ => false,
   };
 
   bool get isPreparing => this is _Preparing;
@@ -31,6 +30,6 @@ abstract class EvidenceSubmissionState with _$EvidenceSubmissionState {
       :final current,
       :final total,
     ) => (current: current, total: total),
-    _ => null,
+    _Idle() => null,
   };
 }
