@@ -1,37 +1,47 @@
 import 'package:dio/dio.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:logger/logger.dart';
-import 'package:mime/mime.dart';
 import 'package:peppercheck_flutter/app/app_logger.dart';
+import 'package:peppercheck_flutter/features/evidence/data/image_normalizer.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 part 'evidence_repository.g.dart';
 
+typedef ProgressCallback = void Function(int current, int total);
+
 class EvidenceRepository {
   final SupabaseClient _client;
   final Logger _logger;
+  final ImageNormalizer _normalizer;
 
-  EvidenceRepository(this._client, this._logger);
+  EvidenceRepository(this._client, this._logger, {ImageNormalizer? normalizer})
+    : _normalizer = normalizer ?? ImageNormalizer();
 
   Future<List<Map<String, dynamic>>> _uploadImages(
     String taskId,
-    List<XFile> images,
-  ) async {
+    List<XFile> images, {
+    ProgressCallback? onPreparing,
+    ProgressCallback? onUploading,
+  }) async {
     final assets = <Map<String, dynamic>>[];
     final dio = Dio();
 
-    for (final image in images) {
-      final length = await image.length();
-      final mimeType = lookupMimeType(image.path) ?? 'application/octet-stream';
+    for (var i = 0; i < images.length; i++) {
+      final image = images[i];
+      onPreparing?.call(i + 1, images.length);
 
-      // 1. Get presigned URL
+      final normalized = await _normalizer.normalize(image);
+      final length = normalized.bytes.length;
+
+      onUploading?.call(i + 1, images.length);
+
       final response = await _client.functions.invoke(
         'generate-upload-url',
         body: {
           'task_id': taskId,
-          'filename': image.name,
-          'content_type': mimeType,
+          'filename': normalized.filename,
+          'content_type': normalized.mimeType,
           'file_size_bytes': length,
           'kind': 'evidence',
         },
@@ -45,22 +55,21 @@ class EvidenceRepository {
       final r2Key = response.data['r2_key'] as String;
       final publicUrl = response.data['public_url'] as String?;
 
-      // 2. Upload file to R2
-      final fileBytes = await image.readAsBytes();
-
-      // Using Dio for PUT (Presigned URL)
       await dio.put(
         uploadUrl,
-        data: Stream.fromIterable([fileBytes]), // Allow streaming
+        data: Stream.fromIterable([normalized.bytes]),
         options: Options(
-          headers: {'Content-Type': mimeType, 'Content-Length': length},
+          headers: {
+            'Content-Type': normalized.mimeType,
+            'Content-Length': length,
+          },
         ),
       );
 
       assets.add({
-        'file_url': r2Key, // We store the key/path
+        'file_url': r2Key,
         'file_size_bytes': length,
-        'content_type': mimeType,
+        'content_type': normalized.mimeType,
         'public_url': publicUrl,
       });
     }
@@ -72,11 +81,16 @@ class EvidenceRepository {
     required String taskId,
     required String description,
     required List<XFile> images,
+    ProgressCallback? onPreparing,
+    ProgressCallback? onUploading,
   }) async {
     try {
-      final assets = await _uploadImages(taskId, images);
-
-      // Submit Evidence RPC
+      final assets = await _uploadImages(
+        taskId,
+        images,
+        onPreparing: onPreparing,
+        onUploading: onUploading,
+      );
       await _client.rpc(
         'submit_evidence',
         params: {
@@ -97,11 +111,18 @@ class EvidenceRepository {
     required String description,
     required List<XFile> newImages,
     required List<String> assetIdsToRemove,
+    ProgressCallback? onPreparing,
+    ProgressCallback? onUploading,
   }) async {
     try {
       List<Map<String, dynamic>>? assetsToAdd;
       if (newImages.isNotEmpty) {
-        assetsToAdd = await _uploadImages(taskId, newImages);
+        assetsToAdd = await _uploadImages(
+          taskId,
+          newImages,
+          onPreparing: onPreparing,
+          onUploading: onUploading,
+        );
       }
 
       await _client.rpc(
@@ -126,11 +147,18 @@ class EvidenceRepository {
     required String description,
     required List<XFile> newImages,
     required List<String> assetIdsToRemove,
+    ProgressCallback? onPreparing,
+    ProgressCallback? onUploading,
   }) async {
     try {
       List<Map<String, dynamic>>? assetsToAdd;
       if (newImages.isNotEmpty) {
-        assetsToAdd = await _uploadImages(taskId, newImages);
+        assetsToAdd = await _uploadImages(
+          taskId,
+          newImages,
+          onPreparing: onPreparing,
+          onUploading: onUploading,
+        );
       }
 
       await _client.rpc(
