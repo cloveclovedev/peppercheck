@@ -25,8 +25,9 @@ class ImageTooLargeException implements Exception {
 }
 
 class ImageProcessingException implements Exception {
-  ImageProcessingException(this.reason);
+  ImageProcessingException(this.reason, {this.cause});
   final String reason;
+  final Object? cause;
   @override
   String toString() => 'ImageProcessingException: $reason';
 }
@@ -45,8 +46,14 @@ class ImageNormalizer {
       Uint8List encoded;
       try {
         encoded = await _encode(original, side, quality);
-      } catch (e) {
-        throw ImageProcessingException(e.toString());
+      } catch (e, st) {
+        Error.throwWithStackTrace(
+          ImageProcessingException(e.toString(), cause: e),
+          st,
+        );
+      }
+      if (encoded.isEmpty) {
+        throw ImageProcessingException('encoder returned empty bytes');
       }
       if (encoded.lengthInBytes <= _maxBytes) {
         return NormalizedImage(
@@ -70,6 +77,8 @@ class ImageNormalizer {
     int longestSide,
     int quality,
   ) async {
+    // Both axes set to longestSide so the plugin fits the longer dimension
+    // to that bound while preserving aspect ratio.
     return FlutterImageCompress.compressWithList(
       bytes,
       minWidth: longestSide,

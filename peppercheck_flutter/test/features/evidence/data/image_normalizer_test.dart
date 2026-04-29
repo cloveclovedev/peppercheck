@@ -216,5 +216,51 @@ void main() {
         throwsA(isA<ImageProcessingException>()),
       );
     });
+
+    test(
+      'throws ImageProcessingException when encoder returns empty bytes',
+      () async {
+        final fakeXFile = XFile.fromData(
+          Uint8List.fromList([0x01]),
+          path: 'photo.jpg',
+        );
+
+        Future<Uint8List> emptyEncode(
+          Uint8List bytes,
+          int longestSide,
+          int quality,
+        ) async {
+          return Uint8List(0);
+        }
+
+        expect(
+          () => ImageNormalizer(encode: emptyEncode).normalize(fakeXFile),
+          throwsA(isA<ImageProcessingException>()),
+        );
+      },
+    );
+
+    test('preserves original exception as cause', () async {
+      final fakeXFile = XFile.fromData(
+        Uint8List.fromList([0x01]),
+        path: 'photo.jpg',
+      );
+      final originalError = StateError('codec gone');
+
+      Future<Uint8List> failingEncode(
+        Uint8List bytes,
+        int longestSide,
+        int quality,
+      ) async {
+        throw originalError;
+      }
+
+      try {
+        await ImageNormalizer(encode: failingEncode).normalize(fakeXFile);
+        fail('expected ImageProcessingException');
+      } on ImageProcessingException catch (e) {
+        expect(e.cause, same(originalError));
+      }
+    });
   });
 }
