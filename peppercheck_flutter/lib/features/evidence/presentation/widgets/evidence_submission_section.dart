@@ -9,6 +9,7 @@ import 'package:peppercheck_flutter/common_widgets/action_button.dart';
 import 'package:peppercheck_flutter/common_widgets/primary_action_button.dart';
 import 'package:peppercheck_flutter/common_widgets/base_text_field.dart';
 
+import 'package:peppercheck_flutter/features/evidence/data/image_normalizer.dart';
 import 'package:peppercheck_flutter/features/evidence/presentation/controllers/evidence_controller.dart';
 import 'package:peppercheck_flutter/common_widgets/base_section.dart';
 import 'package:peppercheck_flutter/features/matching/domain/referee_request.dart';
@@ -79,6 +80,53 @@ class _EvidenceSubmissionSectionState
   bool _isCurrentUserTasker() {
     return Supabase.instance.client.auth.currentUser?.id ==
         widget.task.taskerId;
+  }
+
+  String _mapErrorMessage(Object error) {
+    if (error is ImageTooLargeException) {
+      return t.task.evidence.image_too_large;
+    }
+    if (error is ImageProcessingException) {
+      return t.task.evidence.image_processing_failed;
+    }
+    return error.toString();
+  }
+
+  Widget? _buildProgressText() {
+    final state = ref.watch(evidenceControllerProvider);
+    final value = state.value;
+    if (value == null) return null;
+
+    String? text;
+    if (value.isPreparing) {
+      final p = value.progress!;
+      text = p.total > 1
+          ? t.task.evidence.preparing_multi(current: p.current, total: p.total)
+          : t.task.evidence.preparing;
+    } else if (value.isUploading) {
+      final p = value.progress!;
+      text = p.total > 1
+          ? t.task.evidence.uploading_multi(current: p.current, total: p.total)
+          : t.task.evidence.uploading;
+    }
+
+    if (text == null) return null;
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSizes.spacingTiny),
+      child: Text(
+        text,
+        style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+      ),
+    );
+  }
+
+  Widget? _buildErrorText() {
+    final state = ref.watch(evidenceControllerProvider);
+    if (!state.hasError) return null;
+    return Text(
+      _mapErrorMessage(state.error!),
+      style: const TextStyle(color: AppColors.textError),
+    );
   }
 
   void _enterEditMode({required bool isResubmit}) {
@@ -359,11 +407,8 @@ class _EvidenceSubmissionSectionState
             ),
           ),
           const SizedBox(height: AppSizes.spacingSmall),
-          if (ref.watch(evidenceControllerProvider).hasError) ...[
-            Text(
-              ref.watch(evidenceControllerProvider).error.toString(),
-              style: TextStyle(color: AppColors.textError),
-            ),
+          if (_buildErrorText() != null) ...[
+            _buildErrorText()!,
             const SizedBox(height: 8),
           ],
           Row(
@@ -389,6 +434,7 @@ class _EvidenceSubmissionSectionState
               TextButton(onPressed: _cancelEdit, child: Text(t.common.cancel)),
             ],
           ),
+          if (_buildProgressText() != null) _buildProgressText()!,
         ],
       ),
     );
@@ -535,11 +581,8 @@ class _EvidenceSubmissionSectionState
             ),
             if (!allConfirmed) ...[
               const SizedBox(height: AppSizes.spacingSmall),
-              if (state.hasError) ...[
-                Text(
-                  state.error.toString(),
-                  style: TextStyle(color: AppColors.textError),
-                ),
+              if (_buildErrorText() != null) ...[
+                _buildErrorText()!,
                 const SizedBox(height: AppSizes.spacingSmall),
               ],
               PrimaryActionButton(
@@ -656,11 +699,8 @@ class _EvidenceSubmissionSectionState
             ),
           ),
           const SizedBox(height: AppSizes.spacingSmall),
-          if (state.hasError) ...[
-            Text(
-              state.error.toString(),
-              style: TextStyle(color: AppColors.textError),
-            ),
+          if (_buildErrorText() != null) ...[
+            _buildErrorText()!,
             const SizedBox(height: 8),
           ],
           PrimaryActionButton(
@@ -672,6 +712,7 @@ class _EvidenceSubmissionSectionState
                 : null,
             isLoading: isLoading,
           ),
+          if (_buildProgressText() != null) _buildProgressText()!,
         ],
       ),
     );
