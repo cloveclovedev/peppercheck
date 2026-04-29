@@ -31,9 +31,30 @@ class ImageProcessingException implements Exception {
 }
 
 class ImageNormalizer {
-  ImageNormalizer({EncodeFn? encode});
+  ImageNormalizer({EncodeFn? encode}) : _encode = encode ?? _defaultEncode;
 
-  Future<NormalizedImage> normalize(XFile image) {
-    throw UnimplementedError();
+  final EncodeFn _encode;
+
+  static const int _maxBytes = 5 * 1024 * 1024;
+
+  Future<NormalizedImage> normalize(XFile image) async {
+    final original = await image.readAsBytes();
+    final encoded = await _encode(original, 2048, 85);
+    if (encoded.lengthInBytes <= _maxBytes) {
+      return NormalizedImage(
+        bytes: encoded,
+        filename: image.name,
+        mimeType: 'image/jpeg',
+      );
+    }
+    throw ImageTooLargeException();
+  }
+
+  static Future<Uint8List> _defaultEncode(
+    Uint8List bytes,
+    int longestSide,
+    int quality,
+  ) async {
+    throw UnimplementedError(); // wired in Task 8
   }
 }

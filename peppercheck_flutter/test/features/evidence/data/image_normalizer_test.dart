@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:peppercheck_flutter/features/evidence/data/image_normalizer.dart';
 
 void main() {
@@ -31,5 +32,35 @@ void main() {
       expect(exception, isA<Exception>());
       expect(exception.toString(), contains('codec failed'));
     });
+  });
+
+  group('ImageNormalizer.normalize - happy path', () {
+    test(
+      'returns step 1 bytes when first encoded result is under 5MB',
+      () async {
+        final fakeXFile = XFile.fromData(
+          Uint8List.fromList([0x01, 0x02, 0x03]),
+          path: 'photo.jpg',
+        );
+        final encodedBytes = Uint8List(1024 * 1024); // 1MB
+
+        Future<Uint8List> fakeEncode(
+          Uint8List bytes,
+          int longestSide,
+          int quality,
+        ) async {
+          expect(longestSide, equals(2048));
+          expect(quality, equals(85));
+          return encodedBytes;
+        }
+
+        final normalizer = ImageNormalizer(encode: fakeEncode);
+        final result = await normalizer.normalize(fakeXFile);
+
+        expect(result.bytes, equals(encodedBytes));
+        expect(result.filename, equals('photo.jpg'));
+        expect(result.mimeType, equals('image/jpeg'));
+      },
+    );
   });
 }
