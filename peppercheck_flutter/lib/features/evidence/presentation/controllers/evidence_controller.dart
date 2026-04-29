@@ -114,7 +114,7 @@ class EvidenceController extends _$EvidenceController {
     )
     action,
   }) async {
-    state = const AsyncData(EvidenceSubmissionState.idle());
+    state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       final repo = ref.read(evidenceRepositoryProvider);
       void onPreparing(int current, int total) {
