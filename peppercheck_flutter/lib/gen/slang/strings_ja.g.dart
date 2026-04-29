@@ -1002,6 +1002,24 @@ class TranslationsTaskEvidenceJa {
 	/// ja: 'エビデンスを更新しました'
 	String get update_success => 'エビデンスを更新しました';
 
+	/// ja: '画像を準備中...'
+	String get preparing => '画像を準備中...';
+
+	/// ja: '画像を準備中... ($current/$total)'
+	String preparing_multi({required Object current, required Object total}) => '画像を準備中... (${current}/${total})';
+
+	/// ja: 'アップロード中...'
+	String get uploading => 'アップロード中...';
+
+	/// ja: 'アップロード中... ($current/$total)'
+	String uploading_multi({required Object current, required Object total}) => 'アップロード中... (${current}/${total})';
+
+	/// ja: '画像のサイズが大きすぎます。 別の画像を選んでください。'
+	String get image_too_large => '画像のサイズが大きすぎます。\n別の画像を選んでください。';
+
+	/// ja: '画像の処理に失敗しました。 別の画像を選んでください。'
+	String get image_processing_failed => '画像の処理に失敗しました。\n別の画像を選んでください。';
+
 	late final TranslationsTaskEvidenceTimeoutJa timeout = TranslationsTaskEvidenceTimeoutJa.internal(_root);
 }
 
@@ -1737,6 +1755,12 @@ extension on Translations {
 			'task.evidence.resubmit_success' => 'エビデンスを再提出しました',
 			'task.evidence.update' => '更新',
 			'task.evidence.update_success' => 'エビデンスを更新しました',
+			'task.evidence.preparing' => '画像を準備中...',
+			'task.evidence.preparing_multi' => ({required Object current, required Object total}) => '画像を準備中... (${current}/${total})',
+			'task.evidence.uploading' => 'アップロード中...',
+			'task.evidence.uploading_multi' => ({required Object current, required Object total}) => 'アップロード中... (${current}/${total})',
+			'task.evidence.image_too_large' => '画像のサイズが大きすぎます。\n別の画像を選んでください。',
+			'task.evidence.image_processing_failed' => '画像の処理に失敗しました。\n別の画像を選んでください。',
 			'task.evidence.timeout.title' => 'タイムアウト通知',
 			'task.evidence.timeout.description' => '期限を過ぎました。ポイントが支払われました。',
 			'task.evidence.timeout.referee_description' => 'エビデンスの提出期限が過ぎたため、報酬が付与されました。',
