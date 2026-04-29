@@ -39,7 +39,7 @@ class ImageNormalizer {
 
   Future<NormalizedImage> normalize(XFile image) async {
     final original = await image.readAsBytes();
-    const steps = [(2048, 85), (1536, 85)];
+    const steps = [(2048, 85), (1536, 85), (1024, 85)];
     for (final (side, quality) in steps) {
       final encoded = await _encode(original, side, quality);
       if (encoded.lengthInBytes <= _maxBytes) {

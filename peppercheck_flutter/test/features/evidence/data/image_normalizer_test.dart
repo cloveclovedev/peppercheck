@@ -85,5 +85,54 @@ void main() {
 
       expect(result.bytes, equals(step2Bytes));
     });
+
+    test(
+      'falls back to step 3 (1024px) when steps 1 and 2 exceed 5MB',
+      () async {
+        final fakeXFile = XFile.fromData(
+          Uint8List.fromList([0x01]),
+          path: 'photo.jpg',
+        );
+        final step3Bytes = Uint8List(3 * 1024 * 1024); // 3MB
+
+        Future<Uint8List> fakeEncode(
+          Uint8List bytes,
+          int longestSide,
+          int quality,
+        ) async {
+          if (longestSide == 2048) return Uint8List(6 * 1024 * 1024);
+          if (longestSide == 1536) return Uint8List(6 * 1024 * 1024);
+          if (longestSide == 1024) return step3Bytes;
+          fail('unexpected longestSide: $longestSide');
+        }
+
+        final normalizer = ImageNormalizer(encode: fakeEncode);
+        final result = await normalizer.normalize(fakeXFile);
+
+        expect(result.bytes, equals(step3Bytes));
+      },
+    );
+
+    test('throws ImageTooLargeException when all 3 steps exceed 5MB', () async {
+      final fakeXFile = XFile.fromData(
+        Uint8List.fromList([0x01]),
+        path: 'photo.jpg',
+      );
+
+      Future<Uint8List> fakeEncode(
+        Uint8List bytes,
+        int longestSide,
+        int quality,
+      ) async {
+        return Uint8List(6 * 1024 * 1024);
+      }
+
+      final normalizer = ImageNormalizer(encode: fakeEncode);
+
+      expect(
+        () => normalizer.normalize(fakeXFile),
+        throwsA(isA<ImageTooLargeException>()),
+      );
+    });
   });
 }
