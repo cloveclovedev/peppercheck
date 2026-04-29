@@ -135,4 +135,64 @@ void main() {
       );
     });
   });
+
+  group('ImageNormalizer.normalize - filename rewrite', () {
+    Future<Uint8List> tinyEncode(Uint8List bytes, int side, int q) async =>
+        Uint8List(1024); // 1KB, always under 5MB
+
+    test('rewrites .heic extension to .jpg', () async {
+      final fakeXFile = XFile.fromData(
+        Uint8List.fromList([0x01]),
+        path: 'photo.heic',
+      );
+      final result = await ImageNormalizer(
+        encode: tinyEncode,
+      ).normalize(fakeXFile);
+      expect(result.filename, equals('photo.jpg'));
+    });
+
+    test('rewrites .png extension to .jpg', () async {
+      final fakeXFile = XFile.fromData(
+        Uint8List.fromList([0x01]),
+        path: 'screenshot.png',
+      );
+      final result = await ImageNormalizer(
+        encode: tinyEncode,
+      ).normalize(fakeXFile);
+      expect(result.filename, equals('screenshot.jpg'));
+    });
+
+    test('keeps .jpg as-is', () async {
+      final fakeXFile = XFile.fromData(
+        Uint8List.fromList([0x01]),
+        path: 'photo.jpg',
+      );
+      final result = await ImageNormalizer(
+        encode: tinyEncode,
+      ).normalize(fakeXFile);
+      expect(result.filename, equals('photo.jpg'));
+    });
+
+    test('rewrites .HEIC (uppercase) to .jpg', () async {
+      final fakeXFile = XFile.fromData(
+        Uint8List.fromList([0x01]),
+        path: 'PHOTO.HEIC',
+      );
+      final result = await ImageNormalizer(
+        encode: tinyEncode,
+      ).normalize(fakeXFile);
+      expect(result.filename, equals('PHOTO.jpg'));
+    });
+
+    test('handles filename without extension', () async {
+      final fakeXFile = XFile.fromData(
+        Uint8List.fromList([0x01]),
+        path: 'photo',
+      );
+      final result = await ImageNormalizer(
+        encode: tinyEncode,
+      ).normalize(fakeXFile);
+      expect(result.filename, equals('photo.jpg'));
+    });
+  });
 }

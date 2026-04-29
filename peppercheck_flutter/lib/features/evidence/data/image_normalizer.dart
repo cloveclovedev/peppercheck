@@ -45,12 +45,18 @@ class ImageNormalizer {
       if (encoded.lengthInBytes <= _maxBytes) {
         return NormalizedImage(
           bytes: encoded,
-          filename: image.name,
+          filename: _toJpgFilename(image.name),
           mimeType: 'image/jpeg',
         );
       }
     }
     throw ImageTooLargeException();
+  }
+
+  static String _toJpgFilename(String name) {
+    final dotIndex = name.lastIndexOf('.');
+    if (dotIndex <= 0) return '$name.jpg';
+    return '${name.substring(0, dotIndex)}.jpg';
   }
 
   static Future<Uint8List> _defaultEncode(
