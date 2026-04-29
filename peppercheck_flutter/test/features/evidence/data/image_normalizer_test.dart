@@ -62,5 +62,28 @@ void main() {
         expect(result.mimeType, equals('image/jpeg'));
       },
     );
+
+    test('falls back to step 2 (1536px) when step 1 exceeds 5MB', () async {
+      final fakeXFile = XFile.fromData(
+        Uint8List.fromList([0x01]),
+        path: 'photo.jpg',
+      );
+      final step2Bytes = Uint8List(2 * 1024 * 1024); // 2MB
+
+      Future<Uint8List> fakeEncode(
+        Uint8List bytes,
+        int longestSide,
+        int quality,
+      ) async {
+        if (longestSide == 2048) return Uint8List(6 * 1024 * 1024); // 6MB
+        if (longestSide == 1536) return step2Bytes;
+        fail('unexpected longestSide: $longestSide');
+      }
+
+      final normalizer = ImageNormalizer(encode: fakeEncode);
+      final result = await normalizer.normalize(fakeXFile);
+
+      expect(result.bytes, equals(step2Bytes));
+    });
   });
 }

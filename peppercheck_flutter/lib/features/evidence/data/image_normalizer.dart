@@ -39,13 +39,16 @@ class ImageNormalizer {
 
   Future<NormalizedImage> normalize(XFile image) async {
     final original = await image.readAsBytes();
-    final encoded = await _encode(original, 2048, 85);
-    if (encoded.lengthInBytes <= _maxBytes) {
-      return NormalizedImage(
-        bytes: encoded,
-        filename: image.name,
-        mimeType: 'image/jpeg',
-      );
+    const steps = [(2048, 85), (1536, 85)];
+    for (final (side, quality) in steps) {
+      final encoded = await _encode(original, side, quality);
+      if (encoded.lengthInBytes <= _maxBytes) {
+        return NormalizedImage(
+          bytes: encoded,
+          filename: image.name,
+          mimeType: 'image/jpeg',
+        );
+      }
     }
     throw ImageTooLargeException();
   }
