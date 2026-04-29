@@ -397,7 +397,7 @@ class _EvidenceSubmissionSectionState
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(evidenceControllerProvider);
-    final isLoading = state.isLoading;
+    final isLoading = state.isLoading || (state.value?.isLoading ?? false);
 
     // Check if evidence is already submitted
     // If Evidence exists, show submitted view (Read Only) or edit form
