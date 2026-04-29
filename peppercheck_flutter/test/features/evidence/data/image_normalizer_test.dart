@@ -195,4 +195,26 @@ void main() {
       expect(result.filename, equals('photo.jpg'));
     });
   });
+
+  group('ImageNormalizer.normalize - error wrapping', () {
+    test('wraps encoder errors in ImageProcessingException', () async {
+      final fakeXFile = XFile.fromData(
+        Uint8List.fromList([0x01]),
+        path: 'photo.jpg',
+      );
+
+      Future<Uint8List> failingEncode(
+        Uint8List bytes,
+        int longestSide,
+        int quality,
+      ) async {
+        throw Exception('codec failed');
+      }
+
+      expect(
+        () => ImageNormalizer(encode: failingEncode).normalize(fakeXFile),
+        throwsA(isA<ImageProcessingException>()),
+      );
+    });
+  });
 }

@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image_picker/image_picker.dart';
 
 typedef EncodeFn =
@@ -41,7 +42,12 @@ class ImageNormalizer {
     final original = await image.readAsBytes();
     const steps = [(2048, 85), (1536, 85), (1024, 85)];
     for (final (side, quality) in steps) {
-      final encoded = await _encode(original, side, quality);
+      Uint8List encoded;
+      try {
+        encoded = await _encode(original, side, quality);
+      } catch (e) {
+        throw ImageProcessingException(e.toString());
+      }
       if (encoded.lengthInBytes <= _maxBytes) {
         return NormalizedImage(
           bytes: encoded,
@@ -64,6 +70,12 @@ class ImageNormalizer {
     int longestSide,
     int quality,
   ) async {
-    throw UnimplementedError(); // wired in Task 8
+    return FlutterImageCompress.compressWithList(
+      bytes,
+      minWidth: longestSide,
+      minHeight: longestSide,
+      quality: quality,
+      format: CompressFormat.jpeg,
+    );
   }
 }
