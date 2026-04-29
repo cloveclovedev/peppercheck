@@ -91,6 +91,7 @@ class EvidenceController extends _$EvidenceController {
     required String judgementId,
     required VoidCallback onSuccess,
   }) async {
+    state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       await ref
           .read(evidenceRepositoryProvider)
