@@ -33,13 +33,18 @@ Root cause for (1) and (2): the current settings use `aspectRatioPresets: [CropA
 
 ### Rotation
 
-Rotate buttons are kept (default behavior on both platforms). Rotation does not affect the output aspect ratio, so it does not conflict with the 1:1 constraint.
+Rotation behavior differs by platform because of how `image_cropper` (uCrop on Android, TOCropViewController on iOS) structures its UI:
+
+- **Android:** the rotate slider lives inside the bottom controls strip, alongside the aspect-ratio picker. There is no per-tab visibility flag in `image_cropper` 9.x — `hideBottomControls: true` removes the rotate UI as a side-effect of hiding the aspect-ratio picker. We accept this loss because the user's primary intent is "select the area, nothing else".
+- **iOS:** rotate buttons live in the toolbar, independent of the aspect-ratio picker, so they remain visible by default. We do not hide them in this change.
+
+The asymmetry is intentional for now. If iOS rotate becomes a problem during iOS verification, a follow-up PR can add `rotateButtonsHidden: true` to `IOSUiSettings` for consistency.
 
 ### Result UX
 
 - User picks an image from the gallery.
 - Cropper opens with a circular 1:1 crop overlay covering the image.
-- User can pan, zoom, and rotate to choose which area to use.
+- User can pan and zoom to choose which area to use (and rotate on iOS).
 - No aspect ratio picker is visible.
 - Toolbar title reads "切り抜き".
 
