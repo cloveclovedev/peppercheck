@@ -13,7 +13,8 @@ part of 'evidence_controller.dart';
 const evidenceControllerProvider = EvidenceControllerProvider._();
 
 final class EvidenceControllerProvider
-    extends $AsyncNotifierProvider<EvidenceController, void> {
+    extends
+        $AsyncNotifierProvider<EvidenceController, EvidenceSubmissionState> {
   const EvidenceControllerProvider._()
     : super(
         from: null,
@@ -34,23 +35,32 @@ final class EvidenceControllerProvider
 }
 
 String _$evidenceControllerHash() =>
-    r'410454fde3c0d2fb636a88c716171aaf277ea7c3';
+    r'7327a354279e88133524d454fb71a6220a3e8b41';
 
-abstract class _$EvidenceController extends $AsyncNotifier<void> {
-  FutureOr<void> build();
+abstract class _$EvidenceController
+    extends $AsyncNotifier<EvidenceSubmissionState> {
+  FutureOr<EvidenceSubmissionState> build();
   @$mustCallSuper
   @override
   void runBuild() {
-    build();
-    final ref = this.ref as $Ref<AsyncValue<void>, void>;
+    final created = build();
+    final ref =
+        this.ref
+            as $Ref<
+              AsyncValue<EvidenceSubmissionState>,
+              EvidenceSubmissionState
+            >;
     final element =
         ref.element
             as $ClassProviderElement<
-              AnyNotifier<AsyncValue<void>, void>,
-              AsyncValue<void>,
+              AnyNotifier<
+                AsyncValue<EvidenceSubmissionState>,
+                EvidenceSubmissionState
+              >,
+              AsyncValue<EvidenceSubmissionState>,
               Object?,
               Object?
             >;
-    element.handleValue(ref, null);
+    element.handleValue(ref, created);
   }
 }

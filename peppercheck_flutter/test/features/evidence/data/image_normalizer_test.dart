@@ -1,0 +1,266 @@
+import 'dart:typed_data';
+
+import 'package:flutter_test/flutter_test.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:peppercheck_flutter/features/evidence/data/image_normalizer.dart';
+
+void main() {
+  group('NormalizedImage', () {
+    test('holds bytes, filename, and mimeType', () {
+      final bytes = Uint8List.fromList([0xFF, 0xD8, 0xFF]);
+      final image = NormalizedImage(
+        bytes: bytes,
+        filename: 'photo.jpg',
+        mimeType: 'image/jpeg',
+      );
+
+      expect(image.bytes, equals(bytes));
+      expect(image.filename, equals('photo.jpg'));
+      expect(image.mimeType, equals('image/jpeg'));
+    });
+  });
+
+  group('ImageTooLargeException', () {
+    test('is an Exception', () {
+      expect(ImageTooLargeException(), isA<Exception>());
+    });
+  });
+
+  group('ImageProcessingException', () {
+    test('is an Exception with reason', () {
+      final exception = ImageProcessingException('codec failed');
+      expect(exception, isA<Exception>());
+      expect(exception.toString(), contains('codec failed'));
+    });
+  });
+
+  group('ImageNormalizer.normalize - happy path', () {
+    test(
+      'returns step 1 bytes when first encoded result is under 5MB',
+      () async {
+        final fakeXFile = XFile.fromData(
+          Uint8List.fromList([0x01, 0x02, 0x03]),
+          path: 'photo.jpg',
+        );
+        final encodedBytes = Uint8List(1024 * 1024); // 1MB
+
+        Future<Uint8List> fakeEncode(
+          Uint8List bytes,
+          int longestSide,
+          int quality,
+        ) async {
+          expect(longestSide, equals(2048));
+          expect(quality, equals(85));
+          return encodedBytes;
+        }
+
+        final normalizer = ImageNormalizer(encode: fakeEncode);
+        final result = await normalizer.normalize(fakeXFile);
+
+        expect(result.bytes, equals(encodedBytes));
+        expect(result.filename, equals('photo.jpg'));
+        expect(result.mimeType, equals('image/jpeg'));
+      },
+    );
+
+    test('falls back to step 2 (1536px) when step 1 exceeds 5MB', () async {
+      final fakeXFile = XFile.fromData(
+        Uint8List.fromList([0x01]),
+        path: 'photo.jpg',
+      );
+      final step2Bytes = Uint8List(2 * 1024 * 1024); // 2MB
+
+      Future<Uint8List> fakeEncode(
+        Uint8List bytes,
+        int longestSide,
+        int quality,
+      ) async {
+        if (longestSide == 2048) return Uint8List(6 * 1024 * 1024); // 6MB
+        if (longestSide == 1536) return step2Bytes;
+        fail('unexpected longestSide: $longestSide');
+      }
+
+      final normalizer = ImageNormalizer(encode: fakeEncode);
+      final result = await normalizer.normalize(fakeXFile);
+
+      expect(result.bytes, equals(step2Bytes));
+    });
+
+    test(
+      'falls back to step 3 (1024px) when steps 1 and 2 exceed 5MB',
+      () async {
+        final fakeXFile = XFile.fromData(
+          Uint8List.fromList([0x01]),
+          path: 'photo.jpg',
+        );
+        final step3Bytes = Uint8List(3 * 1024 * 1024); // 3MB
+
+        Future<Uint8List> fakeEncode(
+          Uint8List bytes,
+          int longestSide,
+          int quality,
+        ) async {
+          if (longestSide == 2048) return Uint8List(6 * 1024 * 1024);
+          if (longestSide == 1536) return Uint8List(6 * 1024 * 1024);
+          if (longestSide == 1024) return step3Bytes;
+          fail('unexpected longestSide: $longestSide');
+        }
+
+        final normalizer = ImageNormalizer(encode: fakeEncode);
+        final result = await normalizer.normalize(fakeXFile);
+
+        expect(result.bytes, equals(step3Bytes));
+      },
+    );
+
+    test('throws ImageTooLargeException when all 3 steps exceed 5MB', () async {
+      final fakeXFile = XFile.fromData(
+        Uint8List.fromList([0x01]),
+        path: 'photo.jpg',
+      );
+
+      Future<Uint8List> fakeEncode(
+        Uint8List bytes,
+        int longestSide,
+        int quality,
+      ) async {
+        return Uint8List(6 * 1024 * 1024);
+      }
+
+      final normalizer = ImageNormalizer(encode: fakeEncode);
+
+      expect(
+        () => normalizer.normalize(fakeXFile),
+        throwsA(isA<ImageTooLargeException>()),
+      );
+    });
+  });
+
+  group('ImageNormalizer.normalize - filename rewrite', () {
+    Future<Uint8List> tinyEncode(Uint8List bytes, int side, int q) async =>
+        Uint8List(1024); // 1KB, always under 5MB
+
+    test('rewrites .heic extension to .jpg', () async {
+      final fakeXFile = XFile.fromData(
+        Uint8List.fromList([0x01]),
+        path: 'photo.heic',
+      );
+      final result = await ImageNormalizer(
+        encode: tinyEncode,
+      ).normalize(fakeXFile);
+      expect(result.filename, equals('photo.jpg'));
+    });
+
+    test('rewrites .png extension to .jpg', () async {
+      final fakeXFile = XFile.fromData(
+        Uint8List.fromList([0x01]),
+        path: 'screenshot.png',
+      );
+      final result = await ImageNormalizer(
+        encode: tinyEncode,
+      ).normalize(fakeXFile);
+      expect(result.filename, equals('screenshot.jpg'));
+    });
+
+    test('keeps .jpg as-is', () async {
+      final fakeXFile = XFile.fromData(
+        Uint8List.fromList([0x01]),
+        path: 'photo.jpg',
+      );
+      final result = await ImageNormalizer(
+        encode: tinyEncode,
+      ).normalize(fakeXFile);
+      expect(result.filename, equals('photo.jpg'));
+    });
+
+    test('rewrites .HEIC (uppercase) to .jpg', () async {
+      final fakeXFile = XFile.fromData(
+        Uint8List.fromList([0x01]),
+        path: 'PHOTO.HEIC',
+      );
+      final result = await ImageNormalizer(
+        encode: tinyEncode,
+      ).normalize(fakeXFile);
+      expect(result.filename, equals('PHOTO.jpg'));
+    });
+
+    test('handles filename without extension', () async {
+      final fakeXFile = XFile.fromData(
+        Uint8List.fromList([0x01]),
+        path: 'photo',
+      );
+      final result = await ImageNormalizer(
+        encode: tinyEncode,
+      ).normalize(fakeXFile);
+      expect(result.filename, equals('photo.jpg'));
+    });
+  });
+
+  group('ImageNormalizer.normalize - error wrapping', () {
+    test('wraps encoder errors in ImageProcessingException', () async {
+      final fakeXFile = XFile.fromData(
+        Uint8List.fromList([0x01]),
+        path: 'photo.jpg',
+      );
+
+      Future<Uint8List> failingEncode(
+        Uint8List bytes,
+        int longestSide,
+        int quality,
+      ) async {
+        throw Exception('codec failed');
+      }
+
+      expect(
+        () => ImageNormalizer(encode: failingEncode).normalize(fakeXFile),
+        throwsA(isA<ImageProcessingException>()),
+      );
+    });
+
+    test(
+      'throws ImageProcessingException when encoder returns empty bytes',
+      () async {
+        final fakeXFile = XFile.fromData(
+          Uint8List.fromList([0x01]),
+          path: 'photo.jpg',
+        );
+
+        Future<Uint8List> emptyEncode(
+          Uint8List bytes,
+          int longestSide,
+          int quality,
+        ) async {
+          return Uint8List(0);
+        }
+
+        expect(
+          () => ImageNormalizer(encode: emptyEncode).normalize(fakeXFile),
+          throwsA(isA<ImageProcessingException>()),
+        );
+      },
+    );
+
+    test('preserves original exception as cause', () async {
+      final fakeXFile = XFile.fromData(
+        Uint8List.fromList([0x01]),
+        path: 'photo.jpg',
+      );
+      final originalError = StateError('codec gone');
+
+      Future<Uint8List> failingEncode(
+        Uint8List bytes,
+        int longestSide,
+        int quality,
+      ) async {
+        throw originalError;
+      }
+
+      try {
+        await ImageNormalizer(encode: failingEncode).normalize(fakeXFile);
+        fail('expected ImageProcessingException');
+      } on ImageProcessingException catch (e) {
+        expect(e.cause, same(originalError));
+      }
+    });
+  });
+}

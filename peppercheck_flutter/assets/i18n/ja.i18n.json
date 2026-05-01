@@ -219,6 +219,12 @@
       "resubmit_success": "エビデンスを再提出しました",
       "update": "更新",
       "update_success": "エビデンスを更新しました",
+      "preparing": "画像を準備中...",
+      "preparing_multi": "画像を準備中... ($current/$total)",
+      "uploading": "アップロード中...",
+      "uploading_multi": "アップロード中... ($current/$total)",
+      "image_too_large": "画像のサイズが大きすぎます。\n別の画像を選んでください。",
+      "image_processing_failed": "画像の処理に失敗しました。\n別の画像を選んでください。",
       "timeout": {
         "title": "タイムアウト通知",
         "description": "期限を過ぎました。ポイントが支払われました。",
