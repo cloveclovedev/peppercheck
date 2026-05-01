@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:peppercheck_flutter/features/authentication/data/auth_state_provider.dart';
 import 'package:peppercheck_flutter/features/profile/data/profile_repository.dart';
 import 'package:peppercheck_flutter/features/profile/presentation/providers/current_profile_provider.dart';
+import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'avatar_edit_controller.g.dart';
@@ -33,19 +34,19 @@ class AvatarEditController extends _$AvatarEditController {
       sourcePath: picked.path,
       maxWidth: 512,
       maxHeight: 512,
+      aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
       compressFormat: ImageCompressFormat.jpg,
       compressQuality: 85,
       uiSettings: [
         AndroidUiSettings(
-          toolbarTitle: 'crop',
-          aspectRatioPresets: const [CropAspectRatioPreset.square],
-          lockAspectRatio: true,
+          toolbarTitle: t.profile.edit.cropTitle,
+          hideBottomControls: true,
           cropStyle: CropStyle.circle,
         ),
         IOSUiSettings(
-          title: 'crop',
-          aspectRatioPresets: const [CropAspectRatioPreset.square],
-          aspectRatioLockEnabled: true,
+          title: t.profile.edit.cropTitle,
+          aspectRatioPickerButtonHidden: true,
+          resetAspectRatioEnabled: false,
           cropStyle: CropStyle.circle,
         ),
       ],
