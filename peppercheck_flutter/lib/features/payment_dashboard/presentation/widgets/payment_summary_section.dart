@@ -10,6 +10,7 @@ import 'package:peppercheck_flutter/common_widgets/base_section.dart';
 import 'package:peppercheck_flutter/common_widgets/help_icon_button.dart';
 import 'package:peppercheck_flutter/features/payment_dashboard/domain/payment_summary.dart';
 import 'package:peppercheck_flutter/features/payment_dashboard/presentation/payment_summary_controller.dart';
+import 'package:peppercheck_flutter/features/payout/presentation/payout_controller.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 
 class PaymentSummarySection extends ConsumerWidget {
@@ -35,14 +36,21 @@ class PaymentSummarySection extends ConsumerWidget {
   }
 }
 
-class _SummaryContent extends StatelessWidget {
+class _SummaryContent extends ConsumerWidget {
   final PaymentSummary summary;
 
   const _SummaryContent({required this.summary});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final hasTrial = summary.trialPoints != null;
+    final isPayoutSetupComplete =
+        ref.watch(payoutControllerProvider).value?.isComplete ?? false;
+    final hasRecentPayoutToShow =
+        summary.recentPayout != null &&
+        summary.recentPayout!.status != 'skipped';
+    final hasRewardBalance =
+        summary.rewards != null && summary.rewards!.balance > 0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -192,9 +200,15 @@ class _SummaryContent extends StatelessWidget {
             ),
           ],
         ),
-        // Payout info — conditional rows
-        if (summary.recentPayout != null ||
-            (summary.rewards != null && summary.rewards!.balance > 0)) ...[
+        // Payout info — conditional rows. Hidden until Stripe Connect setup is
+        // complete — prepare_monthly_payouts() skips these users, so a "next
+        // payout date" would mislead. The recent-payout row also hides when
+        // the latest payout is 'skipped' since the skip event was already
+        // communicated via push notification and re-surfacing it on the
+        // wallet creates "did setup not work?" confusion. See spec
+        // 2026-05-03-payout-card-gating-design.md.
+        if (isPayoutSetupComplete &&
+            (hasRecentPayoutToShow || hasRewardBalance)) ...[
           const SizedBox(height: AppSizes.baseCardGap),
           BaseCard(
             child: Row(
@@ -209,19 +223,16 @@ class _SummaryContent extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (summary.recentPayout != null) ...[
+                      if (hasRecentPayoutToShow) ...[
                         _PayoutRow(
                           label: t.dashboard.recentPayout,
                           value:
                               '${_formatCurrency(summary.recentPayout!.amountMinor, summary.recentPayout!.currencyCode, summary.recentPayout!.currencyExponent)} (${_payoutStatusLabel(summary.recentPayout!.status)}) — ${_formatDate(summary.recentPayout!.batchDate)}',
                         ),
                       ],
-                      if (summary.recentPayout != null &&
-                          summary.rewards != null &&
-                          summary.rewards!.balance > 0)
+                      if (hasRecentPayoutToShow && hasRewardBalance)
                         const SizedBox(height: 4),
-                      if (summary.rewards != null &&
-                          summary.rewards!.balance > 0) ...[
+                      if (hasRewardBalance) ...[
                         _PayoutRow(
                           label: t.dashboard.nextPayout,
                           value: _formatDate(summary.nextPayoutDate),
