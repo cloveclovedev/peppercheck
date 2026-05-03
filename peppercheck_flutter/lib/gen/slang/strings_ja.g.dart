@@ -1524,8 +1524,8 @@ class TranslationsAppExplanationSectionsConceptJa {
 	/// ja: '目標達成のモチベーションをサポート'
 	String get title => '目標達成のモチベーションをサポート';
 
-	/// ja: '自分との約束は破ってしまいがち。 PepperCheckは、達成したいタスクを第三者のレフリーに確認してもらうことで、「対人関係から生ずる責任感」を目標達成のエネルギーに変えるアプリです。'
-	String get body => '自分との約束は破ってしまいがち。\nPepperCheckは、達成したいタスクを第三者のレフリーに確認してもらうことで、「対人関係から生ずる責任感」を目標達成のエネルギーに変えるアプリです。';
+	/// ja: '自分との約束は破ってしまいがちです。 PepperCheckは、達成したいタスクを第三者のレフリーに確認してもらうことで、「対人関係から生ずる責任感」を目標達成のエネルギーに変えるアプリです。'
+	String get body => '自分との約束は破ってしまいがちです。\nPepperCheckは、達成したいタスクを第三者のレフリーに確認してもらうことで、「対人関係から生ずる責任感」を目標達成のエネルギーに変えるアプリです。';
 }
 
 // Path: appExplanation.sections.flow
@@ -1912,7 +1912,7 @@ extension on Translations {
 			'account.actions.deletedSnackbar' => 'アカウントが削除されました',
 			'appExplanation.sheetTitle' => 'PepperCheckとは',
 			'appExplanation.sections.concept.title' => '目標達成のモチベーションをサポート',
-			'appExplanation.sections.concept.body' => '自分との約束は破ってしまいがち。\nPepperCheckは、達成したいタスクを第三者のレフリーに確認してもらうことで、「対人関係から生ずる責任感」を目標達成のエネルギーに変えるアプリです。',
+			'appExplanation.sections.concept.body' => '自分との約束は破ってしまいがちです。\nPepperCheckは、達成したいタスクを第三者のレフリーに確認してもらうことで、「対人関係から生ずる責任感」を目標達成のエネルギーに変えるアプリです。',
 			'appExplanation.sections.flow.title' => 'タスク完了までのフロー',
 			'appExplanation.sections.flow.body' => '達成基準と締切を決めてタスクを作成します。\nシステムが自動でタスクとレフリーをマッチングします。\nレフリーは提出されたエビデンスをもとに、タスクが達成されたかどうかを判定します。',
 			'appExplanation.sections.points.title' => 'ポイントでタスクを作成',
