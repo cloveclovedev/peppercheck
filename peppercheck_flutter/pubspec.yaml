@@ -116,4 +116,6 @@ flutter_launcher_icons:
   android: true
   ios: true
   image_path: "../store-listing/peppercheck_icon_512.png"
+  adaptive_icon_background: "#EFE3CA"
+  adaptive_icon_foreground: "../store-listing/peppercheck_icon_512.png"
   remove_alpha_ios: true
