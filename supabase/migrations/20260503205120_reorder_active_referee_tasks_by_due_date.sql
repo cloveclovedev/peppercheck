@@ -1,7 +1,10 @@
-CREATE OR REPLACE FUNCTION public.get_active_referee_tasks() RETURNS jsonb
-    LANGUAGE sql
-    SET search_path = ''
-    AS $$
+set check_function_bodies = off;
+
+CREATE OR REPLACE FUNCTION public.get_active_referee_tasks()
+ RETURNS jsonb
+ LANGUAGE sql
+ SET search_path TO ''
+AS $function$
   SELECT COALESCE(
     jsonb_agg(
       jsonb_build_object(
@@ -44,6 +47,7 @@ CREATE OR REPLACE FUNCTION public.get_active_referee_tasks() RETURNS jsonb
   WHERE
     trr.matched_referee_id = auth.uid()
     AND trr.status IN ('matched', 'accepted');
-$$;
+$function$
+;
 
-ALTER FUNCTION public.get_active_referee_tasks() OWNER TO postgres;
+
