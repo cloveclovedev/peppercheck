@@ -4,15 +4,15 @@
 
 ## Problem
 
-On the Wallet screen, the **ポイント・報酬** (`PaymentSummarySection`) currently shows a payout info card with two rows:
+On the Wallet screen, the Points & Rewards section (`PaymentSummarySection`) currently shows a payout info card with two rows:
 
-- **直近** — most recent `reward_payouts` row (any status)
-- **次回振り込み予定** — last day of the current month, computed unconditionally
+- **Recent payout** — most recent `reward_payouts` row (any status)
+- **Next payout date** — last day of the current month, computed unconditionally
 
 This card is visible even when the user has not finished Stripe Connect onboarding (i.e. `payouts_enabled = false`). Two concrete problems result:
 
-1. **A future payout date is shown to a user whose payouts will not happen.** The same screen has a separate **出金設定** section that says "報酬を受け取るには決済サービスStripeでの出金設定が必要です。" The mismatch — "you need to set this up" *and* "your next payout is on 5/31" — is contradictory and confusing.
-2. **A skipped past payout is rendered as "直近 ¥X (スキップ)".** For a first-time user who hasn't onboarded, this looks like a failure rather than the expected outcome of an unfinished setup.
+1. **A future payout date is shown to a user whose payouts will not happen.** The same screen has a separate Payout Setup section that already tells the user "rewards require Stripe Connect payout setup". The mismatch — "you need to set this up" *and* "your next payout is on 5/31" — is contradictory and confusing.
+2. **A skipped past payout is rendered as "Recent: ¥X (skipped)".** For a first-time user who hasn't onboarded, this looks like a failure rather than the expected outcome of an unfinished setup.
 
 The skip behavior itself is correct: `prepare_monthly_payouts()` (`supabase/schemas/reward/functions/prepare_monthly_payouts.sql`) checks `stripe_accounts.payouts_enabled` per user and inserts a `status='skipped'` row without calling `stripe.transfers.create`. No Stripe instruction is sent. So the issue is purely a UI confusion: we show information that implies an active payout pipeline when there is none.
 
@@ -32,7 +32,7 @@ The skip behavior itself is correct: `prepare_monthly_payouts()` (`supabase/sche
    ```
 3. AND this into the visibility condition for the payout info `BaseCard`.
 
-**(b) Always hide the "直近" row when the most recent payout has `status='skipped'`.**
+**(b) Always hide the recent-payout row when the most recent payout has `status='skipped'`.**
 
 A skipped payout is bookkeeping for "we did nothing because the account wasn't ready". The skip event is already communicated to the user via the `notification_payout_connect_required_referee` push notification at skip time; re-surfacing it on the wallet — especially right after Connect setup completes — produces a "did my setup not work?" moment of confusion. `success` / `pending` / `failed` continue to show.
 
@@ -45,7 +45,7 @@ final hasRewardBalance =
     summary.rewards != null && summary.rewards!.balance > 0;
 ```
 
-The outer guard, the inter-row spacer, and the inner "直近" `if` all key off these locals.
+The outer guard, the inter-row spacer, and the inner recent-payout `if` all key off these locals.
 
 The reward-balance + total-earned row, the trial/regular points card, and the obligations card are **not** changed — they remain visible regardless of payout setup state.
 
@@ -71,8 +71,8 @@ Row-level (within the card, when `isComplete`):
 
 | Row | Visible when |
 |---|---|
-| 直近 (recent payout) | `recentPayout != null` AND `recentPayout.status != 'skipped'` |
-| 次回振り込み予定 (next payout date) | `rewards != null` AND `rewards.balance > 0` |
+| Recent payout | `recentPayout != null` AND `recentPayout.status != 'skipped'` |
+| Next payout date | `rewards != null` AND `rewards.balance > 0` |
 
 ### Loading and error handling
 
@@ -83,8 +83,8 @@ Row-level (within the card, when `isComplete`):
 
 ### Edge cases
 
-- **Setup just completed, most recent payout in history is `status='skipped'`.** The "直近" row stays hidden (per (b) above). The "次回振り込み予定" row shows. Without (b) the user would see "直近 ¥X (スキップ)" right after celebrating completion — the most acute confusion case observed in emulator testing.
-- **Setup complete, latest payout is `skipped` but an older payout was `success`.** Backend `get_payment_summary()` returns the latest row only, so the older success is not reachable through this view. The 直近 row is hidden; the user still sees 累計受取額 and 次回振り込み予定. Acceptable: this state is rare (success → re-verification → another skip cycle) and 累計受取額 still confirms past activity.
+- **Setup just completed, most recent payout in history is `status='skipped'`.** The recent-payout row stays hidden (per (b) above). The next-payout-date row shows. Without (b) the user would see "Recent: ¥X (skipped)" right after celebrating completion — the most acute confusion case observed in emulator testing.
+- **Setup complete, latest payout is `skipped` but an older payout was `success`.** Backend `get_payment_summary()` returns the latest row only, so the older success is not reachable through this view. The recent-payout row is hidden; the user still sees the total-earned card and the next-payout-date row. Acceptable: this state is rare (success → re-verification → another skip cycle) and the total-earned card still confirms past activity.
 - **Setup transitions from complete → not complete** (Stripe re-verification, account flagged). The card disappears while in that state. This matches reality: the next month's payout *will* be skipped if the state persists.
 - **Setup just completed, reward balance is 0, no past payouts.** Outer guard `hasRecentPayoutToShow || hasRewardBalance` is false → card hidden. Behavior unchanged from before.
 - **`status='failed'` or `status='pending'` recent payout.** Shown unchanged. Failure requires user attention; pending is informational ("transfer in transit").
@@ -110,9 +110,9 @@ On the Android emulator, with a test user, walk through each state:
 1. **`isNotStarted`** (no `stripe_accounts` row): payout info card is absent; reward balance + total earned are still shown.
 2. **`isInProgress`** (`charges_enabled=true`, `payouts_enabled=false`): card absent.
 3. **`isPendingVerification`** (`pending_verification` non-empty): card absent.
-4. **`isComplete`** (`charges_enabled=true`, `payouts_enabled=true`) with a non-zero reward balance and no past payouts: card present with **only** "次回振り込み予定" row.
-5. **`isComplete`** with a `status='skipped'` recent row: 直近 row is **hidden**, next-payout row is shown. (Skipped suppression behavior — case (b).)
-6. **`isComplete`** with a `status='success'` recent row: 直近 row is shown ("直近 ¥X (成功) — YYYY/M/D"), next-payout row is shown.
+4. **`isComplete`** (`charges_enabled=true`, `payouts_enabled=true`) with a non-zero reward balance and no past payouts: card present with **only** the next-payout-date row.
+5. **`isComplete`** with a `status='skipped'` recent row: recent-payout row is **hidden**, next-payout row is shown. (Skipped suppression behavior — case (b).)
+6. **`isComplete`** with a `status='success'` recent row: recent-payout row is shown (e.g. "Recent: ¥X (success) — YYYY/M/D"), next-payout row is shown.
 
 Build verification: `cd peppercheck_flutter && flutter build apk --debug -t lib/main_debug.dart`.
 

@@ -202,10 +202,10 @@ class _SummaryContent extends ConsumerWidget {
         ),
         // Payout info — conditional rows. Hidden until Stripe Connect setup is
         // complete — prepare_monthly_payouts() skips these users, so a "next
-        // payout date" would mislead. The 直近 row also hides when the latest
-        // payout is 'skipped' since the skip event was already communicated
-        // via push notification and re-surfacing it on the wallet creates
-        // "did setup not work?" confusion. See spec
+        // payout date" would mislead. The recent-payout row also hides when
+        // the latest payout is 'skipped' since the skip event was already
+        // communicated via push notification and re-surfacing it on the
+        // wallet creates "did setup not work?" confusion. See spec
         // 2026-05-03-payout-card-gating-design.md.
         if (isPayoutSetupComplete &&
             (hasRecentPayoutToShow || hasRewardBalance)) ...[
