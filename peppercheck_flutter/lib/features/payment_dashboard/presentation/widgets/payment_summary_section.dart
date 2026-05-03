@@ -195,10 +195,10 @@ class _SummaryContent extends ConsumerWidget {
             ),
           ],
         ),
-        // Payout info — conditional rows. Hidden until Stripe Connect setup is complete
-        // so we don't show "next payout date" / skipped-payout history to users whose
-        // payouts will be skipped by prepare_monthly_payouts(). See spec
-        // 2026-05-03-payout-card-gating-design.md.
+        // Payout info — conditional rows. Hidden until Stripe Connect setup is
+        // complete — prepare_monthly_payouts() skips these users, so a "next
+        // payout date" would mislead and a skipped past payout would look like
+        // a failure. See spec 2026-05-03-payout-card-gating-design.md.
         if (isPayoutSetupComplete &&
             (summary.recentPayout != null ||
                 (summary.rewards != null && summary.rewards!.balance > 0))) ...[
