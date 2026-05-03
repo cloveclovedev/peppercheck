@@ -10,6 +10,7 @@ import 'package:peppercheck_flutter/common_widgets/base_section.dart';
 import 'package:peppercheck_flutter/common_widgets/help_icon_button.dart';
 import 'package:peppercheck_flutter/features/payment_dashboard/domain/payment_summary.dart';
 import 'package:peppercheck_flutter/features/payment_dashboard/presentation/payment_summary_controller.dart';
+import 'package:peppercheck_flutter/features/payout/presentation/payout_controller.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 
 class PaymentSummarySection extends ConsumerWidget {
@@ -35,14 +36,16 @@ class PaymentSummarySection extends ConsumerWidget {
   }
 }
 
-class _SummaryContent extends StatelessWidget {
+class _SummaryContent extends ConsumerWidget {
   final PaymentSummary summary;
 
   const _SummaryContent({required this.summary});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final hasTrial = summary.trialPoints != null;
+    final isPayoutSetupComplete =
+        ref.watch(payoutControllerProvider).value?.isComplete ?? false;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -192,9 +195,13 @@ class _SummaryContent extends StatelessWidget {
             ),
           ],
         ),
-        // Payout info — conditional rows
-        if (summary.recentPayout != null ||
-            (summary.rewards != null && summary.rewards!.balance > 0)) ...[
+        // Payout info — conditional rows. Hidden until Stripe Connect setup is complete
+        // so we don't show "next payout date" / skipped-payout history to users whose
+        // payouts will be skipped by prepare_monthly_payouts(). See spec
+        // 2026-05-03-payout-card-gating-design.md.
+        if (isPayoutSetupComplete &&
+            (summary.recentPayout != null ||
+                (summary.rewards != null && summary.rewards!.balance > 0))) ...[
           const SizedBox(height: AppSizes.baseCardGap),
           BaseCard(
             child: Row(
