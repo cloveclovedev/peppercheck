@@ -24,7 +24,14 @@ export default async function PrivacyPolicyPage() {
     'support',
     'safety',
   ] as const
-  const thirdParties = ['google', 'stripe', 'firebase', 'supabase'] as const
+  const thirdParties = [
+    'google',
+    'apple',
+    'stripe',
+    'firebase',
+    'supabase',
+    'cloudflare',
+  ] as const
   const rightsItems = [
     'access',
     'correction',
@@ -122,6 +129,9 @@ export default async function PrivacyPolicyPage() {
             <p className="mt-3 text-[var(--color-text)]">
               {t('security.body')}
             </p>
+            <p className="mt-3 text-[var(--color-text)]">
+              {t('security.operatorAccess')}
+            </p>
           </section>
 
           {/* 6. Data Retention */}
@@ -131,6 +141,12 @@ export default async function PrivacyPolicyPage() {
             </h2>
             <p className="mt-3 text-[var(--color-text)]">
               {t('retention.body')}
+            </p>
+            <p className="mt-3 text-[var(--color-text)]">
+              {t('retention.evidenceFiles')}
+            </p>
+            <p className="mt-3 text-[var(--color-text)]">
+              {t('retention.legalException')}
             </p>
           </section>
 
