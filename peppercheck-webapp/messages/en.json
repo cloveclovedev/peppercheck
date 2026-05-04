@@ -179,7 +179,7 @@
     },
     "retention": {
       "heading": "6. Data Retention",
-      "body": "We retain your data for as long as your account is active. If you delete your account, personally identifiable information (profile, email address, payment information, point and reward balances, notification settings, avatar image, etc.) will be deleted promptly. However, task and review-related content (task titles and descriptions, evidence, review messages, rating comments, referee judgments, etc.) will be retained in anonymized form, with personally identifiable information removed, in order to maintain service quality and protect other users.",
+      "body": "We retain your data for as long as your account is active. If you delete your account, personally identifiable information (profile, email address, payment information, point and reward balances, notification settings, avatar image, etc.) will be deleted promptly. However, task-related content (task titles and descriptions, evidence, judgment messages, rating comments, referee judgments, etc.) will be retained in anonymized form, with personally identifiable information removed, in order to maintain service quality and protect other users.",
       "evidenceFiles": "Evidence image files are automatically deleted 90 days after the corresponding task's due date.",
       "legalException": "Where retention is required by law or necessary for legitimate business purposes (e.g., resolving disputes, enforcing agreements, tax records), we may retain data beyond the periods above to the extent necessary."
     },
