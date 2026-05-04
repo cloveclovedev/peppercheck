@@ -99,19 +99,37 @@
       },
       "task": {
         "heading": "Task and Review Data",
-        "body": "Task details (title, description, criteria), evidence submissions (text and uploaded images/files), review messages, rating comments, and your point and reward balances and transaction history."
+        "items": {
+          "details": "Task details (title, description, criteria)",
+          "evidence": "Evidence submissions (text and uploaded images/files)",
+          "reviewMessages": "Review messages",
+          "comments": "Rating comments",
+          "points": "Point and reward balances and transaction history"
+        }
       },
       "payment": {
         "heading": "Payment Information",
-        "body": "Subscription information (provider, status, and purchase transaction identifiers from Apple / Google Play), Stripe account identifiers (used for receiving referee payouts), and payout history. Credit card and bank account information are handled directly by Apple, Google, and Stripe and are never stored on our servers."
+        "items": {
+          "subscription": "Subscription information (provider, status, and purchase transaction identifiers from Apple / Google Play)",
+          "stripe": "Stripe account identifiers (used for receiving referee payouts)",
+          "payouts": "Payout history"
+        },
+        "note": "Credit card and bank account information are handled directly by Apple, Google, and Stripe and are never stored on our servers."
       },
       "device": {
         "heading": "Device Information",
-        "body": "Push notification tokens (FCM), device type, and last active timestamp."
+        "items": {
+          "pushToken": "Push notification tokens (FCM)",
+          "type": "Device type",
+          "lastActive": "Last active timestamp"
+        }
       },
       "usage": {
         "heading": "Usage Data",
-        "body": "Referee availability time slots and matching history."
+        "items": {
+          "availability": "Referee availability time slots",
+          "matching": "Matching history"
+        }
       }
     },
     "purpose": {
@@ -130,28 +148,28 @@
       "heading": "4. Third-Party Services",
       "intro": "We share information with the following third-party services as necessary to operate the app. These providers are located outside of Japan (primarily in the United States) and process personal information in accordance with their own privacy policies and applicable local laws.",
       "google": {
-        "name": "Google (United States)",
-        "body": "Email and profile information for sign-in authentication, and transaction information for subscription billing on Google Play."
+        "name": "Google",
+        "body": "Email and profile information for sign-in authentication, and transaction information for subscription billing on Google Play. (United States)"
       },
       "apple": {
-        "name": "Apple (United States)",
-        "body": "Transaction information for subscription billing on the App Store. Personal information from your Apple Account is not shared with us."
+        "name": "Apple",
+        "body": "Transaction information for subscription billing on the App Store. Personal information from your Apple Account is not shared with us. (United States)"
       },
       "stripe": {
-        "name": "Stripe (United States)",
-        "body": "Stripe Connect account information for sending referee payouts."
+        "name": "Stripe",
+        "body": "Stripe Connect account information for sending referee payouts. (United States)"
       },
       "firebase": {
-        "name": "Firebase (United States)",
-        "body": "Device tokens for delivering push notifications."
+        "name": "Firebase",
+        "body": "Device tokens for delivering push notifications. (United States)"
       },
       "supabase": {
-        "name": "Supabase (United States)",
-        "body": "Backend data storage and authentication. Media files are stored on Cloudflare R2."
+        "name": "Supabase",
+        "body": "Backend data storage and authentication. Media files are stored on Cloudflare R2. (United States)"
       },
       "cloudflare": {
-        "name": "Cloudflare (United States)",
-        "body": "Website delivery and storage of user media files. Access logs include IP addresses and similar information."
+        "name": "Cloudflare",
+        "body": "Website delivery and storage of user media files. Access logs include IP addresses and similar information. (United States)"
       }
     },
     "security": {

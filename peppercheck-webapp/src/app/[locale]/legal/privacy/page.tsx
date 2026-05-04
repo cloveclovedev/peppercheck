@@ -16,6 +16,13 @@ export default async function PrivacyPolicyPage() {
     'device',
     'usage',
   ] as const
+  const collectItems = {
+    account: ['email', 'name', 'timezone'],
+    task: ['details', 'evidence', 'reviewMessages', 'comments', 'points'],
+    payment: ['subscription', 'stripe', 'payouts'],
+    device: ['pushToken', 'type', 'lastActive'],
+    usage: ['availability', 'matching'],
+  } as const
   const purposeItems = [
     'auth',
     'service',
@@ -76,23 +83,18 @@ export default async function PrivacyPolicyPage() {
                   <dt className="font-semibold text-[var(--color-heading)]">
                     {t(`collect.${key}.heading`)}
                   </dt>
-                  {key === 'account' ? (
-                    <dd className="mt-1">
-                      <ul className="list-disc space-y-1 pl-6 text-[var(--color-text)]">
-                        {(['email', 'name', 'timezone'] as const).map(
-                          (item) => (
-                            <li key={item}>
-                              {t(`collect.account.items.${item}`)}
-                            </li>
-                          ),
-                        )}
-                      </ul>
-                    </dd>
-                  ) : (
-                    <dd className="mt-1 text-[var(--color-text)]">
-                      {t(`collect.${key}.body`)}
-                    </dd>
-                  )}
+                  <dd className="mt-1">
+                    <ul className="list-disc space-y-1 pl-6 text-[var(--color-text)]">
+                      {collectItems[key].map((item) => (
+                        <li key={item}>{t(`collect.${key}.items.${item}`)}</li>
+                      ))}
+                    </ul>
+                    {key === 'payment' && (
+                      <p className="mt-2 text-[var(--color-text)]">
+                        {t('collect.payment.note')}
+                      </p>
+                    )}
+                  </dd>
                 </div>
               ))}
             </dl>
