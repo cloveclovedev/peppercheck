@@ -76,9 +76,23 @@ export default async function PrivacyPolicyPage() {
                   <dt className="font-semibold text-[var(--color-heading)]">
                     {t(`collect.${key}.heading`)}
                   </dt>
-                  <dd className="mt-1 text-[var(--color-text)]">
-                    {t(`collect.${key}.body`)}
-                  </dd>
+                  {key === 'account' ? (
+                    <dd className="mt-1">
+                      <ul className="list-disc space-y-1 pl-6 text-[var(--color-text)]">
+                        {(['email', 'name', 'timezone'] as const).map(
+                          (item) => (
+                            <li key={item}>
+                              {t(`collect.account.items.${item}`)}
+                            </li>
+                          ),
+                        )}
+                      </ul>
+                    </dd>
+                  ) : (
+                    <dd className="mt-1 text-[var(--color-text)]">
+                      {t(`collect.${key}.body`)}
+                    </dd>
+                  )}
                 </div>
               ))}
             </dl>

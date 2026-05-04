@@ -91,7 +91,11 @@
       "intro": "We collect the following categories of information:",
       "account": {
         "heading": "Account Information",
-        "body": "Email address — obtained through Google Sign-In. Display name and profile image — set by the user within the app. Timezone — automatically obtained from device information."
+        "items": {
+          "email": "Email address (obtained through Google Sign-In)",
+          "name": "Display name and profile image (set by the user within the app)",
+          "timezone": "Timezone (automatically obtained from device information)"
+        }
       },
       "task": {
         "heading": "Task and Review Data",
@@ -126,28 +130,28 @@
       "heading": "4. Third-Party Services",
       "intro": "We share information with the following third-party services as necessary to operate the app. These providers are located outside of Japan (primarily in the United States) and process personal information in accordance with their own privacy policies and applicable local laws.",
       "google": {
-        "name": "Google",
-        "body": "Email and profile information for sign-in authentication, and transaction information for subscription billing on Google Play. Location: United States."
+        "name": "Google (United States)",
+        "body": "Email and profile information for sign-in authentication, and transaction information for subscription billing on Google Play."
       },
       "apple": {
-        "name": "Apple",
-        "body": "Transaction information for subscription billing on the App Store. Personal information from your Apple Account is not shared with us. Location: United States."
+        "name": "Apple (United States)",
+        "body": "Transaction information for subscription billing on the App Store. Personal information from your Apple Account is not shared with us."
       },
       "stripe": {
-        "name": "Stripe",
-        "body": "Stripe Connect account information for sending referee payouts. Location: United States."
+        "name": "Stripe (United States)",
+        "body": "Stripe Connect account information for sending referee payouts."
       },
       "firebase": {
-        "name": "Firebase Cloud Messaging",
-        "body": "Device tokens for delivering push notifications. Location: United States."
+        "name": "Firebase (United States)",
+        "body": "Device tokens for delivering push notifications."
       },
       "supabase": {
-        "name": "Supabase",
-        "body": "Backend data storage and authentication. Media files are stored on Cloudflare R2. Location: United States."
+        "name": "Supabase (United States)",
+        "body": "Backend data storage and authentication. Media files are stored on Cloudflare R2."
       },
       "cloudflare": {
-        "name": "Cloudflare",
-        "body": "Website delivery and storage of user media files. Access logs include IP addresses and similar information. Location: United States."
+        "name": "Cloudflare (United States)",
+        "body": "Website delivery and storage of user media files. Access logs include IP addresses and similar information."
       }
     },
     "security": {
