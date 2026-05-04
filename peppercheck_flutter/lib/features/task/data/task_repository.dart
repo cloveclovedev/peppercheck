@@ -100,7 +100,8 @@ class TaskRepository {
           ''')
           .eq('tasker_id', userId)
           .neq('status', 'closed')
-          .order('created_at', ascending: false);
+          .order('due_date', ascending: true, nullsFirst: false)
+          .order('created_at', ascending: true);
 
       return (data as List).map((json) {
         final Map<String, dynamic> taskJson = Map<String, dynamic>.from(json);
