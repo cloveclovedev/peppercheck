@@ -98,11 +98,12 @@
         }
       },
       "task": {
-        "heading": "タスク・審査関連データ",
+        "heading": "タスク関連データ",
         "items": {
-          "details": "タスクの詳細（タイトル、説明、基準）",
-          "evidence": "証拠の提出（テキスト・アップロード画像/ファイル）",
-          "reviewMessages": "審査メッセージ",
+          "details": "タスクの詳細（タイトル、説明、達成基準）",
+          "refereeMatching": "レフリーマッチング条件",
+          "evidence": "エビデンス（テキスト・アップロード画像）",
+          "reviewMessages": "判定メッセージ",
           "comments": "評価コメント",
           "points": "ポイント・リワード残高および取引履歴"
         }
@@ -127,7 +128,6 @@
       "usage": {
         "heading": "利用状況データ",
         "items": {
-          "availability": "レフリー対応可能時間帯",
           "matching": "マッチング履歴"
         }
       }

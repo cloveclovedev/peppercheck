@@ -18,10 +18,17 @@ export default async function PrivacyPolicyPage() {
   ] as const
   const collectItems = {
     account: ['email', 'name', 'timezone'],
-    task: ['details', 'evidence', 'reviewMessages', 'comments', 'points'],
+    task: [
+      'details',
+      'refereeMatching',
+      'evidence',
+      'reviewMessages',
+      'comments',
+      'points',
+    ],
     payment: ['subscription', 'stripe', 'payouts'],
     device: ['pushToken', 'type', 'lastActive'],
-    usage: ['availability', 'matching'],
+    usage: ['matching'],
   } as const
   const purposeItems = [
     'auth',

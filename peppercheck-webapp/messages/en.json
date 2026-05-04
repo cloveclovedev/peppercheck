@@ -98,11 +98,12 @@
         }
       },
       "task": {
-        "heading": "Task and Review Data",
+        "heading": "Task Data",
         "items": {
-          "details": "Task details (title, description, criteria)",
-          "evidence": "Evidence submissions (text and uploaded images/files)",
-          "reviewMessages": "Review messages",
+          "details": "Task details (title, description, completion criteria)",
+          "refereeMatching": "Referee matching preferences",
+          "evidence": "Evidence (text and uploaded images)",
+          "reviewMessages": "Judgment messages",
           "comments": "Rating comments",
           "points": "Point and reward balances and transaction history"
         }
@@ -127,7 +128,6 @@
       "usage": {
         "heading": "Usage Data",
         "items": {
-          "availability": "Referee availability time slots",
           "matching": "Matching history"
         }
       }
