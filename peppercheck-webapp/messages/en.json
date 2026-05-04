@@ -81,7 +81,7 @@
   },
   "Privacy": {
     "title": "Privacy Policy",
-    "effectiveDate": "Effective date: March 9, 2026",
+    "effectiveDate": "Effective date: May 5, 2026",
     "operator": {
       "heading": "1. Operator",
       "body": "This app (\"Peppercheck\") is operated by CloveClove (\"we\", \"us\", or \"our\"). For inquiries, please contact us at the email address listed at the bottom of this page."
@@ -91,23 +91,45 @@
       "intro": "We collect the following categories of information:",
       "account": {
         "heading": "Account Information",
-        "body": "Email address — obtained through Google Sign-In. Display name and profile image — set by the user within the app. Timezone — automatically obtained from device information."
+        "items": {
+          "email": "Email address (obtained through Google Sign-In)",
+          "name": "Display name and profile image (set by the user within the app)",
+          "timezone": "Timezone (automatically obtained from device information)"
+        }
       },
       "task": {
-        "heading": "Task and Review Data",
-        "body": "Task details (title, description, criteria), evidence submissions (text and uploaded images/files), review messages, and rating comments."
+        "heading": "Task Data",
+        "items": {
+          "details": "Task details (title, description, completion criteria)",
+          "refereeMatching": "Referee matching preferences",
+          "evidence": "Evidence (text and uploaded images)",
+          "reviewMessages": "Judgment messages",
+          "comments": "Rating comments",
+          "points": "Point and reward balances and transaction history"
+        }
       },
       "payment": {
         "heading": "Payment Information",
-        "body": "Stripe account identifiers, card brand and last 4 digits, card expiration date, subscription status, point and reward balances, and payout history. Full card numbers are handled directly by Stripe and are never stored on our servers."
+        "items": {
+          "subscription": "Subscription information (provider, status, and purchase transaction identifiers from Apple / Google Play)",
+          "stripe": "Stripe account identifiers (used for receiving referee payouts)",
+          "payouts": "Payout history"
+        },
+        "note": "Credit card and bank account information are handled directly by Apple, Google, and Stripe and are never stored on our servers."
       },
       "device": {
         "heading": "Device Information",
-        "body": "Push notification tokens (FCM), device type, and last active timestamp."
+        "items": {
+          "pushToken": "Push notification tokens (FCM)",
+          "type": "Device type",
+          "lastActive": "Last active timestamp"
+        }
       },
       "usage": {
         "heading": "Usage Data",
-        "body": "Referee availability time slots and matching history."
+        "items": {
+          "matching": "Matching history"
+        }
       }
     },
     "purpose": {
@@ -124,31 +146,42 @@
     },
     "thirdParty": {
       "heading": "4. Third-Party Services",
-      "intro": "We share information with the following third-party services as necessary to operate the app:",
+      "intro": "We share information with the following third-party services as necessary to operate the app. These providers are located outside of Japan (primarily in the United States) and process personal information in accordance with their own privacy policies and applicable local laws.",
       "google": {
-        "name": "Google (Sign-In)",
-        "body": "Email and profile information for authentication."
+        "name": "Google",
+        "body": "Email and profile information for sign-in authentication, and transaction information for subscription billing on Google Play. (United States)"
+      },
+      "apple": {
+        "name": "Apple",
+        "body": "Transaction information for subscription billing on the App Store. Personal information from your Apple Account is not shared with us. (United States)"
       },
       "stripe": {
         "name": "Stripe",
-        "body": "Payment method and account information for payment processing and referee payouts."
+        "body": "Stripe Connect account information for sending referee payouts. (United States)"
       },
       "firebase": {
-        "name": "Firebase Cloud Messaging",
-        "body": "Device tokens for delivering push notifications."
+        "name": "Firebase",
+        "body": "Device tokens for delivering push notifications. (United States)"
       },
       "supabase": {
         "name": "Supabase",
-        "body": "All user data for backend storage and authentication."
+        "body": "Backend data storage and authentication. Media files are stored on Cloudflare R2. (United States)"
+      },
+      "cloudflare": {
+        "name": "Cloudflare",
+        "body": "Website delivery and storage of user media files. Access logs include IP addresses and similar information. (United States)"
       }
     },
     "security": {
       "heading": "5. Data Storage and Security",
-      "body": "We use industry-standard security measures, including encryption in transit (TLS) and access controls, to protect your data. However, no method of transmission or storage is 100% secure, and we cannot guarantee absolute security."
+      "body": "We use industry-standard security measures, including encryption in transit (TLS) and access controls, to protect your data. However, no method of transmission or storage is 100% secure, and we cannot guarantee absolute security.",
+      "operatorAccess": "We may access user data only as necessary to operate the service. Such access is limited to specific purposes — handling inquiries, troubleshooting, legal compliance, and investigating misuse — and is restricted to the minimum scope required."
     },
     "retention": {
       "heading": "6. Data Retention",
-      "body": "We retain your data for as long as your account is active. If you delete your account, we will delete your personal data within 30 days, except where retention is required by law or necessary for legitimate business purposes (e.g., resolving disputes, enforcing agreements)."
+      "body": "We retain your data for as long as your account is active. If you delete your account, personally identifiable information (profile, email address, payment information, point and reward balances, notification settings, avatar image, etc.) will be deleted promptly. However, task-related content (task titles and descriptions, evidence, judgment messages, rating comments, referee judgments, etc.) will be retained in anonymized form, with personally identifiable information removed, in order to maintain service quality and protect other users.",
+      "evidenceFiles": "Evidence image files are automatically deleted 90 days after the corresponding task's due date.",
+      "legalException": "Where retention is required by law or necessary for legitimate business purposes (e.g., resolving disputes, enforcing agreements, tax records), we may retain data beyond the periods above to the extent necessary."
     },
     "rights": {
       "heading": "7. Your Rights",
@@ -163,7 +196,7 @@
     },
     "children": {
       "heading": "8. Children's Privacy",
-      "body": "Peppercheck is not intended for use by children under the age of 13. We do not knowingly collect personal information from children under 13. If we become aware that we have collected such information, we will promptly delete it."
+      "body": "Peppercheck is intended for users 18 and older, and is not intended for use by minors. We do not knowingly collect personal information from minors. If we become aware that we have collected such information, we will promptly delete it."
     },
     "changes": {
       "heading": "9. Changes to This Policy",

@@ -16,6 +16,20 @@ export default async function PrivacyPolicyPage() {
     'device',
     'usage',
   ] as const
+  const collectItems = {
+    account: ['email', 'name', 'timezone'],
+    task: [
+      'details',
+      'refereeMatching',
+      'evidence',
+      'reviewMessages',
+      'comments',
+      'points',
+    ],
+    payment: ['subscription', 'stripe', 'payouts'],
+    device: ['pushToken', 'type', 'lastActive'],
+    usage: ['matching'],
+  } as const
   const purposeItems = [
     'auth',
     'service',
@@ -24,7 +38,14 @@ export default async function PrivacyPolicyPage() {
     'support',
     'safety',
   ] as const
-  const thirdParties = ['google', 'stripe', 'firebase', 'supabase'] as const
+  const thirdParties = [
+    'google',
+    'apple',
+    'stripe',
+    'firebase',
+    'supabase',
+    'cloudflare',
+  ] as const
   const rightsItems = [
     'access',
     'correction',
@@ -69,8 +90,17 @@ export default async function PrivacyPolicyPage() {
                   <dt className="font-semibold text-[var(--color-heading)]">
                     {t(`collect.${key}.heading`)}
                   </dt>
-                  <dd className="mt-1 text-[var(--color-text)]">
-                    {t(`collect.${key}.body`)}
+                  <dd className="mt-1">
+                    <ul className="list-disc space-y-1 pl-6 text-[var(--color-text)]">
+                      {collectItems[key].map((item) => (
+                        <li key={item}>{t(`collect.${key}.items.${item}`)}</li>
+                      ))}
+                    </ul>
+                    {key === 'payment' && (
+                      <p className="mt-2 text-[var(--color-text)]">
+                        {t('collect.payment.note')}
+                      </p>
+                    )}
                   </dd>
                 </div>
               ))}
@@ -122,6 +152,9 @@ export default async function PrivacyPolicyPage() {
             <p className="mt-3 text-[var(--color-text)]">
               {t('security.body')}
             </p>
+            <p className="mt-3 text-[var(--color-text)]">
+              {t('security.operatorAccess')}
+            </p>
           </section>
 
           {/* 6. Data Retention */}
@@ -131,6 +164,12 @@ export default async function PrivacyPolicyPage() {
             </h2>
             <p className="mt-3 text-[var(--color-text)]">
               {t('retention.body')}
+            </p>
+            <p className="mt-3 text-[var(--color-text)]">
+              {t('retention.evidenceFiles')}
+            </p>
+            <p className="mt-3 text-[var(--color-text)]">
+              {t('retention.legalException')}
             </p>
           </section>
 
