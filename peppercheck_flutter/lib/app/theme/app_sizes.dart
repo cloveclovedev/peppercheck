@@ -18,6 +18,12 @@ class AppSizes {
   // Height of the floating navigation bar container + padding
   static const double bottomNavigationBarHeight = 80.0;
   static const double bottomNavigationBarBorderRadius = 16.0;
+  // Breathing room below the floating bottom navigation bar, applied
+  // on top of the system safe-area inset. Keeps a visible gap above
+  // the system nav strip (Android 3-button bar, gesture indicator,
+  // iOS home indicator) and a non-cramped margin from the screen edge
+  // on devices with no inset (iOS home button).
+  static const double bottomNavigationBarBreathingRoom = 8.0;
 
   // BaseSection
   static const double baseSectionHorizontalPadding = 12.0;

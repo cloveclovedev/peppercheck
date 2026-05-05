@@ -99,10 +99,11 @@ class AppScaffold extends StatelessWidget {
       body: _buildBody(context),
       bottomNavigationBar: SafeArea(
         child: Padding(
-          // Removed bottom padding as requested (was 8)
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSizes.screenHorizontalPadding,
-            vertical: AppSizes.screenVerticalPadding,
+          padding: const EdgeInsets.fromLTRB(
+            AppSizes.screenHorizontalPadding,
+            AppSizes.screenVerticalPadding,
+            AppSizes.screenHorizontalPadding,
+            AppSizes.bottomNavigationBarBreathingRoom,
           ),
           child: Container(
             decoration: BoxDecoration(
@@ -162,7 +163,8 @@ class AppScaffold extends StatelessWidget {
 
       final bottomPadding =
           AppSizes.bottomNavigationBarHeight +
-          MediaQuery.paddingOf(context).bottom;
+          MediaQuery.paddingOf(context).bottom +
+          AppSizes.bottomNavigationBarBreathingRoom;
 
       final scrollView = CustomScrollView(
         slivers: [
