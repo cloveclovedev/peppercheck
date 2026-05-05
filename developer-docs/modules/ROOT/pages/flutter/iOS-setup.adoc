@@ -11,6 +11,7 @@ For general iOS deployment information, refer to the https://docs.flutter.dev/de
 * [x] Xcode installed on your Mac
 * [x] iPhone connected via USB cable
 * [x] Apple ID (Free Personal Account is sufficient)
+* [x] Firebase configuration completed -- see xref:flutter/firebase-setup.adoc[Firebase Configuration]
 
 == Xcode Signing Configuration (Project Specific)
 
