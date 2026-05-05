@@ -1,0 +1,54 @@
+= Firebase Configuration
+
+This guide explains how to obtain and place the Firebase config files
+required for the PepperCheck Flutter app to start on each platform.
+
+== Why this is needed
+
+Both `google-services.json` (Android) and `GoogleService-Info.plist` (iOS)
+contain identifiers that are specific to each Firebase project (project ID,
+API keys, OAuth client IDs). They are gitignored, so each developer must
+provision their own Firebase project and download the config files after
+cloning the repository.
+
+== Prerequisites
+
+- A Google account with access to the https://console.firebase.google.com/[Firebase Console]
+- A Firebase project of your own (create one at the URL above if you do not
+  already have one)
+
+== iOS
+
+. In Firebase Console -> your project -> Project settings, register an iOS
+  app with the bundle identifier that matches `PRODUCT_BUNDLE_IDENTIFIER`
+  in `peppercheck_flutter/ios/Runner.xcodeproj` (default:
+  `dev.cloveclove.peppercheck`).
+. Skip the SDK install / AppDelegate / build verification steps shown by
+  the console -- this project uses the Flutter `firebase_core` plugin,
+  which performs the equivalent initialization automatically.
+. Download `GoogleService-Info.plist` from the iOS app entry.
+. Place it at `peppercheck_flutter/ios/Runner/GoogleService-Info.plist`.
+. The Xcode project is pre-configured to bundle this file as a resource --
+  no Xcode UI action is needed if the file is at the path above.
+
+== Android
+
+. In Firebase Console -> your project -> Project settings, register an
+  Android app with the package name that matches `applicationId` in
+  `peppercheck_flutter/android/app/build.gradle.kts` (default:
+  `dev.cloveclove.peppercheck`).
+. Download `google-services.json` from the Android app entry.
+. Place it at `peppercheck_flutter/android/app/google-services.json`.
+
+== Verification
+
+After placing the file(s), build and run the app:
+
+[source,bash]
+----
+cd peppercheck_flutter
+flutter run -t lib/main_debug.dart
+----
+
+If `Firebase has not been correctly initialized` appears at startup,
+the platform's config file is missing or in the wrong location.

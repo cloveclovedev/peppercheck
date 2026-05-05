@@ -24,6 +24,7 @@
 
 * Flutter App
 ** xref:flutter/initial-local-setup.adoc[Initial Local Setup]
+** xref:flutter/firebase-setup.adoc[Firebase Configuration]
 ** xref:flutter/google-play-setup.adoc[Google Play Setup]
 ** xref:flutter/iOS-setup.adoc[iOS Setup]
 ** Features
