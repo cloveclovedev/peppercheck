@@ -1,6 +1,7 @@
 {
   "imports": {
     "@supabase/supabase-js": "jsr:@supabase/supabase-js@2",
-    "stripe": "npm:stripe@^20.0.0"
+    "stripe": "npm:stripe@^20.0.0",
+    "@aws-sdk/client-s3": "npm:@aws-sdk/client-s3@3"
   }
 }
