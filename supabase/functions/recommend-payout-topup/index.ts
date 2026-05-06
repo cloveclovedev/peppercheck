@@ -1,32 +1,20 @@
-// Follow this setup guide to integrate the Deno language server with your editor:
-// https://deno.land/manual/getting_started/setup_your_environment
-// This enables autocomplete, go to definition, etc.
+import 'jsr:@supabase/functions-js@^2/edge-runtime.d.ts'
 
-// Setup type definitions for built-in Supabase Runtime APIs
-import '@supabase/functions-js/edge-runtime.d.ts'
-
-console.log('Hello from Functions!')
-
-Deno.serve(async (req) => {
-  const { name } = await req.json()
-  const data = {
-    message: `Hello ${name}!`,
+/**
+ * Subtract N business days (Mon–Fri) from a date.
+ * Note: Japanese public holidays are NOT detected.
+ */
+export function subtractBusinessDays(date: Date, days: number): Date {
+  const d = new Date(date)
+  let remaining = days
+  while (remaining > 0) {
+    d.setUTCDate(d.getUTCDate() - 1)
+    const dow = d.getUTCDay() // 0 = Sun, 6 = Sat
+    if (dow !== 0 && dow !== 6) {
+      remaining--
+    }
   }
+  return d
+}
 
-  return new Response(
-    JSON.stringify(data),
-    { headers: { 'Content-Type': 'application/json' } },
-  )
-})
-
-/* To invoke locally:
-
-  1. Run `supabase start` (see: https://supabase.com/docs/reference/cli/supabase-start)
-  2. Make an HTTP request:
-
-  curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/recommend-payout-topup' \
-    --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0' \
-    --header 'Content-Type: application/json' \
-    --data '{"name":"Functions"}'
-
-*/
+Deno.serve(() => new Response('Not implemented', { status: 501 }))
