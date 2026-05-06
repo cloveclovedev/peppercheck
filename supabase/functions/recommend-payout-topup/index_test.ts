@@ -1,5 +1,6 @@
 import { assertEquals } from '@std/assert'
 import { subtractBusinessDays } from './index.ts'
+import { verifyOperatorSecret } from './index.ts'
 
 Deno.test('subtractBusinessDays: subtracts 7 weekdays from a Sunday', () => {
   // 2026-05-31 is a Sunday. 7 weekdays back = 2026-05-21 (Thursday).
@@ -27,4 +28,37 @@ Deno.test('subtractBusinessDays: crosses a month boundary', () => {
   const from = new Date('2026-06-02T00:00:00Z')
   const result = subtractBusinessDays(from, 5)
   assertEquals(result.toISOString().slice(0, 10), '2026-05-26')
+})
+
+Deno.test('verifyOperatorSecret: returns true when header matches env', () => {
+  Deno.env.set('OPERATOR_API_SECRET', 'matching-secret')
+  const req = new Request('http://localhost/', {
+    method: 'POST',
+    headers: { 'X-Operator-Secret': 'matching-secret' },
+  })
+  assertEquals(verifyOperatorSecret(req), true)
+})
+
+Deno.test('verifyOperatorSecret: returns false when header is missing', () => {
+  Deno.env.set('OPERATOR_API_SECRET', 'matching-secret')
+  const req = new Request('http://localhost/', { method: 'POST' })
+  assertEquals(verifyOperatorSecret(req), false)
+})
+
+Deno.test('verifyOperatorSecret: returns false when header mismatches', () => {
+  Deno.env.set('OPERATOR_API_SECRET', 'matching-secret')
+  const req = new Request('http://localhost/', {
+    method: 'POST',
+    headers: { 'X-Operator-Secret': 'wrong-secret' },
+  })
+  assertEquals(verifyOperatorSecret(req), false)
+})
+
+Deno.test('verifyOperatorSecret: returns false when env is unset', () => {
+  Deno.env.delete('OPERATOR_API_SECRET')
+  const req = new Request('http://localhost/', {
+    method: 'POST',
+    headers: { 'X-Operator-Secret': 'anything' },
+  })
+  assertEquals(verifyOperatorSecret(req), false)
 })

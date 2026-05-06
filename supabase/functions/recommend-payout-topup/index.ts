@@ -17,4 +17,22 @@ export function subtractBusinessDays(date: Date, days: number): Date {
   return d
 }
 
+/**
+ * Constant-time comparison of the X-Operator-Secret header against OPERATOR_API_SECRET env.
+ * Returns false if either side is missing or empty.
+ */
+export function verifyOperatorSecret(req: Request): boolean {
+  const expected = Deno.env.get('OPERATOR_API_SECRET') ?? ''
+  const provided = req.headers.get('X-Operator-Secret') ?? ''
+  if (expected.length === 0 || provided.length === 0) return false
+  if (expected.length !== provided.length) return false
+
+  // Constant-time comparison
+  let diff = 0
+  for (let i = 0; i < expected.length; i++) {
+    diff |= expected.charCodeAt(i) ^ provided.charCodeAt(i)
+  }
+  return diff === 0
+}
+
 Deno.serve(() => new Response('Not implemented', { status: 501 }))
