@@ -70,6 +70,7 @@ schema_paths = [
   "./schemas/reward/tables/reward_ledger.sql",
   "./schemas/reward/tables/reward_exchange_rates.sql",
   "./schemas/reward/tables/reward_payouts.sql",
+  "./schemas/reward/tables/payout_topup_config.sql",
 
   # Task
   "./schemas/task/tables/tasks.sql",
@@ -192,6 +193,7 @@ schema_paths = [
   "./schemas/reward/functions/grant_reward.sql",
   "./schemas/reward/functions/deduct_reward_for_payout.sql",
   "./schemas/reward/functions/prepare_monthly_payouts.sql",
+  "./schemas/reward/functions/get_payout_topup_metrics.sql",
 
   # Notification
   "./schemas/notification/functions/notify_event.sql",
@@ -249,6 +251,7 @@ schema_paths = [
   "./schemas/reward/triggers/on_reward_wallets_update_set_updated_at.sql",
   "./schemas/reward/triggers/on_reward_payouts_update_set_updated_at.sql",
   "./schemas/reward/triggers/on_reward_exchange_rates_update_set_updated_at.sql",
+  "./schemas/reward/triggers/on_payout_topup_config_update_set_updated_at.sql",
 
   # Subscription
   "./schemas/subscription/triggers/on_user_subscriptions_update_set_updated_at.sql",
@@ -296,6 +299,7 @@ schema_paths = [
   "./schemas/reward/policies/reward_ledger_policies.sql",
   "./schemas/reward/policies/reward_payouts_policies.sql",
   "./schemas/reward/policies/reward_exchange_rates_policies.sql",
+  "./schemas/reward/policies/payout_topup_config_policies.sql",
   "./schemas/notification/policies/user_fcm_tokens_policies.sql",
   "./schemas/notification/policies/notification_settings_policies.sql",
   "./schemas/report/policies/reports_policies.sql",
@@ -666,3 +670,14 @@ entrypoint = "./functions/delete-account/index.ts"
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/delete-account/*.html" ]
 
+
+[functions.recommend-payout-topup]
+enabled = true
+verify_jwt = true
+import_map = "./functions/recommend-payout-topup/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/recommend-payout-topup/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/recommend-payout-topup/*.html" ]
