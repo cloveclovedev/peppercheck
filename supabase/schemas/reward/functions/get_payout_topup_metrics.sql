@@ -54,3 +54,10 @@ BEGIN
 END;
 $function$
 ;
+
+ALTER FUNCTION public.get_payout_topup_metrics(text) OWNER TO postgres;
+
+REVOKE EXECUTE ON FUNCTION public.get_payout_topup_metrics(text) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.get_payout_topup_metrics(text) FROM anon;
+REVOKE EXECUTE ON FUNCTION public.get_payout_topup_metrics(text) FROM authenticated;
+GRANT EXECUTE ON FUNCTION public.get_payout_topup_metrics(text) TO service_role;

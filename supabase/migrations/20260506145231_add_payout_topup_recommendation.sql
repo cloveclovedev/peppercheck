@@ -127,3 +127,11 @@ CREATE TRIGGER on_payout_topup_config_update_set_updated_at BEFORE UPDATE ON pub
 -- DML, not detected by schema diff
 INSERT INTO public.payout_topup_config (id) VALUES (true)
 ON CONFLICT (id) DO NOTHING;
+
+-- Permissions hardening, may not be detected by schema diff
+ALTER FUNCTION public.get_payout_topup_metrics(text) OWNER TO postgres;
+
+REVOKE EXECUTE ON FUNCTION public.get_payout_topup_metrics(text) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.get_payout_topup_metrics(text) FROM anon;
+REVOKE EXECUTE ON FUNCTION public.get_payout_topup_metrics(text) FROM authenticated;
+GRANT EXECUTE ON FUNCTION public.get_payout_topup_metrics(text) TO service_role;
