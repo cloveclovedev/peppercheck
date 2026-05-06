@@ -93,7 +93,9 @@ async function deleteObjectsInChunks(
   s3: S3Client,
   bucket: string,
   keys: string[],
+  dryRun: boolean,
 ): Promise<number> {
+  if (dryRun) return keys.length // pretend we deleted them all
   let deleted = 0
   for (let i = 0; i < keys.length; i += S3_BATCH_LIMIT) {
     const chunk = keys.slice(i, i + S3_BATCH_LIMIT)
@@ -112,6 +114,7 @@ async function sweepEvidencePrefixes(
   s3: S3Client,
   bucket: string,
   now: Date,
+  dryRun: boolean,
   result: SweepResult,
 ): Promise<void> {
   const top = await listAllObjects(s3, {
@@ -139,7 +142,7 @@ async function sweepEvidencePrefixes(
       const keys = contents.map((c) => c.Key).filter((k): k is string => Boolean(k))
       if (keys.length === 0) continue
 
-      const deleted = await deleteObjectsInChunks(s3, bucket, keys)
+      const deleted = await deleteObjectsInChunks(s3, bucket, keys, dryRun)
       result.objects_deleted += deleted
       result.prefixes_deleted += 1
     } catch (err) {
@@ -193,6 +196,7 @@ async function sweepAvatarPrefixes(
   bucket: string,
   publicDomain: string,
   now: Date,
+  dryRun: boolean,
   result: SweepResult,
 ): Promise<void> {
   const { live, skip } = await fetchLiveUserAvatars(supabase, publicDomain)
@@ -245,7 +249,7 @@ async function sweepAvatarPrefixes(
 
       if (toDelete.length === 0) continue
 
-      const deleted = await deleteObjectsInChunks(s3, bucket, toDelete)
+      const deleted = await deleteObjectsInChunks(s3, bucket, toDelete, dryRun)
       result.objects_deleted += deleted
       result.prefixes_deleted += 1
     } catch (err) {
@@ -260,6 +264,17 @@ Deno.serve(async (req) => {
       JSON.stringify({ error: 'Method not allowed' }),
       { status: 405, headers: { 'Content-Type': 'application/json' } },
     )
+  }
+
+  let dryRun = false
+  try {
+    const body = await req.json()
+    if (body && typeof body === 'object' && body.dry_run === true) {
+      dryRun = true
+    }
+  } catch {
+    // No body or invalid JSON — default to dryRun=false. The cron sends '{}',
+    // which parses fine and naturally results in dryRun=false.
   }
 
   const r2 = buildS3Client()
@@ -287,7 +302,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    await sweepEvidencePrefixes(r2.s3, r2.env.bucket, now, summary.evidence)
+    await sweepEvidencePrefixes(r2.s3, r2.env.bucket, now, dryRun, summary.evidence)
   } catch (err) {
     recordError(summary.evidence, 'evidence sweep top-level', err)
   }
@@ -299,14 +314,15 @@ Deno.serve(async (req) => {
       r2.env.bucket,
       r2.env.publicDomain,
       now,
+      dryRun,
       summary.avatar,
     )
   } catch (err) {
     recordError(summary.avatar, 'avatar sweep top-level', err)
   }
 
-  return new Response(JSON.stringify(summary), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' },
-  })
+  return new Response(
+    JSON.stringify({ dry_run: dryRun, ...summary }),
+    { status: 200, headers: { 'Content-Type': 'application/json' } },
+  )
 })
