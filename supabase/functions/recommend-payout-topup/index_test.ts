@@ -135,3 +135,104 @@ Deno.test('computeRecommendation: matches the spec example (May 20, 31-day month
   assertEquals(r.recommendedBalanceJpy, 43420)
   assertEquals(r.recommendedTopupJpy, 0)
 })
+
+import { handler } from './index.ts'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type Stripe from 'stripe'
+
+function makeMockSupabase(metrics: Record<string, unknown>): SupabaseClient {
+  return {
+    rpc: (_fn: string, _args: unknown) => Promise.resolve({ data: metrics, error: null }),
+  } as unknown as SupabaseClient
+}
+
+function makeMockStripe(balanceJpy: number): Stripe {
+  return {
+    balance: {
+      retrieve: () =>
+        Promise.resolve({
+          available: [{ amount: balanceJpy, currency: 'jpy' }],
+          pending: [],
+        }),
+    },
+  } as unknown as Stripe
+}
+
+const validMetrics = {
+  currency: 'JPY',
+  rate_per_point: 50,
+  total_obligation_jpy: 23500,
+  month_to_date_earnings_jpy: 18000,
+  buffer_multiplier: 1.3,
+}
+
+Deno.test('handler: returns 401 when X-Operator-Secret is missing', async () => {
+  Deno.env.set('OPERATOR_API_SECRET', 'shh')
+  const req = new Request('http://localhost/', { method: 'POST' })
+  const res = await handler(req, {
+    supabaseAdmin: makeMockSupabase(validMetrics),
+    stripe: makeMockStripe(87500),
+    now: new Date('2026-05-20T00:00:00+09:00'),
+  })
+  assertEquals(res.status, 401)
+})
+
+Deno.test('handler: returns 401 when X-Operator-Secret mismatches', async () => {
+  Deno.env.set('OPERATOR_API_SECRET', 'shh')
+  const req = new Request('http://localhost/', {
+    method: 'POST',
+    headers: { 'X-Operator-Secret': 'nope' },
+  })
+  const res = await handler(req, {
+    supabaseAdmin: makeMockSupabase(validMetrics),
+    stripe: makeMockStripe(87500),
+    now: new Date('2026-05-20T00:00:00+09:00'),
+  })
+  assertEquals(res.status, 401)
+})
+
+Deno.test('handler: returns 200 with full JSON payload on valid request', async () => {
+  Deno.env.set('OPERATOR_API_SECRET', 'shh')
+  const req = new Request('http://localhost/', {
+    method: 'POST',
+    headers: { 'X-Operator-Secret': 'shh' },
+  })
+  const res = await handler(req, {
+    supabaseAdmin: makeMockSupabase(validMetrics),
+    stripe: makeMockStripe(87500),
+    now: new Date('2026-05-20T00:00:00+09:00'),
+  })
+  assertEquals(res.status, 200)
+  const body = await res.json()
+  assertEquals(body.stripe_balance_jpy, 87500)
+  assertEquals(body.current_total_obligation_jpy, 23500)
+  assertEquals(body.month_to_date_earnings_jpy, 18000)
+  assertEquals(body.day_of_month, 20)
+  assertEquals(body.last_day_of_month, 31)
+  assertEquals(body.extrapolated_remaining_earnings_jpy, 9900)
+  assertEquals(body.projected_balance_at_month_end_jpy, 33400)
+  assertEquals(body.buffer_multiplier, 1.3)
+  assertEquals(body.recommended_balance_jpy, 43420)
+  assertEquals(body.recommended_topup_jpy, 0)
+})
+
+Deno.test('handler: returns 503 when SQL helper raises (no exchange rate)', async () => {
+  Deno.env.set('OPERATOR_API_SECRET', 'shh')
+  const req = new Request('http://localhost/', {
+    method: 'POST',
+    headers: { 'X-Operator-Secret': 'shh' },
+  })
+  const errorSupabase = {
+    rpc: () =>
+      Promise.resolve({
+        data: null,
+        error: { message: 'No active exchange rate for currency: JPY' },
+      }),
+  } as unknown as SupabaseClient
+  const res = await handler(req, {
+    supabaseAdmin: errorSupabase,
+    stripe: makeMockStripe(87500),
+    now: new Date('2026-05-20T00:00:00+09:00'),
+  })
+  assertEquals(res.status, 503)
+})
