@@ -35,4 +35,47 @@ export function verifyOperatorSecret(req: Request): boolean {
   return diff === 0
 }
 
+export interface RecommendationInput {
+  stripeBalanceJpy: number
+  totalObligationJpy: number
+  monthToDateEarningsJpy: number
+  bufferMultiplier: number
+  dayOfMonth: number
+  lastDayOfMonth: number
+}
+
+export interface Recommendation {
+  extrapolatedRemainingEarningsJpy: number
+  projectedBalanceAtMonthEndJpy: number
+  recommendedBalanceJpy: number
+  recommendedTopupJpy: number
+}
+
+export function computeRecommendation(input: RecommendationInput): Recommendation {
+  const { dayOfMonth: D, lastDayOfMonth: L } = input
+  const remainingFactor = D >= L ? 0 : (L - D) / D
+
+  const extrapolatedRemainingEarningsJpy = Math.round(
+    input.monthToDateEarningsJpy * remainingFactor,
+  )
+
+  const projectedBalanceAtMonthEndJpy = input.totalObligationJpy + extrapolatedRemainingEarningsJpy
+
+  const recommendedBalanceJpy = Math.round(
+    projectedBalanceAtMonthEndJpy * input.bufferMultiplier,
+  )
+
+  const recommendedTopupJpy = Math.max(
+    0,
+    recommendedBalanceJpy - input.stripeBalanceJpy,
+  )
+
+  return {
+    extrapolatedRemainingEarningsJpy,
+    projectedBalanceAtMonthEndJpy,
+    recommendedBalanceJpy,
+    recommendedTopupJpy,
+  }
+}
+
 Deno.serve(() => new Response('Not implemented', { status: 501 }))
