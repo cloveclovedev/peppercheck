@@ -12,7 +12,7 @@ SELECT is(
 );
 
 -- ============================================================
--- Test 2: Cannot insert a second row (singleton constraint)
+-- Test 2: Cannot insert a second row (PK uniqueness)
 -- ============================================================
 SELECT throws_ok(
     $$INSERT INTO public.payout_topup_config (id, buffer_multiplier) VALUES (true, 2.0)$$,
@@ -36,6 +36,8 @@ SELECT throws_ok(
 -- ============================================================
 -- Test 4: buffer_multiplier < 1.0 is rejected
 -- ============================================================
+-- Defensive delete so Test 4 does not depend on Test 3's side effect
+DELETE FROM public.payout_topup_config;
 SELECT throws_ok(
     $$INSERT INTO public.payout_topup_config (id, buffer_multiplier) VALUES (true, 0.5)$$,
     '23514',  -- check_violation
