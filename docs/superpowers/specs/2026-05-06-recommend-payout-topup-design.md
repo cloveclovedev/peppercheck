@@ -1,4 +1,4 @@
-# Operator Payout Top-Up Advisor
+# Payout Top-Up Recommendation
 
 **Date:** 2026-05-06
 **Status:** Draft
@@ -24,7 +24,7 @@ So the platform Stripe balance must be funded **before** month-end, with enough 
 
 ## Decision
 
-Build an **operator-only Edge Function** (`operator-payout-topup-advisor`) that, when invoked, returns the recommended top-up amount and current state. The operator invokes it from an external task management tool around day 20 of each month, then manually executes a furikomi (bank transfer) to the Stripe VBAN by ~day 21.
+Build an **operator-only Edge Function** (`recommend-payout-topup`) that, when invoked, returns the recommended top-up amount and current state. The operator invokes it from an external task management tool around day 20 of each month, then manually executes a furikomi (bank transfer) to the Stripe VBAN by ~day 21.
 
 **This is operator tooling, not user-facing.** It exposes financial summary data (Stripe balance, outstanding obligations) and is protected by a dedicated shared secret.
 
@@ -41,7 +41,7 @@ Build an **operator-only Edge Function** (`operator-payout-topup-advisor`) that,
         │ scheduled task on day 20
         │ curl -H "X-Operator-Secret: ..." ...
         ▼
-[supabase/functions/operator-payout-topup-advisor]
+[supabase/functions/recommend-payout-topup]
         │
         ├──▶ Stripe SDK: balance.retrieve()
         │      (current platform JPY balance)
@@ -81,14 +81,14 @@ Follows the existing singleton pattern (`BOOLEAN PK DEFAULT true CHECK (id = tru
 
 RLS: no SELECT/INSERT/UPDATE/DELETE policies — only `service_role` (used by the Edge Function) can access. Authenticated client roles have no policy granting access, so they are blocked by default.
 
-### New: `operator-payout-topup-advisor` Edge Function
+### New: `recommend-payout-topup` Edge Function
 
-Created via `supabase functions new operator-payout-topup-advisor`. Standard project structure: `index.ts`, `deno.json`, optional `index_test.ts`.
+Created via `supabase functions new recommend-payout-topup`. Standard project structure: `index.ts`, `deno.json`, optional `index_test.ts`.
 
 #### Request
 
 ```
-POST /functions/v1/operator-payout-topup-advisor
+POST /functions/v1/recommend-payout-topup
 Headers:
   apikey: <supabase publishable key>             # required by Supabase gateway
   Authorization: Bearer <supabase publishable key>  # required by Supabase gateway
@@ -240,10 +240,10 @@ Returns the date 7 weekdays before `next_payout_run_at`. **Japanese public holid
 
 ## Future Considerations
 
-- **Frequency reduction**: As payout volume grows, switching to bimonthly or quarterly top-ups reduces bank fees. The advisor formula is already date-agnostic — only the operator's task tool cadence changes.
+- **Frequency reduction**: As payout volume grows, switching to bimonthly or quarterly top-ups reduces bank fees. The recommendation formula is already date-agnostic — only the operator's task tool cadence changes.
 - **Auto-tuning `buffer_multiplier`**: After several months of operation, observed (actual / projected) ratios can inform a data-driven multiplier.
 - **Low balance alert**: A separate cron-driven Edge Function could push a warning to a notification channel if `stripe_balance_jpy` drops below `current_total_obligation_jpy × 0.5` between top-up cycles.
-- **Stripe Top-up object integration**: If Japan ever supports auto-debit, the same advisor logic could pivot to automatically issuing top-ups via Stripe API.
+- **Stripe Top-up object integration**: If Japan ever supports auto-debit, the same recommendation logic could pivot to automatically issuing top-ups via Stripe API.
 
 ## Testing
 
