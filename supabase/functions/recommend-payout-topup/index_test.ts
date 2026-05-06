@@ -1,7 +1,10 @@
 import { assertEquals } from '@std/assert'
-import { subtractBusinessDays } from './index.ts'
-import { verifyOperatorSecret } from './index.ts'
-import { computeRecommendation } from './index.ts'
+import {
+  computeRecommendation,
+  handler,
+  subtractBusinessDays,
+  verifyOperatorSecret,
+} from './index.ts'
 
 Deno.test('subtractBusinessDays: subtracts 7 weekdays from a Sunday', () => {
   // 2026-05-31 is a Sunday. 7 weekdays back = 2026-05-21 (Thursday).
@@ -136,7 +139,6 @@ Deno.test('computeRecommendation: matches the spec example (May 20, 31-day month
   assertEquals(r.recommendedTopupJpy, 0)
 })
 
-import { handler } from './index.ts'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type Stripe from 'stripe'
 
@@ -235,4 +237,11 @@ Deno.test('handler: returns 503 when SQL helper raises (no exchange rate)', asyn
     now: new Date('2026-05-20T00:00:00+09:00'),
   })
   assertEquals(res.status, 503)
+})
+
+Deno.test('handler: returns 405 for non-POST methods', async () => {
+  Deno.env.set('OPERATOR_API_SECRET', 'shh')
+  const req = new Request('http://localhost/', { method: 'GET' })
+  const res = await handler(req)
+  assertEquals(res.status, 405)
 })

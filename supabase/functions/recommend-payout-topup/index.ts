@@ -72,6 +72,14 @@ export function computeRecommendation(input: RecommendationInput): Recommendatio
   }
 }
 
+interface PayoutTopupMetrics {
+  currency: string
+  rate_per_point: number
+  total_obligation_jpy: number | string
+  month_to_date_earnings_jpy: number | string
+  buffer_multiplier: number | string
+}
+
 interface JstDateParts {
   dayOfMonth: number
   lastDayOfMonth: number
@@ -124,14 +132,23 @@ export async function handler(req: Request, deps: Dependencies = {}): Promise<Re
   const stripe = deps.stripe ?? new Stripe(stripeKey, { apiVersion: '2025-11-17.clover' })
   const now = deps.now ?? new Date()
 
-  const { data: metrics, error: rpcError } = await supabaseAdmin.rpc(
+  const { data, error: rpcError } = await supabaseAdmin.rpc(
     'get_payout_topup_metrics',
     { p_currency: 'JPY' },
   )
+  const metrics = data as PayoutTopupMetrics | null
 
   if (rpcError || !metrics) {
     return new Response(
       JSON.stringify({ error: rpcError?.message ?? 'metrics unavailable' }),
+      { status: 503, headers: { 'Content-Type': 'application/json' } },
+    )
+  }
+
+  const bufferMultiplier = Number(metrics.buffer_multiplier)
+  if (!Number.isFinite(bufferMultiplier) || bufferMultiplier <= 0) {
+    return new Response(
+      JSON.stringify({ error: 'buffer_multiplier missing or invalid in metrics' }),
       { status: 503, headers: { 'Content-Type': 'application/json' } },
     )
   }
@@ -146,7 +163,7 @@ export async function handler(req: Request, deps: Dependencies = {}): Promise<Re
     stripeBalanceJpy,
     totalObligationJpy: Number(metrics.total_obligation_jpy ?? 0),
     monthToDateEarningsJpy: Number(metrics.month_to_date_earnings_jpy ?? 0),
-    bufferMultiplier: Number(metrics.buffer_multiplier),
+    bufferMultiplier,
     dayOfMonth,
     lastDayOfMonth,
   })
@@ -162,13 +179,13 @@ export async function handler(req: Request, deps: Dependencies = {}): Promise<Re
     last_day_of_month: lastDayOfMonth,
     extrapolated_remaining_earnings_jpy: recommendation.extrapolatedRemainingEarningsJpy,
     projected_balance_at_month_end_jpy: recommendation.projectedBalanceAtMonthEndJpy,
-    buffer_multiplier: Number(metrics.buffer_multiplier),
+    buffer_multiplier: bufferMultiplier,
     recommended_balance_jpy: recommendation.recommendedBalanceJpy,
     recommended_topup_jpy: recommendation.recommendedTopupJpy,
     next_payout_run_at: nextPayoutRunAt.toISOString(),
     transfer_initiate_deadline: transferInitiateDeadline.toISOString().slice(0, 10),
     notes: [
-      `Recommended top-up considers buffer_multiplier=${metrics.buffer_multiplier}.`,
+      `Recommended top-up considers buffer_multiplier=${bufferMultiplier}.`,
       'Deadline is 7 weekdays before the payout run — JP public holidays are NOT auto-detected. If Golden Week, Obon, year-end/new-year, or other multi-day holidays fall in this window, initiate earlier.',
     ],
   }
