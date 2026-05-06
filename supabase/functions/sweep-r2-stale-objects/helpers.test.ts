@@ -94,6 +94,14 @@ Deno.test('extractKeyFromAvatarUrl: empty path returns null', () => {
   )
 })
 
+Deno.test('extractKeyFromAvatarUrl: URL with explicit port still matches', () => {
+  const url = 'https://files.peppercheck.com:443/avatar/abc/def.jpg'
+  assertEquals(
+    extractKeyFromAvatarUrl(url, 'files.peppercheck.com'),
+    'avatar/abc/def.jpg',
+  )
+})
+
 import { isWithinGracePeriod } from './helpers.ts'
 
 Deno.test('isWithinGracePeriod: 5 minutes ago, 10 min grace → within', () => {

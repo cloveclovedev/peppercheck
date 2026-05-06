@@ -46,7 +46,7 @@ export function extractKeyFromAvatarUrl(
   } catch {
     return null
   }
-  if (parsed.host !== publicDomain) return null
+  if (parsed.hostname !== publicDomain) return null
   const key = parsed.pathname.replace(/^\//, '')
   return key.length > 0 ? key : null
 }

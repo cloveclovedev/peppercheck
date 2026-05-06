@@ -1437,10 +1437,24 @@
           "npm:stripe@19.3.0"
         ]
       },
+      "functions/recommend-payout-topup": {
+        "dependencies": [
+          "jsr:@std/assert@1",
+          "jsr:@std/testing@0.224",
+          "jsr:@supabase/supabase-js@2",
+          "npm:stripe@20"
+        ]
+      },
       "functions/send-notification": {
         "dependencies": [
           "jsr:@supabase/supabase-js@2",
           "npm:firebase-admin@13.6.0"
+        ]
+      },
+      "functions/sweep-r2-stale-objects": {
+        "dependencies": [
+          "jsr:@supabase/supabase-js@2",
+          "npm:@aws-sdk/client-s3@3"
         ]
       }
     }
