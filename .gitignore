@@ -19,3 +19,8 @@ scripts/github-secrets
 
 # Git worktrees
 .worktrees/
+
+# Operator-private release checklist (lives only on the operator's machine).
+# Backed up separately (1Password / private repo + symlink). Format and
+# maintenance policy live inside the file itself.
+.claude/rules/release-checklist.md
