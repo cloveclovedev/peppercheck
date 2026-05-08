@@ -33,8 +33,12 @@ function emptyResult(): SweepResult {
 }
 
 function recordError(result: SweepResult, context: string, err: unknown): void {
-  const message = err instanceof Error ? err.message : String(err)
-  console.error(`[sweep-r2-stale-objects] ${context}: ${message}`)
+  // Pass the error object directly to console.error so Deno prints the class
+  // name, stack trace, and any nested fields (e.g. PostgrestError.code,
+  // S3ServiceException.$metadata). Without this, debugging cron failures
+  // requires redeploying with extra logging.
+  console.error(`[sweep-r2-stale-objects] ${context}:`, err)
+  const message = err instanceof Error ? `${err.name}: ${err.message}` : String(err)
   result.errors.push(`${context}: ${message}`)
 }
 
@@ -276,6 +280,8 @@ Deno.serve(async (req) => {
     // No body or invalid JSON — default to dryRun=false. The cron sends '{}',
     // which parses fine and naturally results in dryRun=false.
   }
+
+  console.log(`[sweep-r2-stale-objects] starting sweep (dry_run=${dryRun})`)
 
   const r2 = buildS3Client()
   if (!r2) {
