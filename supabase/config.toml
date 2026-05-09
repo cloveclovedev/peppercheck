@@ -692,3 +692,10 @@ entrypoint = "./functions/sweep-r2-stale-objects/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/sweep-r2-stale-objects/*.html" ]
+
+[functions.handle-app-store-server-notification]
+enabled = true
+verify_jwt = false
+import_map = "./functions/handle-app-store-server-notification/deno.json"
+entrypoint = "./functions/handle-app-store-server-notification/index.ts"
+static_files = [ "./functions/handle-app-store-server-notification/certs/*" ]
