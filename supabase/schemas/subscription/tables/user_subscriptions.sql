@@ -7,7 +7,8 @@ CREATE TABLE IF NOT EXISTS public.user_subscriptions (
     -- External IDs
     stripe_subscription_id text,
     google_purchase_token text,
-    
+    apple_original_transaction_id text,
+
     current_period_start timestamp with time zone NOT NULL,
     current_period_end timestamp with time zone NOT NULL,
     
@@ -26,4 +27,5 @@ ALTER TABLE public.user_subscriptions OWNER TO postgres;
 -- Indexes
 CREATE INDEX idx_user_subscriptions_stripe_id ON public.user_subscriptions USING btree (stripe_subscription_id);
 CREATE INDEX idx_user_subscriptions_provider ON public.user_subscriptions USING btree (provider, status);
+CREATE INDEX idx_user_subscriptions_apple_id ON public.user_subscriptions USING btree (apple_original_transaction_id);
 
