@@ -2,7 +2,7 @@
 
 **Date:** 2026-05-11
 **Status:** Draft
-**Type:** Umbrella roadmap (decomposes into per-Phase issues)
+**Type:** Umbrella roadmap (decomposes into a flat list of task-cluster issues; no Phase-level intermediate issue)
 
 ## Goal
 
@@ -233,7 +233,7 @@ Scriptable steps land under `scripts/setup/`. Scripts read credentials from envi
 
 **Verification:** After staging deploy, the staging build shows the "STAGING" banner; `supabase secrets list --project-ref <BETA>` reflects all expected secrets; the debug sandbox boots and `stripe listen` forwards an event to local Supabase.
 
-**Issue breakdown:** 4 sub-issues (env banner, CI secret automation, operations runbook, debug Stripe sandbox).
+**Issue layout:** 4 task-cluster issues filed directly under the umbrella — `env banner`, `CI secret automation`, `operations runbook`, `debug Stripe sandbox`. Phase 0 itself is not a GitHub issue. Each cluster is sized to roughly one PR (the debug Stripe sandbox issue tracks an operator-side manual task with no PR).
 
 ### Phase 1: Bundle ID + Firebase 3-project + Auth split
 
@@ -259,7 +259,7 @@ Scriptable steps land under `scripts/setup/`. Scripts read credentials from envi
 
 **Verification:** `flutter run --flavor <env>` succeeds for all three flavors; Google Sign-In completes; each FCM token registers in its environment's Supabase and receives a notification triggered through that environment's Edge Function.
 
-**Issue breakdown:** 5 sub-issues (Android flavor split, iOS scheme split, Firebase project + apps, per-flavor icons, per-env OAuth + Supabase auth config).
+**Issue layout:** 5 task-cluster issues filed directly under the umbrella — `Android flavor split`, `iOS scheme split`, `Firebase project + apps + CI config injection`, `per-flavor app icons`, `per-env OAuth + Supabase auth config`. Each cluster is roughly one PR.
 
 ### Phase 2: Store registration + IAP staging + iOS publishing
 
@@ -289,7 +289,7 @@ Scriptable steps land under `scripts/setup/`. Scripts read credentials from envi
 
 **Verification:** subscribe / cancel / renew lifecycle observable end-to-end in BETA Supabase for both platforms; production tag triggers a TestFlight build for iOS and a Play Store internal upload for Android.
 
-**Issue breakdown:** 5 sub-issues (Apple Connect staging app + IAP, Play Console staging app + IAP, staging RTDN, Play Store upload automation, iOS TestFlight upload automation).
+**Issue layout:** 5 task-cluster issues filed directly under the umbrella — `Apple Connect staging+debug apps + IAP + ASSN`, `Play Console staging app + IAP`, `staging RTDN Pub/Sub`, `Play Store upload automation`, `iOS TestFlight upload automation`. Each cluster is roughly one PR.
 
 ### Phase 3a: Mobile observability (Firebase suite)
 
@@ -308,7 +308,7 @@ Scriptable steps land under `scripts/setup/`. Scripts read credentials from envi
 
 **Verification:** Three Firebase Console Crashlytics dashboards show independent crash streams; Analytics + Performance separated cleanly.
 
-**Issue breakdown:** 2 sub-issues (Crashlytics + Performance, Analytics + event schema).
+**Issue layout:** 2 task-cluster issues filed directly under the umbrella — `Firebase Crashlytics + Performance Monitoring`, `Firebase Analytics + event naming convention`. Each cluster is roughly one PR.
 
 ### Scriptable ratio
 
@@ -445,3 +445,4 @@ Cross-referenced:
 | Date | Change |
 |---|---|
 | 2026-05-11 | Initial draft. |
+| 2026-05-11 | Clarify issue layout: umbrella decomposes into a flat list of task-cluster issues sized to roughly one PR each; Phases are doc-only structural groupings, not GitHub issues. |
