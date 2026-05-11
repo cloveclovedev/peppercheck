@@ -193,6 +193,15 @@ class TranslationsBillingJa {
 	/// ja: 'キャンセルはApp Storeから →'
 	String get cancelViaAppStore => 'キャンセルはApp Storeから →';
 
+	/// ja: '購入を復元'
+	String get restorePurchases => '購入を復元';
+
+	/// ja: '購入を復元しました'
+	String get restoreSucceeded => '購入を復元しました';
+
+	/// ja: '購入の復元に失敗しました'
+	String get restoreFailed => '購入の復元に失敗しました';
+
 	/// ja: 'プランを選ぶ'
 	String get choosePlan => 'プランを選ぶ';
 
@@ -1623,6 +1632,9 @@ extension on Translations {
 			'billing.canceledUntil' => ({required Object date}) => '解約済み・${date}まで利用可能',
 			'billing.cancelViaGooglePlay' => 'キャンセルはGoogle Playから →',
 			'billing.cancelViaAppStore' => 'キャンセルはApp Storeから →',
+			'billing.restorePurchases' => '購入を復元',
+			'billing.restoreSucceeded' => '購入を復元しました',
+			'billing.restoreFailed' => '購入の復元に失敗しました',
 			'billing.choosePlan' => 'プランを選ぶ',
 			'billing.changePlan' => 'プランを変更',
 			'billing.checkPlan' => '確認する',
