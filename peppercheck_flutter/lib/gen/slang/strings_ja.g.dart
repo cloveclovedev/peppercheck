@@ -190,6 +190,9 @@ class TranslationsBillingJa {
 	/// ja: 'キャンセルはGoogle Playから →'
 	String get cancelViaGooglePlay => 'キャンセルはGoogle Playから →';
 
+	/// ja: 'キャンセルはApp Storeから →'
+	String get cancelViaAppStore => 'キャンセルはApp Storeから →';
+
 	/// ja: 'プランを選ぶ'
 	String get choosePlan => 'プランを選ぶ';
 
@@ -1619,6 +1622,7 @@ extension on Translations {
 			'billing.currentPlan' => '現在のプラン',
 			'billing.canceledUntil' => ({required Object date}) => '解約済み・${date}まで利用可能',
 			'billing.cancelViaGooglePlay' => 'キャンセルはGoogle Playから →',
+			'billing.cancelViaAppStore' => 'キャンセルはApp Storeから →',
 			'billing.choosePlan' => 'プランを選ぶ',
 			'billing.changePlan' => 'プランを変更',
 			'billing.checkPlan' => '確認する',
