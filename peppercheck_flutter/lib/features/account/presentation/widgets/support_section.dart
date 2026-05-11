@@ -1,17 +1,22 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:peppercheck_flutter/app/theme/app_colors.dart';
 import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
 import 'package:peppercheck_flutter/common_widgets/base_section.dart';
 import 'package:peppercheck_flutter/features/about/presentation/app_explanation_bottom_sheet.dart';
+import 'package:peppercheck_flutter/features/billing/data/billing_providers.dart';
+import 'package:peppercheck_flutter/features/billing/presentation/in_app_purchase_controller.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class SupportSection extends StatelessWidget {
+class SupportSection extends ConsumerWidget {
   const SupportSection({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return BaseSection(
       title: t.support.title,
       child: Column(
@@ -30,6 +35,13 @@ class SupportSection extends StatelessWidget {
             title: t.support.privacyPolicy,
             onTap: () => _launchLegalPage('privacy'),
           ),
+          if (Platform.isIOS) ...[
+            const SizedBox(height: AppSizes.spacingSmall),
+            _LinkTile(
+              title: t.billing.restorePurchases,
+              onTap: () => _restorePurchases(context, ref),
+            ),
+          ],
           const SizedBox(height: AppSizes.spacingSmall),
           _LinkTile(
             title: t.support.contactUs,
@@ -38,6 +50,21 @@ class SupportSection extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _restorePurchases(BuildContext context, WidgetRef ref) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ref
+          .read(inAppPurchaseControllerProvider.notifier)
+          .restorePurchases();
+      ref.invalidate(subscriptionProvider);
+      messenger.showSnackBar(
+        SnackBar(content: Text(t.billing.restoreSucceeded)),
+      );
+    } catch (_) {
+      messenger.showSnackBar(SnackBar(content: Text(t.billing.restoreFailed)));
+    }
   }
 
   Future<void> _launchLegalPage(String page) async {
