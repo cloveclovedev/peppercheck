@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:peppercheck_flutter/app/routing/app_router.dart';
 import 'package:peppercheck_flutter/app/theme/app_theme.dart';
+import 'package:peppercheck_flutter/common_widgets/environment_banner.dart';
 import 'package:peppercheck_flutter/features/profile/presentation/timezone_controller.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 
@@ -25,6 +26,8 @@ class MyApp extends ConsumerWidget {
             locale: TranslationProvider.of(context).flutterLocale,
             supportedLocales: AppLocaleUtils.supportedLocales,
             localizationsDelegates: GlobalMaterialLocalizations.delegates,
+            debugShowCheckedModeBanner: false,
+            builder: (context, child) => EnvironmentBanner(child: child!),
           );
         },
       ),
