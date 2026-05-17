@@ -9,11 +9,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:peppercheck_flutter/app/app.dart';
+import 'package:peppercheck_flutter/app/config/app_environment.dart';
 
 void main() {
   testWidgets('App starts smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const ProviderScope(child: MyApp()));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appEnvironmentProvider.overrideWithValue(AppEnvironment.production),
+        ],
+        child: const MyApp(),
+      ),
+    );
 
     // Verify that the app starts.
     expect(find.byType(MyApp), findsOneWidget);
