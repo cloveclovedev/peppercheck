@@ -15,7 +15,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 Future<void> appStartup(AppConfig config) async {
   await _initSdk(config);
 
-  final container = ProviderContainer();
+  final container = ProviderContainer(
+    overrides: [appEnvironmentProvider.overrideWithValue(config.environment)],
+  );
 
   // Initialize FCM
   try {
