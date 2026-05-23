@@ -3,46 +3,45 @@
 // This enables autocomplete, go to definition, etc.
 
 // Setup type definitions for built-in Supabase Runtime APIs
-import "jsr:@supabase/functions-js/edge-runtime.d.ts"
+import 'jsr:@supabase/functions-js@^2/edge-runtime.d.ts'
 
-import { createClient } from "@supabase/supabase-js"
-import Stripe from "stripe"
+import { createClient } from '@supabase/supabase-js'
+import Stripe from 'stripe'
 
-const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY") ?? ""
-const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? ""
-const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? ""
-const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-const stripeOnboardingReturnUrl = Deno.env.get("STRIPE_ONBOARDING_RETURN_URL") ?? ""
-const stripeOnboardingRefreshUrl = Deno.env.get("STRIPE_ONBOARDING_REFRESH_URL") ?? ""
+const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY') ?? ''
+const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+const webBaseUrl = Deno.env.get('WEB_BASE_URL') ?? ''
 
 if (!stripeSecretKey) {
-  console.warn("STRIPE_SECRET_KEY is not set.")
+  console.warn('STRIPE_SECRET_KEY is not set.')
 }
 if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceRoleKey) {
-  console.warn("Supabase environment variables are missing.")
+  console.warn('Supabase environment variables are missing.')
 }
-if (!stripeOnboardingReturnUrl || !stripeOnboardingRefreshUrl) {
-  console.warn("Stripe onboarding URLs are missing.")
+if (!webBaseUrl) {
+  console.warn('WEB_BASE_URL is missing.')
 }
 
 const stripe = new Stripe(stripeSecretKey, {
-  apiVersion: "2025-11-17.clover",
+  apiVersion: '2025-11-17.clover',
 })
 
-const jsonHeaders = { "Content-Type": "application/json" }
+const jsonHeaders = { 'Content-Type': 'application/json' }
 
 Deno.serve(async (req) => {
-  if (req.method !== "POST") {
+  if (req.method !== 'POST') {
     return new Response(
-      JSON.stringify({ error: "Method not allowed" }),
+      JSON.stringify({ error: 'Method not allowed' }),
       { status: 405, headers: jsonHeaders },
     )
   }
 
-  const authHeader = req.headers.get("Authorization")
+  const authHeader = req.headers.get('Authorization')
   if (!authHeader) {
     return new Response(
-      JSON.stringify({ error: "Missing authorization header" }),
+      JSON.stringify({ error: 'Missing authorization header' }),
       { status: 401, headers: jsonHeaders },
     )
   }
@@ -60,7 +59,7 @@ Deno.serve(async (req) => {
 
     if (authError || !user) {
       return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
+        JSON.stringify({ error: 'Unauthorized' }),
         { status: 401, headers: jsonHeaders },
       )
     }
@@ -92,18 +91,18 @@ Deno.serve(async (req) => {
       stripeAccountRow = updated ?? stripeAccountRow
     }
 
-    if (!stripeOnboardingReturnUrl || !stripeOnboardingRefreshUrl) {
+    if (!webBaseUrl) {
       return new Response(
-        JSON.stringify({ error: "Onboarding URLs are not configured" }),
+        JSON.stringify({ error: 'WEB_BASE_URL is not configured' }),
         { status: 500, headers: jsonHeaders },
       )
     }
 
     const accountLink = await stripe.accountLinks.create({
       account: connectAccountId!,
-      refresh_url: stripeOnboardingRefreshUrl,
-      return_url: stripeOnboardingReturnUrl,
-      type: "account_onboarding",
+      refresh_url: `${webBaseUrl}/dashboard/payout/refresh`,
+      return_url: `${webBaseUrl}/dashboard/payout/return`,
+      type: 'account_onboarding',
     })
 
     return new Response(
@@ -111,9 +110,9 @@ Deno.serve(async (req) => {
       { headers: jsonHeaders },
     )
   } catch (error) {
-    console.error("Failed to create Stripe Connect onboarding link", error)
+    console.error('Failed to create Stripe Connect onboarding link', error)
     return new Response(
-      JSON.stringify({ error: "Internal server error" }),
+      JSON.stringify({ error: 'Internal server error' }),
       { status: 500, headers: jsonHeaders },
     )
   }
@@ -123,10 +122,10 @@ async function getOrCreateStripeAccountRow(
   client: ReturnType<typeof createClient>,
   profileId: string,
 ) {
-  let { data, error } = await client
-    .from("stripe_accounts")
-    .select("*")
-    .eq("profile_id", profileId)
+  const { data, error } = await client
+    .from('stripe_accounts')
+    .select('*')
+    .eq('profile_id', profileId)
     .maybeSingle()
 
   if (error) {
@@ -135,9 +134,9 @@ async function getOrCreateStripeAccountRow(
 
   if (!data) {
     const { data: inserted, error: insertError } = await client
-      .from("stripe_accounts")
+      .from('stripe_accounts')
       .insert({ profile_id: profileId })
-      .select("*")
+      .select('*')
       .single()
 
     if (insertError || !inserted) {
@@ -155,14 +154,14 @@ async function updateStripeAccountRow(
   payload: Record<string, unknown>,
 ) {
   const { data, error } = await client
-    .from("stripe_accounts")
+    .from('stripe_accounts')
     .update(payload)
-    .eq("profile_id", profileId)
-    .select("*")
+    .eq('profile_id', profileId)
+    .select('*')
     .single()
 
   if (error) {
-    console.error("Failed to update stripe_accounts row", error.message)
+    console.error('Failed to update stripe_accounts row', error.message)
     return null
   }
   return data
@@ -173,8 +172,8 @@ async function createConnectAccount(user: {
   email?: string | null
 }) {
   return await stripe.accounts.create({
-    type: "express",
-    business_type: "individual",
+    type: 'express',
+    business_type: 'individual',
     email: user.email ?? undefined,
     capabilities: {
       transfers: { requested: true },
