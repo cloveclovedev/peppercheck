@@ -84,8 +84,8 @@ Replacement: introduce `WEB_BASE_URL` (see below), and construct the URLs in cod
 ```ts
 const webBaseUrl = Deno.env.get("WEB_BASE_URL") ?? ""
 // ...
-refresh_url: `${webBaseUrl}/dashboard/payout/refresh`,
-return_url:  `${webBaseUrl}/dashboard/payout/return`,
+refresh_url: `${webBaseUrl}/stripe/connect/refresh`,
+return_url:  `${webBaseUrl}/stripe/connect/return`,
 ```
 
 Net effect: two GitHub Secrets are deleted (per env), one new one (`*_WEB_BASE_URL`) is added, the URL path structure becomes version-controlled.

@@ -98,10 +98,12 @@ Deno.serve(async (req) => {
       )
     }
 
+    // Path tail matches peppercheck-webapp/src/app/[locale]/stripe/connect/{refresh,return}/page.tsx.
+    // The unlocaled URL is handled by next-intl middleware in the webapp.
     const accountLink = await stripe.accountLinks.create({
       account: connectAccountId!,
-      refresh_url: `${webBaseUrl}/dashboard/payout/refresh`,
-      return_url: `${webBaseUrl}/dashboard/payout/return`,
+      refresh_url: `${webBaseUrl}/stripe/connect/refresh`,
+      return_url: `${webBaseUrl}/stripe/connect/return`,
       type: 'account_onboarding',
     })
 
