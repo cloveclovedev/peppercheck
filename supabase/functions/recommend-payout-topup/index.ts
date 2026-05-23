@@ -20,10 +20,10 @@ export function subtractBusinessDays(date: Date, days: number): Date {
 }
 
 /**
- * Constant-time check of the X-Operator-Secret header against OPERATOR_API_SECRET env.
+ * Constant-time check of the X-Operator-Secret header against OPERATOR_AUTH_TOKEN env.
  */
 export function verifyOperatorSecret(req: Request): boolean {
-  const expected = Deno.env.get('OPERATOR_API_SECRET') ?? ''
+  const expected = Deno.env.get('OPERATOR_AUTH_TOKEN') ?? ''
   const provided = req.headers.get('X-Operator-Secret') ?? ''
   if (expected.length === 0 || provided.length === 0) return false
   if (expected.length !== provided.length) return false
