@@ -1,5 +1,5 @@
 // Setup type definitions for built-in Supabase Runtime APIs
-import '@supabase/functions-js/edge-runtime.d.ts'
+import 'jsr:@supabase/functions-js@^2/edge-runtime.d.ts'
 
 import { createClient } from '@supabase/supabase-js'
 import admin from 'firebase-admin'
