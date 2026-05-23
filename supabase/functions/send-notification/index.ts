@@ -1,19 +1,19 @@
 // Setup type definitions for built-in Supabase Runtime APIs
-import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
+import '@supabase/functions-js/edge-runtime.d.ts'
 
 import { createClient } from '@supabase/supabase-js'
 import admin from 'firebase-admin'
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
 const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-const firebaseServiceAccount = Deno.env.get('FIREBASE_SERVICE_ACCOUNT') ?? ''
+const firebaseServiceAccount = Deno.env.get('FIREBASE_SERVICE_ACCOUNT_JSON') ?? ''
 
 if (!supabaseUrl || !supabaseServiceRoleKey) {
   console.warn('Supabase service credentials missing.')
 }
 
 if (!firebaseServiceAccount) {
-  console.warn('FIREBASE_SERVICE_ACCOUNT is missing.')
+  console.warn('FIREBASE_SERVICE_ACCOUNT_JSON is missing.')
 }
 
 // Initialize Firebase Admin
