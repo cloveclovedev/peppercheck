@@ -5,9 +5,10 @@
 #   ./scripts/setup-github-secrets.sh                    # uses scripts/github-secrets
 #   ./scripts/setup-github-secrets.sh path/to/file       # uses custom file
 #
-# Binary/file secrets must be set separately:
-#   base64 < /path/to/upload-keystore.jks | gh secret set ANDROID_KEYSTORE_BASE64
-#   gh secret set FIREBASE_SERVICE_ACCOUNT_JSON < /path/to/firebase-service-account.json
+# Binary/file secrets must be set separately. The full list of file-style
+# secrets and their gh-secret-set invocations is documented at the bottom
+# of scripts/github-secrets.example. This script also prints a summary
+# after the text-secret pass.
 
 set -euo pipefail
 
