@@ -5,9 +5,10 @@
 #   ./scripts/setup-github-secrets.sh                    # uses scripts/github-secrets
 #   ./scripts/setup-github-secrets.sh path/to/file       # uses custom file
 #
-# Binary/file secrets must be set separately:
-#   base64 < /path/to/upload-keystore.jks | gh secret set ANDROID_KEYSTORE_BASE64
-#   gh secret set FIREBASE_SERVICE_ACCOUNT_JSON < /path/to/firebase-service-account.json
+# Binary/file secrets must be set separately. The full list of file-style
+# secrets and their gh-secret-set invocations is documented at the bottom
+# of scripts/github-secrets.example. This script also prints a summary
+# after the text-secret pass.
 
 set -euo pipefail
 
@@ -65,8 +66,13 @@ done < "$SECRETS_FILE"
 echo ""
 echo "Done: $count secrets set, $errors errors."
 echo ""
-echo "Remaining manual steps:"
+echo "Remaining manual steps (binary/file secrets — see scripts/github-secrets.example for details):"
 echo "  base64 < /path/to/upload-keystore.jks | gh secret set ANDROID_KEYSTORE_BASE64"
-echo "  gh secret set FIREBASE_SERVICE_ACCOUNT_JSON < /path/to/firebase-service-account.json"
+echo "  gh secret set FIREBASE_SERVICE_ACCOUNT_JSON < /path/to/firebase-app-dist-sa.json"
+echo "  jq -c . < /path/to/firebase-fcm-sa.json | gh secret set BETA_FIREBASE_SERVICE_ACCOUNT_JSON"
+echo "  jq -c . < /path/to/firebase-fcm-sa.json | gh secret set PROD_FIREBASE_SERVICE_ACCOUNT_JSON"
+echo "  jq -c . < /path/to/play-developer-sa.json | gh secret set BETA_GOOGLE_PLAY_SERVICE_ACCOUNT_JSON"
+echo "  jq -c . < /path/to/play-developer-sa.json | gh secret set PROD_GOOGLE_PLAY_SERVICE_ACCOUNT_JSON"
+echo "  gh secret set GOOGLE_SERVICES_JSON < peppercheck_flutter/android/app/google-services.json"
 echo ""
 echo "Verify with: gh secret list"

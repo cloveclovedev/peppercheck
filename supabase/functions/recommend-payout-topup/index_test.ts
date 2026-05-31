@@ -35,7 +35,7 @@ Deno.test('subtractBusinessDays: crosses a month boundary', () => {
 })
 
 Deno.test('verifyOperatorSecret: returns true when header matches env', () => {
-  Deno.env.set('OPERATOR_API_SECRET', 'matching-secret')
+  Deno.env.set('OPERATOR_AUTH_TOKEN', 'matching-secret')
   const req = new Request('http://localhost/', {
     method: 'POST',
     headers: { 'X-Operator-Secret': 'matching-secret' },
@@ -44,13 +44,13 @@ Deno.test('verifyOperatorSecret: returns true when header matches env', () => {
 })
 
 Deno.test('verifyOperatorSecret: returns false when header is missing', () => {
-  Deno.env.set('OPERATOR_API_SECRET', 'matching-secret')
+  Deno.env.set('OPERATOR_AUTH_TOKEN', 'matching-secret')
   const req = new Request('http://localhost/', { method: 'POST' })
   assertEquals(verifyOperatorSecret(req), false)
 })
 
 Deno.test('verifyOperatorSecret: returns false when header mismatches', () => {
-  Deno.env.set('OPERATOR_API_SECRET', 'matching-secret')
+  Deno.env.set('OPERATOR_AUTH_TOKEN', 'matching-secret')
   const req = new Request('http://localhost/', {
     method: 'POST',
     headers: { 'X-Operator-Secret': 'wrong-secret' },
@@ -59,7 +59,7 @@ Deno.test('verifyOperatorSecret: returns false when header mismatches', () => {
 })
 
 Deno.test('verifyOperatorSecret: returns false when env is unset', () => {
-  Deno.env.delete('OPERATOR_API_SECRET')
+  Deno.env.delete('OPERATOR_AUTH_TOKEN')
   const req = new Request('http://localhost/', {
     method: 'POST',
     headers: { 'X-Operator-Secret': 'anything' },
@@ -169,7 +169,7 @@ const validMetrics = {
 }
 
 Deno.test('handler: returns 401 when X-Operator-Secret is missing', async () => {
-  Deno.env.set('OPERATOR_API_SECRET', 'shh')
+  Deno.env.set('OPERATOR_AUTH_TOKEN', 'shh')
   const req = new Request('http://localhost/', { method: 'POST' })
   const res = await handler(req, {
     supabaseAdmin: makeMockSupabase(validMetrics),
@@ -180,7 +180,7 @@ Deno.test('handler: returns 401 when X-Operator-Secret is missing', async () => 
 })
 
 Deno.test('handler: returns 401 when X-Operator-Secret mismatches', async () => {
-  Deno.env.set('OPERATOR_API_SECRET', 'shh')
+  Deno.env.set('OPERATOR_AUTH_TOKEN', 'shh')
   const req = new Request('http://localhost/', {
     method: 'POST',
     headers: { 'X-Operator-Secret': 'nope' },
@@ -194,7 +194,7 @@ Deno.test('handler: returns 401 when X-Operator-Secret mismatches', async () => 
 })
 
 Deno.test('handler: returns 200 with full JSON payload on valid request', async () => {
-  Deno.env.set('OPERATOR_API_SECRET', 'shh')
+  Deno.env.set('OPERATOR_AUTH_TOKEN', 'shh')
   const req = new Request('http://localhost/', {
     method: 'POST',
     headers: { 'X-Operator-Secret': 'shh' },
@@ -219,7 +219,7 @@ Deno.test('handler: returns 200 with full JSON payload on valid request', async 
 })
 
 Deno.test('handler: returns 503 when SQL helper raises (no exchange rate)', async () => {
-  Deno.env.set('OPERATOR_API_SECRET', 'shh')
+  Deno.env.set('OPERATOR_AUTH_TOKEN', 'shh')
   const req = new Request('http://localhost/', {
     method: 'POST',
     headers: { 'X-Operator-Secret': 'shh' },
@@ -240,7 +240,7 @@ Deno.test('handler: returns 503 when SQL helper raises (no exchange rate)', asyn
 })
 
 Deno.test('handler: returns 405 for non-POST methods', async () => {
-  Deno.env.set('OPERATOR_API_SECRET', 'shh')
+  Deno.env.set('OPERATOR_AUTH_TOKEN', 'shh')
   const req = new Request('http://localhost/', { method: 'GET' })
   const res = await handler(req)
   assertEquals(res.status, 405)

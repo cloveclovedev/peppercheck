@@ -33,6 +33,81 @@ jobs:
           SUPABASE_DB_PASSWORD: ${{ secrets.BETA_SUPABASE_DB_PASSWORD }}
         run: supabase db push
 
+      - name: Verify required GitHub Secrets are set
+        env:
+          STRIPE_SECRET_KEY: ${{ secrets.BETA_STRIPE_SECRET_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.BETA_STRIPE_WEBHOOK_SECRET }}
+          R2_BUCKET_NAME: ${{ secrets.BETA_R2_BUCKET_NAME }}
+          R2_ACCESS_KEY_ID: ${{ secrets.BETA_R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.BETA_R2_SECRET_ACCESS_KEY }}
+          R2_PUBLIC_DOMAIN: ${{ secrets.BETA_R2_PUBLIC_DOMAIN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.BETA_FIREBASE_SERVICE_ACCOUNT_JSON }}
+          OPERATOR_AUTH_TOKEN: ${{ secrets.BETA_OPERATOR_AUTH_TOKEN }}
+          GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.BETA_GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          GOOGLE_PUBSUB_AUDIENCE: ${{ secrets.BETA_GOOGLE_PUBSUB_AUDIENCE }}
+          GOOGLE_PUBSUB_SERVICE_ACCOUNT_EMAIL: ${{ secrets.BETA_GOOGLE_PUBSUB_SERVICE_ACCOUNT_EMAIL }}
+          WEB_BASE_URL: ${{ secrets.BETA_WEB_BASE_URL }}
+        run: |
+          missing=()
+          for key in \
+            STRIPE_SECRET_KEY STRIPE_WEBHOOK_SECRET \
+            R2_BUCKET_NAME R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY R2_PUBLIC_DOMAIN \
+            CLOUDFLARE_ACCOUNT_ID \
+            FIREBASE_SERVICE_ACCOUNT_JSON \
+            OPERATOR_AUTH_TOKEN \
+            GOOGLE_PLAY_SERVICE_ACCOUNT_JSON \
+            GOOGLE_PUBSUB_AUDIENCE GOOGLE_PUBSUB_SERVICE_ACCOUNT_EMAIL \
+            WEB_BASE_URL
+          do
+            if [[ -z "${!key}" ]]; then
+              missing+=("$key (expected GitHub Secret: BETA_${key} or unprefixed if shared)")
+            fi
+          done
+          if (( ${#missing[@]} > 0 )); then
+            echo "Missing required GitHub Secrets:"
+            printf '  - %s\n' "${missing[@]}"
+            exit 1
+          fi
+          echo "All required edge function secrets are populated."
+
+      - name: Sync Supabase Edge Function secrets
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          STRIPE_SECRET_KEY: ${{ secrets.BETA_STRIPE_SECRET_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.BETA_STRIPE_WEBHOOK_SECRET }}
+          R2_BUCKET_NAME: ${{ secrets.BETA_R2_BUCKET_NAME }}
+          R2_ACCESS_KEY_ID: ${{ secrets.BETA_R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.BETA_R2_SECRET_ACCESS_KEY }}
+          R2_PUBLIC_DOMAIN: ${{ secrets.BETA_R2_PUBLIC_DOMAIN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.BETA_FIREBASE_SERVICE_ACCOUNT_JSON }}
+          OPERATOR_AUTH_TOKEN: ${{ secrets.BETA_OPERATOR_AUTH_TOKEN }}
+          GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.BETA_GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          GOOGLE_PUBSUB_AUDIENCE: ${{ secrets.BETA_GOOGLE_PUBSUB_AUDIENCE }}
+          GOOGLE_PUBSUB_SERVICE_ACCOUNT_EMAIL: ${{ secrets.BETA_GOOGLE_PUBSUB_SERVICE_ACCOUNT_EMAIL }}
+          WEB_BASE_URL: ${{ secrets.BETA_WEB_BASE_URL }}
+        run: |
+          umask 077
+          {
+            printf "STRIPE_SECRET_KEY='%s'\n" "$STRIPE_SECRET_KEY"
+            printf "STRIPE_WEBHOOK_SECRET='%s'\n" "$STRIPE_WEBHOOK_SECRET"
+            printf "R2_BUCKET_NAME='%s'\n" "$R2_BUCKET_NAME"
+            printf "R2_ACCESS_KEY_ID='%s'\n" "$R2_ACCESS_KEY_ID"
+            printf "R2_SECRET_ACCESS_KEY='%s'\n" "$R2_SECRET_ACCESS_KEY"
+            printf "R2_PUBLIC_DOMAIN='%s'\n" "$R2_PUBLIC_DOMAIN"
+            printf "CLOUDFLARE_ACCOUNT_ID='%s'\n" "$CLOUDFLARE_ACCOUNT_ID"
+            printf "FIREBASE_SERVICE_ACCOUNT_JSON='%s'\n" "$FIREBASE_SERVICE_ACCOUNT_JSON"
+            printf "OPERATOR_AUTH_TOKEN='%s'\n" "$OPERATOR_AUTH_TOKEN"
+            printf "GOOGLE_PLAY_SERVICE_ACCOUNT_JSON='%s'\n" "$GOOGLE_PLAY_SERVICE_ACCOUNT_JSON"
+            printf "GOOGLE_PUBSUB_AUDIENCE='%s'\n" "$GOOGLE_PUBSUB_AUDIENCE"
+            printf "GOOGLE_PUBSUB_SERVICE_ACCOUNT_EMAIL='%s'\n" "$GOOGLE_PUBSUB_SERVICE_ACCOUNT_EMAIL"
+            printf "WEB_BASE_URL='%s'\n" "$WEB_BASE_URL"
+          } > /tmp/edge-functions.env
+          supabase secrets set \
+            --project-ref ${{ secrets.BETA_SUPABASE_PROJECT_ID }} \
+            --env-file /tmp/edge-functions.env
+
       - name: Deploy Edge Functions
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
