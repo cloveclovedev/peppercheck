@@ -53,7 +53,7 @@ This PR only sets up `peppercheck-debug`. Setup commands for the other two profi
 | `supabase/functions/.env` | `STRIPE_WEBHOOK_SECRET=whsec_<stripe-listen>` | `handle-stripe-webhook` signature verification |
 | `~/.config/stripe/config.toml` | `[peppercheck-debug]` profile | `stripe` CLI commands |
 
-All target files are gitignored. The script never prints secret values to stdout and never writes them to a tracked file.
+All target files are gitignored. The script writes the CLI profile via `stripe login`; the `.env` lines are pasted by the operator (see "Script" below for the rationale).
 
 Notably **not** updated by this PR:
 
@@ -77,26 +77,29 @@ The new sandbox must have Stripe Connect enabled (Dashboard, one-time toggle) so
 
 ## Script: `scripts/setup/configure-stripe-debug-sandbox.sh`
 
-A bash script that automates the local-side configuration. It does **not** create the sandbox itself (no public Stripe API exists for that). It only handles the steps after the sandbox exists in the Dashboard.
+A small bash script that walks the operator through the setup and runs the steps that are tedious to type by hand. It does **not** edit any `.env` file — the operator copies the printed values into `supabase/functions/.env` themselves so they remain in direct control of the secrets that land on disk. It also does **not** create the sandbox itself (no public Stripe API exists for that).
 
 ### Behavior
 
-1. **Preconditions check**: `stripe` CLI installed; required dirs exist.
-2. **Prompt**: confirm the operator has created the sandbox in the Dashboard and noted the `sk_test_*` key. If not, print the Dashboard URL and exit. (The `pk_test_*` is not used by this PR — see "Secret placement" for the rationale.)
-3. **CLI profile setup**: prompt for `sk_test_*` and pipe into `stripe login --project-name=peppercheck-debug --interactive`.
-4. **Webhook secret retrieval**: run `stripe listen --project-name=peppercheck-debug --print-secret`, capture the `whsec_*`.
-5. **`.env` upsert**: for each target key in each target file, replace the existing line if present or append if absent. Use tempfile + atomic `mv`. Never echo the secret value to stdout.
-6. **Next-step hint**: print copy-pasteable commands for verification (`supabase functions serve`, `stripe listen --forward-to ...`, `stripe trigger account.updated`).
+1. **Preconditions check**: `stripe` CLI installed.
+2. **Prompt**: confirm the operator has created the sandbox in the Dashboard. If not, print the Dashboard URL and exit.
+3. **CLI profile setup**: run `stripe login --project-name=peppercheck-debug` (interactive browser-based flow that the operator approves on the Dashboard, scoped to the new sandbox).
+4. **Webhook secret retrieval**: run `stripe listen --project-name=peppercheck-debug --print-secret` and print the resulting `whsec_*` to the operator's terminal.
+5. **Instructions**: print the two lines the operator should add to or update in `supabase/functions/.env`:
 
-### Idempotency
+   ```
+   STRIPE_SECRET_KEY=<paste the sk_test_... from the Dashboard>
+   STRIPE_WEBHOOK_SECRET=<paste the whsec_... printed above>
+   ```
 
-Re-running the script with the same inputs produces the same `.env` content. Re-running with different inputs (e.g., after `stripe login` rotated the webhook secret) reconciles by replacing the existing line.
+   Followed by copy-pasteable verification commands (`supabase functions serve handle-stripe-webhook`, `stripe listen --project-name=peppercheck-debug --forward-to ...`, `stripe trigger account.updated --project-name=peppercheck-debug`).
 
-### Safety properties
+### Properties
 
-- No secret value is printed to stdout or written to a tracked file.
-- The script does not delete or touch any other `.env` keys.
+- The script does not read, edit, or stat any `.env` file. Operator owns that file end-to-end.
 - The script does not create or modify anything in the Stripe sandbox itself.
+- Secrets printed in step 4 are visible only in the operator's own terminal. The script does not redirect, log, or persist them.
+- Re-running the script is safe and idempotent: `stripe login` updates the existing profile; `stripe listen --print-secret` returns the same `whsec_*` as before (stable across runs for the profile).
 
 ## File and example updates
 
@@ -116,9 +119,9 @@ Currently lists `STRIPE_PUBLISHABLE_KEY=pk_test_...`. Leave unchanged in this PR
 
 Acceptance for this PR:
 
-- The script runs to completion with the operator's input and writes the expected three updates (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` to `supabase/functions/.env`; `peppercheck-debug` profile to `~/.config/stripe/config.toml`).
-- Running `stripe trigger account.updated --project-name=peppercheck-debug` with `stripe listen --project-name=peppercheck-debug --forward-to http://localhost:54321/functions/v1/handle-stripe-webhook` reaches the local Edge Function with a 200 response and signature verification passing (verify in `supabase functions serve` logs).
-- `git diff` against staging-side secrets shows no change: no edit to `BETA_STRIPE_*` GitHub Secrets, no edit to the existing sandbox's registered webhook endpoint.
+- The script runs to completion: `peppercheck-debug` profile exists in `~/.config/stripe/config.toml`; the `whsec_*` is printed; the operator-facing `.env` instructions and verification commands are displayed.
+- After the operator pastes the two lines into `supabase/functions/.env`, running `stripe trigger account.updated --project-name=peppercheck-debug` with `stripe listen --project-name=peppercheck-debug --forward-to http://localhost:54321/functions/v1/handle-stripe-webhook` reaches the local Edge Function with a 200 response and signature verification passing (verify in `supabase functions serve` logs).
+- No edit to `BETA_STRIPE_*` GitHub Secrets, no edit to the existing sandbox's registered webhook endpoint.
 - The existing sandbox (now serving as staging) continues to deliver events to BETA Supabase after this change (regression check against a recent BETA event log).
 
 ## Out of scope
