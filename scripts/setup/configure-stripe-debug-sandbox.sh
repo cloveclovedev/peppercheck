@@ -4,8 +4,8 @@
 #
 # What this does:
 #   1. Confirms the debug sandbox has been created in the Stripe Dashboard.
-#   2. Runs `stripe login --project-name=peppercheck-debug` (browser-based).
-#   3. Runs `stripe listen --project-name=peppercheck-debug --print-secret`
+#   2. Runs `stripe login --project-name=cloveclove-debug` (browser-based).
+#   3. Runs `stripe listen --project-name=cloveclove-debug --print-secret`
 #      and prints the resulting webhook signing secret.
 #   4. Prints the two .env lines the operator should paste into
 #      supabase/functions/.env, plus verification commands.
@@ -47,19 +47,19 @@ case "${answer:-N}" in
 esac
 
 echo
-echo "Setting up the 'peppercheck-debug' Stripe CLI profile."
+echo "Setting up the 'cloveclove-debug' Stripe CLI profile."
 echo "A browser window will open — approve the pairing and SELECT THE DEBUG SANDBOX"
 echo "(not the staging sandbox or live mode)."
 echo
-stripe login --project-name=peppercheck-debug
+stripe login --project-name=cloveclove-debug
 
 echo
 echo "Fetching the local webhook signing secret..."
-webhook_secret=$(stripe listen --project-name=peppercheck-debug --print-secret)
+webhook_secret=$(stripe listen --project-name=cloveclove-debug --print-secret)
 
 if [[ -z "${webhook_secret}" ]]; then
   echo "Error: stripe listen --print-secret returned empty output." >&2
-  echo "Check that the peppercheck-debug profile was set up correctly." >&2
+  echo "Check that the cloveclove-debug profile was set up correctly." >&2
   exit 1
 fi
 
@@ -83,12 +83,12 @@ Setup complete. Next steps for the operator:
 
 3. Start the webhook forwarder (in a second terminal):
 
-   stripe listen --project-name=peppercheck-debug \\
+   stripe listen --project-name=cloveclove-debug \\
      --forward-to http://localhost:54321/functions/v1/handle-stripe-webhook
 
 4. Trigger a test event (in a third terminal):
 
-   stripe trigger account.updated --project-name=peppercheck-debug
+   stripe trigger account.updated --project-name=cloveclove-debug
 
 5. Verify in the 'supabase functions serve' logs that the event arrived
    with a 200 response and signature verification passed.

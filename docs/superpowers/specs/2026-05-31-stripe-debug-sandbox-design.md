@@ -29,21 +29,30 @@ Stripe Checkout / subscription is out of scope — PepperCheck's subscription is
 
 | Environment | Stripe mode | Webhook destination | Operator's stripe-cli profile |
 |---|---|---|---|
-| production | live | PROD Supabase `handle-stripe-webhook` (URL registered on live) | `peppercheck-live` (optional, read-only inspection) |
-| staging | existing sandbox | BETA Supabase `handle-stripe-webhook` (URL registered on the sandbox) | `peppercheck-staging` (optional, inspection only) |
-| debug | new sandbox | none registered; `stripe listen --forward-to localhost:54321/...` only | `peppercheck-debug` (**required**) |
+| production | live | PROD Supabase `handle-stripe-webhook` (URL registered on live) | `cloveclove-live` (optional, read-only inspection) |
+| staging | existing sandbox | BETA Supabase `handle-stripe-webhook` (URL registered on the sandbox) | `cloveclove-staging` (optional, inspection only) |
+| debug | new sandbox | none registered; `stripe listen --forward-to localhost:54321/...` only | `cloveclove-debug` (**required**) |
 
 Existing wiring for production and staging is unchanged. No secret rotation on the deploy side.
 
+## Sandbox naming
+
+Sandboxes are named without a product prefix:
+
+- `Staging` (existing — currently labeled `テスト環境`; rename is a separate Dashboard action, not gated by this PR)
+- `Debug` (new — created by the operator before running the setup script)
+
+Rationale: live mode is necessarily shared across all products in the CloveClove account (one Stripe account = one live mode). If a second CloveClove product appears in the future, the sandboxes can be either kept shared (with code-level `metadata.product` routing) or split out per product. Product-less names avoid forcing a rename when that decision is made.
+
 ## Stripe CLI profile naming
 
-CLI profile names follow Stripe's own vocabulary ("live") rather than PepperCheck's internal `production` term, since the consumer (`stripe` CLI) names the concept "live mode":
+CLI profile names are **account-scoped**, not product-scoped, to match the sandbox-naming logic above. The "live" vocabulary follows Stripe's own term (the CLI itself names the concept "live mode"):
 
-- `peppercheck-debug` — **required** for `stripe listen` against the new debug sandbox
-- `peppercheck-staging` — optional, only when inspecting the staging sandbox via CLI
-- `peppercheck-live` — optional, read-only inspection of live data
+- `cloveclove-debug` — **required** for `stripe listen` against the new debug sandbox
+- `cloveclove-staging` — optional, only when inspecting the staging sandbox via CLI
+- `cloveclove-live` — optional, read-only inspection of live data
 
-This PR only sets up `peppercheck-debug`. Setup commands for the other two profiles are documented for future operator reference but not executed as part of this PR.
+This PR only sets up `cloveclove-debug`. Setup commands for the other two profiles are documented for future operator reference but not executed as part of this PR.
 
 ## Secret placement
 
@@ -51,7 +60,7 @@ This PR only sets up `peppercheck-debug`. Setup commands for the other two profi
 |---|---|---|
 | `supabase/functions/.env` | `STRIPE_SECRET_KEY=sk_test_<debug>` | local Edge Function calls to Stripe API |
 | `supabase/functions/.env` | `STRIPE_WEBHOOK_SECRET=whsec_<stripe-listen>` | `handle-stripe-webhook` signature verification |
-| `~/.config/stripe/config.toml` | `[peppercheck-debug]` profile | `stripe` CLI commands |
+| `~/.config/stripe/config.toml` | `[cloveclove-debug]` profile | `stripe` CLI commands |
 
 All target files are gitignored. The script writes the CLI profile via `stripe login`; the `.env` lines are pasted by the operator (see "Script" below for the rationale).
 
@@ -66,10 +75,10 @@ Notably **not** updated by this PR:
 `stripe listen` generates a webhook signing secret that **is stable across command restarts** for a given CLI profile (per Stripe CLI documentation: "This process generates a webhook signing secret that remains consistent across command restarts"). Therefore:
 
 - No webhook endpoint registration is needed in the debug sandbox's Dashboard.
-- `stripe listen --project-name=peppercheck-debug --print-secret` is run once during setup, and the resulting `whsec_*` is written to `supabase/functions/.env` as `STRIPE_WEBHOOK_SECRET`.
+- `stripe listen --project-name=cloveclove-debug --print-secret` is run once during setup, and the resulting `whsec_*` is written to `supabase/functions/.env` as `STRIPE_WEBHOOK_SECRET`.
 - Subsequent `stripe listen --forward-to ...` runs reuse the same secret.
 
-If the operator ever runs `stripe login` again under the `peppercheck-debug` profile, the secret may rotate; the script supports re-running to reconcile.
+If the operator ever runs `stripe login` again under the `cloveclove-debug` profile, the secret may rotate; the script supports re-running to reconcile.
 
 ## Stripe Connect enablement
 
@@ -83,8 +92,8 @@ A small bash script that walks the operator through the setup and runs the steps
 
 1. **Preconditions check**: `stripe` CLI installed.
 2. **Prompt**: confirm the operator has created the sandbox in the Dashboard. If not, print the Dashboard URL and exit.
-3. **CLI profile setup**: run `stripe login --project-name=peppercheck-debug` (interactive browser-based flow that the operator approves on the Dashboard, scoped to the new sandbox).
-4. **Webhook secret retrieval**: run `stripe listen --project-name=peppercheck-debug --print-secret` and print the resulting `whsec_*` to the operator's terminal.
+3. **CLI profile setup**: run `stripe login --project-name=cloveclove-debug` (interactive browser-based flow that the operator approves on the Dashboard, scoped to the new sandbox).
+4. **Webhook secret retrieval**: run `stripe listen --project-name=cloveclove-debug --print-secret` and print the resulting `whsec_*` to the operator's terminal.
 5. **Instructions**: print the two lines the operator should add to or update in `supabase/functions/.env`:
 
    ```
@@ -92,7 +101,7 @@ A small bash script that walks the operator through the setup and runs the steps
    STRIPE_WEBHOOK_SECRET=<paste the whsec_... printed above>
    ```
 
-   Followed by copy-pasteable verification commands (`supabase functions serve handle-stripe-webhook`, `stripe listen --project-name=peppercheck-debug --forward-to ...`, `stripe trigger account.updated --project-name=peppercheck-debug`).
+   Followed by copy-pasteable verification commands (`supabase functions serve handle-stripe-webhook`, `stripe listen --project-name=cloveclove-debug --forward-to ...`, `stripe trigger account.updated --project-name=cloveclove-debug`).
 
 ### Properties
 
@@ -119,8 +128,8 @@ Currently lists `STRIPE_PUBLISHABLE_KEY=pk_test_...`. Leave unchanged in this PR
 
 Acceptance for this PR:
 
-- The script runs to completion: `peppercheck-debug` profile exists in `~/.config/stripe/config.toml`; the `whsec_*` is printed; the operator-facing `.env` instructions and verification commands are displayed.
-- After the operator pastes the two lines into `supabase/functions/.env`, running `stripe trigger account.updated --project-name=peppercheck-debug` with `stripe listen --project-name=peppercheck-debug --forward-to http://localhost:54321/functions/v1/handle-stripe-webhook` reaches the local Edge Function with a 200 response and signature verification passing (verify in `supabase functions serve` logs).
+- The script runs to completion: `cloveclove-debug` profile exists in `~/.config/stripe/config.toml`; the `whsec_*` is printed; the operator-facing `.env` instructions and verification commands are displayed.
+- After the operator pastes the two lines into `supabase/functions/.env`, running `stripe trigger account.updated --project-name=cloveclove-debug` with `stripe listen --project-name=cloveclove-debug --forward-to http://localhost:54321/functions/v1/handle-stripe-webhook` reaches the local Edge Function with a 200 response and signature verification passing (verify in `supabase functions serve` logs).
 - No edit to `BETA_STRIPE_*` GitHub Secrets, no edit to the existing sandbox's registered webhook endpoint.
 - The existing sandbox (now serving as staging) continues to deliver events to BETA Supabase after this change (regression check against a recent BETA event log).
 
@@ -137,7 +146,7 @@ Acceptance for this PR:
 
 - #443 dead-code cleanup, once landed, allows this spec's "leave unchanged" notes on `.env.example` files and `stripe/` directory to be retired.
 - #421 stripe-cli setup runbook will absorb the operator-facing prose for the workflow described here.
-- If `peppercheck-staging` / `peppercheck-live` CLI profiles see real use, codify their setup in the same script behind a `--profile=<name>` flag.
+- If `cloveclove-staging` / `cloveclove-live` CLI profiles see real use, codify their setup in the same script behind a `--profile=<name>` flag.
 
 ## References
 
