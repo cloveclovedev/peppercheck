@@ -45,3 +45,10 @@ case "${answer:-N}" in
     exit 1
     ;;
 esac
+
+echo
+echo "Setting up the 'peppercheck-debug' Stripe CLI profile."
+echo "A browser window will open — approve the pairing and SELECT THE DEBUG SANDBOX"
+echo "(not the staging sandbox or live mode)."
+echo
+stripe login --project-name=peppercheck-debug
