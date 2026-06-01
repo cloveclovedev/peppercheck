@@ -62,3 +62,35 @@ if [[ -z "${webhook_secret}" ]]; then
   echo "Check that the peppercheck-debug profile was set up correctly." >&2
   exit 1
 fi
+
+cat <<EOF
+
+------------------------------------------------------------
+Setup complete. Next steps for the operator:
+------------------------------------------------------------
+
+1. Open supabase/functions/.env (create it from supabase/functions/.env.example
+   if it does not exist) and add or update these two lines with the debug
+   sandbox values:
+
+   STRIPE_SECRET_KEY=<paste your sk_test_... from the Dashboard>
+   STRIPE_WEBHOOK_SECRET=${webhook_secret}
+
+2. Start the local Supabase Edge Function (in one terminal):
+
+   supabase functions serve handle-stripe-webhook \\
+     --env-file supabase/functions/.env
+
+3. Start the webhook forwarder (in a second terminal):
+
+   stripe listen --project-name=peppercheck-debug \\
+     --forward-to http://localhost:54321/functions/v1/handle-stripe-webhook
+
+4. Trigger a test event (in a third terminal):
+
+   stripe trigger account.updated --project-name=peppercheck-debug
+
+5. Verify in the 'supabase functions serve' logs that the event arrived
+   with a 200 response and signature verification passed.
+
+EOF
