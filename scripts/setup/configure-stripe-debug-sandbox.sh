@@ -23,3 +23,25 @@ if ! command -v stripe >/dev/null 2>&1; then
   echo "Install it with: brew install stripe/stripe-cli/stripe" >&2
   exit 1
 fi
+
+cat <<'EOF'
+
+Before continuing, in the Stripe Dashboard:
+
+  1. Create a new sandbox dedicated to local debug.
+     URL: https://dashboard.stripe.com/test/sandboxes
+  2. Enable Stripe Connect for that sandbox
+     (Settings > Connect > Get started, in the new sandbox).
+  3. Note the sandbox-scoped sk_test_... key from
+     Developers > API keys (visible only after selecting the sandbox).
+
+EOF
+
+read -r -p "Have you created the debug sandbox and enabled Connect? [y/N]: " answer
+case "${answer:-N}" in
+  y|Y|yes|YES) ;;
+  *)
+    echo "Aborting. Re-run this script after creating the sandbox." >&2
+    exit 1
+    ;;
+esac
