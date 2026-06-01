@@ -52,3 +52,13 @@ echo "A browser window will open — approve the pairing and SELECT THE DEBUG SA
 echo "(not the staging sandbox or live mode)."
 echo
 stripe login --project-name=peppercheck-debug
+
+echo
+echo "Fetching the local webhook signing secret..."
+webhook_secret=$(stripe listen --project-name=peppercheck-debug --print-secret)
+
+if [[ -z "${webhook_secret}" ]]; then
+  echo "Error: stripe listen --print-secret returned empty output." >&2
+  echo "Check that the peppercheck-debug profile was set up correctly." >&2
+  exit 1
+fi
