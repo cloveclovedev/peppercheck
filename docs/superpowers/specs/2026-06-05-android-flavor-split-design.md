@@ -121,6 +121,10 @@ The existing `defaultConfig.versionCode` / `versionName` apply to all three flav
 
 Default `debug` / `release` / `profile` buildTypes remain as-is. The existing release signing config (gated on `key.properties` presence) is shared across all three flavors.
 
+### GitHub Secret naming follows `<ENV>_*` prefix
+
+Existing `deploy-beta.yml` / `deploy-production.yml` use `PROD_*` and `BETA_*` prefixes consistently for env-scoped secrets (`PROD_SUPABASE_*`, `BETA_STRIPE_*`, `PROD_FIREBASE_SERVICE_ACCOUNT_JSON`, etc.). The legacy `GOOGLE_SERVICES_JSON` and `FIREBASE_APP_ID` secrets without prefix are exceptions left over from earlier work. This PR's implementation renames the legacy `GOOGLE_SERVICES_JSON` to `PROD_GOOGLE_SERVICES_JSON` alongside introducing `BETA_GOOGLE_SERVICES_JSON`, cleaning up the inconsistency in the same change. Dev is local-only in this PR — no `DEV_GOOGLE_SERVICES_JSON` is created (a future dev-channel CI build, if introduced, would add it).
+
 ### `flutter run` / `flutter build` require `--flavor`
 
 With `productFlavors` declared, the Flutter tooling requires `--flavor <env>` on every invocation. Local development workflow becomes:
@@ -249,7 +253,7 @@ Both scripts use `set -euo pipefail` and pre-flight check for `firebase` and `jq
 
 The current Android build job uses a single `GOOGLE_SERVICES_JSON` secret. After this PR:
 
-- New GitHub Secret `GOOGLE_SERVICES_JSON_STAGING` is created by the operator (base64-encoded `google-services.json` from the `peppercheck-staging` Firebase project).
+- New GitHub Secret `BETA_GOOGLE_SERVICES_JSON` is created by the operator (base64-encoded `google-services.json` from the `peppercheck-staging` Firebase project).
 - The workflow's Android build job:
   - Writes the secret to `peppercheck_flutter/android/app/src/staging/google-services.json` before the `flutter build apk` step.
   - Invokes `flutter build apk --release -t lib/main_staging.dart --flavor staging` (added `--flavor staging`).
@@ -257,7 +261,7 @@ The current Android build job uses a single `GOOGLE_SERVICES_JSON` secret. After
 
 ### 8. `.github/workflows/deploy-production.yml`
 
-- The existing GitHub Secret `GOOGLE_SERVICES_JSON` is renamed to `GOOGLE_SERVICES_JSON_PRODUCTION` (same value).
+- The existing GitHub Secret `GOOGLE_SERVICES_JSON` is renamed to `PROD_GOOGLE_SERVICES_JSON` (same value).
 - The workflow's Android build job:
   - Writes the secret to `peppercheck_flutter/android/app/src/production/google-services.json` (replacing the previous `android/app/google-services.json` target).
   - Invokes `flutter build appbundle --release -t lib/main_production.dart --flavor production` (added `--flavor production`).
@@ -285,16 +289,16 @@ Operator workstation
        └─ firebase apps:sdkconfig             → writes gitignored config files into repo
 
 GitHub Secrets (operator-managed, base64-encoded values of the google-services.json files)
-  ├─ GOOGLE_SERVICES_JSON_PRODUCTION   (renamed from GOOGLE_SERVICES_JSON)
-  └─ GOOGLE_SERVICES_JSON_STAGING      (new)
+  ├─ PROD_GOOGLE_SERVICES_JSON   (renamed from GOOGLE_SERVICES_JSON)
+  └─ BETA_GOOGLE_SERVICES_JSON      (new)
 
 CI deploy-beta.yml (on push to beta/v*)
-  └─ Write GOOGLE_SERVICES_JSON_STAGING → src/staging/google-services.json
+  └─ Write BETA_GOOGLE_SERVICES_JSON → src/staging/google-services.json
      └─ flutter build apk --flavor staging --release → APK (dev.cloveclove.peppercheck.staging)
         └─ Firebase App Distribution upload to peppercheck-staging project's staging Android app
 
 CI deploy-production.yml (on push to v* tag)
-  └─ Write GOOGLE_SERVICES_JSON_PRODUCTION → src/production/google-services.json
+  └─ Write PROD_GOOGLE_SERVICES_JSON → src/production/google-services.json
      └─ flutter build appbundle --flavor production --release → AAB (dev.cloveclove.peppercheck)
         └─ Existing Play Store + FAD upload steps (no app-entry change)
 ```
@@ -319,8 +323,8 @@ Performed once by the operator before merging the implementation PR.
 - [ ] `./scripts/setup/register-firebase-apps.sh dev` → downloads dev configs.
 - [ ] `./scripts/setup/register-firebase-apps.sh staging` → downloads staging configs.
 - [ ] `./scripts/setup/register-firebase-apps.sh production` → re-downloads production configs (validates idempotence).
-- [ ] Create GitHub Secret `GOOGLE_SERVICES_JSON_STAGING` (base64-encoded value of `peppercheck-staging`'s `google-services.json`).
-- [ ] Rename GitHub Secret `GOOGLE_SERVICES_JSON` → `GOOGLE_SERVICES_JSON_PRODUCTION` (same value).
+- [ ] Create GitHub Secret `BETA_GOOGLE_SERVICES_JSON` (base64-encoded value of `peppercheck-staging`'s `google-services.json`).
+- [ ] Rename GitHub Secret `GOOGLE_SERVICES_JSON` → `PROD_GOOGLE_SERVICES_JSON` (same value).
 - [ ] In the `peppercheck-staging` Firebase Console: enable Firebase App Distribution for the new staging Android app, re-create the testers group, and capture the new `appId` to update in `deploy-beta.yml`.
 
 Operator can run the bootstrap script for production at any time; it is idempotent and only re-downloads config.
