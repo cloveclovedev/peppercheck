@@ -123,7 +123,18 @@ Default `debug` / `release` / `profile` buildTypes remain as-is. The existing re
 
 ### GitHub Secret naming follows `<ENV>_*` prefix
 
-Existing `deploy-beta.yml` / `deploy-production.yml` use `PROD_*` and `BETA_*` prefixes consistently for env-scoped secrets (`PROD_SUPABASE_*`, `BETA_STRIPE_*`, `PROD_FIREBASE_SERVICE_ACCOUNT_JSON`, etc.). The legacy `GOOGLE_SERVICES_JSON` and `FIREBASE_APP_ID` secrets without prefix are exceptions left over from earlier work. This PR's implementation renames the legacy `GOOGLE_SERVICES_JSON` to `PROD_GOOGLE_SERVICES_JSON` alongside introducing `BETA_GOOGLE_SERVICES_JSON`, cleaning up the inconsistency in the same change. Dev is local-only in this PR — no `DEV_GOOGLE_SERVICES_JSON` is created (a future dev-channel CI build, if introduced, would add it).
+Existing `deploy-beta.yml` / `deploy-production.yml` use `PROD_*` and `BETA_*` prefixes consistently for env-scoped secrets (`PROD_SUPABASE_*`, `BETA_STRIPE_*`, `PROD_FIREBASE_SERVICE_ACCOUNT_JSON`, etc.). Two legacy un-prefixed secrets remain from earlier work:
+
+- `GOOGLE_SERVICES_JSON` — currently the production build's `google-services.json` (staging shares it because both flavors used the same `peppercheck` Firebase project).
+- `FIREBASE_APP_ID` — currently the staging Android app's Firebase App Distribution entry ID in the `peppercheck` project (referenced only in `deploy-beta.yml`'s FAD upload step; `deploy-production.yml` uses Play Developer API, not FAD).
+
+This PR's implementation renames both alongside the new staging secret, so all env-scoped secrets end up consistent:
+
+- `GOOGLE_SERVICES_JSON` → `PROD_GOOGLE_SERVICES_JSON` (same value).
+- `FIREBASE_APP_ID` → `BETA_FIREBASE_APP_ID` (value **changes** — the staging Android app moves to the new `peppercheck-staging` Firebase project, so the FAD app ID is a different identifier).
+- New `BETA_GOOGLE_SERVICES_JSON` for staging.
+
+Dev is local-only in this PR — no `DEV_GOOGLE_SERVICES_JSON` / `DEV_FIREBASE_APP_ID` is created (a future dev-channel CI build, if introduced, would add them). No `PROD_FIREBASE_APP_ID` is created because production does not use Firebase App Distribution.
 
 ### `flutter run` / `flutter build` require `--flavor`
 
@@ -251,13 +262,14 @@ Both scripts use `set -euo pipefail` and pre-flight check for `firebase` and `jq
 
 ### 7. `.github/workflows/deploy-beta.yml`
 
-The current Android build job uses a single `GOOGLE_SERVICES_JSON` secret. After this PR:
+The current Android build job uses a single `GOOGLE_SERVICES_JSON` secret and a single `FIREBASE_APP_ID` secret. After this PR:
 
 - New GitHub Secret `BETA_GOOGLE_SERVICES_JSON` is created by the operator (base64-encoded `google-services.json` from the `peppercheck-staging` Firebase project).
+- New GitHub Secret `BETA_FIREBASE_APP_ID` is created by the operator (the FAD app ID of the new staging Android app registered in the `peppercheck-staging` Firebase project). The legacy `FIREBASE_APP_ID` secret is deleted.
 - The workflow's Android build job:
-  - Writes the secret to `peppercheck_flutter/android/app/src/staging/google-services.json` before the `flutter build apk` step.
+  - Writes `BETA_GOOGLE_SERVICES_JSON` to `peppercheck_flutter/android/app/src/staging/google-services.json` before the `flutter build apk` step.
   - Invokes `flutter build apk --release -t lib/main_staging.dart --flavor staging` (added `--flavor staging`).
-- The Firebase App Distribution upload step's `appId` reference is updated to point at the `peppercheck-staging` Firebase project's new staging Android app entry. The FAD testers group must be re-created (or re-pointed) in the new project as part of operator pre-merge work.
+  - The Firebase App Distribution upload step (`firebase appdistribution:distribute ... --app "${{ secrets.BETA_FIREBASE_APP_ID }}"`) is updated to reference the new secret. The FAD testers group must be re-created (or re-pointed) in the new `peppercheck-staging` Firebase project as part of operator pre-merge work.
 
 ### 8. `.github/workflows/deploy-production.yml`
 
@@ -288,14 +300,17 @@ Operator workstation
        ├─ firebase apps:create ANDROID|IOS    (skip if exists)
        └─ firebase apps:sdkconfig             → writes gitignored config files into repo
 
-GitHub Secrets (operator-managed, base64-encoded values of the google-services.json files)
-  ├─ PROD_GOOGLE_SERVICES_JSON   (renamed from GOOGLE_SERVICES_JSON)
-  └─ BETA_GOOGLE_SERVICES_JSON      (new)
+GitHub Secrets (operator-managed)
+  ├─ PROD_GOOGLE_SERVICES_JSON   (renamed from legacy GOOGLE_SERVICES_JSON; same value)
+  ├─ BETA_GOOGLE_SERVICES_JSON   (new; base64 of peppercheck-staging's google-services.json)
+  └─ BETA_FIREBASE_APP_ID        (new; FAD app ID of staging Android app in peppercheck-staging;
+                                  legacy FIREBASE_APP_ID is deleted)
 
 CI deploy-beta.yml (on push to beta/v*)
   └─ Write BETA_GOOGLE_SERVICES_JSON → src/staging/google-services.json
      └─ flutter build apk --flavor staging --release → APK (dev.cloveclove.peppercheck.staging)
-        └─ Firebase App Distribution upload to peppercheck-staging project's staging Android app
+        └─ firebase appdistribution:distribute --app "$BETA_FIREBASE_APP_ID"
+           → uploads to peppercheck-staging Firebase project's staging Android app
 
 CI deploy-production.yml (on push to v* tag)
   └─ Write PROD_GOOGLE_SERVICES_JSON → src/production/google-services.json
@@ -325,7 +340,8 @@ Performed once by the operator before merging the implementation PR.
 - [ ] `./scripts/setup/register-firebase-apps.sh production` → re-downloads production configs (validates idempotence).
 - [ ] Create GitHub Secret `BETA_GOOGLE_SERVICES_JSON` (base64-encoded value of `peppercheck-staging`'s `google-services.json`).
 - [ ] Rename GitHub Secret `GOOGLE_SERVICES_JSON` → `PROD_GOOGLE_SERVICES_JSON` (same value).
-- [ ] In the `peppercheck-staging` Firebase Console: enable Firebase App Distribution for the new staging Android app, re-create the testers group, and capture the new `appId` to update in `deploy-beta.yml`.
+- [ ] In the `peppercheck-staging` Firebase Console: enable Firebase App Distribution for the new staging Android app and re-create the `beta-testers` group (re-invite the same Apple ID / Google account members that exist in the current `peppercheck` project's group).
+- [ ] Capture the new staging FAD app ID and create GitHub Secret `BETA_FIREBASE_APP_ID`. Delete the legacy `FIREBASE_APP_ID` secret.
 
 Operator can run the bootstrap script for production at any time; it is idempotent and only re-downloads config.
 
