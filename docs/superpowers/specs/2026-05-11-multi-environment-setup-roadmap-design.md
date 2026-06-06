@@ -61,7 +61,7 @@ Legend: ✅ isolated per environment, ⚠️ shared or not isolated, 🆕 not in
 | Firebase project | ⚠️ shared | ⚠️ shared | ⚠️ shared | One project across all |
 | `google-services.json` / `GoogleService-Info.plist` | ⚠️ single secret | ⚠️ same | ⚠️ per-developer copy | |
 | APNs Auth Key | ⚠️ one project | ⚠️ same | ⚠️ same | |
-| Google Sign-In OAuth client | ⚠️ shared Web + Android client | ⚠️ shared (no staging app) | ⚠️ separate Android client (dev fingerprint) | Web client configured in Supabase Dashboard |
+| Google Sign-In OAuth client | ⚠️ shared Web + Android client | ⚠️ shared (no staging app) | ⚠️ separate Android client (debug.keystore fingerprint) | Web client configured in Supabase Dashboard |
 | iOS `GIDClientID` | ⚠️ hard-coded | ⚠️ same | ⚠️ same | Should move to xcconfig |
 | Android signing keystore | ✅ release upload key + Play App Signing | ✅ same (internal testing) | ✅ debug.keystore | Play App Signing fingerprint is the one registered with Firebase / OAuth |
 | Apple Connect app | ⚠️ one | ⚠️ same | ⚠️ same | |
