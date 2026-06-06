@@ -1,4 +1,4 @@
-# Stripe Debug Sandbox
+# Stripe Dev Sandbox
 
 **Date:** 2026-05-31
 **Status:** Draft
@@ -40,7 +40,7 @@ Existing wiring for production and staging is unchanged. No secret rotation on t
 Sandboxes are named without a product prefix:
 
 - `Staging` (existing — currently labeled `テスト環境`; rename is a separate Dashboard action, not gated by this PR)
-- `Debug` (new — created by the operator before running the setup script)
+- `Dev` (new — created by the operator before running the setup script)
 
 Rationale: live mode is necessarily shared across all products in the CloveClove account (one Stripe account = one live mode). If a second CloveClove product appears in the future, the sandboxes can be either kept shared (with code-level `metadata.product` routing) or split out per product. Product-less names avoid forcing a rename when that decision is made.
 
