@@ -101,7 +101,7 @@ flutter:
 
   assets:
     - assets/images/
-    - assets/env/.env.debug
+    - assets/env/.env.dev
     - assets/env/.env.staging
     - assets/env/.env.production
 
