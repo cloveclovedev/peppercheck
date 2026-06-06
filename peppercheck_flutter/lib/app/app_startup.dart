@@ -42,7 +42,7 @@ Future<void> _initSdk(AppConfig config) async {
   await Firebase.initializeApp();
 
   // On iOS Simulator, localhost is 127.0.0.1, but on Android Emulator it is 10.0.2.2.
-  // .env.debug usually contains 10.0.2.2. We replace it globally at runtime for iOS.
+  // .env.dev usually contains 10.0.2.2. We replace it globally at runtime for iOS.
   if (Platform.isIOS) {
     dotenv.env.forEach((key, value) {
       if (value.contains('10.0.2.2')) {
