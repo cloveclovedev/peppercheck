@@ -2,10 +2,10 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Flutter: Debug (Local)",
+            "name": "Flutter: Dev (Local)",
             "request": "launch",
             "type": "dart",
-            "program": "lib/main_debug.dart",
+            "program": "lib/main_dev.dart",
             "cwd": "${workspaceFolder}/peppercheck_flutter",
             "preLaunchTask": "ADB Reverse All"
         },
