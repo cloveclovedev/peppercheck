@@ -4,9 +4,9 @@
 
 Per-environment configuration is managed via `.env` files in `assets/env/`.
 
-=== Debug Environment (`.env.debug`)
+=== Dev Environment (`.env.dev`)
 
-For local development, configure `assets/env/.env.debug`.
+For local development, configure `assets/env/.env.dev`.
 
 Important: For Android Emulator, use `localhost` combined with `adb reverse`.
 This ensures the app behaves exactly like the host environment, avoiding redirect mismatch issues with Supabase Auth.
@@ -18,9 +18,9 @@ adb reverse tcp:3000 tcp:3000
 adb reverse tcp:54321 tcp:54321
 ----
 
-NOTE: You can skip this step if you are running the app via VS Code's "Flutter: Debug (Local)" launch configuration, as it automatically runs these commands for you.
+NOTE: You can skip this step if you are running the app via VS Code's "Flutter: Dev (Local)" launch configuration, as it automatically runs these commands for you.
 
-.assets/env/.env.debug
+.assets/env/.env.dev
 [source,properties]
 ----
 # Supabase Configuration
@@ -44,4 +44,4 @@ WEB_DASHBOARD_URL=http://localhost:3000/dashboard
 flutter run
 ----
 
-By default, this runs in `debug` mode using `main_debug.dart` and loads `.env.debug`.
+By default, this runs in `dev` mode using `main_dev.dart` and loads `.env.dev`.
