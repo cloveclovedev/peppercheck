@@ -61,6 +61,22 @@ android {
             }
         }
     }
+
+    flavorDimensions += "environment"
+    productFlavors {
+        create("dev") {
+            dimension = "environment"
+            applicationIdSuffix = ".dev"
+        }
+        create("staging") {
+            dimension = "environment"
+            applicationIdSuffix = ".staging"
+        }
+        create("production") {
+            dimension = "environment"
+            // no applicationIdSuffix — production keeps dev.cloveclove.peppercheck
+        }
+    }
 }
 
 dependencies {
