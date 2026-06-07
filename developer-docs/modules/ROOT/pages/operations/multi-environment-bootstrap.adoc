@@ -1,5 +1,10 @@
 = Multi-Environment Bootstrap
 
+[NOTE]
+====
+**Operator only.** This runbook is for the PepperCheck project operator provisioning Firebase / GCP / GitHub Secrets infrastructure. Day-to-day developers and external contributors can skip this page — local Flutter dev only needs the `dev` flavor setup covered in xref:flutter/initial-local-setup.adoc[Initial Local Setup].
+====
+
 Operator-only runbook for provisioning the Phase 1 multi-environment setup — Firebase projects, service accounts, per-flavor configs, and the matching GitHub Secrets. Run these scripts once per fresh workstation; they are all idempotent.
 
 Background: see `docs/superpowers/specs/2026-06-05-android-flavor-split-design.md` and the umbrella roadmap issue #418.
