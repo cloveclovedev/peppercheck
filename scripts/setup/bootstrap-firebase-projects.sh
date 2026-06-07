@@ -14,8 +14,8 @@ command -v firebase >/dev/null || { echo "ERROR: firebase CLI not installed" >&2
 command -v jq >/dev/null || { echo "ERROR: jq not installed" >&2; exit 1; }
 
 PROJECTS=(
-  "peppercheck-dev:PepperCheck Dev"
-  "peppercheck-staging:PepperCheck Staging"
+  "peppercheck-dev:peppercheck-dev"
+  "peppercheck-staging:peppercheck-staging"
 )
 
 existing="$(firebase projects:list --json | jq -r '.result[].projectId')"
