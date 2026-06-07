@@ -14,9 +14,6 @@
 # slang i18n generated analysis files
 peppercheck_flutter/assets/i18n/_*.json
 
-# GitHub Secrets config (contains real values)
-scripts/github-secrets
-
 # Git worktrees
 .worktrees/
 

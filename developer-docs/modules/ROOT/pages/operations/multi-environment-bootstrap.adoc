@@ -40,6 +40,10 @@ Day-to-day Flutter development does NOT need these. Once the `dev` flavor config
 | `scripts/setup/setup-deploy-secrets.sh <sa-json-path>`
 | Sets four GitHub Secrets at once via STDIN redirect (values never appear on stdout, in the process list, or in shell history): `BETA_FIREBASE_SERVICE_ACCOUNT_JSON`, `BETA_FIREBASE_APP_ID` (auto-resolved from `firebase apps:list`), `BETA_GOOGLE_SERVICES_JSON`, `PROD_GOOGLE_SERVICES_JSON`.
 | Once per credential refresh. Re-run to update any of the four secrets after a service-account key rotation or staging app re-registration.
+
+| `scripts/sync-github-secrets.sh`
+| Merges new keys from `scripts/github-secrets.example` into `~/.config/peppercheck/github-secrets` (the operator-owned config consumed by `scripts/setup-github-secrets.sh`). Preserves existing values, drops keys removed from the template, leaves new keys empty for manual fill-in. Writes a timestamped `.bak` and keeps the 3 most recent. Never echoes secret values; orphan / new key reports use names only.
+| Whenever `scripts/github-secrets.example` is updated upstream.
 |===
 
 == Order of operations
@@ -98,6 +102,14 @@ After step 4, also visit the Firebase Console once to enable App Distribution on
 | `~/.config/peppercheck/peppercheck-staging-sa.json`
 | `bootstrap-peppercheck-staging-sa.sh`
 | Service account JSON key for the staging FAD upload + Edge Function FCM. Mode 0600 inside a mode 0700 directory. Source of truth for `BETA_FIREBASE_SERVICE_ACCOUNT_JSON`.
+
+| `~/.config/peppercheck/github-secrets`
+| Operator-owned, populated from `scripts/github-secrets.example` then maintained via `scripts/sync-github-secrets.sh`
+| Source of values for `scripts/setup-github-secrets.sh`. Holds env-scoped text secrets (Supabase / Stripe / R2 / Pub-Sub / Operator auth / Web base URLs). Mode 0600.
+
+| `~/.config/peppercheck/github-secrets.bak.<ISO-timestamp>`
+| `sync-github-secrets.sh`
+| Timestamped snapshot of the previous `github-secrets` taken before each sync. The 3 most recent generations are retained; older ones are auto-pruned.
 |===
 
 == Secrets set by step 4

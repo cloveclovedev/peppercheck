@@ -2,21 +2,25 @@
 # Set GitHub Secrets for peppercheck CI/CD from a config file.
 #
 # Usage:
-#   ./scripts/setup-github-secrets.sh                    # uses scripts/github-secrets
+#   ./scripts/setup-github-secrets.sh                    # uses ~/.config/peppercheck/github-secrets
 #   ./scripts/setup-github-secrets.sh path/to/file       # uses custom file
 #
 # Binary/file secrets must be set separately. The full list of file-style
 # secrets and their gh-secret-set invocations is documented at the bottom
 # of scripts/github-secrets.example. This script also prints a summary
 # after the text-secret pass.
+#
+# To keep ~/.config/peppercheck/github-secrets in sync with template
+# updates, run scripts/sync-github-secrets.sh.
 
 set -euo pipefail
 
-SECRETS_FILE="${1:-scripts/github-secrets}"
+SECRETS_FILE="${1:-${HOME}/.config/peppercheck/github-secrets}"
 
 if [[ ! -f "$SECRETS_FILE" ]]; then
   echo "Error: $SECRETS_FILE not found."
-  echo "Copy scripts/github-secrets.example to scripts/github-secrets and fill in the values."
+  echo "Copy scripts/github-secrets.example to ~/.config/peppercheck/github-secrets and fill in the values."
+  echo "(Legacy scripts/github-secrets path was moved out of the repo; mkdir -p ~/.config/peppercheck && chmod 700 ~/.config/peppercheck && mv scripts/github-secrets ~/.config/peppercheck/github-secrets && chmod 600 ~/.config/peppercheck/github-secrets if migrating.)"
   exit 1
 fi
 
