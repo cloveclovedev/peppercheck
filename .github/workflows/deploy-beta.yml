@@ -197,7 +197,7 @@ jobs:
           firebase appdistribution:distribute \
             build/app/outputs/flutter-apk/app-release.apk \
             --app "${{ secrets.BETA_FIREBASE_APP_ID }}" \
-            --groups "beta-testers" \
+            --groups "peppercheck-staging-testers" \
             --release-notes "Beta ${{ steps.version.outputs.build_name }} (${GITHUB_SHA::7})"
 
   webapp-deploy:
