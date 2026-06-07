@@ -39,9 +39,33 @@ WEB_DASHBOARD_URL=http://localhost:3000/dashboard
 
 == Running the App
 
+After the Android product flavor split, every `flutter run` and `flutter build` invocation must pass both `--flavor <env>` and `-t lib/main_<env>.dart`.
+
 [source,bash]
 ----
-flutter run
+flutter run --flavor dev -t lib/main_dev.dart
 ----
 
-By default, this runs in `dev` mode using `main_dev.dart` and loads `.env.dev`.
+Loads `.env.dev` and runs against the `peppercheck-dev` Firebase project.
+
+=== First-time setup
+
+Download your Firebase config files before the first build:
+
+[source,bash]
+----
+./scripts/setup/register-firebase-apps.sh dev
+----
+
+This writes `peppercheck_flutter/android/app/src/dev/google-services.json` and `peppercheck_flutter/ios/Runner/Firebase/GoogleService-Info-Dev.plist` (both gitignored). Operators with access to staging or production secrets may also run the script with `staging` or `production`; otherwise those flavors are built only in CI.
+
+=== Building APKs / AABs
+
+[source,bash]
+----
+flutter build apk --debug --flavor dev -t lib/main_dev.dart
+flutter build apk --release --flavor staging -t lib/main_staging.dart
+flutter build appbundle --release --flavor production -t lib/main_production.dart
+----
+
+The three flavor APKs install side-by-side on the same device — packages are `dev.cloveclove.peppercheck.dev`, `dev.cloveclove.peppercheck.staging`, and `dev.cloveclove.peppercheck` respectively.
