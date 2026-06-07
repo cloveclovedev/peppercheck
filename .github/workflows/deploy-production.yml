@@ -158,7 +158,7 @@ jobs:
           EOF
 
       - name: Generate google-services.json
-        run: echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > android/app/google-services.json
+        run: echo '${{ secrets.PROD_GOOGLE_SERVICES_JSON }}' > android/app/src/production/google-services.json
 
       - name: Decode keystore
         run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android/app/upload-keystore.jks
@@ -181,7 +181,7 @@ jobs:
 
       - name: Build production AAB
         run: |
-          flutter build appbundle --release -t lib/main_production.dart \
+          flutter build appbundle --release --flavor production -t lib/main_production.dart \
             --build-name=${{ steps.version.outputs.build_name }} \
             --build-number=${{ steps.version.outputs.build_number }}
 
