@@ -70,20 +70,31 @@ if [[ -z "$fad_app_id" ]]; then
   exit 1
 fi
 
-# Each gh secret set call uses STDIN redirect for credential-tier values
-# so the secret never appears on the command line or in any logs.
-# Output is redirected to /dev/null because gh's success message echoes
-# the secret name only (no value), but >/dev/null is a defense-in-depth
-# guard against any future CLI change.
+# Each gh secret set call streams the value via STDIN (no `--body` for
+# credentials) so it never appears on the command line or in process
+# listings. Output is redirected to /dev/null as defense-in-depth; gh's
+# success message normally echoes only the secret name.
+#
+# BETA_FIREBASE_SERVICE_ACCOUNT_JSON MUST be a flat single-line JSON.
+# deploy-beta.yml writes it into a Supabase env file
+# (`printf "FIREBASE_SERVICE_ACCOUNT_JSON='%s'\n" ...`), and the env-file
+# parser only accepts one-line-per-variable. A multi-line value silently
+# breaks send-notification's JSON.parse at Edge Function runtime.
+# See scripts/github-secrets.example for the same constraint on
+# PROD_FIREBASE_SERVICE_ACCOUNT_JSON / *_GOOGLE_PLAY_SERVICE_ACCOUNT_JSON.
 
-gh secret set BETA_FIREBASE_SERVICE_ACCOUNT_JSON --repo "$repo" < "$sa_json" >/dev/null
+jq -c . < "$sa_json" | gh secret set BETA_FIREBASE_SERVICE_ACCOUNT_JSON --repo "$repo" >/dev/null
 echo "[ok] BETA_FIREBASE_SERVICE_ACCOUNT_JSON"
 
-# FAD App ID is identifier-tier (appears in published APK). --body is
-# acceptable here.
+# FAD App ID is identifier-tier (it appears in the published APK's
+# google-services.json). --body is acceptable here.
 gh secret set BETA_FIREBASE_APP_ID --repo "$repo" --body "$fad_app_id" >/dev/null
 echo "[ok] BETA_FIREBASE_APP_ID"
 
+# google-services.json secrets are written into a plain JSON file by the
+# workflow (`echo '${{ secrets.X }}' > .../google-services.json`), not
+# into an env file, so multi-line raw is acceptable. STDIN redirect keeps
+# the value off the command line.
 gh secret set BETA_GOOGLE_SERVICES_JSON --repo "$repo" < "$staging_gs" >/dev/null
 echo "[ok] BETA_GOOGLE_SERVICES_JSON"
 
