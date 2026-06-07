@@ -2,7 +2,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'app_environment.g.dart';
 
-enum AppEnvironment { debug, staging, production }
+enum AppEnvironment { dev, staging, production }
 
 /// Build-time descriptor used by [appStartup] during bootstrap only.
 /// Widget-facing runtime state lives in `appEnvironmentProvider`.
@@ -12,9 +12,9 @@ class AppConfig {
 
   const AppConfig({required this.environment, required this.envFile});
 
-  static const debug = AppConfig(
-    environment: AppEnvironment.debug,
-    envFile: 'assets/env/.env.debug',
+  static const dev = AppConfig(
+    environment: AppEnvironment.dev,
+    envFile: 'assets/env/.env.dev',
   );
 
   static const staging = AppConfig(

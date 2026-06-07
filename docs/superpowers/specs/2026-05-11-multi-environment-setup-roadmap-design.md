@@ -6,7 +6,7 @@
 
 ## Goal
 
-Make PepperCheck's three environments — **production**, **staging**, and **debug** — independently usable for end-to-end validation. Each environment must:
+Make PepperCheck's three environments — **production**, **staging**, and **dev** — independently usable for end-to-end validation. Each environment must:
 
 1. Operate without side effects leaking to other environments.
 2. Be installable side-by-side on the same device with a uniform operator workflow.
@@ -26,21 +26,21 @@ It does not scale through the upcoming subscription-related changes (further ite
 
 ### Already isolated
 
-- **R2 buckets**: `peppercheck` (prod), `peppercheck-staging`, `peppercheck-debug`. Selected by Edge Functions via `R2_BUCKET_NAME`.
+- **R2 buckets**: `peppercheck` (prod), `peppercheck-staging`, `peppercheck-dev`. Selected by Edge Functions via `R2_BUCKET_NAME`.
 - **Webapp deployment**: Cloudflare Workers with `wrangler.jsonc` `[env.staging]` (`staging.peppercheck.dev`) and `[env.production]` (`peppercheck.dev`).
 - **Build-time env injection (Flutter / webapp)**: CI workflows (`deploy-beta.yml`, `deploy-production.yml`) generate `assets/env/.env.{staging,production}` and webapp `.env.local` from env-scoped GitHub Secrets (`BETA_*`, `PROD_*`).
 - **Supabase projects**: Distinct `BETA_SUPABASE_*` and `PROD_SUPABASE_*` projects.
-- **Stripe**: Live mode for production payouts; one sandbox shared between staging and debug.
+- **Stripe**: Live mode for production payouts; one sandbox shared between staging and dev.
 
 ### Not isolated or shared (this roadmap's scope)
 
 - **Bundle ID / package name**: A single `dev.cloveclove.peppercheck` is reused across all flavors.
-- **Firebase project**: One Firebase project (`peppercheck`) is shared across debug, staging, and production.
+- **Firebase project**: One Firebase project (`peppercheck`) is shared across dev, staging, and production.
 - **Apple Connect / Play Console apps**: One per platform, shared across all flavors.
 - **Google Play RTDN topic**: One topic; staging internal-testing purchases reach the production Supabase webhook.
-- **Stripe sandbox**: Staging and debug share one sandbox, so a local-debug event reaches the staging Supabase function.
+- **Stripe sandbox**: Staging and dev share one sandbox, so a local-dev event reaches the staging Supabase function.
 - **Edge Function runtime secrets**: Set manually per project via `supabase secrets set`; no CI automation or runbook.
-- **Stripe webhook routing**: live → PROD Supabase is wired; sandbox → BETA Supabase exists, but the staging/debug share creates noise.
+- **Stripe webhook routing**: live → PROD Supabase is wired; sandbox → BETA Supabase exists, but the staging/dev share creates noise.
 - **In-app environment indicator**: No on-screen banner identifies which environment a running build is connected to.
 - **Mobile observability**: Firebase Crashlytics, Performance Monitoring, and Analytics are not enabled.
 
@@ -48,20 +48,20 @@ It does not scale through the upcoming subscription-related changes (further ite
 
 Legend: ✅ isolated per environment, ⚠️ shared or not isolated, 🆕 not introduced.
 
-| Subsystem | production | staging | debug | Notes |
+| Subsystem | production | staging | dev | Notes |
 |---|---|---|---|---|
 | Supabase project | ✅ PROD | ✅ BETA | ✅ local | Per-env secrets in CI |
 | Supabase migration deploy | ✅ tag → push | ✅ beta branch → push | ✅ `supabase db reset` | |
 | Edge Function deploy | ✅ tag | ✅ beta branch | ✅ `functions serve` | 11 functions |
 | Edge Function runtime secret | ⚠️ manual | ⚠️ manual | ⚠️ manual `supabase/.env` | |
-| R2 bucket | ✅ `peppercheck` | ✅ `peppercheck-staging` | ✅ `peppercheck-debug` | |
+| R2 bucket | ✅ `peppercheck` | ✅ `peppercheck-staging` | ✅ `peppercheck-dev` | |
 | Webapp deploy | ✅ `peppercheck.dev` | ✅ `staging.peppercheck.dev` | ✅ `npm run dev` | |
 | Build-time env injection | ✅ `PROD_*` | ✅ `BETA_*` | ✅ local file | |
 | Bundle ID / package | ⚠️ shared | ⚠️ shared | ⚠️ shared | |
 | Firebase project | ⚠️ shared | ⚠️ shared | ⚠️ shared | One project across all |
 | `google-services.json` / `GoogleService-Info.plist` | ⚠️ single secret | ⚠️ same | ⚠️ per-developer copy | |
 | APNs Auth Key | ⚠️ one project | ⚠️ same | ⚠️ same | |
-| Google Sign-In OAuth client | ⚠️ shared Web + Android client | ⚠️ shared (no staging app) | ⚠️ separate Android client (debug fingerprint) | Web client configured in Supabase Dashboard |
+| Google Sign-In OAuth client | ⚠️ shared Web + Android client | ⚠️ shared (no staging app) | ⚠️ separate Android client (debug.keystore fingerprint) | Web client configured in Supabase Dashboard |
 | iOS `GIDClientID` | ⚠️ hard-coded | ⚠️ same | ⚠️ same | Should move to xcconfig |
 | Android signing keystore | ✅ release upload key + Play App Signing | ✅ same (internal testing) | ✅ debug.keystore | Play App Signing fingerprint is the one registered with Firebase / OAuth |
 | Apple Connect app | ⚠️ one | ⚠️ same | ⚠️ same | |
@@ -69,7 +69,7 @@ Legend: ✅ isolated per environment, ⚠️ shared or not isolated, 🆕 not in
 | IAP product registration | ⚠️ single app | ⚠️ same | ⚠️ same | |
 | Apple ASSN V2 webhook URL | ✅ Production URL → PROD | ✅ Sandbox URL → BETA | n/a (sandbox URL shared) | Single-app dual-URL split |
 | Google Play RTDN Pub/Sub | ⚠️ one topic → PROD | ⚠️ internal-testing purchases → same topic | n/a | |
-| Stripe live/sandbox | ✅ live → PROD | ✅ sandbox A → BETA | ⚠️ shared sandbox A with staging | Debug sandbox to be created |
+| Stripe live/sandbox | ✅ live → PROD | ✅ sandbox A → BETA | ⚠️ shared sandbox A with staging | Dev sandbox to be created |
 | Stripe webhook endpoint | ✅ live URL → PROD | ✅ sandbox URL → BETA | n/a (stripe-cli forwarding) | |
 | Mobile crash / performance / analytics | 🆕 none | 🆕 none | 🆕 none | Firebase suite not enabled |
 | In-app environment badge | ⚠️ none | ⚠️ none | ⚠️ none | |
@@ -91,9 +91,9 @@ Legend: ✅ isolated per environment, ⚠️ shared or not isolated, 🆕 not in
 |---|---|
 | production | `dev.cloveclove.peppercheck` (existing) |
 | staging | `dev.cloveclove.peppercheck.staging` |
-| debug | `dev.cloveclove.peppercheck.debug` |
+| dev | `dev.cloveclove.peppercheck.dev` |
 
-- Android: `productFlavors` with `applicationIdSuffix = ".staging"` / `".debug"`.
+- Android: `productFlavors` with `applicationIdSuffix = ".staging"` / `".dev"`.
 - iOS: per-scheme xcconfig overriding `PRODUCT_BUNDLE_IDENTIFIER`; three schemes (`Runner-Debug`, `Runner-Staging`, `Runner-Production`).
 - Suffix-at-end form is the industry standard (matches `applicationIdSuffix` semantics, sorts adjacently in Apple/Google consoles, reads as `org → app → variant`).
 
@@ -101,7 +101,7 @@ Legend: ✅ isolated per environment, ⚠️ shared or not isolated, 🆕 not in
 
 - `peppercheck` (existing, reused for production)
 - `peppercheck-staging` (new)
-- `peppercheck-debug` (new, operator-managed)
+- `peppercheck-dev` (new, operator-managed)
 - Each project hosts one iOS app and one Android app for its flavor (6 apps total).
 - A single APNs Auth Key (`.p8`) is generated once on the Apple Developer Team and registered in all three projects.
 - `FIREBASE_SERVICE_ACCOUNT` is set per Supabase project (PROD project gets the production project's service account, BETA project gets the staging project's). Edge Function code does not branch on environment — it simply reads its single env var.
@@ -109,16 +109,16 @@ Legend: ✅ isolated per environment, ⚠️ shared or not isolated, 🆕 not in
 #### Google Sign-In OAuth clients
 
 - **Web OAuth client**: one per Supabase project (3 total), used as `serverClientId` in the native Google Sign-In flow and registered as the auth provider in Supabase Dashboard.
-- **Android OAuth client**: one per (env × signing fingerprint). Production and staging use their respective Play App Signing fingerprints; debug uses `debug.keystore` fingerprints (one per developer).
+- **Android OAuth client**: one per (env × signing fingerprint). Production and staging use their respective Play App Signing fingerprints; dev uses `debug.keystore` fingerprints (one per developer).
 - **iOS OAuth client**: per env (3 total). `Info.plist` `GIDClientID` is parameterized through xcconfig.
 
 #### Apple Connect / Play Console apps
 
-- Three Apple Connect apps and three Play Console apps (production / staging / debug). IAP products are duplicated across the three.
+- Three Apple Connect apps and three Play Console apps (production / staging / dev). IAP products are duplicated across the three.
 - Distribution:
   - production app: App Store + TestFlight + Play Store
   - staging app: TestFlight internal testing + Play internal testing track
-  - debug app: not distributed via store, IAP product registration only (so local builds can fetch products)
+  - dev app: not distributed via store, IAP product registration only (so local builds can fetch products)
 
 #### Webhook routing
 
@@ -128,12 +128,12 @@ Legend: ✅ isolated per environment, ⚠️ shared or not isolated, 🆕 not in
 |---|---|---|
 | production | → PROD Supabase | (empty) |
 | staging | → BETA Supabase | (empty) |
-| debug | (empty) | (empty) |
+| dev | (empty) | (empty) |
 
 Rationale for empty Sandbox URLs:
 
 - TestFlight purchases (free) run in the production environment and hit Production URL.
-- Sandbox environment fires only when Xcode debug builds are run with a Sandbox tester Apple ID. Those builds use the `.debug` bundle ID; their notifications would route to the debug app's Sandbox URL. Local end-to-end ASSN testing is intentionally out of scope — server-side ASSN flows are validated through TestFlight on the staging app (which makes all purchases free, so no real money is required).
+- Sandbox environment fires only when Xcode debug builds are run with a Sandbox tester Apple ID. Those builds use the `.dev` bundle ID; their notifications would route to the dev app's Sandbox URL. Local end-to-end ASSN testing is intentionally out of scope — server-side ASSN flows are validated through TestFlight on the staging app (which makes all purchases free, so no real money is required).
 
 **Google Play RTDN:**
 
@@ -141,7 +141,7 @@ Rationale for empty Sandbox URLs:
 |---|---|---|
 | production | existing topic | PROD Supabase `handle-google-play-rtdn` |
 | staging | new `peppercheck-rtdn-staging` | BETA Supabase `handle-google-play-rtdn` |
-| debug | none | n/a |
+| dev | none | n/a |
 
 **Stripe webhooks:**
 
@@ -149,7 +149,7 @@ Rationale for empty Sandbox URLs:
 |---|---|---|
 | production | live mode | PROD Supabase `handle-stripe-webhook` |
 | staging | sandbox A | BETA Supabase `handle-stripe-webhook` |
-| debug | sandbox B (new) | none (use `stripe listen --forward-to` for local) |
+| dev | sandbox B (new) | none (use `stripe listen --forward-to` for local) |
 
 #### Edge Function runtime secrets
 
@@ -166,7 +166,7 @@ Rationale for empty Sandbox URLs:
 
 - A banner widget reads `AppConfig.environment` and, for non-production builds, displays a fixed colored bar at the top of the app:
   - staging: yellow, label "STAGING"
-  - debug: green, label "DEBUG"
+  - dev: green, label "DEV"
 - App icon variants reinforce the same distinction on the home screen.
 
 ### Topology
@@ -194,16 +194,16 @@ staging
   RTDN       : staging Play app → peppercheck-rtdn-staging → BETA Supabase
   OAuth      : staging Web client (Supabase BETA), staging Android client
 
-debug
-  App        : dev.cloveclove.peppercheck.debug (local only)
-  Firebase   : peppercheck-debug
+dev
+  App        : dev.cloveclove.peppercheck.dev (local only)
+  Firebase   : peppercheck-dev
   Supabase   : local (`supabase start`)
   Webapp     : localhost:3000 (`npm run dev`)
-  R2         : peppercheck-debug
+  R2         : peppercheck-dev
   Stripe     : sandbox B → stripe-cli forward → localhost
   ASSN       : no URLs (server-side ASSN validated via staging TestFlight)
   RTDN       : none
-  OAuth      : dev Web client (local Supabase), debug Android client (debug.keystore)
+  OAuth      : dev Web client (local Supabase), dev Android client (debug.keystore)
 ```
 
 ## Phases
@@ -222,18 +222,18 @@ Scriptable steps land under `scripts/setup/`. Scripts read credentials from envi
 
 | # | Task | Label |
 |---|---|---|
-| 0.1 | Read `AppConfig.environment` and render a non-production banner widget at the top of the app (yellow "STAGING" / green "DEBUG"). | 🤖 PR |
+| 0.1 | Read `AppConfig.environment` and render a non-production banner widget at the top of the app (yellow "STAGING" / green "DEV"). | 🤖 PR |
 | 0.2 | Add `supabase secrets set` step to `deploy-beta.yml` and `deploy-production.yml` so all Edge Function runtime secrets are reconciled on every deploy. | 🤖 PR |
 | 0.3 | Add `developer-docs/modules/ROOT/pages/operations/secret-management.adoc` listing required secrets per environment and documenting the "CI reconciles on every deploy; one-off updates via dashboard are fine" policy. | 🤖 PR |
-| 0.4 | Create a dedicated Stripe sandbox for debug and issue `DEBUG_STRIPE_PUBLISHABLE_KEY` / `DEBUG_STRIPE_SECRET_KEY`. | ✋ Stripe Dashboard |
-| 0.5 | Add `developer-docs/modules/ROOT/pages/operations/stripe-cli-setup.adoc` documenting `stripe login` against the debug sandbox and `stripe listen --forward-to http://localhost:54321/functions/v1/handle-stripe-webhook`. | 🤖 PR |
+| 0.4 | Create a dedicated Stripe sandbox for dev and issue `DEV_STRIPE_PUBLISHABLE_KEY` / `DEV_STRIPE_SECRET_KEY`. | ✋ Stripe Dashboard |
+| 0.5 | Add `developer-docs/modules/ROOT/pages/operations/stripe-cli-setup.adoc` documenting `stripe login` against the dev sandbox and `stripe listen --forward-to http://localhost:54321/functions/v1/handle-stripe-webhook`. | 🤖 PR |
 | 0.6 | Add `.claude/rules/multi-environment-setup.md` capturing the per-environment operational assumptions for AI tooling. | 🤖 PR |
 
 **Dependencies:** none.
 
-**Verification:** After staging deploy, the staging build shows the "STAGING" banner; `supabase secrets list --project-ref <BETA>` reflects all expected secrets; the debug sandbox boots and `stripe listen` forwards an event to local Supabase.
+**Verification:** After staging deploy, the staging build shows the "STAGING" banner; `supabase secrets list --project-ref <BETA>` reflects all expected secrets; the dev sandbox boots and `stripe listen` forwards an event to local Supabase.
 
-**Issue layout:** 4 task-cluster issues filed directly under the umbrella — `env banner`, `CI secret automation`, `operations runbook`, `debug Stripe sandbox`. Phase 0 itself is not a GitHub issue. Each cluster is sized to roughly one PR (the debug Stripe sandbox issue tracks an operator-side manual task with no PR).
+**Issue layout:** 4 task-cluster issues filed directly under the umbrella — `env banner`, `CI secret automation`, `operations runbook`, `dev Stripe sandbox`. Phase 0 itself is not a GitHub issue. Each cluster is sized to roughly one PR (the dev Stripe sandbox issue tracks an operator-side manual task with no PR).
 
 ### Phase 1: Bundle ID + Firebase 3-project + Auth split
 
@@ -241,18 +241,18 @@ Scriptable steps land under `scripts/setup/`. Scripts read credentials from envi
 
 | # | Task | Label |
 |---|---|---|
-| 1.1 | Android: declare `productFlavors` in `android/app/build.gradle.kts` (`debug` / `staging` / `production`) with `applicationIdSuffix`; add per-flavor source sets. | 🤖 PR |
+| 1.1 | Android: declare `productFlavors` in `android/app/build.gradle.kts` (`dev` / `staging` / `production`) with `applicationIdSuffix`; add per-flavor source sets. | 🤖 PR |
 | 1.2 | iOS: create three schemes (`Runner-Debug`, `Runner-Staging`, `Runner-Production`) with three xcconfig files overriding `PRODUCT_BUNDLE_IDENTIFIER`. | 🔧 Xcode + pbxproj diff |
 | 1.3 | iOS: replace the hard-coded `GIDClientID` in `Info.plist` with an xcconfig variable. | 🤖 PR |
-| 1.4 | `scripts/setup/bootstrap-firebase-projects.sh`: create `peppercheck-staging` and `peppercheck-debug` via `firebase projects:create`; confirm Blaze plan as needed. | 🤖 |
+| 1.4 | `scripts/setup/bootstrap-firebase-projects.sh`: create `peppercheck-staging` and `peppercheck-dev` via `firebase projects:create`; confirm Blaze plan as needed. | 🤖 |
 | 1.5 | `scripts/setup/register-firebase-apps.sh <env>`: create iOS + Android apps in the target project via `firebase apps:create` and download configs via `firebase apps:sdkconfig`. | 🤖 |
-| 1.6 | Place per-flavor config files: `android/app/src/{debug,staging,production}/google-services.json` and `ios/Runner/Firebase/GoogleService-Info-{Debug,Staging,Production}.plist` (all gitignored, injected by CI). | 🤖 |
+| 1.6 | Place per-flavor config files: `android/app/src/{dev,staging,production}/google-services.json` and `ios/Runner/Firebase/GoogleService-Info-{Dev,Staging,Production}.plist` (all gitignored, injected by CI). | 🤖 |
 | 1.7 | CI workflow updates: split `GOOGLE_SERVICES_JSON` into `GOOGLE_SERVICES_JSON_{STAGING,PRODUCTION}` and write each to the matching source set path. | 🤖 PR |
 | 1.8 | Upload the APNs Auth Key (one `.p8`) to all three Firebase projects with the same Team ID and Key ID. | ✋ Firebase Console |
 | 1.9 | `scripts/setup/create-oauth-clients.sh <env>`: create the Web OAuth client and Android OAuth clients via Google Cloud REST API (with a setup service account); record client IDs. | 🔧 |
 | 1.10 | Register each environment's Web OAuth client in the corresponding Supabase project's Google auth provider. | ✋ Supabase Dashboard (or 🔧 via Supabase Management API) |
 | 1.11 | Set `FIREBASE_SERVICE_ACCOUNT` per Supabase project (each pointing to its matching Firebase project's service account). | 🤖 (Phase 0 mechanism) |
-| 1.12 | Add per-flavor app icons (debug green, staging yellow, production normal). | 🤖 PR |
+| 1.12 | Add per-flavor app icons (dev green, staging yellow, production normal). | 🤖 PR |
 | 1.13 | Verification: build and run all three flavors on real devices, sign in, and confirm test push notifications arrive in each environment via its own Edge Function `send-notification`. | 🔧 |
 
 **Dependencies:** Phase 0 complete.
@@ -263,14 +263,14 @@ Scriptable steps land under `scripts/setup/`. Scripts read credentials from envi
 
 ### Phase 2: Store registration + IAP staging + iOS publishing
 
-**Goal:** Register staging and debug apps with Apple Connect and Play Console, route their store webhooks to BETA Supabase, and stand up iOS publishing automation alongside the existing Android pipeline.
+**Goal:** Register staging and dev apps with Apple Connect and Play Console, route their store webhooks to BETA Supabase, and stand up iOS publishing automation alongside the existing Android pipeline.
 
 | # | Task | Label |
 |---|---|---|
-| 2.1 | Register `.staging` and `.debug` bundle IDs on Apple Developer Portal via App Store Connect API `bundleIds` endpoint. | 🤖 (`register-apple-bundle-ids.sh`) |
+| 2.1 | Register `.staging` and `.dev` bundle IDs on Apple Developer Portal via App Store Connect API `bundleIds` endpoint. | 🤖 (`register-apple-bundle-ids.sh`) |
 | 2.2 | Create the Apple Connect staging app via App Store Connect API `apps`. | 🤖 |
-| 2.3 | Create the Apple Connect debug app (IAP only, no store distribution). | 🤖 |
-| 2.4 | Clone IAP products from the production app into the staging and debug apps. | 🤖 (`clone-iap-products.sh`) |
+| 2.3 | Create the Apple Connect dev app (IAP only, no store distribution). | 🤖 |
+| 2.4 | Clone IAP products from the production app into the staging and dev apps. | 🤖 (`clone-iap-products.sh`) |
 | 2.5 | Configure ASSN V2 URLs on the staging app: Production URL → BETA Supabase, Sandbox URL empty. | 🤖 |
 | 2.6 | Create the TestFlight internal testing group on the staging app and invite testers. | 🔧 (API + Connect UI) |
 | 2.7 | Create the Play Console staging app for `dev.cloveclove.peppercheck.staging`. | ✋ Play Console (no API) |
@@ -289,7 +289,7 @@ Scriptable steps land under `scripts/setup/`. Scripts read credentials from envi
 
 **Verification:** subscribe / cancel / renew lifecycle observable end-to-end in BETA Supabase for both platforms; production tag triggers a TestFlight build for iOS and a Play Store internal upload for Android.
 
-**Issue layout:** 5 task-cluster issues filed directly under the umbrella — `Apple Connect staging+debug apps + IAP + ASSN`, `Play Console staging app + IAP`, `staging RTDN Pub/Sub`, `Play Store upload automation`, `iOS TestFlight upload automation`. Each cluster is roughly one PR.
+**Issue layout:** 5 task-cluster issues filed directly under the umbrella — `Apple Connect staging+dev apps + IAP + ASSN`, `Play Console staging app + IAP`, `staging RTDN Pub/Sub`, `Play Store upload automation`, `iOS TestFlight upload automation`. Each cluster is roughly one PR.
 
 ### Phase 3a: Mobile observability (Firebase suite)
 
@@ -321,7 +321,7 @@ Scriptable steps land under `scripts/setup/`. Scripts read credentials from envi
 
 GUI-only steps that cannot be scripted:
 
-- Create Stripe debug sandbox (Stripe Dashboard, Phase 0)
+- Create Stripe dev sandbox (Stripe Dashboard, Phase 0)
 - Upload APNs Auth Key (Firebase Console, Phase 1)
 - Create Play Console staging app and configure RTDN target topic (Play Console, Phase 2)
 - Register Supabase Google auth provider (Supabase Dashboard; Management API may substitute, Phase 1)
@@ -338,10 +338,10 @@ GUI-only steps that cannot be scripted:
 ### Future work
 
 - **Sentry or equivalent server-side error tracking**: Edge Functions and Cloudflare Workers fall back on Supabase logs and Cloudflare Observability for now.
-- **OSS contributor mock services + operator debug ergonomics**: a debug-only layer that bypasses real external services. Two motivations:
-  - OSS contributor onboarding: run a debug build without provisioning Firebase, Stripe, R2, Apple Developer, or Play Console accounts.
-  - Operator debug ergonomics: validate subscription / point grant / payout flows without going through a TestFlight review cycle.
-  - Implementation ideas (separate spec): a debug-only "simulated purchase" button that calls the Edge Function to grant a subscription tier directly; a "simulated payout" button that updates the ledger without invoking Stripe Connect; a "simulated push trigger" that fires a local notification. Mock layer enabled only when `AppConfig.environment == debug`, dead-code-eliminated otherwise.
+- **OSS contributor mock services + operator dev ergonomics**: a dev-only layer that bypasses real external services. Two motivations:
+  - OSS contributor onboarding: run a dev build without provisioning Firebase, Stripe, R2, Apple Developer, or Play Console accounts.
+  - Operator dev ergonomics: validate subscription / point grant / payout flows without going through a TestFlight review cycle.
+  - Implementation ideas (separate spec): a dev-only "simulated purchase" button that calls the Edge Function to grant a subscription tier directly; a "simulated payout" button that updates the ledger without invoking Stripe Connect; a "simulated push trigger" that fires a local notification. Mock layer enabled only when `AppConfig.environment == dev`, dead-code-eliminated otherwise.
 - **Developer-docs restructure**: tracked separately ([#400](https://github.com/cloveclovedev/peppercheck/issues/400)).
 - **Apple App Store submission automation**: TestFlight upload is in Phase 2; full App Store submission (screenshots, release notes, phased rollout) is deferred to a separate spec.
 - **Play Store submission automation beyond internal track**: Phase 2 covers internal-track upload; production-track promotion automation is deferred.
@@ -366,7 +366,7 @@ GUI-only steps that cannot be scripted:
 #### iOS `CFBundleDisplayName` per flavor
 
 - (a) Same display name ("PepperCheck") across flavors; rely on icon variants only.
-- (b) Distinct display names ("PepperCheck", "PepperCheck Staging", "PepperCheck Debug").
+- (b) Distinct display names ("PepperCheck", "PepperCheck Staging", "PepperCheck Dev").
 
 **Recommendation:** (b). Distinct bundle IDs mean store review is unaffected; the operator gains immediate visual distinction on the home screen.
 
@@ -388,19 +388,19 @@ Firebase Crashlytics collects device identifiers in crash reports. Revisit the p
 
 For the staging app, decide who is invited to the internal testing group. Initial assumption: operator only.
 
-#### IAP product visibility in staging and debug builds
+#### IAP product visibility in staging and dev builds
 
 - (a) Same UI as production — subscribe button visible, real IAP flow triggered.
 - (b) Hide subscribe UI, expose a dedicated "test subscription" UI.
 
-**Recommendation:** (a) for staging (matches production validation). Debug build can either reuse (a) and let the back end reject, or wait for the future debug ergonomics layer (simulated purchase button).
+**Recommendation:** (a) for staging (matches production validation). Dev build can either reuse (a) and let the back end reject, or wait for the future dev ergonomics layer (simulated purchase button).
 
 ### Deferred (revisit later)
 
 - **Per-flavor app version numbering**: future work; not addressed in Phases 0–3a.
 - **Crashlytics alert thresholds**: tune after Phase 3a goes live with real data.
 - **Cron job env gating**: revisit only if assumptions change.
-- **Debug ergonomics features (simulated purchase, etc.)**: independent future spec; can be authored once Phase 1 lands.
+- **Dev ergonomics features (simulated purchase, etc.)**: independent future spec; can be authored once Phase 1 lands.
 
 ## References
 
@@ -446,3 +446,4 @@ Cross-referenced:
 |---|---|
 | 2026-05-11 | Initial draft. |
 | 2026-05-11 | Clarify issue layout: umbrella decomposes into a flat list of task-cluster issues sized to roughly one PR each; Phases are doc-only structural groupings, not GitHub issues. |
+| 2026-06-06 | Renamed environment identifier `debug` → `dev` throughout. Rationale: see [`2026-06-05-android-flavor-split-design.md`](2026-06-05-android-flavor-split-design.md) §"Flavor names: `dev` / `staging` / `production`". Implemented in #445. |

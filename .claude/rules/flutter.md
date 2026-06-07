@@ -5,10 +5,10 @@
 After modifying Dart source files, verify the app compiles:
 
 ```bash
-cd peppercheck_flutter && flutter build apk --debug -t lib/main_debug.dart 2>&1 | tail -10
+cd peppercheck_flutter && flutter build apk --debug -t lib/main_dev.dart 2>&1 | tail -10
 ```
 
-The project uses flavored entry points (`main_debug.dart`, `main_staging.dart`, `main_production.dart`), not `lib/main.dart`.
+The project uses flavored entry points (`main_dev.dart`, `main_staging.dart`, `main_production.dart`), not `lib/main.dart`.
 
 ## Riverpod Controller Naming
 

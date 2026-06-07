@@ -21,9 +21,9 @@ class EnvironmentBanner extends ConsumerWidget {
           color: AppColors.accentYellowLight,
           child: child,
         );
-      case AppEnvironment.debug:
+      case AppEnvironment.dev:
         return Banner(
-          message: 'DEBUG',
+          message: 'DEV',
           location: BannerLocation.topEnd,
           color: AppColors.accentGreenLight,
           child: child,

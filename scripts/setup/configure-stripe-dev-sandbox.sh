@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 #
-# Guided setup for the PepperCheck debug Stripe sandbox.
+# Guided setup for the PepperCheck dev Stripe sandbox.
 #
 # What this does:
-#   1. Confirms the debug sandbox has been created in the Stripe Dashboard.
-#   2. Runs `stripe login --project-name=cloveclove-debug` (browser-based).
-#   3. Runs `stripe listen --project-name=cloveclove-debug --print-secret`
+#   1. Confirms the dev sandbox has been created in the Stripe Dashboard.
+#   2. Runs `stripe login --project-name=cloveclove-dev` (browser-based).
+#   3. Runs `stripe listen --project-name=cloveclove-dev --print-secret`
 #      and prints the resulting webhook signing secret.
 #   4. Prints the two .env lines the operator should paste into
 #      supabase/functions/.env, plus verification commands.
@@ -28,7 +28,7 @@ cat <<'EOF'
 
 Before continuing, in the Stripe Dashboard:
 
-  1. Create a new sandbox dedicated to local debug.
+  1. Create a new sandbox dedicated to local dev.
      URL: https://dashboard.stripe.com/test/sandboxes
   2. Enable Stripe Connect for that sandbox
      (Settings > Connect > Get started, in the new sandbox).
@@ -37,7 +37,7 @@ Before continuing, in the Stripe Dashboard:
 
 EOF
 
-read -r -p "Have you created the debug sandbox and enabled Connect? [y/N]: " answer
+read -r -p "Have you created the dev sandbox and enabled Connect? [y/N]: " answer
 case "${answer:-N}" in
   y|Y|yes|YES) ;;
   *)
@@ -47,19 +47,19 @@ case "${answer:-N}" in
 esac
 
 echo
-echo "Setting up the 'cloveclove-debug' Stripe CLI profile."
-echo "A browser window will open — approve the pairing and SELECT THE DEBUG SANDBOX"
+echo "Setting up the 'cloveclove-dev' Stripe CLI profile."
+echo "A browser window will open — approve the pairing and SELECT THE DEV SANDBOX"
 echo "(not the staging sandbox or live mode)."
 echo
-stripe login --project-name=cloveclove-debug
+stripe login --project-name=cloveclove-dev
 
 echo
 echo "Fetching the local webhook signing secret..."
-webhook_secret=$(stripe listen --project-name=cloveclove-debug --print-secret)
+webhook_secret=$(stripe listen --project-name=cloveclove-dev --print-secret)
 
 if [[ -z "${webhook_secret}" ]]; then
   echo "Error: stripe listen --print-secret returned empty output." >&2
-  echo "Check that the cloveclove-debug profile was set up correctly." >&2
+  echo "Check that the cloveclove-dev profile was set up correctly." >&2
   exit 1
 fi
 
@@ -70,7 +70,7 @@ Setup complete. Next steps for the operator:
 ------------------------------------------------------------
 
 1. Open supabase/functions/.env (create it from supabase/functions/.env.example
-   if it does not exist) and add or update these two lines with the debug
+   if it does not exist) and add or update these two lines with the dev
    sandbox values:
 
    STRIPE_SECRET_KEY=<paste your sk_test_... from the Dashboard>
@@ -83,12 +83,12 @@ Setup complete. Next steps for the operator:
 
 3. Start the webhook forwarder (in a second terminal):
 
-   stripe listen --project-name=cloveclove-debug \\
+   stripe listen --project-name=cloveclove-dev \\
      --forward-to http://localhost:54321/functions/v1/handle-stripe-webhook
 
 4. Trigger a test event (in a third terminal):
 
-   stripe trigger account.updated --project-name=cloveclove-debug
+   stripe trigger account.updated --project-name=cloveclove-dev
 
 5. Verify in the 'supabase functions serve' logs that the event arrived
    with a 200 response and signature verification passed.

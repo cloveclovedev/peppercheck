@@ -39,13 +39,13 @@ void main() {
     expect(find.text('child'), findsOneWidget);
   });
 
-  testWidgets('debug: green DEBUG Banner at topEnd', (tester) async {
+  testWidgets('dev: green DEV Banner at topEnd', (tester) async {
     await tester.pumpWidget(
-      _harness(env: AppEnvironment.debug, child: const Text('child')),
+      _harness(env: AppEnvironment.dev, child: const Text('child')),
     );
 
     final banner = tester.widget<Banner>(find.byType(Banner));
-    expect(banner.message, 'DEBUG');
+    expect(banner.message, 'DEV');
     expect(banner.color, AppColors.accentGreenLight);
     expect(banner.location, BannerLocation.topEnd);
     expect(find.text('child'), findsOneWidget);

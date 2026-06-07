@@ -47,7 +47,7 @@ After placing the file(s), build and run the app:
 [source,bash]
 ----
 cd peppercheck_flutter
-flutter run -t lib/main_debug.dart
+flutter run -t lib/main_dev.dart
 ----
 
 If `Firebase has not been correctly initialized` appears at startup,
