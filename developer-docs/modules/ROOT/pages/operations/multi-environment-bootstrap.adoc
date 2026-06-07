@@ -1,0 +1,163 @@
+= Multi-Environment Bootstrap
+
+[NOTE]
+====
+**Operator only.** This runbook is for the PepperCheck project operator provisioning Firebase / GCP / GitHub Secrets infrastructure. Day-to-day developers and external contributors can skip this page — local Flutter dev only needs the `dev` flavor setup covered in xref:flutter/initial-local-setup.adoc[Initial Local Setup].
+====
+
+Operator-only runbook for provisioning the Phase 1 multi-environment setup — Firebase projects, service accounts, per-flavor configs, and the matching GitHub Secrets. Run these scripts once per fresh workstation; they are all idempotent.
+
+Background: see `docs/superpowers/specs/2026-06-05-android-flavor-split-design.md` and the umbrella roadmap issue #418.
+
+== When to use
+
+Use these scripts when:
+
+* Bootstrapping a new operator workstation for releasing PepperCheck.
+* Re-provisioning after a Firebase project rebuild or service-account key rotation.
+* Re-downloading per-flavor `google-services.json` / `GoogleService-Info-*.plist` to a fresh clone.
+
+Day-to-day Flutter development does NOT need these. Once the `dev` flavor configs are in place, regular `flutter run --flavor dev -t lib/main_dev.dart` works against local Supabase + the `peppercheck-dev` Firebase project.
+
+== Scripts overview
+
+[cols="1,3,2", options="header"]
+|===
+| Script | Purpose | When to (re-)run
+
+| `scripts/setup/bootstrap-firebase-projects.sh`
+| Idempotently creates the two non-production Firebase projects (`peppercheck-dev`, `peppercheck-staging`). The production project `peppercheck` is untouched. Spark plan is sufficient — no Blaze prompt.
+| Once per organization; safe to re-run (skips existing projects).
+
+| `scripts/setup/register-firebase-apps.sh <env>`
+| Registers Android + iOS apps in the target Firebase project (creates them if absent) and downloads `google-services.json` + `GoogleService-Info-<Env>.plist` to per-flavor repo paths. `<env>` is one of `dev`, `staging`, `production`. Resolves the project ID at runtime from the project's display name, so the production project's auto-suffixed ID is not hardcoded.
+| Once per env per workstation. Re-run to re-download configs after a Firebase app rebuild or to refresh a stale local config.
+
+| `scripts/setup/bootstrap-peppercheck-staging-sa.sh`
+| Creates a `github-actions-deploy` service account in the `peppercheck-staging` Firebase project with `roles/firebasecloudmessaging.admin` + `roles/firebaseappdistro.admin`. Generates a JSON key at `~/.config/peppercheck/peppercheck-staging-sa.json` (mode 0600). Auto-detects which authenticated gcloud account has access to the project.
+| Once per operator workstation. Re-running creates an additional key (previous keys stay active); rotate manually with `gcloud iam service-accounts keys delete` when needed.
+
+| `scripts/setup/setup-deploy-secrets.sh <sa-json-path>`
+| Sets four GitHub Secrets at once via STDIN redirect (values never appear on stdout, in the process list, or in shell history): `BETA_FIREBASE_SERVICE_ACCOUNT_JSON`, `BETA_FIREBASE_APP_ID` (auto-resolved from `firebase apps:list`), `BETA_GOOGLE_SERVICES_JSON`, `PROD_GOOGLE_SERVICES_JSON`.
+| Once per credential refresh. Re-run to update any of the four secrets after a service-account key rotation or staging app re-registration.
+|===
+
+== Order of operations
+
+Run these in order on a fresh workstation:
+
+[source,bash]
+----
+# 0. Pre-flight: `firebase login`, `gcloud auth login <email>`, `gh auth login`,
+#    and confirm `jq` is on PATH.
+
+# 1. Create the two non-production Firebase projects.
+./scripts/setup/bootstrap-firebase-projects.sh
+
+# 2. Register Android + iOS apps in each project and download the
+#    per-flavor Firebase config files (`google-services.json` and
+#    `GoogleService-Info-*.plist`).
+./scripts/setup/register-firebase-apps.sh dev
+./scripts/setup/register-firebase-apps.sh staging
+./scripts/setup/register-firebase-apps.sh production   # <1>
+
+# 3. Provision the staging service account (FCM + FAD admin roles) and
+#    download its JSON key into `~/.config/peppercheck/`.
+./scripts/setup/bootstrap-peppercheck-staging-sa.sh
+
+# 4. Push the four BETA_*/PROD_* secrets to GitHub.
+./scripts/setup/setup-deploy-secrets.sh ~/.config/peppercheck/peppercheck-staging-sa.json
+----
+
+<1> The production Firebase project (`peppercheck`) and its Android/iOS apps already exist; the script skips creation and only re-downloads configs.
+
+After step 4, also visit the Firebase Console once to enable App Distribution on `peppercheck-staging` and to create the `peppercheck-staging-testers` group (this part has no API). See `deploy-beta.yml` for the literal group name the CI invokes.
+
+== Generated files
+
+[cols="2,1,2", options="header"]
+|===
+| Path | Source script | Notes
+
+| `peppercheck_flutter/android/app/src/dev/google-services.json`
+| `register-firebase-apps.sh dev`
+| dev flavor Firebase config; gitignored. CI does not regenerate this in current workflows — dev is local-only.
+
+| `peppercheck_flutter/android/app/src/staging/google-services.json`
+| `register-firebase-apps.sh staging`
+| staging flavor Firebase config; gitignored. CI regenerates from `BETA_GOOGLE_SERVICES_JSON` in `deploy-beta.yml`.
+
+| `peppercheck_flutter/android/app/src/production/google-services.json`
+| `register-firebase-apps.sh production`
+| production flavor Firebase config; gitignored. CI regenerates from `PROD_GOOGLE_SERVICES_JSON` in `deploy-production.yml`.
+
+| `peppercheck_flutter/ios/Runner/Firebase/GoogleService-Info-{Dev,Staging,Production}.plist`
+| `register-firebase-apps.sh <env>`
+| iOS Firebase configs pre-positioned for future #424 / #425 Xcode wiring; currently unread by Xcode.
+
+| `~/.config/peppercheck/peppercheck-staging-sa.json`
+| `bootstrap-peppercheck-staging-sa.sh`
+| Service account JSON key for the staging FAD upload + Edge Function FCM. Mode 0600 inside a mode 0700 directory. Source of truth for `BETA_FIREBASE_SERVICE_ACCOUNT_JSON`.
+|===
+
+== Secrets set by step 4
+
+`setup-deploy-secrets.sh` sets exactly four secrets in the `cloveclovedev/peppercheck` repo:
+
+[cols="2,3", options="header"]
+|===
+| Secret name | Value
+
+| `BETA_FIREBASE_SERVICE_ACCOUNT_JSON`
+| The verbatim contents of the SA JSON path passed to the script. Consumed by `deploy-beta.yml` for both the FAD upload (`google-github-actions/auth@v2`) and the Edge Function `supabase secrets set` step. The deploy workflow flattens it to single-line JSON via `jq -c` at the point of env-file write.
+
+| `BETA_FIREBASE_APP_ID`
+| Auto-resolved via `firebase apps:list --project peppercheck-staging --json` (the staging Android app's `appId` field). Consumed by `deploy-beta.yml`'s `firebase appdistribution:distribute --app` argument.
+
+| `BETA_GOOGLE_SERVICES_JSON`
+| Verbatim contents of `peppercheck_flutter/android/app/src/staging/google-services.json`. Written to the same path in CI by `deploy-beta.yml` immediately before `flutter build apk --flavor staging`.
+
+| `PROD_GOOGLE_SERVICES_JSON`
+| Verbatim contents of `peppercheck_flutter/android/app/src/production/google-services.json`. Written to the same path in CI by `deploy-production.yml` immediately before `flutter build appbundle --flavor production`. This is the legacy `GOOGLE_SERVICES_JSON` secret in its renamed form (see `scripts/github-secrets.example` for the broader naming convention).
+|===
+
+Other Firebase / Play SA secrets (`PROD_FIREBASE_SERVICE_ACCOUNT_JSON`, `BETA_/PROD_GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`) are NOT touched by this script — they are set manually per the commands documented in `scripts/github-secrets.example`.
+
+== JSON secret convention
+
+All JSON-shaped GitHub Secrets store the raw file contents (multi-line is fine). The deploy workflows normalize the value to single-line via `jq -c .` at each env-file write site (see `deploy-beta.yml` / `deploy-production.yml` around the `printf "FIREBASE_SERVICE_ACCOUNT_JSON='%s'\n"` line). This gives operators a single rule:
+
+[source,bash]
+----
+gh secret set NAME < /path/to/file.json
+----
+
+regardless of how the value is later consumed.
+
+== Re-running and idempotency
+
+All four scripts are safe to re-run.
+
+[cols="1,2", options="header"]
+|===
+| Script | Re-run behavior
+
+| `bootstrap-firebase-projects.sh`
+| Prints `[skip] ... already exists` for existing projects; creates only missing ones.
+
+| `register-firebase-apps.sh <env>`
+| Prints `[skip-android]` / `[skip-ios]` for existing apps. Always overwrites the local `google-services.json` and `GoogleService-Info-*.plist` with a fresh download.
+
+| `bootstrap-peppercheck-staging-sa.sh`
+| Skips SA creation and IAM grants if they already exist. Always creates a NEW JSON key — old keys remain active until manually deleted via `gcloud iam service-accounts keys delete`.
+
+| `setup-deploy-secrets.sh`
+| Overwrites all four secrets every time; no skip logic.
+|===
+
+== Pre-requisites
+
+* `firebase` CLI logged in (`firebase login`) with access to the parent Firebase organization.
+* `gcloud` CLI authenticated to a Google account with IAM permissions on `peppercheck-staging`. The script auto-detects which authenticated account has access, so being logged into multiple accounts is fine.
+* `gh` CLI authenticated to `cloveclovedev/peppercheck` with secrets:write scope.
+* `jq` on PATH (pre-installed on macOS via Homebrew, or `apt install jq` on Debian/Ubuntu).
