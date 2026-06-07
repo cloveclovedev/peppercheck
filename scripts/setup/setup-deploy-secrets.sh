@@ -7,7 +7,7 @@
 #
 # The argument is normally the file written by
 # bootstrap-peppercheck-staging-sa.sh
-# (~/.config/peppercheck-secrets/peppercheck-staging-sa.json).
+# (~/.config/peppercheck/peppercheck-staging-sa.json).
 #
 # Pre-req:
 # - gh CLI logged in with repo write access to cloveclovedev/peppercheck.

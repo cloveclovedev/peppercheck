@@ -11,11 +11,11 @@
 # manually via `gcloud iam service-accounts keys delete` when needed.
 #
 # Output:
-#   ~/.config/peppercheck-secrets/peppercheck-staging-sa.json (mode 0600)
+#   ~/.config/peppercheck/peppercheck-staging-sa.json (mode 0600)
 #
 # Next step:
 #   scripts/setup/setup-deploy-secrets.sh \
-#     ~/.config/peppercheck-secrets/peppercheck-staging-sa.json
+#     ~/.config/peppercheck/peppercheck-staging-sa.json
 
 set -euo pipefail
 
@@ -24,7 +24,7 @@ command -v gcloud >/dev/null || { echo "ERROR: gcloud CLI not installed" >&2; ex
 project="peppercheck-staging"
 sa_name="github-actions-deploy"
 sa_email="${sa_name}@${project}.iam.gserviceaccount.com"
-output_dir="${HOME}/.config/peppercheck-secrets"
+output_dir="${HOME}/.config/peppercheck"
 output_key="${output_dir}/peppercheck-staging-sa.json"
 
 # Auto-detect which authenticated gcloud account has access to the
