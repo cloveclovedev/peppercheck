@@ -27,16 +27,38 @@ sa_email="${sa_name}@${project}.iam.gserviceaccount.com"
 output_dir="${HOME}/.config/peppercheck-secrets"
 output_key="${output_dir}/peppercheck-staging-sa.json"
 
+# Auto-detect which authenticated gcloud account has access to the
+# project. Avoids the "wrong active account" footgun on workstations
+# with multiple gcloud identities.
+active_account=""
+for acct in $(gcloud auth list --filter=-status:revoked --format="value(account)" 2>/dev/null); do
+  if gcloud projects describe "$project" --account="$acct" --quiet >/dev/null 2>&1; then
+    active_account="$acct"
+    break
+  fi
+done
+
+if [[ -z "$active_account" ]]; then
+  echo "ERROR: no authenticated gcloud account can access project '$project'." >&2
+  echo "       Authenticated accounts:" >&2
+  gcloud auth list --filter=-status:revoked --format="value(account)" 2>/dev/null | sed 's/^/         /' >&2
+  echo "" >&2
+  echo "       If one of these SHOULD have access, the token may be expired." >&2
+  echo "       Re-authenticate with: gcloud auth login <email>" >&2
+  exit 1
+fi
+echo "[account] using ${active_account}"
+
 mkdir -p "$output_dir"
 chmod 700 "$output_dir"
 
-if gcloud iam service-accounts describe "$sa_email" --project "$project" --quiet >/dev/null 2>&1; then
+if gcloud iam service-accounts describe "$sa_email" --project "$project" --account="$active_account" --quiet >/dev/null 2>&1; then
   echo "[skip] service account ${sa_email} already exists"
 else
   echo "[create] service account ${sa_email}"
   gcloud iam service-accounts create "$sa_name" \
     --display-name="GitHub Actions deploy" \
-    --project "$project" --quiet >/dev/null
+    --project "$project" --account="$active_account" --quiet >/dev/null
 fi
 
 for role in \
