@@ -112,8 +112,6 @@
     "nextPayout": "次回振り込み予定",
     "payoutDetailsCta": "詳細 →",
     "payoutDashboardLaunchFailed": "Stripeダッシュボードを開けませんでした。少し時間をおいて再度お試しください。",
-    "payoutStatusSuccess": "成功",
-    "payoutStatusPending": "保留中",
     "payoutStatusFailed": "失敗",
     "payoutStatusSkipped": "スキップ",
     "availablePointsHelp": {

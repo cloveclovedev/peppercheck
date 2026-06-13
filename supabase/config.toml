@@ -695,7 +695,7 @@ entrypoint = "./functions/sweep-r2-stale-objects/index.ts"
 
 [functions.create-express-dashboard-link]
 enabled = true
-verify_jwt = false
+verify_jwt = true
 import_map = "./functions/create-express-dashboard-link/deno.json"
 # Uncomment to specify a custom file path to the entrypoint.
 # Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
