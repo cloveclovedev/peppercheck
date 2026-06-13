@@ -108,10 +108,10 @@
     "obligationCount": "$count件",
     "rewardBalance": "報酬残高",
     "totalEarned": "累計受取額",
-    "recentPayout": "直近",
+    "recentPayout": "最近の送金処理",
     "nextPayout": "次回振り込み予定",
-    "payoutStatusSuccess": "成功",
-    "payoutStatusPending": "保留中",
+    "payoutDetailsCta": "詳細 →",
+    "payoutDashboardLaunchFailed": "Stripeダッシュボードを開けませんでした。少し時間をおいて再度お試しください。",
     "payoutStatusFailed": "失敗",
     "payoutStatusSkipped": "スキップ",
     "availablePointsHelp": {

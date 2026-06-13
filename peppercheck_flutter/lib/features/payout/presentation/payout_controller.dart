@@ -64,4 +64,26 @@ class PayoutController extends _$PayoutController {
       }
     });
   }
+
+  Future<void> openExpressDashboard() async {
+    try {
+      final url = await ref
+          .read(stripePayoutRepositoryProvider)
+          .createExpressDashboardSession();
+
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        throw Exception('Could not launch $url');
+      }
+    } catch (e, stack) {
+      _logger.e(
+        'Failed to open Express dashboard',
+        error: e,
+        stackTrace: stack,
+      );
+      rethrow;
+    }
+  }
 }

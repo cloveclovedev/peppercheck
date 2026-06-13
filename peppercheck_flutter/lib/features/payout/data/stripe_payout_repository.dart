@@ -67,6 +67,23 @@ class StripePayoutRepository {
     }
   }
 
+  Future<String> createExpressDashboardSession() async {
+    try {
+      final response = await _supabase.functions.invoke(
+        'create-express-dashboard-link',
+      );
+      final data = response.data as Map<String, dynamic>;
+      return data['url'] as String;
+    } catch (e, stack) {
+      _logger.e(
+        'Failed to create Express dashboard session',
+        error: e,
+        stackTrace: stack,
+      );
+      rethrow;
+    }
+  }
+
   Future<PayoutRequestResponse> requestPayout({
     required int amountMinor,
     required String currencyCode,

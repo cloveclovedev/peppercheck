@@ -360,17 +360,17 @@ class TranslationsDashboardJa {
 	/// ja: '累計受取額'
 	String get totalEarned => '累計受取額';
 
-	/// ja: '直近'
-	String get recentPayout => '直近';
+	/// ja: '最近の送金処理'
+	String get recentPayout => '最近の送金処理';
 
 	/// ja: '次回振り込み予定'
 	String get nextPayout => '次回振り込み予定';
 
-	/// ja: '成功'
-	String get payoutStatusSuccess => '成功';
+	/// ja: '詳細 →'
+	String get payoutDetailsCta => '詳細 →';
 
-	/// ja: '保留中'
-	String get payoutStatusPending => '保留中';
+	/// ja: 'Stripeダッシュボードを開けませんでした。少し時間をおいて再度お試しください。'
+	String get payoutDashboardLaunchFailed => 'Stripeダッシュボードを開けませんでした。少し時間をおいて再度お試しください。';
 
 	/// ja: '失敗'
 	String get payoutStatusFailed => '失敗';
@@ -1673,10 +1673,10 @@ extension on Translations {
 			'dashboard.obligationCount' => ({required Object count}) => '${count}件',
 			'dashboard.rewardBalance' => '報酬残高',
 			'dashboard.totalEarned' => '累計受取額',
-			'dashboard.recentPayout' => '直近',
+			'dashboard.recentPayout' => '最近の送金処理',
 			'dashboard.nextPayout' => '次回振り込み予定',
-			'dashboard.payoutStatusSuccess' => '成功',
-			'dashboard.payoutStatusPending' => '保留中',
+			'dashboard.payoutDetailsCta' => '詳細 →',
+			'dashboard.payoutDashboardLaunchFailed' => 'Stripeダッシュボードを開けませんでした。少し時間をおいて再度お試しください。',
 			'dashboard.payoutStatusFailed' => '失敗',
 			'dashboard.payoutStatusSkipped' => 'スキップ',
 			'dashboard.availablePointsHelp.title' => '利用可能ポイントとは？',
