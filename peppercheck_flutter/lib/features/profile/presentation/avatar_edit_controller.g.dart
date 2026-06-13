@@ -34,7 +34,7 @@ final class AvatarEditControllerProvider
 }
 
 String _$avatarEditControllerHash() =>
-    r'ba84b0e78953ccf0c194162314123cd203333300';
+    r'9ec24b332b48f7f71ea1fd198673ac4711b55567';
 
 abstract class _$AvatarEditController extends $AsyncNotifier<void> {
   FutureOr<void> build();

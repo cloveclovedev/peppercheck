@@ -369,6 +369,9 @@ class TranslationsDashboardJa {
 	/// ja: '詳細 →'
 	String get payoutDetailsCta => '詳細 →';
 
+	/// ja: 'Stripeダッシュボードを開けませんでした。少し時間をおいて再度お試しください。'
+	String get payoutDashboardLaunchFailed => 'Stripeダッシュボードを開けませんでした。少し時間をおいて再度お試しください。';
+
 	/// ja: '成功'
 	String get payoutStatusSuccess => '成功';
 
@@ -1679,6 +1682,7 @@ extension on Translations {
 			'dashboard.recentPayout' => '最近の送金処理',
 			'dashboard.nextPayout' => '次回振り込み予定',
 			'dashboard.payoutDetailsCta' => '詳細 →',
+			'dashboard.payoutDashboardLaunchFailed' => 'Stripeダッシュボードを開けませんでした。少し時間をおいて再度お試しください。',
 			'dashboard.payoutStatusSuccess' => '成功',
 			'dashboard.payoutStatusPending' => '保留中',
 			'dashboard.payoutStatusFailed' => '失敗',

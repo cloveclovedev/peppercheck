@@ -211,36 +211,17 @@ class _SummaryContent extends ConsumerWidget {
             (hasRecentPayoutToShow || hasRewardBalance)) ...[
           const SizedBox(height: AppSizes.baseCardGap),
           BaseCard(
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  Icons.send,
-                  color: AppColors.textSecondary,
-                  size: AppSizes.baseCardIconSize,
-                ),
-                const SizedBox(width: AppSizes.baseCardIconGap),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (hasRecentPayoutToShow) ...[
-                        _PayoutRow(
-                          label: t.dashboard.recentPayout,
-                          value:
-                              '${_formatCurrency(summary.recentPayout!.amountMinor, summary.recentPayout!.currencyCode, summary.recentPayout!.currencyExponent)} (${_payoutStatusLabel(summary.recentPayout!.status)}) — ${_formatDate(summary.recentPayout!.batchDate)}',
-                        ),
-                      ],
-                      if (hasRecentPayoutToShow && hasRewardBalance)
-                        const SizedBox(height: 4),
-                      if (hasRewardBalance) ...[
-                        _PayoutRow(
-                          label: t.dashboard.nextPayout,
-                          value: _formatDate(summary.nextPayoutDate),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
+                if (hasRecentPayoutToShow) ...[
+                  _RecentPayoutRow(payout: summary.recentPayout!),
+                ],
+                if (hasRecentPayoutToShow && hasRewardBalance)
+                  const SizedBox(height: AppSizes.spacingSmall),
+                if (hasRewardBalance) ...[
+                  _NextPayoutRow(date: summary.nextPayoutDate),
+                ],
               ],
             ),
           ),
@@ -384,21 +365,6 @@ class _SummaryContent extends ConsumerWidget {
     if (date == null) return isoDate;
     return DateFormat('yyyy/M/d').format(date);
   }
-
-  static String _payoutStatusLabel(String status) {
-    switch (status) {
-      case 'success':
-        return t.dashboard.payoutStatusSuccess;
-      case 'pending':
-        return t.dashboard.payoutStatusPending;
-      case 'failed':
-        return t.dashboard.payoutStatusFailed;
-      case 'skipped':
-        return t.dashboard.payoutStatusSkipped;
-      default:
-        return status;
-    }
-  }
 }
 
 class _CardLabel extends StatelessWidget {
@@ -434,31 +400,88 @@ class _CardValue extends StatelessWidget {
   }
 }
 
-class _PayoutRow extends StatelessWidget {
-  final String label;
-  final String value;
-  const _PayoutRow({required this.label, required this.value});
+class _RecentPayoutRow extends ConsumerWidget {
+  final RecentPayout payout;
+
+  const _RecentPayoutRow({required this.payout});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final amount = _SummaryContent._formatCurrency(
+      payout.amountMinor,
+      payout.currencyCode,
+      payout.currencyExponent,
+    );
+    final date = _SummaryContent._formatDate(payout.batchDate);
+    final isFailed = payout.status == 'failed';
+
+    return Row(
+      children: [
+        Icon(
+          Icons.send,
+          color: AppColors.textSecondary,
+          size: AppSizes.baseCardIconSize,
+        ),
+        const SizedBox(width: AppSizes.baseCardIconGap),
+        Expanded(child: _CardLabel(label: t.dashboard.recentPayout)),
+        const SizedBox(width: AppSizes.spacingSmall),
+        Text(
+          date,
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+        ),
+        const SizedBox(width: AppSizes.spacingSmall),
+        _CardValue(
+          value: isFailed
+              ? '$amount (${t.dashboard.payoutStatusFailed})'
+              : amount,
+        ),
+        const SizedBox(width: AppSizes.spacingSmall),
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => _openDashboard(context, ref),
+          child: Text(
+            t.dashboard.payoutDetailsCta,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: AppColors.accentGreen,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _openDashboard(BuildContext context, WidgetRef ref) async {
+    try {
+      await ref.read(payoutControllerProvider.notifier).openExpressDashboard();
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(t.dashboard.payoutDashboardLaunchFailed)),
+      );
+    }
+  }
+}
+
+class _NextPayoutRow extends StatelessWidget {
+  final String date;
+
+  const _NextPayoutRow({required this.date});
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Text(
-          label,
-          style: Theme.of(
-            context,
-          ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+        Icon(
+          Icons.calendar_today_outlined,
+          color: AppColors.textSecondary,
+          size: AppSizes.baseCardIconSize,
         ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            value,
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: AppColors.textPrimary),
-            textAlign: TextAlign.end,
-          ),
-        ),
+        const SizedBox(width: AppSizes.baseCardIconGap),
+        Expanded(child: _CardLabel(label: t.dashboard.nextPayout)),
+        _CardValue(value: _SummaryContent._formatDate(date)),
       ],
     );
   }
