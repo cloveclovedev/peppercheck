@@ -1,0 +1,7 @@
+{
+  "imports": {
+    "@supabase/supabase-js": "jsr:@supabase/supabase-js@2",
+    "@apple/app-store-server-library": "npm:@apple/app-store-server-library@^1",
+    "@std/assert": "jsr:@std/assert@1"
+  }
+}

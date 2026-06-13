@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:peppercheck_flutter/app/theme/app_colors.dart';
@@ -93,7 +95,9 @@ class _PlanSelectionSheet extends StatelessWidget {
                     behavior: HitTestBehavior.opaque,
                     onTap: () => launchUrl(
                       Uri.parse(
-                        'https://play.google.com/store/account/subscriptions',
+                        Platform.isIOS
+                            ? 'https://apps.apple.com/account/subscriptions'
+                            : 'https://play.google.com/store/account/subscriptions',
                       ),
                       mode: LaunchMode.externalApplication,
                     ),
@@ -102,7 +106,9 @@ class _PlanSelectionSheet extends StatelessWidget {
                         vertical: AppSizes.spacingTiny,
                       ),
                       child: Text(
-                        t.billing.cancelViaGooglePlay,
+                        Platform.isIOS
+                            ? t.billing.cancelViaAppStore
+                            : t.billing.cancelViaGooglePlay,
                         style: const TextStyle(
                           fontSize: 12,
                           color: AppColors.textSecondary,
