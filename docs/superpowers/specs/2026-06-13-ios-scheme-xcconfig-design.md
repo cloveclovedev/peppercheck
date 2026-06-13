@@ -27,7 +27,7 @@ This is the iOS counterpart to the Android product-flavor split shipped in PR #4
 - **Apple Connect / TestFlight, provisioning profiles, distribution certificates, iOS CI deploy** — tracked in #425 (iOS reshape) and Phase 2.
 - **Per-flavor app icon variants** — Phase 1 task 1.12, separate Issue.
 - **`firebase_options.dart` per-flavor variants** — single-bundle design in [`2026-05-05-ios-firebase-config-design.md`](2026-05-05-ios-firebase-config-design.md) plus the new Run Script Phase covers what we need.
-- **`.vscode/launch.json` `flutterFlavor` keys** — handled independently by PR #456.
+- **`.vscode/launch.json` `flutterFlavor` keys** — already added by PR #456 (merged before this spec lands).
 - **CI workflow changes** — iOS deploy is not yet automated; nothing in `deploy-beta.yml` / `deploy-production.yml` is modified.
 - **Real-device verification** — Simulator-only verification is sufficient for the issue acceptance criteria. Apple Developer Portal bundle ID registration is therefore not required by this PR.
 
@@ -266,7 +266,7 @@ ios/Flutter/Secrets/*.secrets.xcconfig
 
 ## Verification
 
-VSCode debug — relies on PR #456 having added `flutterFlavor` to `.vscode/launch.json`. Without #456, `Start Debugging` would invoke Flutter without `--flavor`, and the new build configurations (`Debug-<flavor>`) would not match. Either merge #456 first, or cherry-pick its single-file diff onto this branch for local verification, then run `Flutter: Dev (Local)` / `Flutter: Staging (Debug)` / `Flutter: Production` against an iOS Simulator from the device selector.
+VSCode debug — `.vscode/launch.json` already carries `flutterFlavor` on each entry (PR #456). Open one of `Flutter: Dev (Local)` / `Flutter: Staging (Debug)` / `Flutter: Production`, pick an iOS Simulator from the device selector, and run `Start Debugging`.
 
 CLI build-only check (used by future CI):
 
