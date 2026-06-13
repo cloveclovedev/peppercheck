@@ -14,7 +14,7 @@ This is the iOS counterpart to the Android product-flavor split shipped in PR #4
 
 - Three Xcode schemes (`Runner-Dev` / `Runner-Staging` / `Runner-Production`) committed under `xcshareddata/xcschemes/`.
 - Nine build configurations (`Debug-<flavor>` / `Release-<flavor>` / `Profile-<flavor>`) replacing the existing three (`Debug` / `Release` / `Profile`) across the project, the Runner target, and the RunnerTests target.
-- A two-layer xcconfig structure under `ios/Flutter/` separating mode-specific includes (Pods + Generated) from flavor-specific overrides (bundle ID suffix, display name, GID client ID, Firebase plist selector).
+- A single-layer xcconfig structure under `ios/Flutter/`: three flavor base xcconfigs (committed) carrying the per-flavor settings (bundle ID suffix, display name, GID client ID via gitignored secrets, Firebase plist selector), plus nine combined leaves (committed) where each leaf directly includes the per-configuration Pods xcconfig, `Generated.xcconfig`, and the flavor base.
 - `Info.plist` parameterization: `CFBundleDisplayName`, `GIDClientID`, and the Google Sign-In `CFBundleURLSchemes` entry become xcconfig variables.
 - A Run Script Phase that copies `Runner/Firebase/GoogleService-Info-<Flavor>.plist` into `Runner/GoogleService-Info.plist` at the start of every build.
 - `scripts/setup/bootstrap-ios-secrets.sh` to write the initial `ios/Flutter/Secrets/<Flavor>.secrets.xcconfig` files (all three flavors share the production OAuth client ID for now).
@@ -52,28 +52,23 @@ Flutter's `xcode_backend.sh` matches a build configuration name as the literal `
 
 ## Design
 
-### xcconfig structure (two-layer)
+### xcconfig structure (single-layer)
 
 ```
 ios/Flutter/
   ▸ existing — preserved
     Generated.xcconfig             # Flutter-generated, gitignored
-    Debug.xcconfig                 # #include Pods debug + Generated
-    Release.xcconfig               # #include Pods release + Generated
 
-  ▸ new — mode base
-    Profile.xcconfig               # #include Pods profile + Generated
-                                   # (today the Runner target's Profile config uses Release.xcconfig as its
-                                   #  baseConfigurationReference, so Pods .release.xcconfig is what actually
-                                   #  gets pulled in Profile mode. The new Profile.xcconfig switches Profile
-                                   #  to the matching Pods .profile.xcconfig — a small, intentional cleanup.)
+  ▸ existing — removed by this PR
+    Debug.xcconfig                 # superseded by the combined leaves below
+    Release.xcconfig
 
   ▸ new — flavor base (committed)
     Dev.xcconfig
     Staging.xcconfig
     Production.xcconfig
 
-  ▸ new — combined leaf (committed, 2-line includes only)
+  ▸ new — combined leaf (committed, 3-line includes only)
     Debug-dev.xcconfig
     Debug-staging.xcconfig
     Debug-production.xcconfig
@@ -89,6 +84,10 @@ ios/Flutter/
     Secrets/Staging.secrets.xcconfig
     Secrets/Production.secrets.xcconfig
 ```
+
+#### Why single-layer, not the original two-layer plan
+
+An earlier draft proposed a two-layer structure with mode bases (`Debug.xcconfig`, `Release.xcconfig`, `Profile.xcconfig`) factoring out the Pods include + Generated, and combined leaves stacking `mode + flavor`. That doesn't work in practice: CocoaPods generates **one** `Pods-<target>.<configname>.xcconfig` per build configuration, named after the exact lowercase config name. After this PR's migration the config names are `Debug-dev` / `Debug-staging` / ... — so CocoaPods emits `Pods-Runner.debug-dev.xcconfig` / `Pods-Runner.debug-staging.xcconfig` / ..., and no `Pods-Runner.debug.xcconfig` exists. A mode base referencing the now-absent `Pods-Runner.debug.xcconfig` via `#include?` would silently match nothing, and the build would fail at link time with missing search paths and OTHER_LDFLAGS. Pulling the Pods include down into each leaf removes the entire abstraction without losing anything — the single shared piece (`Generated.xcconfig`) is just nine duplicate one-liners, which is fine.
 
 #### Flavor base example: `Dev.xcconfig`
 
@@ -112,11 +111,12 @@ FIREBASE_PLIST_FLAVOR = Dev
 #### Combined leaf example: `Debug-dev.xcconfig`
 
 ```
-#include "Debug.xcconfig"
+#include? "Pods/Target Support Files/Pods-Runner/Pods-Runner.debug-dev.xcconfig"
+#include "Generated.xcconfig"
 #include "Dev.xcconfig"
 ```
 
-That is the entire file. Each of the nine combined xcconfigs is two `#include` lines and nothing else — all settings live in one of the two base layers.
+That is the entire file. Each of the nine combined xcconfigs is three `#include` lines and nothing else — the first picks up the per-configuration CocoaPods settings, the second pulls in Flutter's generated variables, and the third applies flavor-specific overrides (bundle ID, display name, Firebase plist selector, GID client ID via the gitignored secrets include).
 
 #### Secrets file example: `Secrets/Dev.secrets.xcconfig` (gitignored)
 
@@ -257,7 +257,8 @@ ios/Flutter/Secrets/*.secrets.xcconfig
 | `peppercheck_flutter/ios/Runner.xcodeproj/project.pbxproj` | 9 build configurations on project + Runner + RunnerTests, 1 new Run Script Phase, scheme refs updated, `Runner.xcscheme` ref removed |
 | `peppercheck_flutter/ios/Runner.xcodeproj/xcshareddata/xcschemes/Runner-{Dev,Staging,Production}.xcscheme` | 3 new files |
 | `peppercheck_flutter/ios/Runner.xcodeproj/xcshareddata/xcschemes/Runner.xcscheme` | deleted |
-| `peppercheck_flutter/ios/Flutter/Profile.xcconfig` | new |
+| `peppercheck_flutter/ios/Flutter/Debug.xcconfig` | deleted (superseded by combined leaves) |
+| `peppercheck_flutter/ios/Flutter/Release.xcconfig` | deleted (same) |
 | `peppercheck_flutter/ios/Flutter/{Dev,Staging,Production}.xcconfig` | 3 new files |
 | `peppercheck_flutter/ios/Flutter/{Debug,Release,Profile}-{dev,staging,production}.xcconfig` | 9 new files |
 | `peppercheck_flutter/ios/Runner/Info.plist` | 3 keys parameterized |
