@@ -432,21 +432,30 @@ class _RecentPayoutRow extends ConsumerWidget {
           ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
         ),
         const SizedBox(width: AppSizes.spacingSmall),
-        _CardValue(
-          value: isFailed
-              ? '$amount (${t.dashboard.payoutStatusFailed})'
-              : amount,
+        Text(
+          amount,
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
         ),
+        if (isFailed) ...[
+          const SizedBox(width: AppSizes.spacingTiny),
+          Icon(
+            Icons.error,
+            size: 14,
+            color: AppColors.accentRed,
+            semanticLabel: t.dashboard.payoutStatusFailed,
+          ),
+        ],
         const SizedBox(width: AppSizes.spacingSmall),
         GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: () => _openDashboard(context, ref),
           child: Text(
             t.dashboard.payoutDetailsCta,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppColors.accentGreen,
-              fontWeight: FontWeight.bold,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
           ),
         ),
       ],
