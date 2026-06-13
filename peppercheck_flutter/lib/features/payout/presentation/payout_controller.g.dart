@@ -33,7 +33,7 @@ final class PayoutControllerProvider
   PayoutController create() => PayoutController();
 }
 
-String _$payoutControllerHash() => r'0fc4c89733d820b380bf0cf5d05bd1db62ca420f';
+String _$payoutControllerHash() => r'740e95926e2a77958b575a56f6569dd77e64f516';
 
 abstract class _$PayoutController extends $AsyncNotifier<PayoutSetupStatus> {
   FutureOr<PayoutSetupStatus> build();
