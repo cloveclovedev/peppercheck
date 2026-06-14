@@ -12,7 +12,7 @@ This is the iOS counterpart to the Android product-flavor split shipped in PR #4
 
 ## In scope
 
-- Three Xcode schemes (`Runner-Dev` / `Runner-Staging` / `Runner-Production`) committed under `xcshareddata/xcschemes/`.
+- Three Xcode schemes (`dev` / `staging` / `production`) committed under `xcshareddata/xcschemes/`. The scheme name must equal the `--flavor` value case-insensitively (Flutter's lookup is `sentenceCase(flavor).toLowerCase() == schemeName.toLowerCase()`), so a `Runner-`-prefixed scheme would not be recognized.
 - Nine build configurations (`Debug-<flavor>` / `Release-<flavor>` / `Profile-<flavor>`) replacing the existing three (`Debug` / `Release` / `Profile`) across the project, the Runner target, and the RunnerTests target.
 - A single-layer xcconfig structure under `ios/Flutter/`: three flavor base xcconfigs (committed) carrying the per-flavor settings (bundle ID suffix, display name, GID client ID via gitignored secrets, Firebase plist selector), plus nine combined leaves (committed) where each leaf directly includes the per-configuration Pods xcconfig, `Generated.xcconfig`, and the flavor base.
 - `Info.plist` parameterization: `CFBundleDisplayName`, `GIDClientID`, and the Google Sign-In `CFBundleURLSchemes` entry become xcconfig variables.
@@ -48,7 +48,7 @@ This pattern also keeps the Crashlytics dSYM upload script (introduced in Phase 
 
 ### Why CapCase schemes but lowercase build-config suffixes
 
-Flutter's `xcode_backend.sh` matches a build configuration name as the literal `<Mode>-<flavor>` (where `<flavor>` is exactly what was passed to `--flavor`), so `Debug-dev` is required if `--flavor dev` is to find the configuration. Scheme names, in contrast, are matched case-insensitively. CapCase scheme names align with Apple's own sample-code conventions (e.g., `Runner-Dev`) and read more naturally in Xcode's scheme selector; lowercase build-config suffixes match the Android `productFlavors { create("dev") }` names and Flutter's literal lookup.
+Flutter's `xcode_backend.sh` matches a build configuration name as the literal `<Mode>-<flavor>` (where `<flavor>` is exactly what was passed to `--flavor`), so `Debug-dev` is required if `--flavor dev` is to find the configuration. Scheme names are matched the same way: the Flutter tool computes `sentenceCase(flavor).toLowerCase()` and looks for a scheme whose name lowercases to the same string. So `--flavor dev` finds a scheme named `dev` (or `Dev`), but it does NOT find `Runner-Dev` — the `Runner-` prefix breaks the equality check. Both scheme and build-config names therefore use the lowercase flavor names (`dev` / `staging` / `production`), matching the Android `productFlavors { create("dev") }` convention.
 
 ## Design
 
@@ -173,13 +173,13 @@ Three new shared schemes, one per flavor:
 
 | Scheme | Run / Test / Analyze | Profile | Archive |
 |---|---|---|---|
-| `Runner-Dev.xcscheme` | `Debug-dev` | `Profile-dev` | `Release-dev` |
-| `Runner-Staging.xcscheme` | `Debug-staging` | `Profile-staging` | `Release-staging` |
-| `Runner-Production.xcscheme` | `Debug-production` | `Profile-production` | `Release-production` |
+| `dev.xcscheme` | `Debug-dev` | `Profile-dev` | `Release-dev` |
+| `staging.xcscheme` | `Debug-staging` | `Profile-staging` | `Release-staging` |
+| `production.xcscheme` | `Debug-production` | `Profile-production` | `Release-production` |
 
 Each scheme builds the Runner target plus the RunnerTests target, mirroring the structure of the current `Runner.xcscheme`. The existing `Runner.xcscheme` is deleted.
 
-`xcshareddata/xcschememanagement.plist` is intentionally not committed (it is per-user); Xcode regenerates it on first open. The default scheme on first open is whichever Xcode picks alphabetically, which is `Runner-Dev` — desirable.
+`xcshareddata/xcschememanagement.plist` is intentionally not committed (it is per-user); Xcode regenerates it on first open. The default scheme on first open is whichever Xcode picks alphabetically, which is `dev` — desirable.
 
 ### `Info.plist` parameterization
 
@@ -282,9 +282,9 @@ flutter build ios --release --flavor production -t lib/main_production.dart --no
 
 | Scheme / `--flavor` | Expected runtime behavior on iOS Simulator |
 |---|---|
-| `Runner-Dev` / `dev` | Bundle ID `dev.cloveclove.peppercheck.dev`, home-screen name `PepperCheck Dev`, Firebase initializes against `peppercheck-dev` project, Google Sign-In attempt fails with bundle-ID mismatch (expected until #427) |
-| `Runner-Staging` / `staging` | Bundle ID `.staging`, `PepperCheck Staging`, Firebase against `peppercheck-staging`, Google Sign-In fails (expected) |
-| `Runner-Production` / `production` | Bundle ID unchanged, `PepperCheck` (renamed from `Peppercheck Flutter`), Firebase against `peppercheck`, Google Sign-In succeeds |
+| `dev` | Bundle ID `dev.cloveclove.peppercheck.dev`, home-screen name `PepperCheck Dev`, Firebase initializes against `peppercheck-dev` project, Google Sign-In attempt fails with bundle-ID mismatch (expected until #427) |
+| `staging` | Bundle ID `.staging`, `PepperCheck Staging`, Firebase against `peppercheck-staging`, Google Sign-In fails (expected) |
+| `production` | Bundle ID unchanged, `PepperCheck` (renamed from `Peppercheck Flutter`), Firebase against `peppercheck`, Google Sign-In succeeds |
 | All three installed at once | Three icons coexist on one Simulator's home screen |
 | CLI build commands above | All three exit zero |
 
