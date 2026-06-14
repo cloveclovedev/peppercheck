@@ -23,7 +23,7 @@ This is the iOS counterpart to the Android product-flavor split shipped in PR #4
 
 ## Out of scope
 
-- **Per-env OAuth client creation** — tracked in #427 (Phase 1 task 1.9). Until #427 lands, all three flavors point at the production OAuth client, so Google Sign-In will fail with a bundle-ID mismatch on dev and staging (same broken-but-builds posture as the Android Phase 1 PR #448).
+- **Per-env OAuth client creation** — tracked in #427 (Phase 1 task 1.9). Until #427 lands, all three flavors point at the production OAuth client. On Android this means Google Sign-In fails on dev/staging because Google strictly checks `package name + signing-key SHA-1`. On **iOS** the equivalent check (registered bundle ID) is **not strictly enforced** by Google at OAuth time — the security model for iOS clients relies on URL-scheme routing + PKCE, not bundle-ID identity. In combination with local Supabase having the production OAuth `client_id` registered as its accepting client, dev iOS Sign-In actually succeeds. Staging/production iOS Sign-In behavior depends on the matching Supabase project's Google provider configuration. Net: iOS Sign-In may keep working incidentally before #427, which does NOT mean the environment is properly isolated; #427 is still required for correct per-env audience separation.
 - **Apple Connect / TestFlight, provisioning profiles, distribution certificates, iOS CI deploy** — tracked in #425 (iOS reshape) and Phase 2.
 - **Per-flavor app icon variants** — Phase 1 task 1.12, separate Issue.
 - **`firebase_options.dart` per-flavor variants** — single-bundle design in [`2026-05-05-ios-firebase-config-design.md`](2026-05-05-ios-firebase-config-design.md) plus the new Run Script Phase covers what we need.
@@ -224,7 +224,7 @@ Run once after `git clone` to populate the three secrets xcconfigs with the init
 #!/bin/bash
 # Bootstrap ios/Flutter/Secrets/*.secrets.xcconfig with the production OAuth client ID.
 # All three flavors share the production client until per-env OAuth clients land in #427;
-# expect dev/staging Google Sign-In to fail with a bundle-ID mismatch until then.
+# on Android dev/staging Sign-In will fail (SHA-1 mismatch); on iOS it may succeed
 set -euo pipefail
 cd "$(dirname "$0")/../../peppercheck_flutter/ios/Flutter"
 mkdir -p Secrets
@@ -282,9 +282,9 @@ flutter build ios --release --flavor production -t lib/main_production.dart --no
 
 | Scheme / `--flavor` | Expected runtime behavior on iOS Simulator |
 |---|---|
-| `dev` | Bundle ID `dev.cloveclove.peppercheck.dev`, home-screen name `PepperCheck Dev`, Firebase initializes against `peppercheck-dev` project, Google Sign-In attempt fails with bundle-ID mismatch (expected until #427) |
-| `staging` | Bundle ID `.staging`, `PepperCheck Staging`, Firebase against `peppercheck-staging`, Google Sign-In fails (expected) |
-| `production` | Bundle ID unchanged, `PepperCheck` (renamed from `Peppercheck Flutter`), Firebase against `peppercheck`, Google Sign-In succeeds |
+| `dev` | Bundle ID `dev.cloveclove.peppercheck.dev`, home-screen name `PepperCheck Dev`, Firebase initializes against `peppercheck-dev` project. Google Sign-In: succeeds against local Supabase (whose Google provider is configured with the production iOS OAuth `client_id`); Google's iOS OAuth check does not strictly enforce the registered bundle ID, so the production `client_id` is accepted even from the `.dev` bundle. This is incidental — proper per-env separation lands with #427. |
+| `staging` | Bundle ID `.staging`, `PepperCheck Staging`, Firebase against `peppercheck-staging`. Local runtime requires `.env.staging` to carry BETA Supabase values (operator decision per PR #448); without them, the app builds and installs but the app body shows a white screen because Supabase init throws before the first frame. CI-driven `beta/v*` builds carry the real values. |
+| `production` | Bundle ID unchanged, `PepperCheck` (renamed from `Peppercheck Flutter`), Firebase against `peppercheck`, Google Sign-In succeeds. |
 | All three installed at once | Three icons coexist on one Simulator's home screen |
 | CLI build commands above | All three exit zero |
 
