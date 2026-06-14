@@ -1,0 +1,9 @@
+// Production has no suffix.
+BUNDLE_ID_SUFFIX =
+PRODUCT_BUNDLE_IDENTIFIER = dev.cloveclove.peppercheck
+
+APP_DISPLAY_NAME = PepperCheck
+
+FIREBASE_PLIST_FLAVOR = Production
+
+#include? "Secrets/Production.secrets.xcconfig"

@@ -1,0 +1,12 @@
+// Bundle identification
+BUNDLE_ID_SUFFIX = .dev
+PRODUCT_BUNDLE_IDENTIFIER = dev.cloveclove.peppercheck$(BUNDLE_ID_SUFFIX)
+
+// Home-screen display name (referenced from Info.plist as $(APP_DISPLAY_NAME))
+APP_DISPLAY_NAME = PepperCheck Dev
+
+// Firebase plist selector (consumed by the Run Script Phase)
+FIREBASE_PLIST_FLAVOR = Dev
+
+// Google Sign-In OAuth client (sourced from gitignored secrets file)
+#include? "Secrets/Dev.secrets.xcconfig"
