@@ -1,0 +1,8 @@
+BUNDLE_ID_SUFFIX = .staging
+PRODUCT_BUNDLE_IDENTIFIER = dev.cloveclove.peppercheck$(BUNDLE_ID_SUFFIX)
+
+APP_DISPLAY_NAME = PepperCheck Staging
+
+FIREBASE_PLIST_FLAVOR = Staging
+
+#include? "Secrets/Staging.secrets.xcconfig"

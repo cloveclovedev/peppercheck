@@ -53,3 +53,6 @@ ios/Runner/Firebase/GoogleService-Info-*.plist
 # Environment Variables
 assets/env/.env.*
 !assets/env/.env.example
+
+# iOS xcconfig secrets (GID client IDs per flavor)
+ios/Flutter/Secrets/*.secrets.xcconfig
