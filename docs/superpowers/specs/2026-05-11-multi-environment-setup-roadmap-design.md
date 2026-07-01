@@ -112,6 +112,8 @@ Legend: ✅ isolated per environment, ⚠️ shared or not isolated, 🆕 not in
 - **Android OAuth client**: one per (env × signing fingerprint). Production and staging use their respective Play App Signing fingerprints; dev uses `debug.keystore` fingerprints (one per developer).
 - **iOS OAuth client**: per env (3 total). `Info.plist` `GIDClientID` is parameterized through xcconfig.
 
+> **Correction (2026-06-21, see [per-env Google Sign-In design](2026-06-21-per-env-google-oauth-design.md)):** the "unify on a Web client via `serverClientId`" premise above is wrong. The Flutter app needs **no code change and no injected `serverClientId`**: Android auto-detects the Web client from `google-services.json` (idToken `aud` = Web client), iOS reads its own iOS client from `GoogleService-Info.plist` (idToken `aud` = iOS client). Each Supabase project must therefore authorize **both** its Web and iOS client IDs (comma-separated, Web first), not one unified client. The Web OAuth client secret is still required for the webapp's browser OAuth flow.
+
 #### Apple Connect / Play Console apps
 
 - Three Apple Connect apps and three Play Console apps (production / staging / dev). IAP products are duplicated across the three.
@@ -255,6 +257,8 @@ Scriptable steps land under `scripts/setup/`. Scripts read credentials from envi
 | 1.12 | Add per-flavor app icons (dev green, staging yellow, production normal). | 🤖 PR |
 | 1.13 | Verification: build and run all three flavors on real devices, sign in, and confirm test push notifications arrive in each environment via its own Edge Function `send-notification`. | 🔧 |
 
+> **Correction (2026-06-21, see [per-env Google Sign-In design](2026-06-21-per-env-google-oauth-design.md)):** tasks 1.9–1.13 are refined by the #427 design. **1.9:** no Google Cloud REST API exists for consumer OAuth clients; the script is `scripts/setup/setup-google-signin.sh <env>` (Firebase-CLI-driven SHA registration auto-creates the Android + Web clients; the iOS OAuth client and Web client secret are Console-manual). **1.10:** register **both** the Web and iOS client IDs per project (comma-separated, Web first), not the Web client alone. **1.11 (dev):** local `supabase/functions/.env` `FIREBASE_SERVICE_ACCOUNT_JSON` is wired by a new `scripts/setup/bootstrap-peppercheck-dev-sa.sh`. **1.13:** #427 covers **dev + production only**; staging moves to #429 (its Play App Signing SHA does not exist until the staging Play app is created). The #425-deferred end-to-end push test lands in #427's dev verification.
+
 **Dependencies:** Phase 0 complete.
 
 **Verification:** `flutter run --flavor <env>` succeeds for all three flavors; Google Sign-In completes; each FCM token registers in its environment's Supabase and receives a notification triggered through that environment's Edge Function.
@@ -362,6 +366,8 @@ GUI-only steps that cannot be scripted:
 - (b) Three Web OAuth clients, one per Supabase project, injected per flavor as `serverClientId`.
 
 **Recommendation:** (b). Aligns with the "independent environments" principle; the marginal management cost is justified by the isolation gain.
+
+> **Resolved / superseded (2026-06-21, see [per-env Google Sign-In design](2026-06-21-per-env-google-oauth-design.md)):** this question is moot — nothing is injected as `serverClientId`. Each env has its own Web + Android + iOS OAuth clients (per-project isolation, the spirit of (b)), but the app injects nothing: Android auto-detects the Web client from `google-services.json` and iOS uses its own client from `GoogleService-Info.plist`. Each Supabase project authorizes both its Web and iOS client IDs.
 
 #### iOS `CFBundleDisplayName` per flavor
 
