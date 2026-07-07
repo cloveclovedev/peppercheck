@@ -297,3 +297,67 @@ the prod service account).
 - Exact triggers for iOS OAuth client creation and Web client secret
   availability in a Firebase-managed project. Resolve by a spike on
   peppercheck-staging before finalizing the manual checkpoints in the script.
+
+## Spike findings (2026-07-08)
+
+Spike executed on **peppercheck-dev** (not staging — merged into the real dev
+implementation so the created clients are reused rather than thrown away;
+staging left untouched for #429).
+
+**Correction to the OAuth-client creation model** (supersedes the "SHA
+auto-creates the clients" assumption in the plan, and part of D2):
+
+- OAuth clients are **not** auto-created by SHA-1 registration alone. Registering
+  a real signing SHA-1 (and re-registering it) produced **zero** `oauth_client`
+  entries while the Google provider was still disabled.
+- The actual trigger is **enabling the Google sign-in provider in Firebase
+  Authentication** (Console: Authentication -> Sign-in method -> Google). This
+  requires the **OAuth consent screen** (branding) to already exist; otherwise
+  client creation is blocked and the Console shows a "configure consent screen"
+  warning.
+- Enabling the Google provider auto-created **all three** OAuth clients at once
+  and wrote them into the config files:
+  - Android client (`client_type 1`) in `google-services.json`
+  - Web client (`client_type 3`) in `google-services.json`
+  - iOS client (`CLIENT_ID` / `REVERSED_CLIENT_ID`) in the iOS plist
+- => **The iOS OAuth client does NOT need manual Cloud Console creation.** This
+  supersedes the earlier assumption (D2 / Task 3 Step 1) that iOS client creation
+  is Console-manual. Firebase's "Download latest config" dialog explicitly lists
+  both the Android and the Apple app as receiving the new clients.
+
+**SHA-1 / signing key:**
+
+- The Android client still requires the signing SHA-1 to be registered (Google
+  verifies app authenticity by package name + SHA-1).
+- **dev signing key is `~/.android/peppercheck.jks`** (the `release`
+  signingConfig), **not** `~/.android/debug.keystore` as the plan originally
+  stated. Debug builds otherwise use the standard debug.keystore (a different
+  SHA). Decision: make the dev flavor sign debug builds with peppercheck.jks too
+  (a `build.gradle.kts` change), so a single registered SHA-1 covers both debug
+  and release. staging/production sign via Google Play App Signing (SHA from Play
+  Console; out of scope / already registered).
+- `firebase apps:android:sha:delete <appId> <SHA_Id>` takes the SHA **Id** (e.g.
+  the value in the `SHA Id` column), not the 40-hex SHA hash — passing the hash is
+  a silent no-op.
+
+**Web client secret:**
+
+- Retrievable from Firebase Console -> Authentication -> Sign-in method -> Google
+  -> "Web SDK configuration". Not required for #427: native sign-in validates only
+  the id_token `aud`; the secret is only for the webapp browser OAuth flow.
+
+**Consent screen:**
+
+- Created as User Type = External, Publishing status = Testing, minimal fields
+  (app name "PepperCheck Dev", user support email, developer contact email).
+
+**Reduced manual (non-scriptable) checkpoints** for standing up a new env:
+
+1. Create the OAuth consent screen (branding) — Console only.
+2. Enable the Google provider in Firebase Authentication — Console only.
+
+   These two are intentionally NOT scripted: each is a one-time-per-environment
+   Console action, so `setup-google-signin.sh` treats them as prerequisites and
+   prints them as checkpoints rather than automating them. SHA-1 registration,
+   config re-download, iOS xcconfig reflection, and Supabase provider config
+   remain fully scriptable.
