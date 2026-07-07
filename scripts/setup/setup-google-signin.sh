@@ -127,9 +127,20 @@ EOF
   exit 0
 fi
 
-# --- 5. iOS xcconfig reflection --------------------- [appended in Task 3] ---
+# --- 5. Reflect the iOS redirect scheme into the (gitignored) xcconfig -----
+# Replaces bootstrap-ios-secrets.sh's "production client ID to all three flavors":
+# each env now writes its own iOS client into its own flavor xcconfig.
+ios_reversed="$(/usr/libexec/PlistBuddy -c 'Print :REVERSED_CLIENT_ID' "$ios_dest" 2>/dev/null || true)"
+xcconfig="$repo_root/peppercheck_flutter/ios/Flutter/Secrets/${cap_env}.secrets.xcconfig"
+mkdir -p "$(dirname "$xcconfig")"
+cat > "$xcconfig" <<EOF
+GID_CLIENT_ID = $ios_client_id
+GID_REVERSED_CLIENT_ID = $ios_reversed
+EOF
+echo "[ok] wrote $xcconfig"
+
 # --- 6. Supabase provider config -------------------- [appended in Task 4] ---
 
 echo ""
-echo "[done] SHA registered + OAuth clients present + configs refreshed for $env."
-echo "       (iOS xcconfig reflection and Supabase provider config are added in later steps.)"
+echo "[done] SHA registered + OAuth clients present + configs + iOS xcconfig for $env."
+echo "       (Supabase provider config is added in the next step.)"
