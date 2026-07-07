@@ -139,8 +139,41 @@ GID_REVERSED_CLIENT_ID = $ios_reversed
 EOF
 echo "[ok] wrote $xcconfig"
 
-# --- 6. Supabase provider config -------------------- [appended in Task 4] ---
+# --- 6. Configure the Supabase Google provider (both client IDs, Web first) ---
+# config.toml already sets client_id = env(GOOGLE_CLIENT_ID) with
+# skip_nonce_check = true, so there is no structural change — only the value.
+if [[ "$env" == "dev" ]]; then
+  supabase_env="$repo_root/supabase/.env"
+  [[ -f "$supabase_env" ]] || cp "$repo_root/supabase/.env.example" "$supabase_env"
+  tmp="$(mktemp)"; grep -v '^GOOGLE_CLIENT_ID=' "$supabase_env" > "$tmp" || true
+  printf 'GOOGLE_CLIENT_ID=%s,%s\n' "$web_client_id" "$ios_client_id" >> "$tmp"
+  mv "$tmp" "$supabase_env"
+  echo "[ok] set GOOGLE_CLIENT_ID=<web>,<ios> in supabase/.env (local container)"
+  echo "     GOOGLE_CLIENT_SECRET stays optional for native #427 — set it only to"
+  echo "     also exercise the webapp browser OAuth flow against local Supabase."
+else
+  # hosted (staging/production): VERIFY FIRST — never change production blindly.
+  # GET the current authorized client IDs; only PATCH when the operator passes
+  # APPLY=1. The secret is never sent.
+  : "${SUPABASE_ACCESS_TOKEN:?export SUPABASE_ACCESS_TOKEN (Management API PAT) for $env}"
+  : "${SUPABASE_PROJECT_REF:?export SUPABASE_PROJECT_REF for the $env project}"
+  current="$(curl -s -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+    "https://api.supabase.com/v1/projects/$SUPABASE_PROJECT_REF/config/auth" \
+    | jq -r '.external_google_client_id // ""')"
+  if [[ "$current" == *"$ios_client_id"* && "$current" == *"$web_client_id"* ]]; then
+    echo "[ok] $env Supabase already authorizes the web+ios clients — NO change needed"
+  elif [[ "${APPLY:-0}" != "1" ]]; then
+    echo "[would-change] $env Supabase external_google_client_id='$current'" >&2
+    echo "               Re-run with APPLY=1 to set it to '$web_client_id,$ios_client_id' (secret untouched)." >&2
+  else
+    echo "[patch] $env Supabase external_google_client_id -> web,ios"
+    curl -s -X PATCH \
+      -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" \
+      "https://api.supabase.com/v1/projects/$SUPABASE_PROJECT_REF/config/auth" \
+      -d "{\"external_google_enabled\":true,\"external_google_client_id\":\"$web_client_id,$ios_client_id\"}" \
+      | jq '{external_google_client_id}'
+  fi
+fi
 
 echo ""
-echo "[done] SHA registered + OAuth clients present + configs + iOS xcconfig for $env."
-echo "       (Supabase provider config is added in the next step.)"
+echo "[done] Google Sign-In configured for $env (SHA + OAuth clients + iOS xcconfig + Supabase provider)."
