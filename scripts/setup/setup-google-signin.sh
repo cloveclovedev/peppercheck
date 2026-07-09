@@ -48,29 +48,28 @@ project_id="$(firebase projects:list --json | jq -r ".result[] | select(.display
 [[ -n "$project_id" ]] || { echo "ERROR: no Firebase project with displayName '$project_display'" >&2; exit 1; }
 
 # --- 1. Determine the signing SHA-1 ---------------------------------------
-# dev signs with the release keystore (peppercheck.jks) for BOTH debug and
-# release builds (see android/app/build.gradle.kts), so a single SHA-1 covers
-# every dev build. staging/production sign via Google Play App Signing; that SHA
-# lives in the Play Console and is passed in via SHA1= (optional — omit it to
-# only reconcile configs/provider for an additive change).
+# dev debug builds (flutter run / --debug) sign with the standard Android debug
+# keystore, so register ITS SHA-1 — NOT the release peppercheck.jks, which is a
+# legacy pre-Play-App-Signing production key. staging/production sign via Google
+# Play App Signing; that SHA lives in the Play Console and is passed via SHA1=
+# (optional — omit it to only reconcile configs/provider for an additive change).
 sha1=""
 if [[ "$env" == "dev" ]]; then
-  key_props="$repo_root/peppercheck_flutter/android/key.properties"
-  [[ -f "$key_props" ]] || { echo "ERROR: $key_props not found (needed to derive the dev SHA-1)" >&2; exit 1; }
-  # Read the signing config at runtime. These are secrets — never echo them.
-  store_file="$(sed -n 's/^storeFile=//p'     "$key_props" | head -n1)"
-  store_pass="$(sed -n 's/^storePassword=//p' "$key_props" | head -n1)"
-  key_alias="$(sed -n 's/^keyAlias=//p'       "$key_props" | head -n1)"
-  store_file="${store_file/#\~/$HOME}"
-  if [[ ! -f "$store_file" ]]; then
-    # storeFile may be written relative to the android/app module dir
-    cand="$repo_root/peppercheck_flutter/android/app/$store_file"
-    [[ -f "$cand" ]] && store_file="$cand"
-  fi
-  [[ -f "$store_file" ]] || { echo "ERROR: keystore from key.properties storeFile not found" >&2; exit 1; }
-  sha1="$(keytool -list -v -keystore "$store_file" -alias "$key_alias" -storepass "$store_pass" 2>/dev/null \
+  # Resolve the debug keystore across the common ANDROID_USER_HOME /
+  # ANDROID_SDK_HOME / ~/.android layouts (alias + password are the fixed Android
+  # defaults: androiddebugkey / "android").
+  debug_keystore=""
+  for cand in \
+    "${ANDROID_USER_HOME:-}/debug.keystore" \
+    "${ANDROID_SDK_HOME:-}/.android/debug.keystore" \
+    "$HOME/.config/.android/debug.keystore" \
+    "$HOME/.android/debug.keystore"; do
+    if [[ -n "$cand" && -f "$cand" ]]; then debug_keystore="$cand"; break; fi
+  done
+  [[ -n "$debug_keystore" ]] || { echo "ERROR: debug.keystore not found (build a dev debug APK once to generate it)" >&2; exit 1; }
+  sha1="$(keytool -list -v -keystore "$debug_keystore" -alias androiddebugkey -storepass android 2>/dev/null \
           | awk -F': ' '/SHA1:/ {print $2; exit}')"
-  [[ -n "$sha1" ]] || { echo "ERROR: could not read SHA-1 from the keystore (check key.properties alias/password)" >&2; exit 1; }
+  [[ -n "$sha1" ]] || { echo "ERROR: could not read SHA-1 from $debug_keystore" >&2; exit 1; }
 else
   sha1="${SHA1:-}"
 fi
