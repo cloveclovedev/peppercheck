@@ -163,8 +163,8 @@ Uses Firebase CLI directly with `google-github-actions/auth@v2` for authenticati
 [source,bash]
 ----
 firebase appdistribution:distribute <apk-path> \
-  --app $FIREBASE_APP_ID \
-  --groups internal-testers
+  --app $BETA_FIREBASE_APP_ID \
+  --groups peppercheck-staging-testers
 ----
 
 == Webapp Deployment (Cloudflare Workers)

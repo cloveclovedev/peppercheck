@@ -127,8 +127,9 @@ EOF
 fi
 
 # --- 5. Reflect the iOS redirect scheme into the (gitignored) xcconfig -----
-# Replaces bootstrap-ios-secrets.sh's "production client ID to all three flavors":
-# each env now writes its own iOS client into its own flavor xcconfig.
+# Replaces the retired bootstrap-ios-secrets.sh (which wrote the production client
+# ID to all three flavors): each env now writes its own iOS client into its own
+# flavor xcconfig.
 ios_reversed="$(/usr/libexec/PlistBuddy -c 'Print :REVERSED_CLIENT_ID' "$ios_dest" 2>/dev/null || true)"
 xcconfig="$repo_root/peppercheck_flutter/ios/Flutter/Secrets/${cap_env}.secrets.xcconfig"
 mkdir -p "$(dirname "$xcconfig")"

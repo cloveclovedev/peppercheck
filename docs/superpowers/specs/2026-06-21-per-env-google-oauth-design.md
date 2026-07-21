@@ -240,11 +240,20 @@ the prod service account).
 
 **Acceptance criteria:**
 
-- [ ] dev: Google Sign-In succeeds on Android and iOS against local Supabase.
-- [ ] dev: a push reaches the signed-in user end to end (closes the #425
-      deferral).
-- [ ] production: no sign-in regression after the *Client IDs* append.
-- [ ] staging is untouched (tracked by #429).
+- [x] dev: Google Sign-In succeeds on Android and iOS against local Supabase.
+      Android verified end to end; iOS verified on the simulator. NOTE: the dev
+      Android SHA-1 registered is the standard debug.keystore's, not
+      peppercheck.jks's (a legacy prod key) — see "Spike findings".
+- [x] dev: a push reaches the signed-in user end to end (closes the #425
+      deferral). Verified via scripts/dev-push-test.sh on the Android emulator;
+      iOS push needs a real device (out of #427 scope).
+- [x] production: no sign-in regression — production config was NOT changed. Task 6
+      confirmed via the Supabase Dashboard that prod already authorizes the
+      web + iOS clients (5 client IDs), so no *Client IDs* append was needed. The
+      production iOS xcconfig re-generation via setup-google-signin.sh was not
+      run (same logic verified on dev; the existing Production.secrets.xcconfig is
+      retained), so production builds are unaffected.
+- [x] staging is untouched (tracked by #429).
 
 ## Companion issue / doc updates
 
