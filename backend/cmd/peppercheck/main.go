@@ -15,6 +15,7 @@ import (
 	"github.com/cloveclovedev/peppercheck/backend/internal/platform/config"
 	"github.com/cloveclovedev/peppercheck/backend/internal/platform/database"
 	"github.com/cloveclovedev/peppercheck/backend/internal/platform/logging"
+	"github.com/cloveclovedev/peppercheck/backend/internal/worker"
 )
 
 func main() {
@@ -46,6 +47,17 @@ func main() {
 		defer db.Close()
 		if err := api.Run(ctx, cfg, logger, db.PingContext); err != nil {
 			logger.Error("api exited with error", "error", err)
+			os.Exit(1)
+		}
+	case "worker":
+		db, err := database.Connect(ctx, cfg.DatabaseURL)
+		if err != nil {
+			logger.Error("database connect failed", "error", err)
+			os.Exit(1)
+		}
+		defer db.Close()
+		if err := worker.Run(ctx, cfg, logger, db); err != nil {
+			logger.Error("worker exited with error", "error", err)
 			os.Exit(1)
 		}
 	default:
