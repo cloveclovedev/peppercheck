@@ -45,11 +45,11 @@ services:
     networks: [pcnet]
 
   migrate:
-    # Pin to a specific released Atlas tag, NOT :latest, for reproducibility.
-    # Resolve the current stable tag at implementation time from
-    # https://hub.docker.com/r/arigaio/atlas/tags (e.g. `docker run --rm
-    # arigaio/atlas:<tag> version`) and pin it here.
-    image: arigaio/atlas:0.36.0
+    # Pinned to the current stable Atlas release (NOT :latest, which is a moving
+    # canary). Keep this in lockstep with the CI setup-atlas version and the dev
+    # machine's Atlas. Uses the Standard distribution unauthenticated (free) —
+    # the table-only workflow needs no Atlas Pro features.
+    image: arigaio/atlas:1.2.0
     command:
       - migrate
       - apply

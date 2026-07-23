@@ -59,6 +59,8 @@ jobs:
         run: go vet ./...
 
       - uses: ariga/setup-atlas@v0
+        with:
+          version: v1.2.0   # pin (not latest/canary); match compose + dev
 
       - name: Provision DB roles (runs the real 00-roles.sh)
         run: bash deploy/postgres/init/00-roles.sh
