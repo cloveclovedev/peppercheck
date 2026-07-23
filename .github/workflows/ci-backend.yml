@@ -69,7 +69,7 @@ jobs:
         run: atlas migrate validate --dir file://migrations
 
       - name: Apply migrations as the migrator role
-        run: atlas migrate apply --env local --url "$DATABASE_URL" --revisions-schema public
+        run: atlas migrate apply --env local --url "$DATABASE_URL" --revisions-schema atlas
 
       - name: Check for schema/migration drift
         run: |

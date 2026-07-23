@@ -55,13 +55,13 @@ services:
       - apply
       - --dir
       - file:///migrations
-      # peppercheck_migrator (deploy/postgres/init/00-roles.sh) only has
-      # CREATE on the `public` schema, not database-level CREATE. Without this
-      # flag Atlas tries to create its own `atlas_schema_revisions` schema to
-      # track applied migrations, which that role cannot do, so the
-      # revisions table lives in `public` instead.
+      # peppercheck_migrator (deploy/postgres/init/00-roles.sh) owns a
+      # dedicated `atlas` schema (created in 00-roles.sh), so Atlas tracks
+      # its applied-migrations history there instead of in `public` — kept
+      # isolated from the least-privilege app role, which is never granted
+      # USAGE on `atlas`.
       - --revisions-schema
-      - public
+      - atlas
       - --url
       - postgres://peppercheck_migrator:${POSTGRES_MIGRATOR_PASSWORD:?POSTGRES_MIGRATOR_PASSWORD is required}@postgres:5432/peppercheck?sslmode=disable
     volumes:

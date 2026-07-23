@@ -13,6 +13,12 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" \
   CREATE ROLE peppercheck_migrator LOGIN PASSWORD :'migrator_pw';
   GRANT CREATE, USAGE ON SCHEMA public TO peppercheck_migrator;
 
+  -- Atlas migration-history table lives in its own schema, owned by the
+  -- migrator, so the least-privilege app role (granted no USAGE here) can never
+  -- read or tamper with migration state. The app's blanket default-privilege
+  -- grant below is scoped to `public`, so it never reaches this schema.
+  CREATE SCHEMA atlas AUTHORIZATION peppercheck_migrator;
+
   -- Runtime role: least-privilege DML only, never DDL.
   CREATE ROLE peppercheck_app LOGIN PASSWORD :'app_pw';
   GRANT USAGE ON SCHEMA public TO peppercheck_app;
