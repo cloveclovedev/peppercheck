@@ -6,6 +6,7 @@ variable "url" {
 env "local" {
   src = [
     "file://schema/identity",
+    "file://schema/jobs",
   ]
   dev = "docker://postgres/17/dev?search_path=public"
   url = var.url
