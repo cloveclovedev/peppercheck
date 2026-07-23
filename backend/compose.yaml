@@ -116,9 +116,28 @@ services:
       - caddy-config:/config
     networks: [pcnet]
 
+  backup:
+    build: ./deploy/backup
+    profiles: ["backup"]
+    environment:
+      PGHOST: postgres
+      PGUSER: peppercheck_backup
+      PGPASSWORD: ${POSTGRES_BACKUP_PASSWORD:?POSTGRES_BACKUP_PASSWORD is required}
+      PGDATABASE: peppercheck
+      AGE_RECIPIENT: ${AGE_RECIPIENT:?set AGE_RECIPIENT in .env (age public key)}
+      BACKUP_INTERVAL_SECONDS: ${BACKUP_INTERVAL_SECONDS:-86400}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - wal-archive:/wal-archive:ro
+      - backups:/backups
+    networks: [pcnet]
+
 volumes:
   pgdata:
   wal-archive:
+  backups:
   caddy-data:
   caddy-config:
 
