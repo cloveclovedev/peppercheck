@@ -13,6 +13,7 @@ import (
 
 	"github.com/cloveclovedev/peppercheck/backend/internal/api"
 	"github.com/cloveclovedev/peppercheck/backend/internal/platform/config"
+	"github.com/cloveclovedev/peppercheck/backend/internal/platform/database"
 	"github.com/cloveclovedev/peppercheck/backend/internal/platform/logging"
 )
 
@@ -37,7 +38,13 @@ func main() {
 
 	switch os.Args[1] {
 	case "api":
-		if err := api.Run(ctx, cfg, logger, nil); err != nil {
+		db, err := database.Connect(ctx, cfg.DatabaseURL)
+		if err != nil {
+			logger.Error("database connect failed", "error", err)
+			os.Exit(1)
+		}
+		defer db.Close()
+		if err := api.Run(ctx, cfg, logger, db.PingContext); err != nil {
 			logger.Error("api exited with error", "error", err)
 			os.Exit(1)
 		}
