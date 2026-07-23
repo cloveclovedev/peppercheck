@@ -163,14 +163,15 @@ cmd/peppercheck/main.go            # wires TokenVerifier + identity + db into ap
 internal/
   core/                            # (was internal/platform/*) config, database,
                                    #   httpserver, logging, jobs, inbox, httpclient
-    httpserver/                    # + error envelope, auth middleware (added)
+    httpserver/                    # + error envelope writer WriteError (added)
   platform/
-    auth/                          # Firebase TokenVerifier boundary (new)
-      auth.go                      # Identity, TokenVerifier interface, fake
+    auth/                          # Firebase auth boundary (new)
+      auth.go                      # Identity, TokenVerifier interface, FakeVerifier
       firebase.go                  # *FirebaseVerifier (firebase.google.com/go/v4)
+      middleware.go                # auth middleware + IdentityFrom (uses core/httpserver)
   identity/                        # identity feature (new)
-    domain.go                      # User, Identity, Issuer/Subject value types
-    service.go                     # type Service: ResolveOrProvision, GetMe
+    domain.go                      # User (internal user anchor)
+    service.go                     # type Service: ResolveOrProvision
     store.go                       # type Store: Postgres impl over users/user_identities
     handler.go                     # type Handler: GET /api/v1/me
 ```
@@ -200,30 +201,38 @@ type TokenVerifier interface {
 - **Domain and service packages never import Firebase types** — only
   `platform/auth` does.
 
-### 5.3 Authentication middleware & error envelope (`core/httpserver`)
+### 5.3 Error envelope (`core/httpserver`) & auth middleware (`platform/auth`)
 
-- Middleware reads `Authorization: Bearer <FirebaseIDToken>`, calls
-  `TokenVerifier.Verify`, and stores the `Identity` in the request context.
-  Failure → `401` with the standard envelope (`unauthenticated`). It composes
-  after the existing RequestID → AccessLog → Recover chain.
-- **Error envelope** (strategy §7 — stable machine-readable code, never a raw
-  provider error):
+- **Error envelope** (`core/httpserver`, strategy §7 — stable machine-readable
+  code, never a raw provider error):
   ```json
   { "error": { "code": "unauthenticated", "message": "…", "requestId": "…" } }
   ```
-  Stable codes: `unauthenticated`, `permission_denied`, `not_found`,
-  `invalid_argument`, `internal`. The `requestId` echoes `X-Request-Id`.
+  Codes used in Phase 2: `unauthenticated` (401), `unavailable` (503),
+  `internal` (500). The `requestId` echoes `X-Request-Id`. `Recover` also routes
+  panics through this envelope (so a panic returns a 500 envelope with a
+  `requestId`, not a bare empty 500).
+- **Auth middleware** lives in `platform/auth` (cohesive with the verifier; it
+  depends on `core/httpserver` for the envelope — `platform` → `core`, the
+  allowed direction). It reads `Authorization: Bearer <FirebaseIDToken>`, calls
+  `TokenVerifier.Verify`, stores the `Identity` in the request context, and
+  **distinguishes failure kinds**: a missing/malformed header or an
+  invalid/expired token → `401 unauthenticated`; any other verifier error (e.g.
+  a public-key fetch / network failure — not the caller's fault) → `503
+  unavailable`, with the original error logged server-side and never returned to
+  the client. It composes after the existing RequestID → AccessLog → Recover
+  chain.
 
 ### 5.4 Identity feature
 
-- `Service.ResolveOrProvision(ctx, Identity) (User, error)`:
-  1. `store.FindUserByIdentity(issuer, subject)` → return the existing
-     `users.id` if present (the common path).
+- `Service.ResolveOrProvision(ctx, issuer, subject string) (User, error)`:
+  1. `store.FindByIdentity(issuer, subject)` → return the existing `users.id` if
+     present (the common path).
   2. Else, in **one transaction**: insert `users`, then insert
      `user_identities`. `UNIQUE(issuer, subject)` is the final defense; on a
-     concurrent first-sighting the unique violation is caught and the row is
-     re-selected (idempotent, no duplicate user).
-- `Service.GetMe(ctx, userID) (User, error)` returns the internal user.
+     concurrent first-sighting the unique violation is caught, the transaction
+     rolls back (no orphan `users` row), and the row is re-selected (idempotent,
+     no duplicate user).
 - `Handler` serves `GET /api/v1/me`, authenticated. In Phase 2 the handler
   calls `Service.ResolveOrProvision(ctx, Identity)` (reading the `Identity` the
   middleware placed in context) to resolve/provision, then returns the user.
@@ -243,11 +252,16 @@ type TokenVerifier interface {
 
 ### 5.5 Config
 
-- Add `FIREBASE_PROJECT_ID` (per environment).
-- **Local default HTTP port → `8765`** (from `8080`, which collides easily with
-  other local dev tools). `PORT` remains the override; in staging/production the
-  api sits behind Caddy on a private network, so the internal port is
-  immaterial.
+- Add `FIREBASE_PROJECT_ID` (per environment). In Compose it is injected into the
+  `api` service with a dummy default so the stack boots offline / in CI; a real
+  per-env project is needed to actually verify tokens.
+- **HTTP port — single source of truth.** The port is defined **once** as
+  `API_PORT` in the Compose `.env`; the `api` service maps it to `PORT` and Caddy
+  reads the same `API_PORT` for its upstream (`reverse_proxy api:{$API_PORT}`).
+  The Go config default (`8765`, chosen over the collision-prone `8080`) matches
+  it and is only the fallback for standalone (non-Compose) runs. The api is never
+  published to the host — Caddy is the only ingress — so smoke tests go through
+  Caddy on `:80`.
 
 ---
 
@@ -267,10 +281,14 @@ first, deviate with a concrete reason" bar is met).
     `http://10.0.2.2:8765` (Android) / `http://127.0.0.1:8765` (iOS sim, via the
     existing `10.0.2.2 → 127.0.0.1` startup rewrite); staging
     `https://staging.peppercheck.dev`; production `https://peppercheck.dev`.
-  - **Auth interceptor:** attaches `Authorization: Bearer <Firebase ID token>`
-    (`FirebaseAuth.currentUser.getIdToken()`) on authenticated requests. On
-    `401`, force-refresh (`getIdToken(true)`) and retry **once for idempotent
-    GET only**.
+  - **Auth interceptor:** attaches `Authorization: Bearer <token>` on
+    authenticated requests, where the token comes from an injected
+    `IdTokenProvider` (`Future<String?> Function({bool forceRefresh})`) — **not**
+    a direct `firebase_auth` call, so `core/network` never imports the Firebase
+    SDK. `features/auth` supplies the Firebase-backed implementation
+    (`({forceRefresh}) => FirebaseAuth.instance.currentUser?.getIdToken(forceRefresh)`)
+    and wires it in at app composition. On `401`, the interceptor asks the
+    provider to force-refresh and retries **once, for idempotent GET only**.
   - **Request-ID interceptor:** propagate/echo `X-Request-Id`.
   - **Timeouts:** bounded connect/receive/send.
   - **No auto-retry of non-idempotent mutations.**
@@ -305,6 +323,22 @@ import `firebase_auth` (enforced by a CI architecture import check).
 - **Remove Supabase from the auth path:** the auth-state provider and repository
   no longer import `supabase_flutter`. `Supabase.initialize(...)` stays in
   startup for un-migrated data features (§3).
+- **Migrate existing auth consumers in the same PR (P2-5) — do not leave them
+  dangling.** Several consumers bind Supabase-specific auth types today and break
+  when the provider changes; each is updated to the neutral current-user contract
+  so the branch still compiles (the data behind them stays non-functional until
+  its own phase — narrowing, §3). The chosen approach is **update the consumers**,
+  not a compat facade or feature gate:
+  - `lib/app/routing/app_router.dart` (`authState.value?.session`) → the
+    contract's signed-in state.
+  - `lib/features/matching/presentation/controllers/referee_availability_controller.dart`
+    (`session?.user.id`) and
+    `lib/features/profile/presentation/providers/current_profile_provider.dart`
+    (`currentUserProvider`) → `AppUser.internalUserId` from the contract.
+  - `lib/features/notification/application/fcm_service.dart` (listens to
+    `Supabase…onAuthStateChange`) → the new auth-state. The FCM listener is part
+    of the auth path, so this is required to satisfy the "auth path no longer
+    uses the Supabase SDK" done criterion (§12).
 
 ### 6.3 Post-login navigation
 
@@ -330,14 +364,31 @@ safe.
   accounts stay separate unless explicitly linked, and revealing the real email
   later does not retroactively merge.
 
-**Operator / infrastructure checklist** (per environment: dev / staging /
-production Firebase projects; belongs to the release-checklist skill):
-- Firebase console: **enable the Google provider** (Google currently flows
-  through Supabase, so Firebase Auth Google enablement is new) **and enable the
-  Apple provider** (register the Services ID + Sign in with Apple key).
-- Apple Developer: add the "Sign in with Apple" capability to the App ID; create
-  the Services ID and the Sign in with Apple key.
-- Xcode: add the Sign in with Apple capability to the Runner target (per flavor).
+**Operator / infrastructure runbook** (per environment — dev / staging /
+production Firebase projects; add a Pending entry to the release-checklist skill
+when P2-5 lands, and complete it before that environment's release):
+1. **Firebase — Google provider:** enable Google sign-in in each project's
+   Authentication → Sign-in method (Google currently flows through Supabase, so
+   Firebase Auth Google enablement is net-new); confirm the OAuth consent screen.
+2. **Firebase — one-account-per-email:** in Authentication → Settings, confirm
+   the account-linking setting ("one account per email address") matches the
+   design (auto-link trusted verified providers), so Google/Apple with the same
+   verified email converge to one Firebase UID.
+3. **Android SHA keys:** register the SHA-1 **and** SHA-256 of the signing key
+   for **each flavor** (dev debug keystore, staging, production) in the matching
+   Firebase project — Google sign-in fails without them.
+4. **Firebase — Apple provider:** enable Apple in each project and register the
+   Services ID + Sign in with Apple key.
+5. **Apple Developer:** add the "Sign in with Apple" capability to each App ID;
+   create the Services ID and the Sign in with Apple key used in step 4.
+6. **Xcode:** add the Sign in with Apple capability to the Runner target per
+   flavor scheme.
+7. **`FIREBASE_PROJECT_ID` injection:** set the real per-env project ID for the
+   deployed api (staging/production), replacing the dummy local default (§5.5).
+8. **E2E smoke (per platform, real device):** verify Google sign-in and Apple
+   sign-in for the **same verified email** resolve to the **same internal user**
+   (one Firebase UID → one `/api/v1/me` `user.id`), and that an Apple
+   Hide-My-Email relay stays a **separate** account.
 
 ---
 
@@ -348,8 +399,8 @@ production Firebase projects; belongs to the release-checklist skill):
 unique violation re-resolves with no duplicate. `TokenVerifier` via the fake.
 
 **Go API integration** (HTTP + real Postgres + fake `TokenVerifier`):
-- missing / invalid / expired token → `401` with the `unauthenticated`
-  envelope;
+- missing / invalid / expired token → `401 unauthenticated`; a non-token
+  verifier failure (infra, e.g. public-key fetch) → `503 unavailable`;
 - valid token, first call → user created, `/api/v1/me` returns the internal
   UUID + identity;
 - valid token, second call → same UUID (no duplicate);
@@ -357,9 +408,16 @@ unique violation re-resolves with no duplicate. `TokenVerifier` via the fake.
   the authz-isolation pattern);
 - error-envelope stability (stable codes).
 
-**Postgres integration** (pgTAP, relocated to `backend/db/tests/`):
-`UNIQUE(issuer, subject)`; `users` ↔ `user_identities` FK cascade; migrations
-apply cleanly to an empty DB.
+**Schema / DB integration:** the constraint behavior — `UNIQUE(issuer, subject)`,
+`users` ↔ `user_identities` FK cascade, and no-orphan-`users` on rollback — is
+covered by the Go store integration tests (CI-enforced via `make test`), plus a
+transactional assert-SQL file `backend/db/tests/test_identity_constraints.sql` in
+the repo's existing `db/tests/` style. **Note:** the repo has **no pgTAP runner**
+and no CI wiring for `db/tests/` today (Phase 1's `test_role_separation.sql` is
+assert-SQL, not pgTAP). Whether to stand up a real pgTAP/assert-SQL CI runner or
+keep the manual convention is an **open operator decision**; the strategy's
+"pgTAP" wording (§24) is aspirational until then. (Migrations applying cleanly to
+an empty DB is already checked by Phase 1 CI.)
 
 **Flutter:**
 - `core/network` `ApiClient` (fake HTTP): auth interceptor attaches the header;
