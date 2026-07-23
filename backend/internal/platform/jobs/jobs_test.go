@@ -152,6 +152,41 @@ func TestFailReschedulesUntilExhausted(t *testing.T) {
 	}
 }
 
+func TestExpiredJobFailsAfterMaxAttempts(t *testing.T) {
+	s := newStore(t)
+	ctx := context.Background()
+	if _, err := s.Enqueue(ctx, "noop", nil, EnqueueOpts{MaxAttempts: 1}); err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	j, err := s.Claim(ctx) // attempts -> 1
+	if err != nil || j == nil {
+		t.Fatalf("claim: %v %v", j, err)
+	}
+	// Simulate a crashed worker: lease expires without Complete/Fail.
+	if _, err := s.db.Exec(`UPDATE public.jobs SET lease_until = now() - interval '1 second' WHERE id = $1`, j.ID); err != nil {
+		t.Fatalf("expire: %v", err)
+	}
+	// attempts(1) >= max_attempts(1): must NOT be reclaimable...
+	if j2, err := s.Claim(ctx); err != nil || j2 != nil {
+		t.Fatalf("exhausted+expired job must not be reclaimable: %v %v", j2, err)
+	}
+	// ...and FailExpired marks it failed.
+	n, err := s.FailExpired(ctx)
+	if err != nil {
+		t.Fatalf("FailExpired: %v", err)
+	}
+	if n != 1 {
+		t.Fatalf("FailExpired should fail 1 job, got %d", n)
+	}
+	var status string
+	if err := s.db.QueryRow(`SELECT status FROM public.jobs WHERE id = $1`, j.ID).Scan(&status); err != nil {
+		t.Fatalf("scan: %v", err)
+	}
+	if status != "failed" {
+		t.Fatalf("status = %q, want failed", status)
+	}
+}
+
 func TestClaimIsExclusiveUnderConcurrency(t *testing.T) {
 	s := newStore(t)
 	ctx := context.Background()

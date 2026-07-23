@@ -107,7 +107,7 @@ func (s *Store) Claim(ctx context.Context) (*Job, error) {
 		WHERE id = (
 			SELECT id FROM public.jobs
 			WHERE (status = 'pending' AND run_at <= now())
-			   OR (status = 'running' AND lease_until < now())
+			   OR (status = 'running' AND lease_until < now() AND attempts < max_attempts)
 			ORDER BY run_at
 			FOR UPDATE SKIP LOCKED
 			LIMIT 1
@@ -153,6 +153,21 @@ func (s *Store) Fail(ctx context.Context, j *Job, cause error, backoff time.Dura
 		 WHERE id = $1 AND locked_by = $4`,
 		j.ID, backoff.Seconds(), cause.Error(), j.LockedBy)
 	return err
+}
+
+// FailExpired marks running jobs whose lease has expired and whose attempts are
+// exhausted as failed, so a repeatedly-crashing job (its worker dies before
+// Fail runs) doesn't stay leased forever. Returns the number of jobs failed.
+func (s *Store) FailExpired(ctx context.Context) (int64, error) {
+	res, err := s.db.ExecContext(ctx,
+		`UPDATE public.jobs
+		 SET status = 'failed', last_error = 'lease expired after max attempts', updated_at = now()
+		 WHERE status = 'running' AND lease_until < now() AND attempts >= max_attempts`)
+	if err != nil {
+		return 0, fmt.Errorf("fail expired jobs: %w", err)
+	}
+	n, _ := res.RowsAffected()
+	return n, nil
 }
 
 // newToken returns a random lease token.

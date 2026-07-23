@@ -42,6 +42,9 @@ func (w *Worker) Register(kind string, h Handler) { w.handlers[kind] = h }
 // RunDue drains every currently-due job, then returns. It stops early if ctx is
 // cancelled or a claim errors.
 func (w *Worker) RunDue(ctx context.Context) error {
+	if _, err := w.store.FailExpired(ctx); err != nil {
+		return err
+	}
 	for {
 		if err := ctx.Err(); err != nil {
 			return err
@@ -64,7 +67,7 @@ func (w *Worker) process(ctx context.Context, j *jobs.Job) {
 		w.logger.Error("no handler for job kind", "kind", j.Kind, "job_id", j.ID)
 		return
 	}
-	if err := h(ctx, j); err != nil {
+	if err := w.runHandler(ctx, h, j); err != nil {
 		backoff := time.Duration(j.Attempts) * 30 * time.Second
 		if ferr := w.store.Fail(ctx, j, err, backoff); ferr != nil {
 			w.logger.Error("failed to record job failure", "job_id", j.ID, "error", ferr)
@@ -75,6 +78,17 @@ func (w *Worker) process(ctx context.Context, j *jobs.Job) {
 	if err := w.store.Complete(ctx, j); err != nil {
 		w.logger.Error("failed to mark job complete", "job_id", j.ID, "error", err)
 	}
+}
+
+// runHandler runs h and converts a panic into an error so one bad job cannot
+// crash the whole worker process.
+func (w *Worker) runHandler(ctx context.Context, h Handler, j *jobs.Job) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("handler panicked: %v", r)
+		}
+	}()
+	return h(ctx, j)
 }
 
 // Loop runs RunDue on each tick until ctx is cancelled.
