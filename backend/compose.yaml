@@ -124,7 +124,12 @@ services:
       PGUSER: peppercheck_backup
       PGPASSWORD: ${POSTGRES_BACKUP_PASSWORD:?POSTGRES_BACKUP_PASSWORD is required}
       PGDATABASE: peppercheck
-      AGE_RECIPIENT: ${AGE_RECIPIENT:?set AGE_RECIPIENT in .env (age public key)}
+      # Empty default (not ${VAR:?}) so the core stack's `docker compose up`
+      # parses without an age key — Compose interpolates the whole file eagerly,
+      # even for services excluded by the active profile. backup.sh enforces a
+      # non-empty AGE_RECIPIENT at runtime, so an actual backup run still fails
+      # loudly if it is unset.
+      AGE_RECIPIENT: ${AGE_RECIPIENT:-}
       BACKUP_INTERVAL_SECONDS: ${BACKUP_INTERVAL_SECONDS:-86400}
     depends_on:
       postgres:
