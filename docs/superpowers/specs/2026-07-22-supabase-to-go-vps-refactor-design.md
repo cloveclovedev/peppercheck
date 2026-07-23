@@ -447,6 +447,17 @@ HTTP, provider webhooks, UI-oriented response assembly.
 > **Completion is NOT "all functions deleted."** Under max-Go, however, only
 > the `handle_updated_at` housekeeping helper remains DB-side; every other
 > function/trigger is Go-owned (baseline §4).
+>
+> **Refined in Phase 1 (2026-07-24):** the schema tool (Atlas, Standard
+> distribution used unauthenticated/free) gates functions and triggers behind
+> `atlas login` (Pro). Rather than take that dependency, Phase 1 removed even
+> `handle_updated_at`: the schema is **tables only, with zero DB
+> functions/triggers**, and `updated_at` is set by Go in every store `UPDATE`
+> (`updated_at = now()`). This is consistent with max-Go (Go is the sole write
+> boundary) and keeps schema management on the free tier. If a later phase
+> genuinely needs a DB-side function/trigger, it is hand-authored as a
+> supplementary versioned migration (`atlas migrate apply` runs raw SQL for
+> free). See the Phase 1 plan's Global Constraints "Schema management".
 
 ---
 

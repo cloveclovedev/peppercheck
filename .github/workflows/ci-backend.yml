@@ -1,0 +1,121 @@
+name: ci-backend
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'backend/**'
+      - '.github/workflows/ci-backend.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: backend
+
+jobs:
+  go:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: peppercheck
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d peppercheck"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # go tests + atlas apply run AS THE MIGRATOR: it owns the tables (so tests
+      # can TRUNCATE) and, via ALTER DEFAULT PRIVILEGES, the app role gets DML on
+      # them — which the role-separation step below verifies.
+      DATABASE_URL: postgres://peppercheck_migrator:migrator_ci_pw@localhost:5432/peppercheck?sslmode=disable
+      # Consumed by the real 00-roles.sh:
+      PGHOST: localhost
+      PGPASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: peppercheck
+      POSTGRES_MIGRATOR_PASSWORD: migrator_ci_pw
+      POSTGRES_APP_PASSWORD: app_ci_pw
+      POSTGRES_BACKUP_PASSWORD: backup_ci_pw
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+          cache-dependency-path: backend/go.sum
+
+      - name: gofmt
+        run: test -z "$(gofmt -l .)" || (gofmt -l .; echo "run gofmt -w ."; exit 1)
+
+      - name: go vet
+        run: go vet ./...
+
+      - uses: ariga/setup-atlas@v0
+        with:
+          version: v1.2.0   # pin (not latest/canary); match compose + dev
+
+      - name: Provision DB roles (runs the real 00-roles.sh)
+        run: bash deploy/postgres/init/00-roles.sh
+
+      - name: Validate migration checksums
+        run: atlas migrate validate --dir file://migrations
+
+      - name: Apply migrations as the migrator role
+        run: atlas migrate apply --env local --url "$DATABASE_URL" --revisions-schema public
+
+      - name: Check for schema/migration drift
+        run: |
+          atlas migrate diff ci_drift_check --env local
+          if [ -n "$(git status --porcelain migrations)" ]; then
+            echo "Schema and migrations are out of sync (uncommitted diff):"
+            git status --porcelain migrations
+            exit 1
+          fi
+
+      - name: Role-model SQL test (synthetic, fast)
+        run: psql "postgres://postgres:postgres@localhost:5432/peppercheck?sslmode=disable" -v ON_ERROR_STOP=1 -f db/tests/test_role_separation.sql
+
+      - name: Real role separation on real tables
+        run: |
+          set -euo pipefail
+          APP="postgres://peppercheck_app:${POSTGRES_APP_PASSWORD}@localhost:5432/peppercheck?sslmode=disable"
+          psql "$APP" -v ON_ERROR_STOP=1 -c "INSERT INTO public.users DEFAULT VALUES;"
+          psql "$APP" -v ON_ERROR_STOP=1 -c "SELECT count(*) FROM public.users;"
+          psql "$APP" -v ON_ERROR_STOP=1 -c "UPDATE public.users SET status = 'active';"
+          if psql "$APP" -v ON_ERROR_STOP=1 -c "CREATE TABLE public.should_fail (i int);" 2>/dev/null; then
+            echo "FAIL: app role must NOT be able to CREATE TABLE"; exit 1
+          fi
+          echo "app role: DML ok, DDL denied"
+
+      - name: Tests (race, serialized packages)
+        run: go test -race -p 1 ./...
+
+  image:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      # Compose is fail-closed on secrets; supply throwaway values so `config`
+      # and `build` can parse the file. These are not real secrets.
+      POSTGRES_PASSWORD: ci
+      POSTGRES_APP_PASSWORD: ci
+      POSTGRES_MIGRATOR_PASSWORD: ci
+      POSTGRES_BACKUP_PASSWORD: ci
+      AGE_RECIPIENT: age1ci
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Compose syntax (incl. backup profile)
+        run: docker compose --profile backup config >/dev/null
+      - name: Build api image
+        run: docker build -t peppercheck-backend:ci .
+      - name: Build backup image
+        run: docker build -t peppercheck-backup:ci deploy/backup

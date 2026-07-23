@@ -1,0 +1,150 @@
+name: peppercheck
+
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: peppercheck
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required (set it in .env)}
+      POSTGRES_APP_PASSWORD: ${POSTGRES_APP_PASSWORD:?POSTGRES_APP_PASSWORD is required}
+      POSTGRES_MIGRATOR_PASSWORD: ${POSTGRES_MIGRATOR_PASSWORD:?POSTGRES_MIGRATOR_PASSWORD is required}
+      POSTGRES_BACKUP_PASSWORD: ${POSTGRES_BACKUP_PASSWORD:?POSTGRES_BACKUP_PASSWORD is required}
+    # Docker creates a fresh named volume owned by root:root, but the postgres
+    # server process drops privileges to the non-root `postgres` user, so the
+    # archive_command's `cp` into /wal-archive would fail with "Permission
+    # denied". The entrypoint override chowns the mount (running as the
+    # image's default root user) before handing off to the stock
+    # docker-entrypoint.sh, which then does its normal root-setup ->
+    # gosu-to-postgres -> exec sequence.
+    entrypoint:
+      - bash
+      - -c
+      - chown postgres:postgres /wal-archive && exec docker-entrypoint.sh "$$0" "$$@"
+    command:
+      - postgres
+      - -c
+      - wal_level=replica
+      - -c
+      - archive_mode=on
+      - -c
+      - archive_command=test ! -f /wal-archive/%f && cp %p /wal-archive/%f
+      - -c
+      - archive_timeout=60
+      - -c
+      - max_wal_senders=3
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - wal-archive:/wal-archive
+      - ./deploy/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d peppercheck"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [pcnet]
+
+  migrate:
+    # Pinned to the current stable Atlas release (NOT :latest, which is a moving
+    # canary). Keep this in lockstep with the CI setup-atlas version and the dev
+    # machine's Atlas. Uses the Standard distribution unauthenticated (free) —
+    # the table-only workflow needs no Atlas Pro features.
+    image: arigaio/atlas:1.2.0
+    command:
+      - migrate
+      - apply
+      - --dir
+      - file:///migrations
+      # peppercheck_migrator (deploy/postgres/init/00-roles.sh) only has
+      # CREATE on the `public` schema, not database-level CREATE. Without this
+      # flag Atlas tries to create its own `atlas_schema_revisions` schema to
+      # track applied migrations, which that role cannot do, so the
+      # revisions table lives in `public` instead.
+      - --revisions-schema
+      - public
+      - --url
+      - postgres://peppercheck_migrator:${POSTGRES_MIGRATOR_PASSWORD:?POSTGRES_MIGRATOR_PASSWORD is required}@postgres:5432/peppercheck?sslmode=disable
+    volumes:
+      - ./migrations:/migrations:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    networks: [pcnet]
+
+  api:
+    build: .
+    command: ["api"]
+    environment:
+      APP_ENV: local
+      PORT: "8080"
+      LOG_LEVEL: info
+      DATABASE_URL: postgres://peppercheck_app:${POSTGRES_APP_PASSWORD:?POSTGRES_APP_PASSWORD is required}@postgres:5432/peppercheck?sslmode=disable
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "/peppercheck", "healthcheck"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks: [pcnet]
+
+  worker:
+    build: .
+    command: ["worker"]
+    environment:
+      APP_ENV: local
+      LOG_LEVEL: info
+      DATABASE_URL: postgres://peppercheck_app:${POSTGRES_APP_PASSWORD:?POSTGRES_APP_PASSWORD is required}@postgres:5432/peppercheck?sslmode=disable
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    networks: [pcnet]
+
+  caddy:
+    image: caddy:2
+    environment:
+      CADDY_SITE_ADDRESS: ${CADDY_SITE_ADDRESS:-:80}
+    depends_on: [api]
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks: [pcnet]
+
+  backup:
+    build: ./deploy/backup
+    profiles: ["backup"]
+    environment:
+      PGHOST: postgres
+      PGUSER: peppercheck_backup
+      PGPASSWORD: ${POSTGRES_BACKUP_PASSWORD:?POSTGRES_BACKUP_PASSWORD is required}
+      PGDATABASE: peppercheck
+      # Empty default (not ${VAR:?}) so the core stack's `docker compose up`
+      # parses without an age key — Compose interpolates the whole file eagerly,
+      # even for services excluded by the active profile. backup.sh enforces a
+      # non-empty AGE_RECIPIENT at runtime, so an actual backup run still fails
+      # loudly if it is unset.
+      AGE_RECIPIENT: ${AGE_RECIPIENT:-}
+      BACKUP_INTERVAL_SECONDS: ${BACKUP_INTERVAL_SECONDS:-86400}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - wal-archive:/wal-archive:ro
+      - backups:/backups
+    networks: [pcnet]
+
+volumes:
+  pgdata:
+  wal-archive:
+  backups:
+  caddy-data:
+  caddy-config:
+
+networks:
+  pcnet:

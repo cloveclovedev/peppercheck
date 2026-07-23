@@ -1,0 +1,14 @@
+.git
+Dockerfile
+.dockerignore
+compose.yaml
+compose.override.yaml
+deploy
+migrations
+schema
+db
+atlas.hcl
+.env
+.env.*
+**/*_test.go
+*.md
