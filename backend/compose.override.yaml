@@ -1,0 +1,14 @@
+# Dev-only overrides, auto-merged by `docker compose` in local development.
+# Binds Postgres to localhost so host tools (Atlas, psql) can reach it. The base
+# compose.yaml never publishes :5432, matching the production topology.
+#
+# NOTE: bound to host port 5433, not the default 5432. On this machine 5432 is
+# already held by an unrelated Docker container (a different project's
+# postgres), so binding 5432 here fails with "port is already allocated" and
+# blocks the whole stack. This binding is dev-tool convenience only (Atlas,
+# psql from the host) and is not exercised by any container-network check, so
+# host tools should target `-p 5433` / `localhost:5433` instead.
+services:
+  postgres:
+    ports:
+      - "127.0.0.1:5433:5432"
