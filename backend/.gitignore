@@ -1,0 +1,5 @@
+# Compiled binary produced by `go build ./cmd/peppercheck`
+/peppercheck
+# Go test/coverage artifacts
+*.test
+*.out
