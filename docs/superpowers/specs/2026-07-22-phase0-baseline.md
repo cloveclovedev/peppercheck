@@ -2279,7 +2279,17 @@ re-enter their profile).
   (`matching`, `trial_point`, `subscription`, `point`, … `tables/enums.sql`)
   and any singleton config tables (`BOOLEAN PK DEFAULT true` pattern).
 
-### 11.3 Seed subset for the fresh DB (to build during the Atlas baseline, Phase 1)
+### 11.3 Seed subset for the fresh DB (built per owning feature phase)
+
+> **Reconciled 2026-07-23:** the Phase 1 Foundation plan scopes Phase 1 to the
+> identity core (`users`, `user_identities`) + durable-job/webhook-inbox
+> primitives only — it deliberately does **not** create the reference/config
+> tables. Those tables and their seed rows are therefore built in their
+> **owning feature phases** (currencies/matching config/notification defaults →
+> Phase 3; subscription plans + platform product mapping + reward/payout config
+> → Phase 5), not during the Phase 1 Atlas baseline. The itemized set below is
+> the complete list to seed across those phases; the "build during the Atlas
+> baseline, Phase 1" framing of an earlier draft is superseded by this split.
 
 Reference/config seed set for the new database (itemized, supplement §12.1):
 
