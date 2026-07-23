@@ -124,7 +124,7 @@ opportunistic-refactor (§15) drop candidate worth flagging alongside it.
 
 Stripe **Connect** (payouts — keep, port to Go): `stripe_accounts`'s 4
 Connect columns, `payout-setup`, `create-express-dashboard-link`,
-`execute-pending-payouts`, `payout-request` (net-new, launch-blocker),
+`execute-pending-payouts`, `payout-request` (dead/unmounted — remove, §3.1),
 `handle-stripe-webhook`'s `account.updated` case only, `recommend-payout-topup`
 (operator tool).
 
@@ -345,11 +345,11 @@ endpoint, not a port; see §3.
 | Column | Value |
 |---|---|
 | used-by feature | payout (Flutter `stripe_payout_repository.dart`), reward/payout cron+worker |
-| direct-client-call? | Yes — `payout-setup`, `create-express-dashboard-link` via `.functions.invoke`; `payout-request` also invoked but 404s today (launch-blocker, no backing function); `execute-pending-payouts` reached only by DB cron, never by a client |
-| Go replacement | Go endpoints for onboarding / dashboard-link / payout-request (net-new); Go worker for `execute-pending-payouts`; `handle-stripe-webhook`'s `account.updated` handler only (1.1 Finding 2) |
+| direct-client-call? | Yes — `payout-setup`, `create-express-dashboard-link` via `.functions.invoke`; `payout-request` is referenced in code but its call path is dead/unmounted (never reachable — §3.1); `execute-pending-payouts` reached only by DB cron, never by a client |
+| Go replacement | Go endpoints for onboarding / dashboard-link; Go worker for `execute-pending-payouts`; `handle-stripe-webhook`'s `account.updated` handler only (1.1 Finding 2). **`payout-request` gets no Go endpoint — its manual-payout path is dead/unmounted and is removed (§3.1, §7.F)** |
 | data/config conversion | `stripe_accounts`'s 4 Connect columns (`stripe_connect_account_id`, `charges_enabled`, `payouts_enabled`, `connect_requirements`) carry over as-is (1.1 Finding 1); Stripe API key + Connect webhook signing secret move from Supabase Vault to Go config/secret store; webapp's static `stripe/connect/return`/`refresh` pages must keep resolving post-webapp-migration (§6) |
 | temporary coexistence | None; Stripe webhook endpoint URL re-registration in the Stripe Dashboard is a one-time cutover flip |
-| disposition | **Keep — port to Go** (money-out, unchanged per §11); `payout-request` is a Phase-0 launch-blocker needing net-new implementation (§3) |
+| disposition | **Keep — port to Go** (money-out, unchanged per §11); `payout-request` is **not** a blocker — the manual-payout path is dead/unmounted, disposition **remove** (§3.1, §7.F) |
 
 #### Stripe Billing (subscription / card-on-file)
 
@@ -882,41 +882,43 @@ awareness, not a Phase 0 blocker.
 > by §5's critical-journey behavior catalog, which the operator adjudicated
 > into this register as candidates on 2026-07-22.
 
-### 3.1 `payout-request` — confirmed launch blocker
+### 3.1 `payout-request` — investigated, NOT a launch blocker (dead path)
 
-**Status:** Confirmed bug, fix planned.
+**Status:** Resolved 2026-07-23. The manual-payout path is **dead/unmounted
+code**; disposition is **remove** (drop candidate, §7.F), not implement. Not a
+launch blocker.
+
+> **Supersedes earlier phrasing.** Where §1 (edge/Stripe inventory), §4, and §5
+> still describe `payout-request` as a "launch-blocker" or a net-new Go endpoint,
+> this section is the authoritative disposition: it is dead code to remove.
 
 **Evidence:**
-- `supabase/functions/` contains no `payout-request` directory. `ls
-  supabase/functions/ | grep -i payout` returns only
-  `execute-pending-payouts`, `payout-setup`, and `recommend-payout-topup` —
-  no `payout-request`.
-- Yet Flutter calls it:
-  `peppercheck_flutter/lib/features/payout/data/stripe_payout_repository.dart:93`
-  invokes `_supabase.functions.invoke('payout-request', ...)` inside
-  `stripe_payout_repository.dart`'s payout-request method.
-- Calling this today hits Supabase's default 404 for an unregistered
-  function name — the referee-initiated "request my payout now" action in
-  the app has no working backend. Program design doc §17 (line 482) already
-  records this exact finding: `**payout-request** (called by Flutter, no
-  edge fn exists) → **Phase-0 bug**; implement as a Go payout endpoint`.
+- `supabase/functions/` contains no `payout-request` directory (`ls
+  supabase/functions/ | grep -i payout` → only `execute-pending-payouts`,
+  `payout-setup`, `recommend-payout-topup`).
+- Flutter references it at `stripe_payout_repository.dart:93`
+  (`_supabase.functions.invoke('payout-request', ...)` inside the repo's
+  `requestPayout()` method).
+- **But the whole path is unreachable** (verified 2026-07-23):
+  - `grep -rn "\.requestPayout(" peppercheck_flutter/lib/` → **zero callers** of
+    the repo method.
+  - `PayoutAmountDialog` — the only UI that would trigger it — is **never
+    instantiated**: `grep -rn "PayoutAmountDialog(" ...` returns only its own
+    constructor declaration; nothing mounts it via `showDialog`; and
+    `payout_amount_dialog.dart` is **imported by no other file**.
 
-**Proposed fix:** Implement a Go payout endpoint (`POST /payouts` or
-similar) as part of the Go API's payout surface, alongside the ported
-`payout-setup` and `create-express-dashboard-link` endpoints. Since
-`execute-pending-payouts` already contains the actual Stripe `Transfer` +
-wallet-deduction logic (as a batch job over `reward_payouts` rows with
-`status='pending'`), the new endpoint's likely job is simply to insert a
-`reward_payouts` row with `status='pending'` (i.e., "request" a payout that
-the worker will later execute) rather than duplicate the money-movement
-logic — but confirm the intended UX (immediate transfer vs. queued-for-
-next-run) during the owning phase's design.
+  So `payout-request` can never be invoked by a user and cannot 404 in
+  practice. It is a remnant of the removed `payout_jobs`-era manual-payout
+  architecture; the approved payout flow is the monthly `reward_payouts` batch
+  (`prepare_monthly_payouts` → `execute-pending-payouts`).
 
-**Owning phase:** Phase 5 — "Financial & subscription" (program §22:
-"point/trial-point, reward/payout; ... keep Stripe Connect payouts").
-Confirmed against the §22 roadmap table, the correct home for the
-payout-request implementation work alongside
-`payout-setup`/`create-express-dashboard-link`/`execute-pending-payouts`.
+**Disposition:** Remove the dead manual-payout path — Flutter
+`payout_amount_dialog.dart`, `stripe_payout_repository.requestPayout()` + its
+`PayoutRequestResponse` DTO, and the unused `dashboard.requestPayout` /
+`dashboard.payoutRequested` i18n keys (§7.F). No Go endpoint is built. The
+earlier "launch-blocker → implement in Phase 5" reading was based only on the
+missing-function grep, before the mounting/caller check. Removal lands whenever
+the payout feature is migrated (Phase 5 cleanup).
 
 ### 3.2 T7 financial-integrity risks — operator-adjudicated candidates
 
@@ -1177,7 +1179,7 @@ needed to account for all 24 Supabase-importing files.
 | invoke | `delete-account` | `peppercheck_flutter/lib/features/account/data/account_repository.dart:27` | account | `POST /api/v1/account/delete` (per §1.3: Go endpoint + worker, idempotent saga — also called from webapp; see §3 T7-3) |
 | invoke | `payout-setup` | `peppercheck_flutter/lib/features/payout/data/stripe_payout_repository.dart:57` | payout | `POST /api/v1/payout/setup` (per §1.3: Go endpoint, Stripe Connect onboarding) |
 | invoke | `create-express-dashboard-link` | `peppercheck_flutter/lib/features/payout/data/stripe_payout_repository.dart:72` | payout | `POST /api/v1/payout/dashboard-link` (per §1.3: Go endpoint, Stripe Connect passthrough) |
-| invoke | `payout-request` | `peppercheck_flutter/lib/features/payout/data/stripe_payout_repository.dart:92` | payout | **No Edge Function exists today** — confirmed launch-blocker, see §3.1. Needs a net-new Go endpoint, not a straight port. |
+| invoke | `payout-request` | `peppercheck_flutter/lib/features/payout/data/stripe_payout_repository.dart:92` | payout | **Dead path — never reachable**: the calling `requestPayout()` has 0 callers and `PayoutAmountDialog` is never mounted. No Go endpoint needed; remove the dead code (§3.1, §7.F). |
 | invoke | `billing-setup` | `peppercheck_flutter/lib/features/billing/data/stripe_billing_repository.dart:22` | billing | Per §1.3: **Drop — currently unused** (dead pre-IAP billing flow); do not port. Its only caller, `stripe_billing_repository.dart`, is dormant legacy code per that doc's disposition. |
 
 #### `auth` (Supabase Auth SDK, non-CRUD) — 5 call sites, 4 files
@@ -2267,6 +2269,7 @@ client and server sides of the dead feature are removed atomically.
 | B — `stripe_accounts` orphaned columns | 5 columns on 1 table | Drop candidate, Phase 5 |
 | C — §2 schema dead functions | 2 functions | Verify before drop (resolved, §2.7.1/2.7.2), Phase 3/4 |
 | D — `billing-setup` Edge Function | 1 function | Already flagged in §1.3; drop together with A |
+| F — dead manual-payout path | `payout_amount_dialog.dart` + `requestPayout()` + DTO + i18n keys | Found 2026-07-23 (§3.1, §7.F); remove in the payout migration (Phase 5) |
 | Excluded | trial-point + subscription/point/IAP code in `features/billing/` | **Stays** — active production code, not evaluated for removal |
 
 No other unused-code candidates were found within this task's grep scope
@@ -2274,6 +2277,21 @@ No other unused-code candidates were found within this task's grep scope
 open-ended dead-code sweep of the rest of the codebase was not performed —
 out of scope per §15's "bounded" cleanup rule (opportunistic cleanup only in
 areas already being migrated, not a general audit).
+
+### 7.F. Dead manual-payout path (`payout-request`) — added 2026-07-23
+
+Found while re-verifying §3.1 (outside the original T6 grep scope). The referee
+"request payout now" feature is fully dead/unmounted code:
+
+| artifact | evidence it is unused | drop in phase | risk |
+|---|---|---|---|
+| `peppercheck_flutter/lib/features/payout/presentation/widgets/payout_amount_dialog.dart` (`PayoutAmountDialog`) | `grep -rn "PayoutAmountDialog(" peppercheck_flutter/lib/` → only its own constructor declaration; nothing mounts it via `showDialog`; `payout_amount_dialog` imported by no other file. | Phase 5 (payout migration) | Low. Never shown; deleting cannot break a reachable screen. |
+| `stripe_payout_repository.dart` `requestPayout()` + `PayoutRequestResponse` DTO | `grep -rn "\.requestPayout(" peppercheck_flutter/lib/` → **0 callers**. Invokes the nonexistent `payout-request` Edge Function. | Phase 5 | Low. Sole would-be caller is the dead dialog. |
+| unused i18n keys `dashboard.requestPayout` / `dashboard.payoutRequested` | Only referenced by the dead dialog. | Phase 5 | Low. Localization-only. |
+
+Remnant of the removed `payout_jobs`-era manual-payout architecture; the
+approved flow is the monthly `reward_payouts` batch. Remove rather than port —
+see §3.1.
 
 ## 8. Decisions Ledger
 
@@ -2476,10 +2494,11 @@ read-only briefly for **comparison only** — never rollback, never in the runti
       Go-tx SQL 15 / DB trigger 1 / delete 4; §2.4 Business triggers, 15 rows,
       all → Go 12 + Go-tx SQL 3, plus 21 housekeeping DB triggers; §2.5 Cron,
       10 rows, all → Go worker). Ambiguities resolved in §2.7; new items in §2.10.
-- [x] All launch-blockers identified (incl. `payout-request` fix plan), each
-      assigned an owning phase. → **§3** (§3.1 `payout-request`, owning
-      phase Phase 5; §3.2 T7-1/T7-2/T7-3, owning phases Phase 5, Phase 5,
-      Phase 6 respectively, each with evidence + proposed fix).
+- [x] All launch-blockers identified, each assigned an owning phase. → **§3**
+      (§3.1 `payout-request` — investigated and **resolved as dead/unmounted
+      code, not a blocker**; removal tracked in §7.F. §3.2 T7-1/T7-2/T7-3
+      financial-integrity candidates, owning phases Phase 5, Phase 5, Phase 6,
+      each with evidence + proposed fix).
 - [x] High-risk journey behavior catalog complete. → **§5** (5 flows —
       auth, point/trial-point ledger, payout, judgement state machine,
       account deletion — each with preconditions, steps, expected behavior,
