@@ -17,7 +17,8 @@
 > "pending," "proposed," or left an item ambiguous, this document records the
 > operator's resolution and supersedes that wording.
 >
-> Last updated: 2026-07-22.
+> Last updated: 2026-07-23 (§2 DB-logic classification refined to the max-Go
+> rule; see adjudication 4 below).
 
 ---
 
@@ -29,6 +30,13 @@
 3. **Three financial-integrity risks surfaced by the journey catalog (§5) are
    added to the launch-blocker register (§3)** as "candidate — verify in
    owning phase," each assigned an owning phase (Phase 5 ×2, Phase 6 ×1).
+4. **DB-logic classification refined to a "max-Go" rule (2026-07-23).** §2 is
+   re-derived by decomposing each function: logic / routing / orchestration /
+   validation / derived-state → Go; only the irreducible atomic statement
+   stays as SQL, issued inside a Go-owned transaction. No business PL/pgSQL
+   function or trigger survives — only `handle_updated_at` (housekeeping)
+   remains DB-side. See §2.1a for the criterion and §2.9 for the
+   trigger-dissolution implications.
 
 ---
 
@@ -306,9 +314,9 @@ endpoint, not a port; see §3.
 | used-by feature | All — full per-function table in §2 |
 | direct-client-call? | Mixed — 21 of 68 called directly from Flutter via `.rpc()`/`.rpc<T>()` (§4's rpc table, 21 call sites = 21 distinct functions, zero duplicates); the rest are internal (triggers, other functions, or Edge Functions only) |
 | Go replacement | Category split: business orchestration / authorization / external side-effect (41) → Go; integrity-atomicity / query-set (23) → stay in Postgres; obsolete Supabase-only support (4) → delete |
-| data/config conversion | `auth.uid()`-gated functions (14, category 4) become explicit user-scoped SQL called from Go with an app-supplied user id; `get_point_for_matching_strategy` (#9) stays in Postgres for retained trigger callers but needs a duplicated Go constant for moved callers (§2, §4); `handle_new_user` (#43) is a special case — its trigger *mechanism* dies with Supabase Auth, but its provisioning logic (profile/notification_settings/user_ratings/point_wallet/trial_point_wallet creation) needs an explicit Go-side "create user" onboarding step, not a drop (§2, resolved — move-to-Go) |
+| data/config conversion | `auth.uid()`-gated functions (14, category 4) become explicit user-scoped SQL called from Go with an app-supplied user id; `get_point_for_matching_strategy` (#9) becomes a single Go constant — all its callers move to Go under the max-Go refinement, so no Postgres copy is retained (§2.3 #9); `handle_new_user` (#43) is a special case — its trigger *mechanism* dies with Supabase Auth, but its provisioning logic (profile/notification_settings/user_ratings/point_wallet/trial_point_wallet creation) needs an explicit Go-side "create user" onboarding step, not a drop (§2, resolved — Go) |
 | temporary coexistence | None; per §2, "completion is NOT all functions deleted" — complex transactional routines may remain behind the Go store post-cutover |
-| disposition | **Split** — stay-in-Postgres **23** / move-to-Go **41** / delete **4** (matches §2's tally exactly) |
+| disposition | **Split** (refined max-Go, §2.1a) — **Go 48 / Go-tx SQL 15 / DB trigger 1 (`handle_updated_at`) / delete 4** = 68; no business function stays as a Postgres stored function (matches §2's tally exactly) |
 
 #### Triggers (36)
 
@@ -316,10 +324,10 @@ endpoint, not a port; see §3.
 |---|---|
 | used-by feature | matching, judgement, evidence, rating, task, auth (onboarding) for the 15 business triggers; all domains with `updated_at` columns for the 21 housekeeping triggers (§2) |
 | direct-client-call? | No — fire on DB writes only, never called directly |
-| Go replacement | 21 housekeeping (`set_updated_at`) stay as minimal DB triggers; of 15 business triggers, 10 move to Go (matching insert/update ×2, judgement notify/close/settle ×5, evidence notify ×1, `on_auth_user_created` ×1 — mechanism deleted, logic ported) and 5 stay in Postgres as invariant/derived-state triggers (`on_rating_histories_change_update_user_ratings`, `on_judgement_confirmed_close_request`, `on_task_evidences_{insert,update}_validate_due_date`, `on_all_judgements_confirmed_close_task`) |
+| Go replacement | 21 housekeeping (`set_updated_at`) stay as minimal DB triggers; **all 15 business triggers move to Go** (refined max-Go, §2.1a) — 12 as Go logic, 3 as Go-tx SQL statements Go issues in the same transaction as the write that used to fire them; the 5 previously-"stay" invariant/derived-state triggers dissolve because Go becomes the sole writer (see §2.4, §2.9) |
 | data/config conversion | Go-side equivalents for the 10 moved triggers become explicit calls inside the same business-orchestration functions that already move (e.g., `settle_evidence_timeout`'s notify step folds into the Go evidence-settlement flow) |
 | temporary coexistence | None — new schema ships without the 10 moved triggers from day one |
-| disposition | **Split** — 21 housekeeping + 5 business = **26 stay-in-Postgres**; **10 business move-to-Go** (matches §2's tally: 15 + 21 = 36) |
+| disposition | **Split** (refined max-Go, §2.1a) — 21 housekeeping stay as DB triggers; **all 15 business triggers → Go (12) / Go-tx SQL (3)** (matches §2's tally: 15 + 21 = 36) |
 
 #### Cron (10)
 
@@ -383,7 +391,7 @@ endpoint, not a port; see §3.
 | used-by feature | notification — `user_fcm_tokens` table + `notification_repository.dart`'s register/unregister; dispatch reached via `notify_event()` → `send-notification`, called from many DB triggers/RPCs across the schema (fan-out out of scope for §1.3's edge-function-only table) |
 | direct-client-call? | Yes for token registration (2 `.from('user_fcm_tokens')` call sites, §4); No for dispatch (server-side only) |
 | Go replacement | Go endpoint for token registration (covered under PostgREST row); Go endpoint + worker for dispatch (covered under Edge Function "endpoint + worker" row) — §1.3 flags the Go port needs an equivalent trigger point (synchronous Go-API call vs. worker-consumed outbox) since Postgres stops calling out via `pg_net` |
-| data/config conversion | Firebase Admin SDK credentials move from Supabase function env vars to Go's config/secret store; the 10 move-to-Go notification-dispatch triggers/functions (category 5, §2) become the new call sites feeding FCM dispatch, replacing `notify_event`'s `pg_net` hop |
+| data/config conversion | Firebase Admin SDK credentials move from Supabase function env vars to Go's config/secret store; the 10 Go notification-dispatch triggers/functions (category 5, §2) become the new call sites feeding FCM dispatch, replacing `notify_event`'s `pg_net` hop |
 | temporary coexistence | None |
 | disposition | **Keep provider, replace dispatch path** — FCM itself unchanged; Postgres→`pg_net`→Edge-Function dispatch replaced by Go-native dispatch (endpoint or worker/outbox) |
 
@@ -451,9 +459,10 @@ rows in the design doc). **Total: 21 rows**, all with a non-empty
 exactly, plus the `payout-request` launch-blocker carried forward to §3.
 
 **DB-logic disposition summary matches §2's tally.** DB Functions row:
-stay-in-Postgres 23 / move-to-Go 41 / delete 4 — copied verbatim from §2's
-"Function tally" table, not re-derived. Triggers row: 26 stay (21
-housekeeping + 5 business) / 10 move — copied from §2's "Trigger tally."
+Go 48 / Go-tx SQL 15 / DB trigger 1 / delete 4 — copied from §2's
+"Function tally (v2)" table (refined max-Go, §2.1a), not re-derived. Triggers
+row: 21 housekeeping stay / all 15 business → Go 12 + Go-tx SQL 3 — copied from
+§2's "Trigger tally (v2)."
 Cron row: 10/10 move to Go worker — copied from §2's cron table.
 
 **No empty disposition cells.** All 21 rows in 1.2 carry an explicit
@@ -509,14 +518,18 @@ re-reading each row while assembling this document.
 
 ## 2. DB Logic Classification
 
-> Source: `docs/superpowers/plans/phase0-parts/02-db-logic-classification.md`.
-> Scope: `supabase/schemas/` only (declarative schema source of truth;
-> migrations are generated from it and not separately inventoried).
+> **Refined on 2026-07-23 under the operator-adopted max-Go rule (§2.1a).**
+> Every disposition of the 23 functions and 5 business triggers previously
+> tagged *stay-in-Postgres* was re-derived by decomposing the actual SQL. The
+> 41 previously-*move-to-Go* functions, 10 *move-to-Go* business triggers, and
+> 4 *delete* functions carry forward (vocabulary *move-to-Go* → *Go*). Every
+> row below cites the SQL that justifies its disposition. Subsections `2.1a`,
+> `2.9`, and `2.10` are additions from this refinement.
 
-### 2.1 Classification framework (program design §13)
+### 2.1 Classification framework (original, program design §13)
 
-Each function / business trigger / cron gets one of six categories, then a
-coarse disposition:
+Each function / business trigger / cron was originally tagged with one of
+six categories, then a coarse disposition:
 
 1. integrity/atomicity → stay-in-Postgres
 2. query/set → stay-in-Postgres
@@ -525,12 +538,54 @@ coarse disposition:
 5. external side effect → move-to-Go (endpoint or worker)
 6. obsolete Supabase support → delete
 
-Retained by default: wallet/ledger mutations, job claiming (`FOR UPDATE SKIP
-LOCKED`), row-locked state transitions. Moved by default: `auth.uid()`
+Retained by default: wallet/ledger mutations, job claiming (`FOR UPDATE
+SKIP LOCKED`), row-locked state transitions. Moved by default: `auth.uid()`
 checks, notification dispatch, external HTTP, provider webhooks,
 UI-oriented response assembly.
 
-### 2.2 Object counts (verified against `supabase/schemas/`)
+> **Superseded for disposition-assignment purposes by 2.1a.** The category
+> number (1–6) in each row of 2.3/2.4 below is retained as a descriptive tag
+> for the SQL's original dominant nature (useful for cross-referencing prior
+> work), but the **disposition** in this v2 document is assigned by
+> decomposing each function per 2.1a — not by a direct category→disposition
+> lookup. This is exactly why category-1/2 functions no longer all map to
+> "stay."
+
+### 2.1a Classification criterion (refined, max-Go, operator-adopted 2026-07-23)
+
+**Crux:** atomicity comes from the *transaction + row lock*, which the Go
+store controls — not from the code living in a PL/pgSQL stored function.
+Because the Go API becomes the **single write boundary**, moving a
+lock/consume/derived-state routine into a Go-owned transaction loses
+**zero** atomicity and gains testability (checks become unit-testable Go;
+the tx is exercised by real-Postgres integration tests). Triggers that
+enforce invariants across arbitrary write paths are no longer load-bearing
+once Go is the only writer. Lean to Go for testability.
+
+**Decompose each function** (do not classify whole-function by dominant
+nature). Assign every function and business trigger one of these
+dispositions:
+
+- **Go** — decision / branch / routing / orchestration / validation /
+  derived-state transition / aggregate recompute / authorization.
+  Reimplemented as Go code.
+- **Go-tx SQL** — the *irreducible* atomic statement(s) (`SELECT … FOR
+  UPDATE`, `… FOR UPDATE SKIP LOCKED` claim, ledger `INSERT`, balance
+  `UPDATE`) or a single set-based `UPDATE … FROM`, issued by the Go store
+  **inside a Go-owned transaction**. The PL/pgSQL stored function is
+  **dissolved** — this is a *move*, the SQL text just executes from Go, and
+  the surrounding checks/branches move to Go.
+- **DB constraint** — a pure invariant better expressed as a real `CHECK` /
+  `UNIQUE` / FK constraint.
+- **DB trigger** — housekeeping only (`set_updated_at` family). May
+  alternatively move to the Go data layer; note as "either."
+- **delete** — obsolete / dead.
+
+Under this rule almost no *business* PL/pgSQL function stays as a stored
+function. Something stays in the DB only with a concrete justification
+written against the actual SQL.
+
+### 2.2 Object counts (unchanged from 2026-07-22 baseline)
 
 | Object | grep count | Baseline expectation | Match |
 |---|---|---|---|
@@ -538,273 +593,287 @@ UI-oriented response assembly.
 | `CREATE [OR REPLACE] TRIGGER` | 36 | 36 | yes (21 housekeeping + 15 business) |
 | `cron.schedule(...)` | 10 | 10 | yes |
 | `CREATE POLICY` | 63 | 63 | yes |
-| `auth.users` references | 16 | ~13 FK anchors | see note below |
+| `auth.users` references | 16 | ~13 FK anchors | see 2026-07-22 baseline note |
 
-Note on `auth.users` count: the ~13 FK-anchor estimate undercounts because
-several tables reference `auth.users(id)` for more than one column pattern
-and the `handle_new_user`/`on_auth_user_created` files reference `auth.users`
-multiple times (trigger target + comments). No reconciliation needed — all
-16 hits are legitimate FK/trigger-target references tied to Supabase Auth's
-`auth.users` table, which is itself an artifact of the current auth model
-(see the `handle_new_user` resolution below).
-
-No file-count or `CREATE TRIGGER` vs `CREATE OR REPLACE TRIGGER`
-discrepancies were found; all objects below are accounted for 1:1 against
-the grep baseline.
+Unaffected by this v2 pass — these are structural counts, not dispositions.
 
 ### 2.3 Functions (68)
 
-| # | function | file | category | disposition | note |
+Dispositions marked **Δ** were re-derived for this v2 pass (previously
+stay-in-Postgres); all other rows are carried forward with the vocabulary
+renamed (`move-to-Go` → `Go`) and are noted **(unaffected)**. A small number
+of unaffected rows had their *note* text lightly touched because they name
+a function whose disposition changed underneath them — these are marked
+**(note updated)**.
+
+| # | function | file | category | disposition (v2) | note |
 |---|---|---|---|---|---|
-| 1 | `process_pending_requests()` | `matching/functions/process_pending_requests.sql` | 3 | move-to-Go (worker) | Cron orchestrator: expires stale pending requests (refunds via `route_unlock_points`), retries `process_matching` for the rest. |
-| 2 | `update_referee_available_time_slot(...)` | `matching/functions/update_referee_available_time_slot.sql` | 4 | move-to-Go | `auth.uid()`-gated single-row CRUD + overlap validation. |
-| 3 | `create_matching_request(...)` | `matching/functions/create_matching_request.sql` | 3 | move-to-Go | Locks points (`lock_points`, retained) then inserts request; hardcoded strategy→cost table (TODO comment in source already flags this). |
-| 4 | `detect_and_handle_referee_timeouts()` | `matching/functions/detect_referee_timeouts.sql` | 6 | **delete (verify before drop)** | **Dead code.** Byte-for-byte duplicate business logic of `detect_and_handle_review_timeouts` (judgement domain), but has no `cron.schedule` entry anywhere in `matching/cron/` — unscheduled and unreferenced. **Resolved by operator adjudication — see 2.7.1.** |
-| 5 | `create_referee_available_time_slot(...)` | `matching/functions/create_referee_available_time_slot.sql` | 4 | move-to-Go | `auth.uid()`-gated CRUD + overlap validation. |
-| 6 | `auto_score_timeout_referee()` [trigger fn] | `matching/functions/auto_score_timeout_referee.sql` | 3 | move-to-Go | Inserts negative referee rating when a `review_timeout` judgement is confirmed. Logically overlaps with `settle_review_timeout`'s own negative-rating insert (both guarded by `ON CONFLICT DO NOTHING`, so idempotent, but redundant). **Resolved by operator adjudication — move-to-Go with dedup, see 2.7.3.** |
-| 7 | `process_matching(uuid)` | `matching/functions/process_matching.sql` | 3 | move-to-Go | Core matching algorithm (availability, workload balancing, obligation priority, random tie-break) + 2 `notify_event` calls. Highest-complexity function in the schema. |
-| 8 | `trigger_process_matching()` [trigger fn] | `matching/functions/process_matching.sql` (L265) | 3 | move-to-Go | Thin wrapper invoking `process_matching` on insert/update to `pending`. |
-| 9 | `get_point_for_matching_strategy(strategy)` | `matching/functions/get_point_for_matching_strategy.sql` | 2 | stay-in-Postgres | Pure stateless lookup (hardcoded `standard`→1). Called by both retained triggers (`on_evidence_timeout_settle`, `on_review_timeout_settle`, `detect_auto_confirms`) and moving endpoints — keep in Postgres for the retained callers; duplicate the constant in Go for moved callers. |
-| 10 | `create_referee_blocked_date(...)` | `matching/functions/create_referee_blocked_date.sql` | 4 | move-to-Go | `auth.uid()`-gated CRUD. |
-| 11 | `cancel_referee_assignment(uuid)` | `matching/functions/cancel_referee_assignment.sql` | 3 | move-to-Go | Multi-step: cancel request, delete judgement, insert re-match request, notify. |
-| 12 | `get_active_referee_tasks()` | `matching/functions/get_active_referee_tasks.sql` | 4 | move-to-Go | `auth.uid()`-scoped read, UI-shaped nested `jsonb` assembly. |
-| 13 | `delete_referee_available_time_slot(uuid)` | `matching/functions/delete_referee_available_time_slot.sql` | 4 | move-to-Go | `auth.uid()`-gated delete. |
-| 14 | `get_payment_summary()` | `payment_summary/functions/get_payment_summary.sql` | 4 | move-to-Go | `auth.uid()`-scoped dashboard aggregate read across 5 wallet/reward tables; UI-shaped response. |
-| 15 | `delete_referee_blocked_date(uuid)` | `matching/functions/delete_referee_blocked_date.sql` | 4 | move-to-Go | `auth.uid()`-gated delete. |
-| 16 | `update_referee_blocked_date(...)` | `matching/functions/update_referee_blocked_date.sql` | 4 | move-to-Go | `auth.uid()`-gated CRUD. |
-| 17 | `lock_trial_points(...)` | `trial_point/functions/lock_trial_points.sql` | 1 | stay-in-Postgres | `FOR UPDATE` wallet mutation + ledger insert. |
-| 18 | `deactivate_trial_points(uuid)` | `trial_point/functions/deactivate_trial_points.sql` | 1 | stay-in-Postgres | Idempotent wallet-state mutation on subscription start. |
-| 19 | `route_consume_points(...)` | `trial_point/functions/route_consume_points.sql` | 1 | stay-in-Postgres | Pure routing dispatcher (trial vs regular) to retained wallet functions. |
-| 20 | `unlock_trial_points(...)` | `trial_point/functions/unlock_trial_points.sql` | 1 | stay-in-Postgres | `FOR UPDATE` wallet mutation + ledger insert. |
-| 21 | `route_referee_reward(...)` | `trial_point/functions/route_referee_reward.sql` | 1 | stay-in-Postgres | Routes to obligation fulfillment or `grant_reward` (retained). |
-| 22 | `consume_trial_points(...)` | `trial_point/functions/consume_trial_points.sql` | 1 | stay-in-Postgres | `FOR UPDATE` wallet mutation + ledger insert + obligation creation. |
-| 23 | `route_unlock_points(...)` | `trial_point/functions/route_unlock_points.sql` | 1 | stay-in-Postgres | Pure routing dispatcher to retained wallet functions. |
-| 24 | `update_user_ratings()` [trigger fn] | `rating/functions/update_user_ratings.sql` | 2 | stay-in-Postgres | Recomputes aggregate rating counts/pct on `rating_histories` change — invariant maintenance, no external calls. |
-| 25 | `notify_judgement_confirmed()` [trigger fn] | `judgement/triggers/on_judgement_confirmed_notify.sql` | 5 | move-to-Go | Push-notification dispatch (2x `notify_event`) on auto-confirm. |
-| 26 | `close_referee_request_on_confirmed()` [trigger fn] | `judgement/triggers/on_judgement_confirmed_close_request.sql` | 1 | stay-in-Postgres | Single derived-state UPDATE (`task_referee_requests.status = 'closed'`), same-transaction consistency with judgement confirm. |
-| 27 | `handle_judgement_confirmed()` [trigger fn] | `judgement/triggers/on_judgement_confirmed.sql` | 5 | move-to-Go | Push-notification dispatch on manual confirm. |
-| 28 | `settle_evidence_timeout()` [trigger fn] | `judgement/triggers/on_evidence_timeout_settle.sql` | 5 | move-to-Go | Mixed: wallet settlement via `route_consume_points`/`route_referee_reward` (retained calls) + close request + 2x `notify_event`. Classified by its externally-visible side effect (notifications); wallet sub-calls stay as Postgres functions invoked from the Go orchestration. |
-| 29 | `settle_review_timeout()` [trigger fn] | `judgement/triggers/on_review_timeout_settle.sql` | 5 | move-to-Go | Same pattern as #28: unlock points (retained call) + negative rating insert + close + 2x notify. Redundant rating insert with #6 — **resolved by operator adjudication, see 2.7.3.** |
-| 30 | `on_judgements_status_changed()` [trigger fn] | `judgement/triggers/on_judgements_status_changed.sql` | 5 | move-to-Go | Status-change → notification key mapping + dispatch. |
-| 31 | `judge_evidence(...)` | `judgement/functions/judge_evidence.sql` | 4 | move-to-Go | `auth.uid()`-gated single state transition (approve/reject). |
-| 32 | `confirm_evidence_timeout(uuid)` | `judgement/functions/confirm_evidence_timeout.sql` | 4 | move-to-Go | `auth.uid()`-gated idempotent confirm. |
-| 33 | `confirm_review_timeout(uuid)` | `judgement/functions/confirm_review_timeout.sql` | 4 | move-to-Go | `auth.uid()`-gated idempotent confirm. |
-| 34 | `detect_auto_confirms()` | `judgement/functions/detect_auto_confirms.sql` | 1 | stay-in-Postgres | `FOR UPDATE SKIP LOCKED` job-claiming loop; settles points/rewards/rating via retained calls; **no external HTTP**. Candidate to remain a Postgres function invoked by the Go cron worker via RPC. |
-| 35 | `detect_and_handle_review_timeouts()` | `judgement/functions/detect_review_timeouts.sql` | 2 | stay-in-Postgres | Single set-based `UPDATE ... FROM ... WHERE`, no side effects beyond the status column. |
-| 36 | `confirm_judgement_and_rate_referee(...)` | `judgement/functions/confirm_judgement_and_rate_referee.sql` | 3 | move-to-Go | Multi-step: settle wallet + grant reward + insert rating + confirm, all `auth.uid()`-gated. **See §3 T7-2** — no explicit row lock; a race is possible under wallet headroom. |
-| 37 | `on_task_evidences_upserted_notify_referee()` [trigger fn] | `evidence/triggers/on_task_evidences_upserted_notify_referee.sql` | 5 | move-to-Go | Notification dispatch on evidence insert/update. |
-| 38 | `validate_evidence_due_date()` [trigger fn] | `evidence/functions/validate_evidence_due_date.sql` | 1 | stay-in-Postgres | Pure invariant check (due-date cutoff), no side effects. |
-| 39 | `resubmit_evidence(...)` | `evidence/functions/resubmit_evidence.sql` | 3 | move-to-Go | Multi-table: evidence update, asset add/remove, judgement status transition (`rejected`→`in_review`), `auth.uid()`-gated. |
-| 40 | `update_evidence(...)` | `evidence/functions/update_evidence.sql` | 4 | move-to-Go | `auth.uid()`-gated evidence + asset CRUD (no judgement-status change). |
-| 41 | `submit_evidence(...)` | `evidence/functions/submit_evidence.sql` | 3 | move-to-Go | Multi-table: evidence insert, asset insert, judgement status transition, `auth.uid()`-gated. |
-| 42 | `detect_and_handle_evidence_timeouts()` | `evidence/functions/detect_evidence_timeouts.sql` | 2 | stay-in-Postgres | Single set-based `UPDATE ... FROM ... WHERE`, no side effects. |
-| 43 | `handle_new_user()` [trigger fn] | `auth/functions/handle_new_user.sql` | 3 | **move-to-Go** | Provisions profile + notification_settings + user_ratings + point_wallet + trial_point_wallet on signup. **Business logic moves** (reimplemented as a Go onboarding step after Firebase user creation); the trigger *mechanism* (listening on Supabase's `auth.users`) is what's obsolete, not the provisioning logic itself. **Confirmed by operator adjudication — this is the D2 provisioning path, see 2.7.4.** |
-| 44 | `notify_event(...)` | `notification/functions/notify_event.sql` | 5 | move-to-Go | Reads Vault secrets, calls `net.http_post` to the `send-notification` Edge Function. Textbook external side effect. |
-| 45 | `send_deadline_reminder(...)` | `notification/functions/send_deadline_reminder.sql` | 5 | move-to-Go | Idempotency log insert + `notify_event` dispatch. |
-| 46 | `detect_judgement_deadline_warnings()` | `notification/functions/detect_judgement_deadline_warnings.sql` | 5 | move-to-Go | Scans + dispatches reminders via `send_deadline_reminder`. |
-| 47 | `detect_evidence_deadline_warnings()` | `notification/functions/detect_evidence_deadline_warnings.sql` | 5 | move-to-Go | Same pattern as #46. |
-| 48 | `detect_auto_confirm_deadline_warnings()` | `notification/functions/detect_auto_confirm_deadline_warnings.sql` | 5 | move-to-Go | Same pattern as #46; default OFF (`auto_confirm_reminder_minutes` NULL by default per comment). |
-| 49 | `reset_subscription_points(...)` | `point/functions/reset_subscription_points.sql` | 1 | stay-in-Postgres | Idempotent (via ledger check) wallet reset on renewal; invoked by whatever handles the RevenueCat/Stripe renewal event (that caller moves to Go; this mutation stays). |
-| 50 | `consume_points(...)` | `point/functions/consume_points.sql` | 1 | stay-in-Postgres | `FOR UPDATE` wallet mutation + ledger insert. |
-| 51 | `lock_points(...)` | `point/functions/lock_points.sql` | 1 | stay-in-Postgres | `FOR UPDATE` wallet mutation + ledger insert. |
-| 52 | `unlock_points(...)` | `point/functions/unlock_points.sql` | 1 | stay-in-Postgres | `FOR UPDATE` wallet mutation + ledger insert. |
-| 53 | `handle_updated_at()` [trigger fn] | `common/functions/handle_updated_at.sql` | 2 | stay-in-Postgres | Generic `updated_at = now()` setter, used by all 21 housekeeping triggers. |
-| 54 | `is_task_referee(task_uuid, user_uuid)` | `profile/functions/auth_helpers.sql` (L1) | 6 | delete | RLS-only helper (`SECURITY DEFINER`, `SET row_security = 'off'`). Only caller: `tasks_policies.sql` RLS policy. Not a drop candidate ahead of the broader RLS retirement — see 2.6. |
-| 55 | `is_task_referee_candidate(task_uuid, user_uuid)` | `profile/functions/auth_helpers.sql` (L19) | 6 | delete | RLS-only helper, same caller as #54. Same note as #54. |
-| 56 | `is_task_tasker(task_uuid, user_uuid)` | `profile/functions/auth_helpers.sql` (L37) | 6 | **delete (verify before drop)** | **Fully unreferenced** — no RLS policy or function calls it anywhere in `supabase/schemas/`. Already dead today, independent of the refactor. **Resolved by operator adjudication — see 2.7.2.** |
-| 57 | `close_task_if_all_judgements_confirmed()` [trigger fn] | `task/triggers/on_all_judgements_confirmed_close_task.sql` | 1 | stay-in-Postgres | Row-locked (`FOR UPDATE` on `tasks`) state transition — closes task when all judgements confirmed. |
-| 58 | `create_task(...)` | `task/functions/create_task.sql` | 3 | move-to-Go | Multi-step: validate inputs, validate open-requirements, insert task, create referee requests (which locks points). `SECURITY INVOKER` (relies on caller's RLS grants — another Supabase-specific mechanism). |
-| 59 | `update_task(...)` | `task/functions/update_task.sql` | 3 | move-to-Go | Same multi-step pattern as #58, plus ownership + status-transition checks. |
-| 60 | `delete_task(uuid)` | `task/functions/delete_task.sql` | 4 | move-to-Go | `auth.uid()`-gated ownership + status check + single delete. |
-| 61 | `validate_task_inputs(...)` | `task/functions/utils/validate_task_inputs.sql` | 3 | move-to-Go | Pure business-rule validation, tightly coupled to `create_task`/`update_task` (both move); easy to port. |
-| 62 | `create_task_referee_requests_from_json(...)` | `task/functions/utils/create_task_referee_requests_from_json.sql` | 3 | move-to-Go | Multi-step: cost calc, trial-vs-regular point-source decision, loop insert + lock (calls retained `lock_trial_points`/`lock_points`). |
-| 63 | `validate_task_open_requirements(...)` | `task/functions/utils/validate_task_open_requirements.sql` | 3 | move-to-Go | Business-rule validation: due-date minimum, point-balance sufficiency (trial-first fallback to regular). |
-| 64 | `prepare_monthly_payouts(...)` | `reward/functions/prepare_monthly_payouts.sql` | 3 | move-to-Go (worker) | Batch orchestration: last-day-of-month guard, exchange-rate lookup, per-wallet Stripe Connect readiness check, payout row insert, notify. |
-| 65 | `deduct_reward_for_payout(...)` | `reward/functions/deduct_reward_for_payout.sql` | 1 | stay-in-Postgres | Optimistic-concurrency (`WHERE balance >= amount`) wallet mutation + ledger insert. |
-| 66 | `grant_reward(...)` | `reward/functions/grant_reward.sql` | 1 | stay-in-Postgres | Upsert wallet mutation + ledger insert. |
-| 67 | `get_payout_topup_metrics(text)` | `reward/functions/get_payout_topup_metrics.sql` | 2 | stay-in-Postgres | Read-only ops aggregate, `REVOKE`d from `anon`/`authenticated`, `GRANT`ed to `service_role` only — internal admin/ops query, not app-facing. **Resolved by operator adjudication — exposed via a Go operator endpoint, see 2.7.5.** |
-| 68 | `check_account_deletable()` | `account/functions/check_account_deletable.sql` | 4 | move-to-Go | `auth.uid()`-gated read-only precondition check, called from both the Flutter app and the `delete-account` Edge Function. |
+| 1 | `process_pending_requests()` | `matching/functions/process_pending_requests.sql` | 3 | Go (worker) *(note updated)* | Cron orchestrator: expires stale pending requests (refunds via `route_unlock_points`, now **Go** — dissolved, see #23), retries `process_matching` for the rest. |
+| 2 | `update_referee_available_time_slot(...)` | `matching/functions/update_referee_available_time_slot.sql` | 4 | Go *(unaffected)* | `auth.uid()`-gated single-row CRUD + overlap validation. |
+| 3 | `create_matching_request(...)` | `matching/functions/create_matching_request.sql` | 3 | Go *(note updated)* | Locks points (`lock_points`, now **Go-tx SQL**, see #51) then inserts request; hardcoded strategy→cost table (TODO comment in source already flags this). |
+| 4 | `detect_and_handle_referee_timeouts()` | `matching/functions/detect_referee_timeouts.sql` | 6 | delete (verify before drop) *(unaffected)* | Dead code, unscheduled/unreferenced. Not one of the 23 re-derived here — re-confirmed only, not re-litigated. See baseline 2.7.1. |
+| 5 | `create_referee_available_time_slot(...)` | `matching/functions/create_referee_available_time_slot.sql` | 4 | Go *(unaffected)* | `auth.uid()`-gated CRUD + overlap validation. |
+| 6 | `auto_score_timeout_referee()` [trigger fn] | `matching/functions/auto_score_timeout_referee.sql` | 3 | Go *(unaffected, see §2.9)* | Inserts negative referee rating on `review_timeout` confirm. Once ported, must also invoke #24's recompute Go-tx SQL (rating_histories write) — see 2.9. Dedup with #29 per baseline 2.7.3. |
+| 7 | `process_matching(uuid)` | `matching/functions/process_matching.sql` | 3 | Go *(unaffected)* | Core matching algorithm + 2 `notify_event` calls. |
+| 8 | `trigger_process_matching()` [trigger fn] | `matching/functions/process_matching.sql` (L265) | 3 | Go *(unaffected)* | Thin wrapper invoking `process_matching`. |
+| 9 | `get_point_for_matching_strategy(strategy)` | `matching/functions/get_point_for_matching_strategy.sql` | 2 | **Go** Δ | Pure stateless lookup with **no table access** (`IF p_strategy = 'standard' THEN RETURN 1; ELSE RAISE EXCEPTION...`). No atomicity to lose. Every remaining caller (#28, #29, #34) itself moves off Postgres in this v2 pass, so there is no longer a retained-Postgres caller requiring a shared copy — single Go constant, no cross-language drift risk. |
+| 10 | `create_referee_blocked_date(...)` | `matching/functions/create_referee_blocked_date.sql` | 4 | Go *(unaffected)* | `auth.uid()`-gated CRUD. |
+| 11 | `cancel_referee_assignment(uuid)` | `matching/functions/cancel_referee_assignment.sql` | 3 | Go *(unaffected)* | Multi-step: cancel request, delete judgement, insert re-match request, notify. |
+| 12 | `get_active_referee_tasks()` | `matching/functions/get_active_referee_tasks.sql` | 4 | Go *(unaffected)* | `auth.uid()`-scoped read, UI-shaped `jsonb` assembly. |
+| 13 | `delete_referee_available_time_slot(uuid)` | `matching/functions/delete_referee_available_time_slot.sql` | 4 | Go *(unaffected)* | `auth.uid()`-gated delete. |
+| 14 | `get_payment_summary()` | `payment_summary/functions/get_payment_summary.sql` | 4 | Go *(unaffected)* | `auth.uid()`-scoped dashboard aggregate read; UI-shaped response. |
+| 15 | `delete_referee_blocked_date(uuid)` | `matching/functions/delete_referee_blocked_date.sql` | 4 | Go *(unaffected)* | `auth.uid()`-gated delete. |
+| 16 | `update_referee_blocked_date(...)` | `matching/functions/update_referee_blocked_date.sql` | 4 | Go *(unaffected)* | `auth.uid()`-gated CRUD. |
+| 17 | `lock_trial_points(...)` | `trial_point/functions/lock_trial_points.sql` | 1 | **Go-tx SQL** Δ | Bundles the availability check (`IF (v_balance - v_locked) < p_amount THEN RAISE EXCEPTION`) with `SELECT ... FOR UPDATE`, `locked = locked + p_amount`, and the ledger `INSERT`. Check → Go; lock+mutation+ledger-insert is the irreducible atomic sequence, stays as Go-tx SQL (backed by the existing `trial_point_wallets_balance_gte_locked` / `locked >= 0` CHECK constraints as a DB-level backstop). |
+| 18 | `deactivate_trial_points(uuid)` | `trial_point/functions/deactivate_trial_points.sql` | 1 | **Go-tx SQL** Δ | The `IF v_is_active IS NULL` / `IF NOT v_is_active` idempotency short-circuits collapse into one guarded statement: `UPDATE trial_point_wallets SET is_active=false WHERE user_id=$1 AND is_active=true` + the informational ledger `INSERT`, both Go-tx SQL. Zero rows affected is the no-op case — no separate Go branch needed. |
+| 19 | `route_consume_points(...)` | `trial_point/functions/route_consume_points.sql` | 1 | **Go** Δ | Pure routing dispatcher — `SELECT point_source FROM task_referee_requests` (unlocked read) then `IF v_point_source = 'trial' ... ELSE ...` branches to `consume_trial_points`/`consume_points`. No wallet mutation of its own; dissolves entirely into a Go branch calling #22/#50's Go-tx SQL. |
+| 20 | `unlock_trial_points(...)` | `trial_point/functions/unlock_trial_points.sql` | 1 | **Go-tx SQL** Δ | Same shape as #17: `IF v_locked < p_amount THEN RAISE EXCEPTION` → Go; `SELECT ... FOR UPDATE` + `locked = locked - p_amount` + ledger `INSERT` → Go-tx SQL. |
+| 21 | `route_referee_reward(...)` | `trial_point/functions/route_referee_reward.sql` | 1 | **Go** Δ | `SELECT is_obligation FROM task_referee_requests` then branches. Obligation path: `SELECT ... FOR UPDATE` on oldest pending `referee_obligations` row + `UPDATE ... SET status='fulfilled'` (this sub-sequence is Go-tx SQL). Non-obligation path calls `grant_reward` (#66, Go-tx SQL). The branch itself is Go; it issues one of two Go-tx SQL statements depending on `is_obligation`. |
+| 22 | `consume_trial_points(...)` | `trial_point/functions/consume_trial_points.sql` | 1 | **Go-tx SQL** Δ | `IF v_balance < p_amount` / `IF v_locked < p_amount` checks → Go. `SELECT ... FOR UPDATE`, the `balance/locked` mutation, the ledger `INSERT`, and the fixed-count `FOR v_i IN 1..p_amount LOOP INSERT INTO referee_obligations` are the atomic Go-tx SQL sequence (the loop is a batch insert, not a decision). |
+| 23 | `route_unlock_points(...)` | `trial_point/functions/route_unlock_points.sql` | 1 | **Go** Δ | Identical shape to #19 — pure `point_source` routing dispatcher to `unlock_trial_points`/`unlock_points`, no mutation of its own. |
+| 24 | `update_user_ratings()` [trigger fn] | `rating/functions/update_user_ratings.sql` | 2 | **Go-tx SQL** Δ | No branching beyond `TG_OP = 'DELETE'` (picks `OLD`/`NEW`). Each recompute is one set-based statement: `UPDATE user_ratings SET tasker_positive_count = agg.pos, tasker_positive_pct = ... FROM (SELECT count(*) FILTER(...), count(*) FROM rating_histories WHERE ratee_id=$1 AND rating_type='tasker') agg WHERE user_id=$1` (and the referee equivalent) — textbook "single set-based `UPDATE … FROM`." The `AFTER INSERT OR DELETE OR UPDATE` trigger dissolves: Go is the sole writer of `rating_histories` (via #6, #29, #34, #36), so Go runs these two statements in the same transaction as every `rating_histories` write instead of relying on a trigger firing on arbitrary paths. See 2.9. |
+| 25 | `notify_judgement_confirmed()` [trigger fn] | `judgement/triggers/on_judgement_confirmed_notify.sql` | 5 | Go *(unaffected, see §2.9)* | Push-notification dispatch (2x `notify_event`) on auto-confirm. Fires on the same `is_confirmed: false→true` transition as #26/#27/#57 — see 2.9 for the unified Go orchestration point. |
+| 26 | `close_referee_request_on_confirmed()` [trigger fn] | `judgement/triggers/on_judgement_confirmed_close_request.sql` | 1 | **Go-tx SQL** Δ | Single-statement, PK-scoped `UPDATE task_referee_requests SET status='closed' WHERE id=NEW.id`, no branching beyond the trigger's own `WHEN (NEW.is_confirmed = true AND OLD.is_confirmed = false)` filter. The filter is subsumed by the caller's control flow (Go already knows it just flipped `is_confirmed`) — collapses to one Go-tx SQL statement issued in the same transaction as the judgement-confirm write. See 2.9. |
+| 27 | `handle_judgement_confirmed()` [trigger fn] | `judgement/triggers/on_judgement_confirmed.sql` | 5 | Go *(unaffected, see §2.9)* | Push-notification dispatch on manual confirm; skips if `is_auto_confirmed`. Same transition as #25/#26/#57 — see 2.9. |
+| 28 | `settle_evidence_timeout()` [trigger fn] | `judgement/triggers/on_evidence_timeout_settle.sql` | 5 | Go *(note updated)* | Mixed: wallet settlement via `route_consume_points`/`route_referee_reward` (both now **Go**, see #19/#21) + close request (now **Go-tx SQL**, see #26) + 2x `notify_event`. Classified by its externally-visible side effect; the sub-calls are now Go orchestration calling Go-tx SQL, not separate Postgres RPCs. |
+| 29 | `settle_review_timeout()` [trigger fn] | `judgement/triggers/on_review_timeout_settle.sql` | 5 | Go *(note updated, see §2.9)* | Same pattern as #28: unlock points (`route_unlock_points`, now **Go**, see #23) + negative rating insert (now feeds #24's Go-tx SQL) + close (now **Go-tx SQL**, see #26/#57) + 2x notify. Redundant rating insert with #6 — resolved by operator adjudication, baseline 2.7.3. |
+| 30 | `on_judgements_status_changed()` [trigger fn] | `judgement/triggers/on_judgements_status_changed.sql` | 5 | Go *(unaffected)* | Status-change → notification key mapping + dispatch. |
+| 31 | `judge_evidence(...)` | `judgement/functions/judge_evidence.sql` | 4 | Go *(unaffected)* | `auth.uid()`-gated single state transition (approve/reject). |
+| 32 | `confirm_evidence_timeout(uuid)` | `judgement/functions/confirm_evidence_timeout.sql` | 4 | Go *(note updated, see §2.9)* | `auth.uid()`-gated idempotent confirm; sets `is_confirmed = TRUE` (source comment: "triggers `on_all_judgements_confirmed_close_task`"). With that trigger dissolved (#57 → Go-tx SQL), the Go port of this handler must now explicitly issue #57's (and #26's, #25's, #27's) Go-tx SQL / Go logic in the same transaction — see 2.9. |
+| 33 | `confirm_review_timeout(uuid)` | `judgement/functions/confirm_review_timeout.sql` | 4 | Go *(note updated, see §2.9)* | Same shape and same implication as #32 — sets `is_confirmed = TRUE`, source comment references the now-dissolved close-task trigger. See 2.9. |
+| 34 | `detect_auto_confirms()` | `judgement/functions/detect_auto_confirms.sql` | 1 | **Go (worker orchestration)** Δ | Not a single atomic statement. Decomposes into: the `FOR ... FOR UPDATE OF j SKIP LOCKED` eligibility+claim query (Go-tx SQL, claims a batch of rows); the per-row `IF v_rec.status IN ('approved','rejected')` branch (Go); calls into `get_point_for_matching_strategy` (#9, Go), `route_consume_points` (#19, Go → #50 Go-tx SQL), `route_referee_reward` (#21, Go → #66 Go-tx SQL); the `INSERT INTO rating_histories ... ON CONFLICT (judgement_id, rating_type) DO NOTHING` (Go-tx SQL, backed by the existing `unique_rating_per_judgement` constraint); and the final `UPDATE judgements SET is_auto_confirmed=true, is_confirmed=true` (Go-tx SQL) which — with #25/#26/#27/#57 dissolved — must be immediately followed by Go explicitly invoking those in the same transaction (see 2.9). Overall: Go worker orchestration issuing five distinct Go-tx SQL statements per claimed row. |
+| 35 | `detect_and_handle_review_timeouts()` | `judgement/functions/detect_review_timeouts.sql` | 2 | **Go-tx SQL** Δ | Exactly one statement, no branching: `UPDATE judgements j SET status='review_timeout' ... FROM task_referee_requests trr JOIN tasks t ... WHERE j.status='in_review' AND v_now > (t.due_date + INTERVAL '3 hours')` — textbook "single set-based `UPDATE … FROM`," issued verbatim by the Go worker each tick; no stored function needed. |
+| 36 | `confirm_judgement_and_rate_referee(...)` | `judgement/functions/confirm_judgement_and_rate_referee.sql` | 3 | Go *(unaffected, see §2.9)* | Multi-step: settle wallet + grant reward + insert rating + confirm, all `auth.uid()`-gated. Inserts `rating_histories` (feeds #24's Go-tx SQL) and sets `is_confirmed=TRUE` (must now explicitly invoke #26/#57's Go-tx SQL and #25/#27's Go logic — see 2.9). **See §3 T7-2** — no explicit row lock; a race is possible under wallet headroom. |
+| 37 | `on_task_evidences_upserted_notify_referee()` [trigger fn] | `evidence/triggers/on_task_evidences_upserted_notify_referee.sql` | 5 | Go *(unaffected)* | Notification dispatch on evidence insert/update. |
+| 38 | `validate_evidence_due_date()` [trigger fn] | `evidence/functions/validate_evidence_due_date.sql` | 1 | **Go** Δ | Pure read-only guard: `SELECT t.due_date ... IF v_now > v_due_date THEN RAISE EXCEPTION`. No mutation, no lock. Needs `tasks.due_date` (another table), so it cannot become a same-table `CHECK` constraint. Moves to Go as a pre-write validation in the evidence create/resubmit handlers — no atomicity lost, since nothing else contends on a single evidence row's due-date check. |
+| 39 | `resubmit_evidence(...)` | `evidence/functions/resubmit_evidence.sql` | 3 | Go *(unaffected)* | Multi-table: evidence update, asset add/remove, judgement status transition, `auth.uid()`-gated. |
+| 40 | `update_evidence(...)` | `evidence/functions/update_evidence.sql` | 4 | Go *(unaffected)* | `auth.uid()`-gated evidence + asset CRUD. |
+| 41 | `submit_evidence(...)` | `evidence/functions/submit_evidence.sql` | 3 | Go *(unaffected)* | Multi-table: evidence insert, asset insert, judgement status transition, `auth.uid()`-gated. |
+| 42 | `detect_and_handle_evidence_timeouts()` | `evidence/functions/detect_evidence_timeouts.sql` | 2 | **Go-tx SQL** Δ | Same shape as #35: one `UPDATE judgements j SET status='evidence_timeout' ... FROM task_referee_requests trr JOIN tasks t ... LEFT JOIN task_evidences te ... WHERE j.status='awaiting_evidence' AND v_now > t.due_date AND te.id IS NULL`, no branching. |
+| 43 | `handle_new_user()` [trigger fn] | `auth/functions/handle_new_user.sql` | 3 | Go *(unaffected)* | Provisions profile + notification_settings + user_ratings + point_wallet + trial_point_wallet on signup. Business logic moves; trigger mechanism (Supabase `auth.users`) is what's obsolete. Confirmed D2 provisioning path, baseline 2.7.4. |
+| 44 | `notify_event(...)` | `notification/functions/notify_event.sql` | 5 | Go *(unaffected)* | Reads Vault secrets, calls `net.http_post`. External side effect. |
+| 45 | `send_deadline_reminder(...)` | `notification/functions/send_deadline_reminder.sql` | 5 | Go *(unaffected)* | Idempotency log insert + `notify_event` dispatch. |
+| 46 | `detect_judgement_deadline_warnings()` | `notification/functions/detect_judgement_deadline_warnings.sql` | 5 | Go *(unaffected)* | Scans + dispatches reminders. |
+| 47 | `detect_evidence_deadline_warnings()` | `notification/functions/detect_evidence_deadline_warnings.sql` | 5 | Go *(unaffected)* | Same pattern as #46. |
+| 48 | `detect_auto_confirm_deadline_warnings()` | `notification/functions/detect_auto_confirm_deadline_warnings.sql` | 5 | Go *(unaffected)* | Same pattern as #46; default OFF. |
+| 49 | `reset_subscription_points(...)` | `point/functions/reset_subscription_points.sql` | 1 | **Go (orchestration)** Δ | Multiple business decisions: the idempotency check (`SELECT id FROM point_ledger WHERE reason='plan_renewal' AND description=v_description` — a fragile description-string idempotency key, flagged in 2.10), the wallet-not-found fallback (`INSERT ... IF NOT FOUND`), and the "record expiry of unused points" decision (`IF v_available > 0`) are Go branches. The atomic reads/writes (`SELECT ... FOR UPDATE`, the two possible `INSERT`s, the reset `UPDATE`) are Go-tx SQL statements Go issues once it has picked a branch. |
+| 50 | `consume_points(...)` | `point/functions/consume_points.sql` | 1 | **Go-tx SQL** Δ | Same pattern as #22 minus the obligation loop: `IF v_balance < p_amount` / `IF v_locked < p_amount` → Go; `SELECT ... FOR UPDATE`, the `balance/locked` `UPDATE`, and the ledger `INSERT` → Go-tx SQL. |
+| 51 | `lock_points(...)` | `point/functions/lock_points.sql` | 1 | **Go-tx SQL** Δ | Brief's own worked example: `IF (v_balance - v_locked) < p_amount THEN RAISE EXCEPTION` (availability check) → Go; `SELECT ... FOR UPDATE`, `locked = locked + p_amount`, and the ledger `INSERT` are the irreducible Go-tx SQL sequence. |
+| 52 | `unlock_points(...)` | `point/functions/unlock_points.sql` | 1 | **Go-tx SQL** Δ | Same shape as #51/#20: `IF v_locked < p_amount` → Go; `SELECT ... FOR UPDATE` + `locked = locked - p_amount` + ledger `INSERT` → Go-tx SQL. |
+| 53 | `handle_updated_at()` [trigger fn] | `common/functions/handle_updated_at.sql` | 2 | **DB trigger (either)** Δ | The one function the refined rule explicitly carves out: "housekeeping only (`set_updated_at` family) … may alternatively move to the Go data layer; note as either." Trivial `NEW.updated_at = NOW()`, no business logic, no atomicity concern. Kept as a DB trigger for the 21 housekeeping call sites (2.4); equally valid for the Go store to set `updated_at` explicitly on every `UPDATE` instead. |
+| 54 | `is_task_referee(task_uuid, user_uuid)` | `profile/functions/auth_helpers.sql` (L1) | 6 | delete *(unaffected)* | RLS-only helper; tied to the broader RLS retirement, not today's dead-code list. |
+| 55 | `is_task_referee_candidate(task_uuid, user_uuid)` | `profile/functions/auth_helpers.sql` (L19) | 6 | delete *(unaffected)* | Same note as #54. |
+| 56 | `is_task_tasker(task_uuid, user_uuid)` | `profile/functions/auth_helpers.sql` (L37) | 6 | delete (verify before drop) *(unaffected)* | Fully unreferenced. Baseline 2.7.2. |
+| 57 | `close_task_if_all_judgements_confirmed()` [trigger fn] | `task/triggers/on_all_judgements_confirmed_close_task.sql` | 1 | **Go-tx SQL** Δ | The three-statement body (`SELECT trr.task_id`, `PERFORM ... FOR UPDATE` lock, `IF NOT EXISTS (...) THEN UPDATE tasks SET status='closed'`) collapses into one atomic statement: `UPDATE tasks SET status='closed' WHERE id=$1 AND status <> 'closed' AND NOT EXISTS (SELECT 1 FROM judgements j JOIN task_referee_requests trr ON j.id=trr.id WHERE trr.task_id=$1 AND j.is_confirmed=false)`. No separate lock step needed, no business branching left — single conditional `UPDATE`, Go-tx SQL. See 2.9. |
+| 58 | `create_task(...)` | `task/functions/create_task.sql` | 3 | Go *(unaffected)* | Multi-step: validate inputs, validate open-requirements, insert task, create referee requests (locks points). |
+| 59 | `update_task(...)` | `task/functions/update_task.sql` | 3 | Go *(unaffected)* | Same multi-step pattern as #58, plus ownership + status-transition checks. |
+| 60 | `delete_task(uuid)` | `task/functions/delete_task.sql` | 4 | Go *(unaffected)* | `auth.uid()`-gated ownership + status check + single delete. |
+| 61 | `validate_task_inputs(...)` | `task/functions/utils/validate_task_inputs.sql` | 3 | Go *(unaffected)* | Pure business-rule validation. |
+| 62 | `create_task_referee_requests_from_json(...)` | `task/functions/utils/create_task_referee_requests_from_json.sql` | 3 | Go *(note updated)* | Multi-step: cost calc, trial-vs-regular point-source decision, loop insert + lock (calls `lock_trial_points`/`lock_points`, now **Go-tx SQL**, see #17/#51). |
+| 63 | `validate_task_open_requirements(...)` | `task/functions/utils/validate_task_open_requirements.sql` | 3 | Go *(unaffected)* | Business-rule validation: due-date minimum, point-balance sufficiency. |
+| 64 | `prepare_monthly_payouts(...)` | `reward/functions/prepare_monthly_payouts.sql` | 3 | Go (worker) *(unaffected)* | Batch orchestration: last-day-of-month guard, exchange-rate lookup, Stripe Connect readiness check, payout row insert, notify. |
+| 65 | `deduct_reward_for_payout(...)` | `reward/functions/deduct_reward_for_payout.sql` | 1 | **Go-tx SQL** Δ | Optimistic-concurrency single statement, no `FOR UPDATE` needed: `UPDATE reward_wallets SET balance=balance-p_amount WHERE user_id=$1 AND balance >= p_amount`; `IF NOT FOUND THEN RAISE EXCEPTION` is Go's zero-rows-affected handling, not a separate decision. Plus the ledger `INSERT`. |
+| 66 | `grant_reward(...)` | `reward/functions/grant_reward.sql` | 1 | **Go-tx SQL** Δ | Single `INSERT ... ON CONFLICT (user_id) DO UPDATE SET balance = reward_wallets.balance + p_amount` upsert, no branching, plus the ledger `INSERT`. |
+| 67 | `get_payout_topup_metrics(text)` | `reward/functions/get_payout_topup_metrics.sql` | 2 | **Go-tx SQL** Δ | Read-only, but the four `SELECT`s (active exchange rate, sum of wallet balances, month-to-date ledger earnings, singleton `payout_topup_config`) need a **consistent snapshot across statements** while payouts are being processed concurrently elsewhere — that consistency comes from one Go-owned (read) transaction, not a PL/pgSQL wrapper. Refines baseline 2.7.5: the *SQL* dissolves into a plain Go-tx SQL query set behind the same Go operator endpoint; the "Postgres function callable via RPC" framing is no longer needed. |
+| 68 | `check_account_deletable()` | `account/functions/check_account_deletable.sql` | 4 | Go *(unaffected)* | `auth.uid()`-gated read-only precondition check. |
 
-#### Function tally
+#### Function tally (v2)
 
-| Disposition | Count |
-|---|---|
-| stay-in-Postgres (cat 1 + 2) | 23 (cat 1: 17, cat 2: 6) |
-| move-to-Go (cat 3 + 4 + 5) | 41 (cat 3: 16, cat 4: 14, cat 5: 11) |
-| delete (cat 6) | 4 |
-| **Total** | **68** |
+| Disposition | Count | Of which, from the 23 re-derived this pass |
+|---|---|---|
+| Go | 48 | 7 (#9, #19, #21, #23, #34, #38, #49) |
+| Go-tx SQL | 15 | 15 (#17, #18, #20, #22, #24, #26, #35, #42, #50, #51, #52, #57, #65, #66, #67) |
+| DB trigger (either) | 1 | 1 (#53) |
+| DB constraint | 0 | 0 |
+| delete | 4 | 0 (unaffected, re-confirmed) |
+| **Total** | **68** | **23** |
 
-**Note (operator adjudication, 2026-07-22):** `get_payout_topup_metrics`
-(#67) remains tallied as **stay-in-Postgres** (category 2) — the read-only
-aggregate SQL itself stays in Postgres behind the Go store — but its Phase-0
-ambiguity is now resolved rather than open: it is exposed to the operator
-via a **Go operator endpoint**, which replaces the operator-tool role that
-`recommend-payout-topup` held in the Supabase design (§1.3, §2.7.5). The
-23/41/4 tally is unchanged by this — only the *access path* to #67 changes,
-not its stay-in-Postgres disposition.
+**DB constraint = 0, by design, not oversight.** None of the 23 decompose
+into a *new* invariant that needs a fresh `CHECK`/`UNIQUE` constraint —
+the two invariants the wallet functions implicitly protect (`balance >= 0`,
+`locked >= 0`, `balance >= locked`) are **already** real `CHECK` constraints
+on `point_wallets`/`trial_point_wallets` (see `supabase/schemas/point/tables/point_wallets.sql`,
+`supabase/schemas/trial_point/tables/trial_point_wallets.sql`), predating
+this classification and out of scope of the function/trigger inventory
+(the original T3 inventory only counted `CREATE FUNCTION`/`TRIGGER`/`cron.schedule`/`POLICY`,
+not table constraints). Those existing `CHECK`s are the real DB-level
+backstop for the sufficiency checks that move to Go — noted per-row above.
 
 ### 2.4 Business triggers (15) + housekeeping summary
 
-| # | trigger | file | function called | category | disposition |
+| # | trigger | file | function called | category | disposition (v2) |
 |---|---|---|---|---|---|
-| 1 | `on_task_referee_requests_update_process_matching` | `matching/triggers/on_task_referee_requests_update_process_matching.sql` | `trigger_process_matching()` | 3 | move-to-Go |
-| 2 | `on_task_referee_requests_insert_process_matching` | `matching/triggers/on_task_referee_requests_insert_process_matching.sql` | `trigger_process_matching()` | 3 | move-to-Go |
-| 3 | `on_rating_histories_change_update_user_ratings` | `rating/triggers/on_rating_histories_change_update_user_ratings.sql` | `update_user_ratings()` | 2 | stay-in-Postgres |
-| 4 | `on_judgement_confirmed_notify` | `judgement/triggers/on_judgement_confirmed_notify.sql` | `notify_judgement_confirmed()` | 5 | move-to-Go |
-| 5 | `on_judgement_confirmed_close_request` | `judgement/triggers/on_judgement_confirmed_close_request.sql` | `close_referee_request_on_confirmed()` | 1 | stay-in-Postgres |
-| 6 | `on_evidence_timeout_settle` | `judgement/triggers/on_evidence_timeout_settle.sql` | `settle_evidence_timeout()` | 5 | move-to-Go |
-| 7 | `on_judgements_timeout_score_referee` | `judgement/triggers/on_judgements_timeout_score_referee.sql` | `auto_score_timeout_referee()` | 3 | move-to-Go |
-| 8 | `on_judgements_status_changed` | `judgement/triggers/on_judgements_status_changed.sql` | `on_judgements_status_changed()` | 5 | move-to-Go |
-| 9 | `on_review_timeout_settle` | `judgement/triggers/on_review_timeout_settle.sql` | `settle_review_timeout()` | 5 | move-to-Go |
-| 10 | `on_judgement_confirmed` | `judgement/triggers/on_judgement_confirmed.sql` | `handle_judgement_confirmed()` | 5 | move-to-Go |
-| 11 | `on_task_evidences_insert_validate_due_date` | `evidence/triggers/on_task_evidences_insert_validate_due_date.sql` | `validate_evidence_due_date()` | 1 | stay-in-Postgres |
-| 12 | `on_task_evidences_upserted_notify_referee` | `evidence/triggers/on_task_evidences_upserted_notify_referee.sql` | `on_task_evidences_upserted_notify_referee()` | 5 | move-to-Go |
-| 13 | `on_task_evidences_update_validate_due_date` | `evidence/triggers/on_task_evidences_update_validate_due_date.sql` | `validate_evidence_due_date()` | 1 | stay-in-Postgres |
-| 14 | `on_auth_user_created` | `auth/triggers/on_auth_user_created.sql` | `handle_new_user()` | 3 | **move-to-Go** (mechanism deleted, logic ported — resolved, see 2.7.4) |
-| 15 | `on_all_judgements_confirmed_close_task` | `task/triggers/on_all_judgements_confirmed_close_task.sql` | `close_task_if_all_judgements_confirmed()` | 1 | stay-in-Postgres |
+| 1 | `on_task_referee_requests_update_process_matching` | `matching/triggers/on_task_referee_requests_update_process_matching.sql` | `trigger_process_matching()` | 3 | Go *(unaffected)* |
+| 2 | `on_task_referee_requests_insert_process_matching` | `matching/triggers/on_task_referee_requests_insert_process_matching.sql` | `trigger_process_matching()` | 3 | Go *(unaffected)* |
+| 3 | `on_rating_histories_change_update_user_ratings` | `rating/triggers/on_rating_histories_change_update_user_ratings.sql` | `update_user_ratings()` | 2 | **Go-tx SQL** Δ — see 2.3 #24. Trigger dissolves entirely (no `CREATE TRIGGER` remains); Go issues the two recompute `UPDATE ... FROM` statements in the same transaction as every Go-initiated `rating_histories` write. |
+| 4 | `on_judgement_confirmed_notify` | `judgement/triggers/on_judgement_confirmed_notify.sql` | `notify_judgement_confirmed()` | 5 | Go *(unaffected)* |
+| 5 | `on_judgement_confirmed_close_request` | `judgement/triggers/on_judgement_confirmed_close_request.sql` | `close_referee_request_on_confirmed()` | 1 | **Go-tx SQL** Δ — see 2.3 #26. Trigger dissolves; Go issues the single PK-scoped `UPDATE task_referee_requests SET status='closed'` right after it writes `is_confirmed=true`, in the same transaction. |
+| 6 | `on_evidence_timeout_settle` | `judgement/triggers/on_evidence_timeout_settle.sql` | `settle_evidence_timeout()` | 5 | Go *(unaffected)* |
+| 7 | `on_judgements_timeout_score_referee` | `judgement/triggers/on_judgements_timeout_score_referee.sql` | `auto_score_timeout_referee()` | 3 | Go *(unaffected)* |
+| 8 | `on_judgements_status_changed` | `judgement/triggers/on_judgements_status_changed.sql` | `on_judgements_status_changed()` | 5 | Go *(unaffected)* |
+| 9 | `on_review_timeout_settle` | `judgement/triggers/on_review_timeout_settle.sql` | `settle_review_timeout()` | 5 | Go *(unaffected)* |
+| 10 | `on_judgement_confirmed` | `judgement/triggers/on_judgement_confirmed.sql` | `handle_judgement_confirmed()` | 5 | Go *(unaffected)* |
+| 11 | `on_task_evidences_insert_validate_due_date` | `evidence/triggers/on_task_evidences_insert_validate_due_date.sql` | `validate_evidence_due_date()` | 1 | **Go** Δ — see 2.3 #38. Trigger dissolves; the pre-write due-date guard runs as Go validation in the evidence-create handler. |
+| 12 | `on_task_evidences_upserted_notify_referee` | `evidence/triggers/on_task_evidences_upserted_notify_referee.sql` | `on_task_evidences_upserted_notify_referee()` | 5 | Go *(unaffected)* |
+| 13 | `on_task_evidences_update_validate_due_date` | `evidence/triggers/on_task_evidences_update_validate_due_date.sql` | `validate_evidence_due_date()` | 1 | **Go** Δ — see 2.3 #38 and row 11 above. Same function, second call site (evidence-resubmit handler); trigger dissolves. |
+| 14 | `on_auth_user_created` | `auth/triggers/on_auth_user_created.sql` | `handle_new_user()` | 3 | Go *(unaffected)* (mechanism deleted, logic ported — resolved, baseline 2.7.4) |
+| 15 | `on_all_judgements_confirmed_close_task` | `task/triggers/on_all_judgements_confirmed_close_task.sql` | `close_task_if_all_judgements_confirmed()` | 1 | **Go-tx SQL** Δ — see 2.3 #57. Trigger dissolves into one conditional `UPDATE tasks ... WHERE NOT EXISTS (...)` statement issued by Go. |
 
-**Housekeeping triggers (21, summary row):** all `on_<table>_update_set_updated_at` triggers across `matching`, `trial_point`, `rating`, `judgement`, `evidence`, `notification`, `point`, `subscription`, `profile`, `task`, `reward` (×4), `report`, `stripe` — all call `handle_updated_at()`. Category 2, disposition **stay-in-Postgres** (trivial, low-regret to keep as a DB-level convenience; equally fine to have the Go data layer set `updated_at` explicitly on every UPDATE if preferred).
+**Housekeeping triggers (21, summary row):** all `on_<table>_update_set_updated_at`
+triggers across `matching`, `trial_point`, `rating`, `judgement`, `evidence`,
+`notification`, `point`, `subscription`, `profile`, `task`, `reward` (×4),
+`report`, `stripe` — all call `handle_updated_at()`. Category 2, disposition
+**DB trigger (either)** *(unaffected in count; wording refined to match 2.1a's
+explicit housekeeping carve-out — see 2.3 #53)*.
 
-#### Trigger tally
+#### Trigger tally (v2)
 
 | Disposition | Count |
 |---|---|
-| stay-in-Postgres (business, cat 1+2) | 5 |
-| move-to-Go (business, cat 3+5) | 10 |
-| stay-in-Postgres (housekeeping, 1 summary row = 21 triggers) | 21 |
+| Go (business) | 12 (2 flipped from stay: #11, #13; 10 unaffected) |
+| Go-tx SQL (business) | 3 (all flipped from stay: #3, #5, #15) |
+| DB trigger — literal `CREATE TRIGGER` remaining (business) | 0 |
+| DB trigger (either) — housekeeping (1 summary row = 21 triggers) | 21 |
 | **Total triggers accounted for** | **15 + 21 = 36** |
+
+**Notable result:** under the refined rule, **zero of the 5 previously-stay
+business triggers remain a literal Postgres `CREATE TRIGGER`.** 3 dissolve
+into Go-tx SQL statements Go issues inside the same transaction as the
+write that used to fire them; 2 dissolve into ordinary Go validation. This
+matches the rule's own crux — "triggers that enforce invariants across
+arbitrary write paths are no longer load-bearing once Go is the only
+writer" — and is the central, reportable consequence of this v2 pass. See
+2.9 for the orchestration implications this creates.
 
 ### 2.5 Cron (10)
 
+Structurally unaffected (all 10 still move to the Go worker's own
+scheduler); three notes are updated because they cited functions whose
+disposition changed.
+
 | # | schedule name | frequency | job | disposition | note |
 |---|---|---|---|---|---|
-| 1 | `process-pending-requests` | hourly (`0 * * * *`) | `matching/cron/cron_process_pending_requests.sql` → `process_pending_requests()` | move-to-Go (worker) | |
-| 2 | `detect-review-timeouts` | every 5 min | `judgement/cron/cron_detect_review_timeout.sql` → `detect_and_handle_review_timeouts()` | move-to-Go (worker) | Scheduling moves; the SQL function itself (cat 2) can remain a Postgres function the worker calls via RPC. |
-| 3 | `detect-auto-confirms` | hourly | `judgement/cron/cron_detect_auto_confirm.sql` → `detect_auto_confirms()` | move-to-Go (worker) | Function itself (cat 1, job-claiming) can remain a Postgres function the worker calls via RPC. |
-| 4 | `detect-evidence-timeouts` | every 5 min | `judgement/cron/cron_detect_evidence_timeout.sql` → `detect_and_handle_evidence_timeouts()` | move-to-Go (worker) | Function itself (cat 2) can remain a Postgres function the worker calls via RPC. |
-| 5 | `detect-auto-confirm-deadline-warnings` | every minute | `notification/cron/cron_detect_auto_confirm_deadline_warnings.sql` → `detect_auto_confirm_deadline_warnings()` | move-to-Go (worker) | |
-| 6 | `detect-evidence-deadline-warnings` | every minute | `notification/cron/cron_detect_evidence_deadline_warnings.sql` → `detect_evidence_deadline_warnings()` | move-to-Go (worker) | |
-| 7 | `detect-judgement-deadline-warnings` | every minute | `notification/cron/cron_detect_judgement_deadline_warnings.sql` → `detect_judgement_deadline_warnings()` | move-to-Go (worker) | |
-| 8 | `sweep-r2-stale-objects` | daily 18:00 UTC | `common/cron/cron_sweep_r2_stale_objects.sql` → `net.http_post` to `sweep-r2-stale-objects` Edge Function | move-to-Go (worker) | Already calls out to an external Edge Function directly from `pg_cron`; the Edge Function itself is covered by §1.3. |
-| 9 | `prepare-monthly-payouts` | `0 15 28-31 * *` (guarded to last day) | `reward/cron/cron_prepare_monthly_payouts.sql` → `prepare_monthly_payouts('JPY')` | move-to-Go (worker) | |
-| 10 | `execute-pending-payouts` | every 30 min | `reward/cron/cron_execute_pending_payouts.sql` → `net.http_post` to `execute-pending-payouts` Edge Function | move-to-Go (worker) | Same pattern as #8. See §3 T7-1 for a job-claiming gap in this function. |
+| 1 | `process-pending-requests` | hourly (`0 * * * *`) | `matching/cron/cron_process_pending_requests.sql` → `process_pending_requests()` | Go (worker) *(unaffected)* | |
+| 2 | `detect-review-timeouts` | every 5 min | `judgement/cron/cron_detect_review_timeout.sql` → `detect_and_handle_review_timeouts()` | Go (worker) *(note updated)* | Scheduling moves; the SQL statement itself is now **Go-tx SQL** (2.3 #35) — the Go worker issues the exact `UPDATE ... FROM` text directly each tick. No stored function/RPC needed (previously noted as "can remain a Postgres function the worker calls via RPC" — superseded). |
+| 3 | `detect-auto-confirms` | hourly | `judgement/cron/cron_detect_auto_confirm.sql` → `detect_auto_confirms()` | Go (worker) *(note updated)* | Function dissolves into Go worker orchestration (2.3 #34): a `FOR UPDATE SKIP LOCKED` claim query plus several Go-tx SQL mutations per claimed row. No RPC to a stored function (previously noted as a keep-as-Postgres-function candidate — superseded). |
+| 4 | `detect-evidence-timeouts` | every 5 min | `judgement/cron/cron_detect_evidence_timeout.sql` → `detect_and_handle_evidence_timeouts()` | Go (worker) *(note updated)* | Same as row 2 — the SQL is now **Go-tx SQL** (2.3 #42), issued directly by the worker; no RPC needed. |
+| 5 | `detect-auto-confirm-deadline-warnings` | every minute | `notification/cron/cron_detect_auto_confirm_deadline_warnings.sql` → `detect_auto_confirm_deadline_warnings()` | Go (worker) *(unaffected)* | |
+| 6 | `detect-evidence-deadline-warnings` | every minute | `notification/cron/cron_detect_evidence_deadline_warnings.sql` → `detect_evidence_deadline_warnings()` | Go (worker) *(unaffected)* | |
+| 7 | `detect-judgement-deadline-warnings` | every minute | `notification/cron/cron_detect_judgement_deadline_warnings.sql` → `detect_judgement_deadline_warnings()` | Go (worker) *(unaffected)* | |
+| 8 | `sweep-r2-stale-objects` | daily 18:00 UTC | `common/cron/cron_sweep_r2_stale_objects.sql` → `net.http_post` | Go (worker) *(unaffected)* | |
+| 9 | `prepare-monthly-payouts` | `0 15 28-31 * *` | `reward/cron/cron_prepare_monthly_payouts.sql` → `prepare_monthly_payouts('JPY')` | Go (worker) *(unaffected)* | |
+| 10 | `execute-pending-payouts` | every 30 min | `reward/cron/cron_execute_pending_payouts.sql` → `net.http_post` | Go (worker) *(unaffected)* | See baseline §3 T7-1 for a job-claiming gap in this function. |
 
-**None of the 10 cron jobs are pure DB-internal maintenance** (no
-`VACUUM`/`ANALYZE`/partition-rotation jobs exist in this schema) — all 10
-encode product-domain business logic or external calls, so all 10 move to
-the Go worker's own scheduler per the "all 10 business cron → move-to-Go
-worker" framework default. The two that already call `net.http_post` (#8,
-#10) are the clearest cases — they're already structurally "an external
-side effect on a timer," just via `pg_cron` + `pg_net` instead of a Go
-scheduler.
+### 2.6 RLS summary (unchanged, out of scope for this v2 pass)
 
-### 2.6 RLS summary
+63 `CREATE POLICY` statements — disposition unaffected by the function/
+trigger re-classification above. Carried forward verbatim from the
+2026-07-22 baseline: **retire all 63** to Go application-layer authz, with
+wallet/ledger-adjacent policies (point, trial_point, reward) as possible
+defense-in-depth candidates — a Go-implementation decision, not resolved
+here (baseline 2.7.6, still open).
 
-63 `CREATE POLICY` statements across 30 policy files (13 domains: evidence,
-judgement, matching, notification, point, profile, rating, report, reward,
-stripe, subscription, task, trial_point). Per program design §10,
-authorization retires from Postgres RLS to the Go service layer wholesale —
-**disposition: retire all 63** (auth model moves from Supabase
-`auth.uid()`/RLS to Firebase-verified-JWT + application-layer authz checks
-in Go). A handful of wallet/ledger-adjacent policies (point, trial_point,
-reward tables) may be worth keeping as tested defense-in-depth once the Go
-app owns primary authz, but that's a Go-implementation decision out of
-scope for this coarse pass — **not resolved by the operator adjudication;
-remains open**, see 2.7.6.
+### 2.7 Operator resolutions (2026-07-22, carried forward; one refined below)
 
-### 2.7 Operator resolutions (2026-07-22)
+The five resolved items and one open item from the 2026-07-22 baseline are
+carried forward unchanged **except 2.7.5**, whose "access path" framing is
+refined by this pass's Go-tx SQL classification of `get_payout_topup_metrics`.
 
-The source investigation (§2.8 below) flagged six ambiguous items for
-operator confirmation. Five are resolved by this adjudication; one (RLS
-defense-in-depth) remains open, deferred to Go-implementation design.
-
-#### 2.7.1 `detect_and_handle_referee_timeouts()` — resolved: delete, verify before drop
-
-**Resolved: delete (category 6), verify before drop.** The function
-(`matching/functions/detect_referee_timeouts.sql`) is confirmed
-unscheduled and unreferenced anywhere in `supabase/schemas/`. The operator
-accepts the "dead code" classification but requires the drop to be
-**verified** (not assumed silently correct) before it happens — i.e.,
-confirm during the owning phase that this wasn't meant to be wired to a
-cron schedule that was never added, per the source investigation's own
-hedge (§7-C of this baseline). This is not a blocker; it closes the
-ambiguity as "delete, with a verification step," not as "keep" or
-"investigate further before deciding."
-
-#### 2.7.2 `is_task_tasker(task_uuid, user_uuid)` — resolved: delete candidate, verify before drop
-
-**Resolved: delete (category 6), verify before drop.** Zero callers in
-`supabase/schemas/` (unlike its siblings `is_task_referee`/
-`is_task_referee_candidate`, each called once from `tasks_policies.sql` —
-those two are **not** drop candidates and are tied to the broader RLS
-retirement, not today's dead-code list; do not conflate the three
-`auth_helpers.sql` functions). The operator accepts "delete candidate" and
-requires verification before drop, consistent with the historical-migration
-trail (§7-C) showing it *was* called by earlier, since-refactored judgement
-policies/functions — corroborating rather than contradicting "vestigial
-today."
-
-#### 2.7.3 `auto_score_timeout_referee()` + `settle_review_timeout()` redundant rating insert — resolved: move-to-Go with dedup
-
-**Resolved: move-to-Go with dedup; not a launch blocker.** Both #6
-(`auto_score_timeout_referee`, trigger `on_judgements_timeout_score_referee`)
-and #29 (`settle_review_timeout`) insert the same "negative rating on
-review_timeout" row, each guarded by
-`ON CONFLICT (judgement_id, rating_type) DO NOTHING` — today's behavior is
-correct despite the duplication. The operator's resolution: when both move
-to Go (both are already category 3/5, move-to-Go), **consolidate into one
-Go code path with deduplication** rather than preserving two independent
-call sites asserting the same business rule. This is an implementation
-instruction for the owning feature phase (judgement domain, Phase 4), not a
-Phase 0 blocker — today's `ON CONFLICT DO NOTHING` protection means there is
-no correctness bug to fix urgently.
-
-#### 2.7.4 `handle_new_user()` / `on_auth_user_created` — confirmed: move-to-Go, this is the D2 provisioning path
-
-**Resolved: move-to-Go (category 3), confirmed.** The provisioning logic —
-create `profiles`, `notification_settings`, `user_ratings`, `point_wallet`,
-`trial_point_wallet`, with a config-driven initial trial-point grant — is
-real business logic that needs a Go-side home. The operator confirms the
-framing proposed by the source investigation: the trigger *mechanism*
-(`AFTER INSERT ON auth.users`, Supabase-Auth-specific) disappears entirely
-under Firebase Auth + internal UUID, but the *logic* it runs is exactly the
-onboarding step described in program design §10/D2 — an explicit
-"create user" step the Go API runs after first-seen Firebase-authenticated
-request (see also §5(a) "target" steps for the full flow). This closes
-Ambiguous item #4 from the source investigation as confirmed, not merely
-proposed.
-
-#### 2.7.5 `get_payout_topup_metrics(text)` — resolved: exposed via a Go operator endpoint
-
-**Resolved: exposed via a Go operator endpoint**, replacing the operator-tool
-role `recommend-payout-topup` held in the Supabase Edge Function design
-(§1.3). The read-only aggregate SQL itself (function #67, category 2)
-**may stay in Postgres behind the Go store** — the resolution changes the
-*access path* (a Go operator endpoint calls it, rather than a Supabase Edge
-Function with `X-Operator-Secret` auth calling the RPC directly), not the
-function's stay-in-Postgres disposition. This closes the "ad hoc query vs.
-Go admin surface" question the source investigation left open (Ambiguous
-item #5) in favor of a concrete Go admin surface. See also the Function
-tally note in 2.3 and the `recommend-payout-topup` row in §1.3.
-
-#### 2.7.6 RLS defense-in-depth candidates — remains open
-
-**Not resolved by this adjudication.** The proposal to keep a handful of
-wallet/ledger-adjacent RLS policies (point, trial_point, reward tables) as
-tested defense-in-depth once the Go app owns primary authz is a design
-recommendation, not a decision — it remains open, to be confirmed with the
-operator during Go-implementation design (feature phase, not Phase 0).
+- **2.7.1** `detect_and_handle_referee_timeouts()` — delete, verify before
+  drop. Unaffected (not one of the 23).
+- **2.7.2** `is_task_tasker(...)` — delete candidate, verify before drop.
+  Unaffected (not one of the 23).
+- **2.7.3** `auto_score_timeout_referee()` + `settle_review_timeout()`
+  redundant rating insert — move-to-Go (now: Go) with dedup. Unaffected in
+  substance; both feed into #24's now-Go-tx-SQL recompute (2.9).
+- **2.7.4** `handle_new_user()` / `on_auth_user_created` — confirmed
+  move-to-Go (now: Go), D2 provisioning path. Unaffected.
+- **2.7.5** `get_payout_topup_metrics(text)` — **refined.** The 2026-07-22
+  resolution said the read-only aggregate SQL "may stay in Postgres behind
+  the Go store" as a PL/pgSQL function called via a Go operator endpoint.
+  This v2 pass finds no reason for the PL/pgSQL wrapper itself to survive:
+  the four `SELECT`s need cross-statement consistency, which a Go-owned
+  transaction gives for free (2.3 #67). **Refined resolution:** the SQL
+  text (four `SELECT`s) is issued directly by the Go operator endpoint
+  inside one read transaction — Go-tx SQL, not a stored function. The
+  *access path* (Go operator endpoint, not a Supabase Edge Function) is
+  unchanged from the original resolution.
+- **2.7.6** RLS defense-in-depth candidates — remains open, unaffected.
 
 ### 2.8 Original ambiguous items (source investigation, pre-resolution)
 
-Retained verbatim for audit trail — cross-referenced by 2.7 above.
+Unchanged from the 2026-07-22 baseline — retained verbatim for audit trail.
+See `docs/superpowers/specs/2026-07-22-phase0-baseline.md` §2.8 (lines
+798–807); not reproduced here since none concern the 23 re-derived by this
+pass.
 
-1. **`detect_and_handle_referee_timeouts()`** (`matching/functions/detect_referee_timeouts.sql`) is byte-for-byte duplicate business logic of `detect_and_handle_review_timeouts()` (`judgement/functions/detect_review_timeouts.sql`) — both transition `in_review` judgements past `due_date + 3h` to `review_timeout`. Only the judgement-domain one has a `cron.schedule` entry; the matching-domain one is unscheduled and unreferenced anywhere in the schema. Classified here as dead code (category 6, delete), but confirm this wasn't meant to be wired to a different cron schedule before dropping it. → **Resolved 2.7.1.**
-2. **`is_task_tasker(task_uuid, user_uuid)`** (`profile/functions/auth_helpers.sql`) has zero callers anywhere in `supabase/schemas/` — not even in an RLS policy (unlike its two siblings, which are used once by `tasks_policies.sql`). It appears to already be dead code today, independent of the refactor. Confirm before deleting in case something outside `supabase/schemas/` (e.g., an Edge Function or ad-hoc query) calls it directly. → **Resolved 2.7.2.**
-3. **`auto_score_timeout_referee()`** (trigger `on_judgements_timeout_score_referee`, fires on *every* `judgements` UPDATE with no `WHEN` clause) inserts the same "negative rating on review_timeout" row that `settle_review_timeout()` already inserts on the status transition into `review_timeout`. Both are protected by `ON CONFLICT (judgement_id, rating_type) DO NOTHING`, so behavior is currently correct, but the redundancy means there are two independent code paths asserting the same business rule. Worth deciding whether to fold this into one path when porting to Go, or preserve both intentionally. → **Resolved 2.7.3.**
-4. **`handle_new_user()` / `on_auth_user_created`**: classified as category 3 (business orchestration) → move-to-Go, *not* category 6 (obsolete/delete), even though the trigger mechanism itself (`AFTER INSERT ON auth.users`) is Supabase-Auth-specific and disappears entirely under Firebase Auth + internal UUID. The distinction matters: the *provisioning logic* (create profile, notification_settings, user_ratings, point_wallet, trial_point_wallet with config-driven initial grant) is real business logic that needs a Go-side home (e.g., an explicit "create user" step invoked after first-seen Firebase-authenticated request), not something to simply drop. Confirm this framing matches the intended Go onboarding design. → **Resolved 2.7.4.**
-5. **`get_payout_topup_metrics(text)`**: `service_role`-only ops/admin query (no `anon`/`authenticated` grant), likely backing an internal metrics view rather than the app. Classified as stay-in-Postgres (category 2) as a low-priority item, but confirm whether it should instead move to Go alongside `prepare_monthly_payouts` if there's a Go admin surface being planned, or just be queried ad hoc post-migration. → **Resolved 2.7.5.**
-6. **RLS defense-in-depth candidates**: the RLS summary proposes retiring all 63 policies to Go authz, with wallet/ledger tables (point, trial_point, reward) as possible keep-as-defense-in-depth candidates. This is a design recommendation, not a decision — confirm with the operator during Go-implementation design, not here. → **Open, see 2.7.6.**
+### 2.9 New implications of dissolving the 5 previously-"stay" business triggers (v2 addition)
+
+Reading the actual trigger definitions surfaced something the disposition
+table alone doesn't show: **four separate triggers currently fire off the
+exact same condition** — `AFTER UPDATE ON judgements ... WHEN (NEW.is_confirmed
+= true AND OLD.is_confirmed = false)` (or the equivalent `IS NULL OR ... =
+false` form):
+
+- `on_judgement_confirmed_notify` → `notify_judgement_confirmed()` (2.3 #25, Go)
+- `on_judgement_confirmed_close_request` → `close_referee_request_on_confirmed()` (2.3 #26, **Go-tx SQL**)
+- `on_judgement_confirmed` → `handle_judgement_confirmed()` (2.3 #27, Go)
+- `on_all_judgements_confirmed_close_task` → `close_task_if_all_judgements_confirmed()` (2.3 #57, **Go-tx SQL**)
+
+Plus, separately, every write that inserts a `rating_histories` row today
+fires `on_rating_histories_change_update_user_ratings` → `update_user_ratings()`
+(2.3 #24, **Go-tx SQL**).
+
+Once Go becomes the sole writer and these 5 triggers are dropped, **the four
+call sites that currently set `judgements.is_confirmed = TRUE` must each
+explicitly perform the work the triggers used to cascade automatically**:
+
+| Call site (2.3 #) | Sets `is_confirmed=true` | Inserts `rating_histories` | Must now explicitly run |
+|---|---|---|---|
+| `confirm_judgement_and_rate_referee` (#36) | yes | yes | #24 Go-tx SQL, #26 Go-tx SQL, #57 Go-tx SQL, #25/#27 Go (notify) |
+| `confirm_evidence_timeout` (#32) | yes | no | #26 Go-tx SQL, #57 Go-tx SQL, #25/#27 Go (notify) |
+| `confirm_review_timeout` (#33) | yes | no | #26 Go-tx SQL, #57 Go-tx SQL, #25/#27 Go (notify) |
+| `detect_auto_confirms` (#34) | yes | yes | #24 Go-tx SQL, #26 Go-tx SQL, #57 Go-tx SQL, #25/#27 Go (notify) |
+
+**Recommendation for the owning feature phase (not decided here):** implement
+one shared Go orchestration helper (e.g. `onJudgementConfirmed(tx, judgementID)`)
+that all four call sites invoke inside their transaction, rather than
+re-implementing the same four-to-five-statement sequence independently at
+each site. This mirrors — and extends — the dedup the operator already
+approved for the #6/#29 redundant rating insert (baseline 2.7.3): once
+triggers no longer provide the "fires everywhere automatically" guarantee,
+that guarantee has to be re-created deliberately in Go, and a single shared
+helper is the natural place to do it. Flagged for operator/implementer
+awareness, not a Phase 0 blocker.
+
+### 2.10 New ambiguous items surfaced by this pass (for operator confirmation)
+
+1. **`reset_subscription_points`'s idempotency key is a `description` string
+   match, not a real constraint.** The guard is
+   `SELECT id FROM point_ledger WHERE user_id=$1 AND reason='plan_renewal'
+   AND description = 'Subscription renewal: ' || p_invoice_id LIMIT 1` — a
+   free-text column doing duplicate-detection work. It works today, but it's
+   fragile (whitespace/formatting changes to the description silently break
+   idempotency) and it's exactly the kind of thing the refined rule's "DB
+   constraint" bucket exists for. **Not classified as DB constraint here**
+   because doing so would require a schema change (e.g. a dedicated
+   `related_id`/invoice-id column with a `UNIQUE (user_id, reason,
+   related_id)` constraint) that's a real design decision, not a
+   reclassification of existing SQL. Flagged for the owning phase (point
+   domain), not resolved here.
+2. **`get_point_for_matching_strategy`'s hardcoded `'standard' → 1` mapping**
+   duplicates as a Go constant with no remaining Postgres copy (2.3 #9). The
+   2026-07-22 baseline (line 1442-1446 of the assembled doc) already flagged
+   this as "a real drift risk if the lookup table ever grows past the single
+   hardcoded case" for the *old* split (Go duplicate + Postgres original);
+   under v2 there is only one copy (Go), so the drift risk this flagged is
+   **resolved by elimination**, not by discipline — worth noting explicitly
+   since the old note's phrasing ("duplicated constant") no longer applies.
+3. **Confirm the 2.9 "shared Go helper" recommendation is the intended
+   design**, or whether the four call sites are expected to each inline
+   the post-confirm sequence independently. Either is workable; the
+   recommendation is for consistency and lower regression risk, not a
+   correctness requirement.
 
 ## 3. Launch-Blocker Register
 
@@ -1077,27 +1146,27 @@ needed to account for all 24 Supabase-importing files.
 
 | kind | symbol/table | file:line | feature | maps to (Go endpoint) |
 |---|---|---|---|---|
-| rpc | `create_referee_available_time_slot` (generic `.rpc<String>(`) | `peppercheck_flutter/lib/features/matching/data/matching_repository.dart:43` | matching | `POST /api/v1/matching/availability` (§2.3 #5, move-to-Go) |
-| rpc | `update_referee_available_time_slot` | `peppercheck_flutter/lib/features/matching/data/matching_repository.dart:56` | matching | `PATCH /api/v1/matching/availability/{id}` (§2.3 #2, move-to-Go) |
-| rpc | `delete_referee_available_time_slot` | `peppercheck_flutter/lib/features/matching/data/matching_repository.dart:68` | matching | `DELETE /api/v1/matching/availability/{id}` (§2.3 #13, move-to-Go) |
-| rpc | `create_referee_blocked_date` (generic `.rpc<String>(`) | `peppercheck_flutter/lib/features/matching/data/matching_repository.dart:90` | matching | `POST /api/v1/matching/blocked-dates` (§2.3 #10, move-to-Go) |
-| rpc | `update_referee_blocked_date` | `peppercheck_flutter/lib/features/matching/data/matching_repository.dart:107` | matching | `PATCH /api/v1/matching/blocked-dates/{id}` (§2.3 #16, move-to-Go) |
-| rpc | `delete_referee_blocked_date` | `peppercheck_flutter/lib/features/matching/data/matching_repository.dart:119` | matching | `DELETE /api/v1/matching/blocked-dates/{id}` (§2.3 #15, move-to-Go) |
-| rpc | `cancel_referee_assignment` | `peppercheck_flutter/lib/features/matching/data/matching_repository.dart:123` | matching | `POST /api/v1/matching/assignments/{id}/cancel` (§2.3 #11, move-to-Go) |
-| rpc | `get_payment_summary` | `peppercheck_flutter/lib/features/payment_dashboard/data/payment_summary_repository.dart:18` | payment_dashboard | `GET /api/v1/payments/summary` (§2.3 #14, move-to-Go) |
-| rpc | `judge_evidence` | `peppercheck_flutter/lib/features/judgement/data/judgement_repository.dart:20` | judgement | `POST /api/v1/judgements/judge` (§2.3 #31, move-to-Go) |
-| rpc | `confirm_judgement_and_rate_referee` | `peppercheck_flutter/lib/features/judgement/data/judgement_repository.dart:40` | judgement | `POST /api/v1/judgements/{id}/confirm` (§2.3 #36, move-to-Go; see §3 T7-2) |
-| rpc | `confirm_review_timeout` | `peppercheck_flutter/lib/features/judgement/data/judgement_repository.dart:56` | judgement | `POST /api/v1/judgements/{id}/confirm-review-timeout` (§2.3 #33, move-to-Go) |
-| rpc | `submit_evidence` | `peppercheck_flutter/lib/features/evidence/data/evidence_repository.dart:94` | evidence | `POST /api/v1/evidence` (§2.3 #41, move-to-Go) |
-| rpc | `update_evidence` | `peppercheck_flutter/lib/features/evidence/data/evidence_repository.dart:128` | evidence | `PATCH /api/v1/evidence/{id}` (§2.3 #40, move-to-Go) |
-| rpc | `resubmit_evidence` | `peppercheck_flutter/lib/features/evidence/data/evidence_repository.dart:164` | evidence | `POST /api/v1/evidence/{id}/resubmit` (§2.3 #39, move-to-Go) |
-| rpc | `confirm_evidence_timeout` | `peppercheck_flutter/lib/features/evidence/data/evidence_repository.dart:182` | evidence | `POST /api/v1/evidence/confirm-timeout` (§2.3 #32, move-to-Go) |
-| rpc | `create_task` | `peppercheck_flutter/lib/features/task/data/task_repository.dart:32` | task | `POST /api/v1/tasks` (§2.3 #58, move-to-Go) |
-| rpc | `update_task` | `peppercheck_flutter/lib/features/task/data/task_repository.dart:56` | task | `PATCH /api/v1/tasks/{id}` (§2.3 #59, move-to-Go) |
-| rpc | `delete_task` | `peppercheck_flutter/lib/features/task/data/task_repository.dart:65` | task | `DELETE /api/v1/tasks/{id}` (§2.3 #60, move-to-Go) |
-| rpc | `get_active_referee_tasks` | `peppercheck_flutter/lib/features/task/data/task_repository.dart:155` | task | `GET /api/v1/tasks/active` (§2.3 #12, move-to-Go) |
-| rpc | `check_account_deletable` | `peppercheck_flutter/lib/features/account/data/account_repository.dart:17` | account | `GET /api/v1/account/deletable` (§2.3 #68, move-to-Go; also called from the `delete-account` Edge Function per §1.3) |
-| rpc | `get_point_for_matching_strategy` | `peppercheck_flutter/lib/features/billing/data/billing_repository.dart:72` | billing (point) | TBD (feature phase) — §2.3 #9 keeps this **stay-in-Postgres** (shared with retained triggers) and says moved callers should get a **duplicated constant in Go** rather than call through; exact Go endpoint shape undecided |
+| rpc | `create_referee_available_time_slot` (generic `.rpc<String>(`) | `peppercheck_flutter/lib/features/matching/data/matching_repository.dart:43` | matching | `POST /api/v1/matching/availability` (§2.3 #5, Go) |
+| rpc | `update_referee_available_time_slot` | `peppercheck_flutter/lib/features/matching/data/matching_repository.dart:56` | matching | `PATCH /api/v1/matching/availability/{id}` (§2.3 #2, Go) |
+| rpc | `delete_referee_available_time_slot` | `peppercheck_flutter/lib/features/matching/data/matching_repository.dart:68` | matching | `DELETE /api/v1/matching/availability/{id}` (§2.3 #13, Go) |
+| rpc | `create_referee_blocked_date` (generic `.rpc<String>(`) | `peppercheck_flutter/lib/features/matching/data/matching_repository.dart:90` | matching | `POST /api/v1/matching/blocked-dates` (§2.3 #10, Go) |
+| rpc | `update_referee_blocked_date` | `peppercheck_flutter/lib/features/matching/data/matching_repository.dart:107` | matching | `PATCH /api/v1/matching/blocked-dates/{id}` (§2.3 #16, Go) |
+| rpc | `delete_referee_blocked_date` | `peppercheck_flutter/lib/features/matching/data/matching_repository.dart:119` | matching | `DELETE /api/v1/matching/blocked-dates/{id}` (§2.3 #15, Go) |
+| rpc | `cancel_referee_assignment` | `peppercheck_flutter/lib/features/matching/data/matching_repository.dart:123` | matching | `POST /api/v1/matching/assignments/{id}/cancel` (§2.3 #11, Go) |
+| rpc | `get_payment_summary` | `peppercheck_flutter/lib/features/payment_dashboard/data/payment_summary_repository.dart:18` | payment_dashboard | `GET /api/v1/payments/summary` (§2.3 #14, Go) |
+| rpc | `judge_evidence` | `peppercheck_flutter/lib/features/judgement/data/judgement_repository.dart:20` | judgement | `POST /api/v1/judgements/judge` (§2.3 #31, Go) |
+| rpc | `confirm_judgement_and_rate_referee` | `peppercheck_flutter/lib/features/judgement/data/judgement_repository.dart:40` | judgement | `POST /api/v1/judgements/{id}/confirm` (§2.3 #36, Go; see §3 T7-2) |
+| rpc | `confirm_review_timeout` | `peppercheck_flutter/lib/features/judgement/data/judgement_repository.dart:56` | judgement | `POST /api/v1/judgements/{id}/confirm-review-timeout` (§2.3 #33, Go) |
+| rpc | `submit_evidence` | `peppercheck_flutter/lib/features/evidence/data/evidence_repository.dart:94` | evidence | `POST /api/v1/evidence` (§2.3 #41, Go) |
+| rpc | `update_evidence` | `peppercheck_flutter/lib/features/evidence/data/evidence_repository.dart:128` | evidence | `PATCH /api/v1/evidence/{id}` (§2.3 #40, Go) |
+| rpc | `resubmit_evidence` | `peppercheck_flutter/lib/features/evidence/data/evidence_repository.dart:164` | evidence | `POST /api/v1/evidence/{id}/resubmit` (§2.3 #39, Go) |
+| rpc | `confirm_evidence_timeout` | `peppercheck_flutter/lib/features/evidence/data/evidence_repository.dart:182` | evidence | `POST /api/v1/evidence/confirm-timeout` (§2.3 #32, Go) |
+| rpc | `create_task` | `peppercheck_flutter/lib/features/task/data/task_repository.dart:32` | task | `POST /api/v1/tasks` (§2.3 #58, Go) |
+| rpc | `update_task` | `peppercheck_flutter/lib/features/task/data/task_repository.dart:56` | task | `PATCH /api/v1/tasks/{id}` (§2.3 #59, Go) |
+| rpc | `delete_task` | `peppercheck_flutter/lib/features/task/data/task_repository.dart:65` | task | `DELETE /api/v1/tasks/{id}` (§2.3 #60, Go) |
+| rpc | `get_active_referee_tasks` | `peppercheck_flutter/lib/features/task/data/task_repository.dart:155` | task | `GET /api/v1/tasks/active` (§2.3 #12, Go) |
+| rpc | `check_account_deletable` | `peppercheck_flutter/lib/features/account/data/account_repository.dart:17` | account | `GET /api/v1/account/deletable` (§2.3 #68, Go; also called from the `delete-account` Edge Function per §1.3) |
+| rpc | `get_point_for_matching_strategy` | `peppercheck_flutter/lib/features/billing/data/billing_repository.dart:72` | billing (point) | TBD (feature phase) — §2.3 #9 makes this a **single Go constant** (all callers move to Go under the max-Go refinement; no Postgres copy retained); the value is served by the owning Go endpoint, not a standalone RPC |
 
 #### `invoke` (Edge Function) — 7 call sites, 6 distinct functions
 
@@ -1339,12 +1408,14 @@ retry succeeds/exhausts correctly.
 ### 5(b) Point / trial-point ledger
 
 #### Code paths
-- DB (all `stay-in-Postgres`, category 1, per §2.3 #17–23, #49–52):
+- DB access (refined max-Go, §2.3 #17–23, #49–52): the wallet lock/consume/unlock
+  are **Go-tx SQL** issued inside a Go-owned transaction; the `route_*`
+  dispatchers become plain **Go** — none remain stored functions:
   `supabase/schemas/point/functions/{lock,consume,unlock}_points.sql`,
   `supabase/schemas/trial_point/functions/{lock,consume,unlock}_trial_points.sql`,
   `deactivate_trial_points.sql`, and routing dispatchers
   `route_consume_points.sql` / `route_unlock_points.sql` / `route_referee_reward.sql`.
-- Callers (move-to-Go): `create_task_referee_requests_from_json.sql` (locks),
+- Callers (Go): `create_task_referee_requests_from_json.sql` (locks),
   `settle_evidence_timeout()`/`settle_review_timeout()` triggers (consume/
   unlock), `confirm_judgement_and_rate_referee.sql` (consume), `detect_auto_confirms.sql`
   (consume).
@@ -1474,8 +1545,8 @@ retry succeeds/exhausts correctly.
 ### 5(c) Payout (Stripe Connect)
 
 #### Code paths
-- DB (stay-in-Postgres, category 1): `supabase/schemas/reward/functions/grant_reward.sql`,
-  `deduct_reward_for_payout.sql`; (move-to-Go worker, category 3):
+- DB access (now **Go-tx SQL**, §2.3 #65–66): `supabase/schemas/reward/functions/grant_reward.sql`,
+  `deduct_reward_for_payout.sql`; (Go worker, category 3):
   `prepare_monthly_payouts.sql`.
 - Edge Functions: `supabase/functions/payout-setup/` (onboarding —
   Stripe Express Connect account get-or-create + `accountLinks`),
@@ -1782,7 +1853,7 @@ judgement's `status` or flips `is_confirmed` back to `false`.
   negative rating that `settle_review_timeout()` already inserts — both are
   guarded by `ON CONFLICT (judgement_id, rating_type) DO NOTHING`, so
   today's behavior is correct despite the duplication — **resolved by
-  operator adjudication, §2.7.3** (move-to-Go with dedup).
+  operator adjudication, §2.7.3** (Go with dedup).
 
 #### pgTAP evidence
 - `supabase/tests/test_judge_evidence.sql`: approve/reject happy paths,
@@ -2400,11 +2471,11 @@ read-only briefly for **comparison only** — never rollback, never in the runti
       complete). → **§1** (21-row master dependency inventory, §1.2,
       completeness-verified in §1.4; plus the 12-row edge function detail in
       §1.3).
-- [x] 68 functions / 15 business triggers / 10 cron classified
-      move / stay / delete. → **§2** (§2.3 Functions table, 68 rows, tally
-      23/41/4; §2.4 Business triggers table, 15 rows, tally 5 stay + 10
-      move + 21 housekeeping; §2.5 Cron table, 10 rows, all move-to-Go
-      worker). Ambiguities resolved in §2.7.
+- [x] 68 functions / 15 business triggers / 10 cron classified. → **§2**
+      (refined max-Go, §2.1a: §2.3 Functions table, 68 rows, tally Go 48 /
+      Go-tx SQL 15 / DB trigger 1 / delete 4; §2.4 Business triggers, 15 rows,
+      all → Go 12 + Go-tx SQL 3, plus 21 housekeeping DB triggers; §2.5 Cron,
+      10 rows, all → Go worker). Ambiguities resolved in §2.7; new items in §2.10.
 - [x] All launch-blockers identified (incl. `payout-request` fix plan), each
       assigned an owning phase. → **§3** (§3.1 `payout-request`, owning
       phase Phase 5; §3.2 T7-1/T7-2/T7-3, owning phases Phase 5, Phase 5,
