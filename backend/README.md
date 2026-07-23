@@ -39,6 +39,14 @@ Feature packages (`internal/identity`, `internal/task`, …) with the
 
 ## Notes & caveats
 
+- **Changing the DB bootstrap needs a fresh volume.** The role/schema bootstrap
+  in `deploy/postgres/init/*` (including the migrator-owned `atlas` schema) runs
+  **only on an empty Postgres data dir** (`docker-entrypoint-initdb.d`). After
+  pulling a change there onto an existing local volume, run **`make reset`**
+  (`down-v` then `up`) — the migrator can't create the `atlas` schema on its own
+  (no database-level `CREATE`), so a stale volume would fail migration. Local
+  data is disposable (fresh-start policy). For a persistent DB you would instead
+  apply the delta once by hand, e.g. `CREATE SCHEMA atlas AUTHORIZATION peppercheck_migrator;`.
 - **Atlas is pinned to `v1.2.0`** (Standard distribution, used unauthenticated =
   free). Match it on your machine — Homebrew can't pin a specific version, so
   use the install script:
@@ -55,11 +63,18 @@ Feature packages (`internal/identity`, `internal/task`, …) with the
   retention/pruning and no off-site upload**. Real WAL retention, off-site (B2)
   shipping, physical base backups, and restore drills are **Phase 7 and required
   before any VPS deploy**. Locally, `make down-v` clears the archive.
-- **DB passwords in connection strings must be URI-safe.** DSNs embed the
-  password in a `postgres://user:pass@host/db` URL, and Atlas requires this URL
-  form, so a real password containing `/ # % @ :` etc. must be **percent-encoded**
-  when injected (or constrain the generated password to a URI-safe charset). The
-  local dev defaults are URI-safe.
+- **DB passwords must be URI-safe (single-variable design).** Each password
+  variable (e.g. `POSTGRES_APP_PASSWORD`) is used BOTH to create the DB role
+  (raw literal, in `00-roles.sh`) AND embedded in a `postgres://user:pass@host/db`
+  DSN (which URI-**decodes** it), and Atlas requires the URL form. The two only
+  agree when the value contains no URI-reserved characters. So **constrain real
+  (Bitwarden) passwords to a URI-safe charset** (alphanumeric + `-_.~`). Do NOT
+  try to fix a special-char password by percent-encoding this single shared
+  variable — the role would be created with the encoded literal (e.g. `p%40ss`)
+  while the DSN connects with the decoded value (`p@ss`), so they mismatch and
+  the connection fails. If arbitrary special characters are truly unavoidable,
+  split into two variables: a raw value for role creation and a separately
+  percent-encoded value for every DSN. The local dev defaults are URI-safe.
 - **Production deploys must use `-f compose.yaml` explicitly** (no
   `compose.override.yaml`), since the committed dev override publishes Postgres
   to host loopback for local tooling.
