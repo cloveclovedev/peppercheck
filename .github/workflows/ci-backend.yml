@@ -69,7 +69,7 @@ jobs:
         run: atlas migrate validate --dir file://migrations
 
       - name: Apply migrations as the migrator role
-        run: atlas migrate apply --env local --url "$DATABASE_URL" --revisions-schema public
+        run: atlas migrate apply --env local --url "$DATABASE_URL" --revisions-schema atlas
 
       - name: Check for schema/migration drift
         run: |
@@ -96,7 +96,10 @@ jobs:
           echo "app role: DML ok, DDL denied"
 
       - name: Tests (race, serialized packages)
-        run: go test -race -p 1 ./...
+        # -count=1 disables the Go test cache so the DB integration tests always
+        # run against the fresh service Postgres (a cached PASS would otherwise
+        # skip re-execution when DATABASE_URL is unchanged).
+        run: go test -race -p 1 -count=1 ./...
 
   image:
     runs-on: ubuntu-latest

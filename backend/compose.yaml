@@ -28,15 +28,20 @@ services:
       - -c
       - archive_mode=on
       - -c
-      - archive_command=test ! -f /wal-archive/%f && cp %p /wal-archive/%f
+      - archive_command=/usr/local/bin/archive-wal.sh %p %f
       - -c
-      - archive_timeout=60
+      # 900s (15min) matches the accepted RPO (docs/superpowers/specs/2026-07-22-phase0-baseline.md).
+      # 60s forced a 16MiB segment every minute (~22.5 GiB/day of WAL); nothing
+      # yet prunes /wal-archive or ships it off-site (B2) — retention/pruning +
+      # off-site upload is Phase 7 and a pre-VPS-deploy requirement.
+      - archive_timeout=900
       - -c
       - max_wal_senders=3
     volumes:
       - pgdata:/var/lib/postgresql/data
       - wal-archive:/wal-archive
       - ./deploy/postgres/init:/docker-entrypoint-initdb.d:ro
+      - ./deploy/postgres/archive-wal.sh:/usr/local/bin/archive-wal.sh:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d peppercheck"]
       interval: 5s
@@ -55,13 +60,13 @@ services:
       - apply
       - --dir
       - file:///migrations
-      # peppercheck_migrator (deploy/postgres/init/00-roles.sh) only has
-      # CREATE on the `public` schema, not database-level CREATE. Without this
-      # flag Atlas tries to create its own `atlas_schema_revisions` schema to
-      # track applied migrations, which that role cannot do, so the
-      # revisions table lives in `public` instead.
+      # peppercheck_migrator (deploy/postgres/init/00-roles.sh) owns a
+      # dedicated `atlas` schema (created in 00-roles.sh), so Atlas tracks
+      # its applied-migrations history there instead of in `public` — kept
+      # isolated from the least-privilege app role, which is never granted
+      # USAGE on `atlas`.
       - --revisions-schema
-      - public
+      - atlas
       - --url
       - postgres://peppercheck_migrator:${POSTGRES_MIGRATOR_PASSWORD:?POSTGRES_MIGRATOR_PASSWORD is required}@postgres:5432/peppercheck?sslmode=disable
     volumes:
