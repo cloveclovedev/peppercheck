@@ -10,8 +10,12 @@
 > adapted here to the real codebase. This document also integrates an independent
 > parallel review.
 >
-> Last updated: 2026-07-22 — formalized as a design doc; incorporates multi-round
+> Last updated: 2026-07-23 — formalized as a design doc; incorporates multi-round
 > review integration and re-measured codebase facts.
+>
+> Phase 0 is complete. Its decisions are recorded in
+> `docs/superpowers/specs/2026-07-22-phase0-baseline.md`; this strategy is
+> synced to that baseline.
 
 ---
 
@@ -32,8 +36,11 @@ disposable (§20 / D9), we can take a decisive single cutover a live system coul
 ### Grounding facts (re-measured 2026-07-22, declarative schema only)
 
 - **Two clients bind directly to Supabase.**
-  - Flutter: 24 files import `supabase_flutter`; **31** `.from(` (PostgREST);
-    **19** `.rpc(` call sites in `lib/` (each a distinct DB function); **7**
+  - Flutter: 24 files import `supabase_flutter`; **31** raw `.from(` matches, of
+    which **18** are real PostgREST table calls (the other 13 are Dart
+    `Map.from`/`List.from` conversions, not Supabase calls); **21** `.rpc(` call
+    sites in `lib/` (two generic `.rpc<T>()` calls were missed by an earlier
+    literal-substring count of 19), all **21** distinct DB functions; **7**
     `.functions.invoke` calls across **6** edge
     functions. No Realtime, no Storage.
   - webapp (Next.js on Cloudflare/OpenNext): `@supabase/ssr` +
@@ -50,9 +57,13 @@ disposable (§20 / D9), we can take a decisive single cutover a live system coul
 - **Billing is raw IAP** (`in_app_purchase` + Google Play RTDN edge function);
   **RevenueCat not yet integrated**; **no Apple sign-in yet** (Google only).
   **Stripe Connect (Express)** powers referee/tasker payouts (money out) — core.
-- **Known defect:** `stripe_payout_repository.dart:93` invokes edge function
-  `payout-request`, which **does not exist** in `supabase/functions/` — a
-  Phase-0 investigation item and launch-blocker candidate.
+- **Resolved (Phase 0):** `stripe_payout_repository.dart:93` invokes edge
+  function `payout-request`, which does not exist in `supabase/functions/` —
+  but the whole call path is dead/unmounted client code: the repo's
+  `requestPayout()` method has zero callers and `PayoutAmountDialog` is never
+  mounted. It is a remnant of the removed `payout_jobs`-era manual-payout
+  architecture (deleted in commit `8988786`). Disposition: **remove the dead
+  path; do not implement a Go endpoint** (baseline §5.1, §10.F).
 - **Positive baseline:** Flutter domain files do not import Flutter/Riverpod/
   Firebase/Supabase; the schema is already split by feature. Both are worth
   preserving.
@@ -68,7 +79,7 @@ disposable (§20 / D9), we can take a decisive single cutover a live system coul
 | D3 | **webapp shrinks** to marketing + legal + account-deletion. web is an **independent logical component**, **initially recommended in the same Go process/image** as the api (separability retained), rebuilt in Go + html/template + htmx + Tailwind behind Caddy. | IAP-only, mobile-first; no Next.js justification remains; collapses the stack to **Flutter + Go + Postgres**, removing Cloudflare/OpenNext/Node. |
 | D4 | **Adopt RevenueCat** for subscription entitlement (money in) with a **durable, deduplicated, reconciled webhook**. Keep **Stripe Connect** for payouts (money out) — orthogonal. Drop web Stripe Checkout subscribe. | Money-state-machine is the highest-risk code; RC collapses Apple+Google lifecycle into one entitlement + one webhook. Endorsed by Engineering Policy. Nets to *less* total work. |
 | D5 | **Big-bang cutover to `main`, incremental on an integration branch.** Land small feature-sized PRs into a long-lived integration branch; swap `main` once at the end. The exact branch name is **not** fixed here and must be coordinated with other in-flight work before starting. | No production users to protect; single cutover is simpler than dual-running. The base branch stays green + runnable after each PR to eliminate a giant untested delta. |
-| D6 | **Move business decisions & authorization to Go; keep atomic integrity in Postgres.** Business orchestration/authz/external side effects → Go services + tests. Atomic routines (ledger mutation, locking, state transitions) **may remain** as SQL behind a Go store. Business cron/triggers → **Go `worker` with Postgres-backed durable jobs**; housekeeping triggers (`set_updated_at`) stay in DB. | Follows the reference policy's DB-logic split; details in §13. Deleting *all* functions is **not** a release condition. |
+| D6 | **Go owns business logic and transaction boundaries; Postgres enforces data integrity.** Business decisions, authorization, orchestration, and transaction-ordering move to Go services + tests. Stores keep typed SQL only for locks, conditional DML, and set queries; the schema keeps constraints and minimal invariant/housekeeping triggers. **Callable business stored functions are removed by default** — an exception needs a documented set-based or measured-performance reason, and none of the current 68 functions qualifies. Business cron/triggers → **Go `worker`**; only `handle_updated_at` housekeeping stays in the DB. | Atomicity comes from the transaction + row lock the Go store controls, not from a stored function — this makes domain rules directly testable without weakening concurrency safety. Details in §13 (baseline §4, §4.1a). Deleting *all* functions is **not** a release condition, but under max-Go only `handle_updated_at` remains DB-side. |
 | D7 | **Pivot now.** In-flight multi-env (#418) and iOS IAP work are paused; their intent (per-env separation, IAP) is absorbed into the new architecture. | Continuing Supabase-premised work is rework. |
 | D8 | **Bounded opportunistic cleanup allowed** (unused/messy schema; Flutter clean-arch violations), governed by the §27 stop rule. | Tidy what we already touch; no beautification pass. |
 | D9 | **Fresh-start data, no historical migration, no dual-write.** Go-live builds a new DB from Atlas + seeds reference data. Testers **re-create their account via normal Firebase login** (new internal UUID); importing old profile rows from a dump is avoided (identity mismatch under §10) — a few testers can re-enter their profile. dump/restore is retained as a *capability rehearsal*, not the go-live path. | Internal-test data is disposable; the cheapest time to replace Auth and the IAP backend. |
@@ -92,7 +103,7 @@ disposable (§20 / D9), we can take a decisive single cutover a live system coul
 - Rebuild webapp in Go + htmx (D3); provider-neutral account-deletion path.
 - VPS Docker Compose; Caddy HTTPS; off-site backups (B2); restore + migration
   rehearsals.
-- Fix internal-test launch blockers (incl. the `payout-request` orphan).
+- Fix internal-test launch blockers; remove the dead `payout-request` client path (resolved in Phase 0 — a dead-code removal, not a Go endpoint to build).
 - Verify auth, billing, payouts, and account-deletion critical paths.
 - **Bounded** opportunistic schema and Flutter clean-arch cleanup (D8).
 
@@ -223,10 +234,12 @@ PostgreSQL / Firebase / R2 / RevenueCat / Stripe`.
 - Tests must prove one user cannot read/mutate another's data.
 
 ### Transactions
-The service picks transaction boundaries. A store may expose a small transactional
-operation when Postgres must atomically lock/consume/grant/release points, append
-immutable ledger entries, claim jobs, transition task/evidence/judgement state, or
-protect payout idempotency. Never split one invariant across multiple HTTP calls.
+The service picks and owns the transaction boundary through the store; store
+methods execute minimal typed SQL — locks, conditional DML, ledger inserts,
+state transitions — with constraints/unique keys as the final defense. Do not
+hide a business workflow in a new stored function merely because it must be
+atomic: atomicity comes from the transaction + row lock the Go store controls,
+not from a stored function. Never split one invariant across multiple HTTP calls.
 
 Stdlib-first; no large web framework. Thin CRUD services are fine; add interfaces
 only for a real boundary/alternative/test need.
@@ -343,12 +356,13 @@ Two orthogonal money flows — keep them strictly separate.
 - **Removes** `handle-google-play-rtdn` (RC ingests RTDN) and avoids building an
   Apple ASSN handler from scratch. RC is authoritative; Postgres stores a
   queryable projection used by business rules.
-- **Cost/plan (Phase 0):** confirm RevenueCat pricing for this project —
-  **webhooks may require a paid (Pro) plan** — before committing to it.
+- **Cost/plan (resolved Phase 0):** RevenueCat webhooks **and** the reconciliation
+  REST API are included in the Pro plan — **free up to $2,500 MTR** (1% thereafter).
+  D4 stands as-is; no separate paid gate (baseline §12).
 
 ### Money out — payouts → Stripe Connect (Express), unchanged
 - Behind Go: onboarding session, account status refresh, `create-express-dashboard-
-  link`, payout request, payout execution (durable worker), signed idempotent
+  link`, payout execution (durable worker), signed idempotent
   `handle-stripe-webhook`. Stripe account/event IDs protected by unique constraints.
 - **Distinguish Stripe Billing from Stripe Connect** before deleting shared code.
 
@@ -393,29 +407,46 @@ inside `api`.
   load reference data + fixtures → verify no unexpected diff. Historical Supabase
   migrations remain in git history only.
 
-### Logic classification (each function/trigger → one of)
-1. **Integrity & atomicity** — keep in Postgres when it is the clearest safe impl.
-2. **Query / set operation** — keep as SQL owned by the store.
-3. **Business orchestration** — move to a Go service.
-4. **Authorization** — move to Go + explicit user-scoped SQL.
-5. **External side effect** — move to Go + durable job/webhook record.
-6. **Obsolete Supabase support** — delete after its caller is removed.
+### Logic classification (5-way, max-Go — Phase 0 baseline §4)
+Every schema function and business trigger is assigned exactly one of:
+1. **DB invariant/helper** — a constraint or minimal invariant/housekeeping
+   trigger helper stays in Postgres. Duplicate user-facing validation in Go
+   when needed for stable API errors.
+2. **Store query** — remove the callable function; keep typed, explicit SQL in
+   the Go Postgres store, pass the internal user ID as a parameter, assemble
+   API DTOs in Go.
+3. **Go transaction** — remove the callable function; Go owns the business
+   decision and transaction boundary, store statements use only the minimum
+   required locks, conditional DML, constraints, and ledger inserts.
+4. **Go service/worker** — remove the callable function; Go owns validation,
+   authorization, scheduling, orchestration, or external side effects.
+5. **Drop** — obsolete provider/support code with no target equivalent.
 
-Retain initially: wallet/ledger mutations, job claiming, row-locked state
-transitions. Move: `auth.uid()` checks, notification dispatch, external HTTP,
-provider webhooks, UI-oriented response assembly.
+Atomicity alone is not a reason to retain a stored function. A callable
+business stored function is an exception and requires a documented set-based
+or measured-performance reason; none of the current 68 functions has that
+exception at the Phase 0 baseline. The Phase 0 tally: **DB invariant/helper 1
+(`handle_updated_at` only) · Store query 4 · Go transaction 38 · Go
+service/worker 21 · Drop 4 = 68** (Go-managed = 63 of 68).
 
-### Triggers & cron (measured)
-- **36 triggers**: **21 `set_updated_at`** housekeeping → stay as minimal DB
-  triggers; **15 business** (matching insert/update, judgement settle/notify/
-  close, evidence validation/notify, rating update, `on_auth_user_created`) →
-  classify in Phase 0: validation → invariant triggers may stay; side-effect /
-  orchestration → Go worker.
-- **10 `cron.schedule`** → business jobs to the Go `worker`; DB-internal
-  maintenance only (if any) → `pg_cron`.
+Wallet/ledger mutations, job claiming, and row-locked state transitions become
+**Go-owned transactions issuing minimal store SQL** — not retained stored
+functions. Move to Go: `auth.uid()` checks, notification dispatch, external
+HTTP, provider webhooks, UI-oriented response assembly.
 
-> **Completion is NOT "all functions deleted."** Complex transactional routines may
-> remain behind the Go store; they can be simplified later without a store release.
+### Triggers & cron (measured, Phase 0 classification)
+- **36 triggers**: **21 `set_updated_at`** housekeeping (all calling
+  `handle_updated_at`) stay as minimal DB triggers; **all 15 business**
+  triggers (matching insert/update, judgement settle/notify/close, evidence
+  validation/notify, rating update, `on_auth_user_created`) **dissolve into
+  Go** — none remains a literal `CREATE TRIGGER`.
+- **10 `cron.schedule`** → all move to the Go `worker`'s own scheduler, which
+  issues state directly against Postgres (no RPC to a retained stored
+  function); nothing stays as DB-internal `pg_cron` maintenance.
+
+> **Completion is NOT "all functions deleted."** Under max-Go, however, only
+> the `handle_updated_at` housekeeping helper remains DB-side; every other
+> function/trigger is Go-owned (baseline §4).
 
 ---
 
@@ -448,7 +479,7 @@ Allowed **only within areas already being migrated**, governed by §27:
 |---------|-------|--------|
 | PostgreSQL | Yes | Self-hosted Postgres on VPS |
 | Supabase Auth | Yes (Google) | **Firebase Auth** + internal-UUID identity (§10) |
-| PostgREST (`.from` ×31) | Yes | **Go API** endpoints |
+| PostgREST (`.from` ×18 real; 31 raw) | Yes | **Go API** endpoints |
 | RLS (63 policies) | Yes | **Go service-layer authorization** |
 | Storage | **No** | R2 |
 | Realtime | **No** | n/a (polling per existing subscription-refresh design) |
@@ -479,27 +510,39 @@ replacement, data/config conversion, temporary coexistence.
 | `delete-account` | Go endpoint + worker (idempotent saga, §14) |
 | `send-notification` | Go endpoint + worker (FCM) |
 | `sweep-r2-stale-objects` | Go **worker** |
-| **`payout-request`** (called by Flutter, **no edge fn exists**) | **Phase-0 bug**; implement as a Go payout endpoint |
+| **`payout-request`** (called by Flutter, **no edge fn exists**) | **Resolved (Phase 0):** dead/unmounted client code (0 callers, dialog never mounted; removed with the old `payout_jobs` arch) → **remove the dead path, do not implement** (baseline §5.1, §10.F) |
 
 ---
 
 ## 18. VPS Production Topology
 
-Single VPS, Docker Compose: `caddy · api · worker · postgres · backup`. `api` and
-`worker` share one immutable multi-stage image, different commands.
+**Provider/region (decided, baseline §12.2):** DigitalOcean Basic Droplets in
+Singapore (`sgp1`). The operator's existing familiarity reduces operational
+risk, and the stack stays portable — no DigitalOcean-specific API in
+application packages.
+
+Production runs on its own Docker Compose Droplet: `caddy · api · worker ·
+postgres · backup`. `api` and `worker` share one immutable multi-stage image,
+different commands. Production starts on a dedicated **1 GiB RAM / 1 vCPU / 25
+GiB SSD** Droplet running only Caddy, the Go API, worker, PostgreSQL, and
+backup components; images are built in CI, not on the VPS. **Resize to 2 GiB**
+after any OOM, recurring swap use, sustained memory pressure, or failure to
+meet the four-hour restore target (§20).
 
 Container requirements: read port from config; store no durable state on the
 container FS; no in-memory sessions; secrets at runtime; non-root where practical;
 structured logs to stdout; liveness + readiness endpoints; graceful shutdown.
 
-Exposure: only `caddy` binds 80/443; `api`/`worker`/`postgres`/`backup` on a
-private network; `:5432` never public. Initial size ~2 GB RAM is a
-**single-environment working hypothesis**; **re-estimate if staging + production
-share one VPS**. Grow disk conservatively.
+Exposure: only `caddy` binds 80/443 on either host; `api`/`worker`/`postgres`/
+`backup` on a private network; `:5432` never public.
 
-**Environment separation** (staging vs production, even if co-located initially):
-separate Compose project, network, Postgres volume + credentials, R2 bucket/prefix,
-Firebase project/app, RevenueCat + Stripe webhook endpoints + secrets, and domain.
+**Environment separation (decided, baseline §12.2):** staging runs on a
+**separate 1 GiB Droplet**, not co-located with production, with its own
+Compose project, network, Postgres volume + credentials, R2 bucket/prefix,
+Firebase project/app, RevenueCat + Stripe webhook endpoints + secrets, and
+domain (`peppercheck.dev` for production, `staging.peppercheck.dev` for
+staging). Re-measure memory, disk, latency, and restore time before enabling
+production.
 
 ---
 
@@ -520,16 +563,26 @@ paused multi-env intent (D7) is absorbed.
 
 ## 20. Backup & Restore, and Data Strategy
 
-- **Daily** `pg_dump` (custom format) → **encrypt** → **Backblaze B2** (pg_dump is
-  not encrypted by itself); 7–30 generations; success/failure alerts;
-  checksum/integrity check.
-- **Monthly** restore into a separate Postgres + post-restore API smoke test.
-  **A backup counts only once restored.**
-- **Recovery target (decide in Phase 0):** a daily dump alone risks up to **24 h
-  data loss** (RPO ≈ 24 h). If unacceptable, add **WAL archiving / PITR** on the VPS
-  Postgres or use **managed Postgres** — fix the acceptable **RPO/RTO before release**.
-- **R2 objects are a separate recovery domain:** define object retention,
-  versioning, and accidental-deletion recovery independently of the DB backup.
+- **Recovery target (decided, baseline §12.1): RPO 15 minutes, RTO 4 hours.**
+  A 24-hour loss window is unacceptable once point/reward/payout state exists.
+  Start at the 15-minute RPO; reassess a 5-minute and then a 1-minute target
+  only after measuring WAL archive lag, archive volume/cost, and restore
+  reliability — do not claim a shorter target until restore drills demonstrate
+  it consistently.
+- **Recurring encrypted physical base backups plus continuous WAL archiving to
+  Backblaze B2** provide point-in-time recovery (30-day PITR window). A
+  **daily `pg_dump` (custom format)** is retained as an independent logical
+  fallback (30 generations) — it is not part of WAL replay.
+- **Encryption:** client-side `age` encryption (the backup container holds
+  only the public recipient) plus B2 SSE. A **private B2 bucket with 30-day
+  governance Object Lock** and a lifecycle policy after the lock expires.
+- **Monthly** restore into a separate Postgres + post-restore authenticated API
+  smoke test. **A backup counts only once restored.**
+- **R2 objects are a separate recovery domain:** R2 has no S3 bucket
+  versioning, so referenced objects are copied **daily to a separate B2
+  backup prefix** with the same 30-day retention, rather than indefinitely
+  locking the delivery bucket (account deletion must still be able to purge
+  user data).
 - **Migration rehearsals** (portability is an original goal): Supabase → VPS;
   VPS → another local Postgres; VPS → Supabase/other DaaS — driven by **fixtures**,
   followed by API integration + key flows.
@@ -545,13 +598,25 @@ paused multi-env intent (D7) is absorbed.
 
 ## 21. Monitoring Minimums
 
-API liveness/readiness; HTTP request count/latency/5xx; auth failures; Postgres
-connection/query failures; **worker queue age + failed jobs**; RevenueCat webhook
-failures + reconciliation lag; Stripe webhook/payout failures; R2 upload
+**Provider (decided, baseline §12.3):** **Better Stack** is the default
+provider-neutral external monitoring service — public liveness/readiness, TLS,
+response time, and critical worker/backup heartbeats — paired with
+**DigitalOcean Monitoring** as the host-level source for Droplet CPU, load,
+memory, disk usage/I/O, and bandwidth (do not duplicate those metrics in
+Better Stack without an application-level use case). Better Stack telemetry is
+opt-in per service (short retention, warning/error logs, low-cardinality
+metrics, sampled traces to start); configure usage/spend alerts before
+increasing volume or retention. **Alert by email first**; add paid phone/SMS
+escalation only after real on-call demand. The application stays
+vendor-neutral: structured stdout logs + Prometheus-compatible/OpenTelemetry
+telemetry, with no Better Stack types in feature packages.
+
+Minimums: API liveness/readiness; HTTP request count/latency/5xx; auth failures;
+Postgres connection/query failures; **worker queue age + failed jobs**; RevenueCat
+webhook failures + reconciliation lag; Stripe webhook/payout failures; R2 upload
 intent/finalize failures; backup age + last restore result; VPS CPU/mem/**disk +
 inode**; container restart count; TLS cert health. Logs carry request/job IDs and
-stable error codes; never secrets, tokens, or full PII payloads. Managed uptime/log
-alerting is fine; a custom monitoring platform is out of scope.
+stable error codes; never secrets, tokens, or full PII payloads.
 
 ---
 
@@ -562,23 +627,27 @@ implementation` cycle. Order reflects dependencies (feature order, not fixed dat
 
 | Phase | Content | "Done" means |
 |-------|---------|--------------|
-| **0 — Freeze & baseline** | Finalize Supabase/Stripe/Firebase/R2/cron/webhook inventory; classify the 68 functions / 36 triggers / 10 cron; identify launch-blockers (incl. `payout-request`); record user journeys + high-risk characterization tests; finalize reduced web routes; decide tester-profile seed subset. | Every integration has an owner/disposition; identity + subscription decisions accepted. |
-| **1 — Foundation** | Go module + modular monolith skeleton; config/logging/HTTP lifecycle/health; Dockerfile/Compose/Caddy/Postgres/backup skeletons; Atlas + provider-independent baseline; CI for Go/Atlas/Postgres/container build. | A clean clone starts the stack locally; migrations recreate the DB; `api`/`worker` shut down cleanly. |
+| **0 — Freeze & baseline** | **Complete (2026-07-23).** Finalized Supabase/Stripe/Firebase/R2/cron/webhook inventory; classified the 68 functions / 36 triggers / 10 cron (max-Go, baseline §4); resolved `payout-request` as dead/unmounted code to remove, not a launch-blocker (baseline §5.1); recorded user journeys + high-risk characterization tests; finalized reduced web routes; decided tester-profile seed subset. | Every integration has an owner/disposition; identity + subscription decisions accepted; recovery/VPS/monitoring decisions accepted (baseline §12). |
+| **1 — Foundation** | Go module + modular monolith skeleton; config/logging/HTTP lifecycle/health; Dockerfile/Compose/Caddy/Postgres/backup skeletons; Atlas + provider-independent baseline; migration/runtime DB role separation; durable job + webhook inbox primitives; backup/WAL(PITR) skeleton matching the accepted 15-minute RPO (§20); CI for Go/Atlas/Postgres/container build. | A clean clone starts the stack locally; migrations recreate the DB; `api`/`worker` shut down cleanly. |
 | **2 — Identity & client boundary** | `users` + `user_identities`; Firebase Google **+ Apple**; Go token verify + `/api/v1/me`; shared Flutter Dio client + auth contract; remove direct authenticated-user SDK access; configure RevenueCat with internal UUID. | Both providers create/restore the same internal user (**same verified email → one account via Firebase linking**; Apple Hide-My-Email stays separate unless explicitly linked); user-isolation authz tests pass. |
 | **3 — Low-risk slices + Go web** | profile, reference data, notification-token registration, reports, support/account; server-rendered public/legal pages; provider-neutral deletion request resource; preserve Stripe Connect return/refresh; remove obsolete web login/dashboard/pricing/checkout after route parity. | These features have no Supabase imports; public web routes production-ready; old URLs redirect. |
-| **4 — Core task lifecycle** | task, matching, R2 upload intents + evidence, judgement/confirmation/timeout/rating; deadline/notification work → worker; replace PostgREST-shaped models with DTOs. | Full tasker/referee journey via Go API; no client RPC/edge calls; concurrency/timeout tested. |
-| **5 — Financial & subscription** | point/trial-point, reward/payout; retain necessary atomic SQL behind Go stores; replace IAP with RevenueCat; durable webhook ingestion + reconciliation; validate Apple/Google sandbox lifecycle; keep Stripe Connect payouts. | Ledgers balanced under retries; purchase/restore both platforms; duplicate webhooks have no double effect. |
-| **6 — Account deletion & cleanup** | idempotent deletion saga across Firebase/RC/Stripe/R2/DB; document retention/anonymization; validate in-app + web paths. | Retrying partial deletion is safe; deleted user cannot regain access; store paths present. |
-| **7 — Staging, restore, release** | deploy staging on target VPS topology; backup/restore rehearsal; run the release-journey suite; reset internal data + seed reference (testers re-create via login); update legal + store metadata; remove Supabase runtime/SDK; swap `main`; freeze code; fix blockers only; submit to stores. | §25 completion criteria pass. |
+| **4 — Core task lifecycle** | task, matching, R2 upload intents + evidence, judgement/confirmation/timeout/rating; **private R2 bucket + authorized presigned downloads** (evidence objects must not use a public domain); deadline/notification work → worker; replace PostgREST-shaped models with DTOs. | Full tasker/referee journey via Go API; no client RPC/edge calls; concurrency/timeout tested. |
+| **5 — Financial & subscription** | point/trial-point, reward/payout; Go-owned transactions with minimal store SQL (no business stored functions); payout idempotency (`FOR UPDATE SKIP LOCKED`, unique `stripe_transfer_id`); judgement double-confirm row lock; fix the Stripe webhook env-var mismatch (`STRIPE_WEBHOOK_SIGNING_SECRET` → `STRIPE_WEBHOOK_SECRET`); reconcile the Premium price; remove the dead `payout-request` path; replace IAP with RevenueCat; durable webhook ingestion + reconciliation; validate Apple/Google sandbox lifecycle; keep Stripe Connect payouts. | Ledgers balanced under retries; purchase/restore both platforms; duplicate webhooks have no double effect. |
+| **6 — Account deletion & cleanup** | idempotent deletion saga across Firebase/RC/Stripe/R2/DB — the persisted saga must prevent the reward-wallet fund-loss case (a `force=true` deletion or a step-7 failure after a successful reward payout must not silently lose an un-paid-out balance, baseline §5.2 T7-3); document retention/anonymization; validate in-app + web paths. | Retrying partial deletion is safe; deleted user cannot regain access; store paths present. |
+| **7 — Staging, restore, release** | deploy staging + production on the decided DigitalOcean `sgp1` topology (separate Droplets, §18); backup/restore rehearsal; run the release-journey suite; reset internal data + seed reference (testers re-create via login); update legal + store metadata; remove Supabase runtime/SDK; swap `main`; freeze code; fix blockers only; submit to stores. | §25 completion criteria pass. |
 
 ---
 
 ## 23. Schedule & Safety Valves
 
-**Aspirational target: mid-September 2026 release.** Concrete dates and a code
-freeze are **not fixed yet** — check velocity at the **end of Phase 0** (do not wait
-for Phase 2) and set the dated milestones then. The timeline is aggressive for a solo
-dev; the safety valves below are **load-bearing, not decorative**.
+**Release timing is milestone-based; no fixed date (decided, baseline §12.4).**
+The Phase 0 velocity check is done — this is a solo-operated business without
+an external calendar commitment, so quality and recovery gates take precedence
+over an aspirational date. Review effort after Phases 1, 2, and 4 without
+turning those reviews into release commitments; after Phase 6 and the Phase 7
+staging/restore/release-journey gates pass, select the store-submission date
+and begin an approximately one-week blocker-only freeze. The safety valves
+below are **load-bearing, not decorative**.
 
 **If behind, reduce scope in this order:** keep complex atomic SQL behind the Go
 API instead of rewriting; drop optional web content before legal/deletion; defer
@@ -649,7 +718,7 @@ backup + restore verification; privacy + store metadata updates.
       backup failure detectable.
 - [ ] API/worker/Postgres/Caddy/disk/backup failures detectable.
 - [ ] Internal release acceptance passes on Android + iOS.
-- [ ] No unresolved launch-blocking defect (incl. `payout-request`).
+- [ ] No unresolved launch-blocking defect (`payout-request` resolved in Phase 0 as dead code to remove).
 
 **Not** completion criteria: every SQL function moved to Go; final naming
 everywhere; every duplication removed; full coverage; speculative scalability.
@@ -691,6 +760,10 @@ work must be justified by production evidence.
 ---
 
 ## 28. To Confirm During Phase 0
+
+**Resolved in the Phase 0 baseline (2026-07-23) — see
+`docs/superpowers/specs/2026-07-22-phase0-baseline.md`.** The list below is
+kept as a record of what Phase 0 set out to confirm.
 
 - Reconcile exact Flutter RPC count (measured 19; reviewer 21) and confirm the
   `payout-request` orphan fix.
