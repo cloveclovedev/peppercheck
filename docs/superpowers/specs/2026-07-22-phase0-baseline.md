@@ -1,61 +1,152 @@
-# Phase 0 Baseline — Supabase → Go API + VPS Refactor
+# Phase 0 Baseline — Supabase → Go API + VPS Refactor (Merged Draft)
 
-> Status: **Finalized.** This is the Phase 0 deliverable defined by the Phase 0
-> spec — the single source of truth for the dependency inventory, DB-logic
-> classification, launch-blocker register, Flutter API surface, critical-journey
-> behavior catalog, reduced web routes, drop candidates, decisions ledger, and
-> seed policy that gate Phase 1 (Foundation).
+> Status: **Single canonical Phase 0 baseline.** This document merges the two
+> Phase 0 baselines that existed in parallel —
+> `docs/superpowers/specs/2026-07-22-phase0-baseline.md` (the detailed,
+> already-max-Go baseline; canonical/base document for this merge) and
+> `docs/superpowers/specs/2026-07-22-go-api-vps-phase-0-baseline-design.md`
+> (the supplement, source of the operational decisions, subscription
+> baseline, exit criteria, measurements, and Phase 1 handoff) — into one
+> deliverable. The supplement's content is absorbed here; the supplement
+> file itself is left uncommitted/superseded once this draft is reviewed and
+> promoted to `docs/superpowers/specs/`.
 >
 > Parent documents:
 > - Program strategy: `docs/superpowers/specs/2026-07-22-supabase-to-go-vps-refactor-design.md`
 > - Phase 0 spec (defines this deliverable's shape + Done checklist):
 >   `docs/superpowers/specs/2026-07-22-phase0-freeze-baseline-design.md`
 >
-> Assembled from nine investigation part files
-> (`docs/superpowers/plans/phase0-parts/`), with the operator's Phase 0
-> adjudications folded in (2026-07-22). Where a part file's wording said
-> "pending," "proposed," or left an item ambiguous, this document records the
-> operator's resolution and supersedes that wording.
+> Merged: 2026-07-23. Sources: `2026-07-22-phase0-baseline.md` (~2,531
+> lines, assembled from nine investigation part files in
+> `docs/superpowers/plans/phase0-parts/`) and
+> `2026-07-22-go-api-vps-phase-0-baseline-design.md` (~570 lines).
 >
-> Last updated: 2026-07-23 (§2 DB-logic classification refined to the max-Go
-> rule; see adjudication 4 below).
-
----
+> **Provenance note on inline citations.** Long evidence passages below are
+> carried over from the canonical baseline largely verbatim (per the merge
+> brief's instruction to preserve SQL citations, file:line references, and
+> grep results without watering them down). Inline citations inside that
+> prose — e.g. `§2.3 #24`, `see 2.9`, `§3 T7-2`, `§7.A` — refer to the
+> **canonical source document's own internal section numbers**, not to this
+> merged document's section numbers, unless a citation explicitly says
+> "this document." Where a function or trigger is cited by number (e.g.
+> `#24`), that number matches **Appendix A**'s numbering below, which
+> preserves the canonical source's original 1–68 numbering unchanged. A
+> handful of sentences that stated a now-superseded position (`payout-request`
+> as an unresolved launch-blocker to implement; cron logic staying callable
+> via RPC; DB-functions "staying in Postgres") have been corrected in place
+> per the merge brief; those edits are called out inline where they occur.
 
 ## Operator adjudications folded into this baseline
 
 1. **D2 (identity) and D4 (subscription/RevenueCat) are ACCEPTED**, not
-   pending — see §8.
-2. **T3 DB-logic ambiguities are resolved** — see §2 "Operator resolutions."
-3. **Three financial-integrity risks surfaced by the journey catalog (§5) are
-   added to the launch-blocker register (§3)** as "candidate — verify in
-   owning phase," each assigned an owning phase (Phase 5 ×2, Phase 6 ×1).
-4. **DB-logic classification refined to a "max-Go" rule (2026-07-23).** §2 is
-   re-derived by decomposing each function: logic / routing / orchestration /
-   validation / derived-state → Go; only the irreducible atomic statement
-   stays as SQL, issued inside a Go-owned transaction. No business PL/pgSQL
-   function or trigger survives — only `handle_updated_at` (housekeeping)
-   remains DB-side. See §2.1a for the criterion and §2.9 for the
-   trigger-dissolution implications.
+   pending — see §12.
+2. **T3 DB-logic ambiguities are resolved** — see §4 "Operator resolutions."
+3. **Three financial-integrity risks surfaced by the journey catalog (§6)
+   are added to the launch-blocker register (§5)** as "candidate — verify
+   in owning phase," each assigned an owning phase (Phase 5 ×2, Phase 6
+   ×1).
+4. **DB-logic classification refined to a "max-Go" rule (2026-07-23).** The
+   classification in §4 is derived by decomposing each function: logic /
+   routing / orchestration / validation / derived-state → Go; only the
+   irreducible atomic statement stays as SQL, issued inside a Go-owned
+   transaction. No business PL/pgSQL function or trigger survives as a
+   callable stored function — only `handle_updated_at` (housekeeping)
+   remains DB-side.
+5. **Merged with the parallel supplement 2026-07-23; operational decisions
+   adopted.** The supplement's accepted recovery/VPS/monitoring/release-timing
+   decisions (§12), subscription baseline (§8), exit criteria (§1),
+   reproducible measurements (§2), and Phase 1 handoff (§13) are folded into
+   this single canonical document. Where the supplement and the canonical
+   baseline disagreed only in framing (e.g. "open decision" vs. "accepted
+   decision"), the accepted/resolved framing wins per this adjudication.
 
 ---
 
-## 1. Dependency Inventory
+## 1. Goal & Exit Criteria
 
-> Source: `docs/superpowers/plans/phase0-parts/01a-dependency-inventory.md`
-> (Stripe Connect/Billing split + master table) and
-> `docs/superpowers/plans/phase0-parts/01b-edge-functions.md` (per-function
-> edge function detail). Synthesizes program design doc §16 (dependency
-> inventory skeleton), §11 (billing vs. payouts), §17 (Edge Function → Go
-> mapping), §13 (logic classification), §12 (background work).
+> Source: supplement §1–2.
 
-### 1.1 Stripe Connect vs. Stripe Billing separation
+Freeze the current Supabase-dependent system as a reproducible inventory
+before the Go migration starts. Every current integration, database
+routine, trigger, cron job, public route, and high-risk user journey must
+have a target owner and disposition.
+
+Phase 0 does not add the Go runtime. It removes ambiguity so Phase 1 can
+create the provider-independent foundation without rediscovering current
+behavior.
+
+### Exit Criteria
+
+- [x] Flutter and web Supabase calls measured and assigned to target features.
+- [x] All 68 schema functions classified.
+- [x] All 36 schema triggers classified.
+- [x] All 10 cron schedules classified.
+- [x] All 12 Edge Functions and the orphaned `payout-request` call classified.
+- [x] Firebase, Stripe, R2, IAP, webhook, web-hosting, backup, and monitoring
+      integrations have a target owner or an explicit removal decision.
+- [x] Reduced web routes and redirects fixed.
+- [x] Tester-profile migration decision and reference-data seed set fixed.
+- [x] Identity and subscription model inherited from the parent strategy.
+- [x] Existing high-risk characterization coverage recorded with migration gates.
+- [x] Owner accepts the recovery, VPS/environment, and monitoring decisions
+      (§12).
+- [x] Release timing is intentionally milestone-based; no calendar date is
+      required to exit Phase 0.
+
+All boxes are checked — this baseline satisfies the Phase 0 spec's exit
+criteria in full.
+
+## 2. Reproducible Measurements
+
+> Source: supplement §3.
+
+Run:
+
+```bash
+scripts/audit_go_api_vps_phase0.sh
+```
+
+The script exists at `scripts/audit_go_api_vps_phase0.sh` (confirmed
+present in the repository, executable). The 2026-07-22 snapshot is:
+
+| Measurement | Count | Interpretation |
+|---|---:|---|
+| Flutter files importing `supabase_flutter` | 24 | Includes auth and presentation-layer violations. |
+| Raw Flutter `.from(` matches | 31 | Textual count only. |
+| Verified Flutter PostgREST table calls | 18 | The other 13 raw matches are Dart `List.from` / `Map.from` conversions. |
+| Flutter RPC calls | 21 | Two `.rpc<String>` calls were omitted by the earlier 19-call measurement. |
+| Distinct Flutter RPC functions | 21 | No duplicate RPC target in the current call sites. |
+| Flutter Edge Function calls | 7 | `generate-upload-url` has two callers. |
+| Distinct Flutter Edge Function targets | 6 | Includes missing `payout-request`. |
+| Declarative schema functions | 68 | Current schema only; historical migrations excluded. |
+| Declarative schema triggers | 36 | 21 housekeeping and 15 business triggers. |
+| Declarative schema cron jobs | 10 | All are business or external-side-effect jobs. |
+| Edge Function source directories | 12 | Current source only; historical deletions excluded. |
+
+**The 19→21 RPC correction.** The earlier reviewer count of 21 RPC calls was
+correct; the program strategy has been corrected from 19 to 21. The root
+cause (§3's own §4.1 detail, carried into this document's §3.6): the
+literal-substring grep `\.rpc(` misses generic-typed calls of the form
+`.rpc<String>(...)`, where a type argument sits between `rpc` and `(`. Two
+call sites in `matching_repository.dart` use this generic form. See §3.6 for
+the full reconciliation.
+
+## 3. Dependency Inventory
+
+> Source: canonical §1 (`docs/superpowers/plans/phase0-parts/01a-dependency-inventory.md`
+> + `01b-edge-functions.md`), enriched at §3.6 with the supplement's
+> per-feature Flutter/webapp call view (supplement §4). Synthesizes program
+> design doc §16 (dependency inventory skeleton), §11 (billing vs. payouts),
+> §17 (Edge Function → Go mapping), §13 (logic classification), §12
+> (background work).
+
+### 3.1 Stripe Connect vs. Stripe Billing separation
 
 Program §11 requires this split explicitly before any shared Stripe code is
 deleted. Investigation of `supabase/schemas/stripe/` (only table:
 `stripe_accounts`) plus its callers shows the split is **not clean at the
-code level today** — two places interleave Connect (keep) and Billing (drop)
-concerns in the same object:
+code level today** — two places interleave Connect (keep) and Billing
+(drop) concerns in the same object:
 
 #### Finding 1: `stripe_accounts` is one table with both concerns mixed in
 
@@ -83,21 +174,21 @@ type: `checkout.session.completed`, `customer.subscription.{updated,deleted}`,
 `invoice.payment_succeeded` (all **Billing** — subscription upsert into
 `user_subscriptions`, point reset) vs. `account.updated` (the only **Connect**
 case — syncs `charges_enabled`/`payouts_enabled`/`connect_requirements` on
-`stripe_accounts`). `01b-edge-functions.md` describes this function as one
-unit ("port as a signature-verified Go endpoint") without flagging the
+`stripe_accounts`). The edge-function inventory describes this function as
+one unit ("port as a signature-verified Go endpoint") without flagging the
 internal split. Per §11 ("Money in" moves to RevenueCat; "Money out" keeps
 `handle-stripe-webhook`), **the Go port should drop the 3 Billing case-handlers
 and keep only the Connect `account.updated` handler** — this is a scope
-narrowing that isn't visible from `01b`'s function-level table alone.
+narrowing that isn't visible from the function-level table alone.
 
-#### Finding 3: `stripe_billing_repository.dart` is confirmed dead code (resolves `04`'s open question)
+#### Finding 3: `stripe_billing_repository.dart` is confirmed dead code
 
-`04-flutter-api-surface.md` flagged `stripe_billing_repository.dart:41`'s
-read of `stripe_accounts` as having an "unresolved dependency" on the
-unused `billing-setup` function. This investigation resolves it:
-`grep -rn "BillingSetupSection(" peppercheck_flutter/lib/` returns **only
-the widget's own class declaration** — it is never instantiated by any
-screen. Both of `StripeBillingRepository`'s methods
+The Flutter API-surface investigation (Appendix C) flagged
+`stripe_billing_repository.dart:41`'s read of `stripe_accounts` as having an
+"unresolved dependency" on the unused `billing-setup` function. This
+investigation resolves it: `grep -rn "BillingSetupSection(" peppercheck_flutter/lib/`
+returns **only the widget's own class declaration** — it is never
+instantiated by any screen. Both of `StripeBillingRepository`'s methods
 (`createBillingSetupSession()` → invokes `billing-setup`;
 `fetchDefaultBillingMethod()` → reads `pm_brand/pm_last4/pm_exp_month/pm_exp_year`
 off `stripe_accounts`) are reachable only from `billing_controller.dart` and
@@ -118,13 +209,13 @@ username)` only. This column is permanently `NULL`, leaks into the Flutter
 `Profile` domain model (`profile.dart`, `profile.freezed.dart`) only because
 `profile_repository.dart:24` does `.select()` (all columns), and has no
 functional purpose. Not part of the Connect/Billing split itself, but an
-opportunistic-refactor (§15) drop candidate worth flagging alongside it.
+opportunistic-refactor drop candidate worth flagging alongside it (see §10).
 
 #### Conclusion
 
 Stripe **Connect** (payouts — keep, port to Go): `stripe_accounts`'s 4
 Connect columns, `payout-setup`, `create-express-dashboard-link`,
-`execute-pending-payouts`, `payout-request` (dead/unmounted — remove, §3.1),
+`execute-pending-payouts`, `payout-request` (dead/unmounted — remove, §5.1),
 `handle-stripe-webhook`'s `account.updated` case only, `recommend-payout-topup`
 (operator tool).
 
@@ -133,9 +224,9 @@ Stripe **Billing** (subscription/card — drop, do not port): `stripe_accounts`'
 `handle-stripe-webhook`'s 3 subscription-event cases, Flutter
 `stripe_billing_repository.dart` + `billing_setup_section.dart` (confirmed
 dead), webapp `SubscribeButton.tsx`/`pricing`/`dashboard` routes (already
-flagged for removal by §6).
+flagged for removal by §9).
 
-### 1.2 Master dependency inventory table
+### 3.2 Master dependency inventory table
 
 Columns: `integration | used-by feature | direct-client-call? | Go
 replacement | data/config conversion | temporary coexistence | disposition`.
@@ -154,8 +245,8 @@ re-registration is a one-time flip, not a coexistence period).
 |---|---|
 | used-by feature | All — every feature persists through the shared Postgres instance |
 | direct-client-call? | No — reached only via PostgREST/RPC/Edge Functions/webapp SSR clients, never a raw DB connection from a client |
-| Go replacement | Self-hosted Postgres on the VPS (§16, §18) — same engine, re-platformed |
-| data/config conversion | Drop `auth.users`/`auth.uid()` coupling (16 references, §2); ownership FKs move to an internal `users.id` (§13 baseline); connection config moves from Supabase's pooler to VPS-local Postgres |
+| Go replacement | Self-hosted Postgres on the VPS (§12) — same engine, re-platformed |
+| data/config conversion | Drop `auth.users`/`auth.uid()` coupling (16 references, §4); ownership FKs move to an internal `users.id` (§8 baseline); connection config moves from Supabase's pooler to VPS-local Postgres |
 | temporary coexistence | None — see umbrella answer; fresh Atlas-baselined DB at go-live (D9) |
 | disposition | **Keep, re-platform** |
 
@@ -163,10 +254,10 @@ re-registration is a one-time flip, not a coexistence period).
 
 | Column | Value |
 |---|---|
-| used-by feature | authentication (Flutter), webapp `login`/`auth/callback` (both removal targets, §6) |
-| direct-client-call? | Yes — 5 Supabase Auth SDK call sites / 4 files (§4's `auth` table: `Supabase.initialize`, `onAuthStateChange` ×2, `signInWithIdToken`, `signOut`), plus webapp's `signInWithOAuth`/`exchangeCodeForSession`/`updateSession` via `src/lib/supabase/{client,server,middleware}.ts` (§6) |
-| Go replacement | Firebase Auth + internal-UUID identity (§10, §16) |
-| data/config conversion | `auth.users` table (and everything FK'd to it) replaced by an internal `users` table; the 10 `presentation/`-layer `currentUser?.id` reads across 7 files (§4) must move to an app-level current-user provider |
+| used-by feature | authentication (Flutter), webapp `login`/`auth/callback` (both removal targets, §9) |
+| direct-client-call? | Yes — 5 Supabase Auth SDK call sites / 4 files (Appendix C's `auth` table: `Supabase.initialize`, `onAuthStateChange` ×2, `signInWithIdToken`, `signOut`), plus webapp's `signInWithOAuth`/`exchangeCodeForSession`/`updateSession` via `src/lib/supabase/{client,server,middleware}.ts` (§9) |
+| Go replacement | Firebase Auth + internal-UUID identity (§8, §12) |
+| data/config conversion | `auth.users` table (and everything FK'd to it) replaced by an internal `users` table; the 10 `presentation/`-layer `currentUser?.id` reads across 7 files (Appendix C) must move to an app-level current-user provider |
 | temporary coexistence | None — testers re-create accounts via Firebase login (D9); no dual-auth period |
 | disposition | **Replace** — Firebase Auth |
 
@@ -174,21 +265,21 @@ re-registration is a one-time flip, not a coexistence period).
 
 | Column | Value |
 |---|---|
-| used-by feature | matching, notification, profile, task, report, currency, billing (point), payout — see §4's full 18-row call-site table |
-| direct-client-call? | Yes — design doc §16 cites the raw grep baseline of 31; §4 reconciled this to **18 real call sites over 9 tables** (13 of 31 are Dart `Map.from`/`List.from` false positives, not Supabase calls) |
-| Go replacement | Per-table `/api/v1/...` Go endpoints; only `GET /api/v1/me` is design-doc-fixed today, the rest are §4's naming proposals pending feature-phase confirmation |
-| data/config conversion | RLS-scoped `eq('user_id', ...)` filters become explicit authenticated-user scoping in Go handlers; webapp's SSR reads of `user_subscriptions` (`dashboard`/`pricing`) are dropped with those routes (§6), not ported |
-| temporary coexistence | None — Flutter's Supabase repositories are replaced by `ApiXxxRepository` at cutover, no side-by-side period (§5) |
+| used-by feature | matching, notification, profile, task, report, currency, billing (point), payout — see Appendix C's full 18-row call-site table |
+| direct-client-call? | Yes — the raw grep baseline is 31; Appendix C reconciled this to **18 real call sites over 9 tables** (13 of 31 are Dart `Map.from`/`List.from` false positives, not Supabase calls) |
+| Go replacement | Per-table `/api/v1/...` Go endpoints; only `GET /api/v1/me` is design-doc-fixed today, the rest are Appendix C's naming proposals pending feature-phase confirmation |
+| data/config conversion | RLS-scoped `eq('user_id', ...)` filters become explicit authenticated-user scoping in Go handlers; webapp's SSR reads of `user_subscriptions` (`dashboard`/`pricing`) are dropped with those routes (§9), not ported |
+| temporary coexistence | None — Flutter's Supabase repositories are replaced by `ApiXxxRepository` at cutover, no side-by-side period |
 | disposition | **Replace** — Go API endpoints |
 
 #### RLS
 
 | Column | Value |
 |---|---|
-| used-by feature | All 13 policy domains (evidence, judgement, matching, notification, point, profile, rating, report, reward, stripe, subscription, task, trial_point), 63 policies across 30 files (§2) |
+| used-by feature | All 13 policy domains (evidence, judgement, matching, notification, point, profile, rating, report, reward, stripe, subscription, task, trial_point), 63 policies across 30 files |
 | direct-client-call? | No — enforced transparently by Postgres/PostgREST; not a call site |
-| Go replacement | Go service-layer authorization (§16); Firebase-verified JWT + application-layer checks (§13) |
-| data/config conversion | **Retire all 63 policies** (§2); wallet/ledger-adjacent policies (point, trial_point, reward) flagged as possible defense-in-depth keepers — a Go-implementation decision, not designed here |
+| Go replacement | Go service-layer authorization (§12); Firebase-verified JWT + application-layer checks |
+| data/config conversion | **Retire all 63 policies**; wallet/ledger-adjacent policies (point, trial_point, reward) flagged as possible defense-in-depth keepers — a Go-implementation decision, not decided here (remains open, §4.6) |
 | temporary coexistence | None — RLS stays enforced on the old DB until cutover; no dual-authz period on the new stack |
 | disposition | **Replace** — Go authz layer (narrow defense-in-depth RLS possibly retained, TBD) |
 
@@ -196,7 +287,7 @@ re-registration is a one-time flip, not a coexistence period).
 
 | Column | Value |
 |---|---|
-| used-by feature | n/a — zero usage confirmed: no `storage.buckets`/`storage.objects` reference in `supabase/schemas/`, `peppercheck_flutter/lib/`, or `peppercheck-webapp/src` (verified this investigation) |
+| used-by feature | n/a — zero usage confirmed: no `storage.buckets`/`storage.objects` reference in `supabase/schemas/`, `peppercheck_flutter/lib/`, or `peppercheck-webapp/src` |
 | direct-client-call? | No |
 | Go replacement | n/a — object storage is already R2 today (see R2 row), never Supabase Storage |
 | data/config conversion | None needed |
@@ -207,10 +298,10 @@ re-registration is a one-time flip, not a coexistence period).
 
 | Column | Value |
 |---|---|
-| used-by feature | n/a for the client — zero `.channel(`/`RealtimeChannel`/`.stream(` usage in `peppercheck_flutter/lib/` (verified this investigation); MEMORY.md's subscription-refresh design already specifies polling, not Realtime |
+| used-by feature | n/a for the client — zero `.channel(`/`RealtimeChannel`/`.stream(` usage in `peppercheck_flutter/lib/`; MEMORY.md's subscription-refresh design already specifies polling, not Realtime |
 | direct-client-call? | No |
-| Go replacement | n/a — polling per existing subscription-refresh design (§16) |
-| data/config conversion | **New finding beyond §2's scope** (functions/triggers/cron only): `supabase/schemas/subscription/tables/realtime.sql` still runs `ALTER PUBLICATION supabase_realtime ADD TABLE public.user_subscriptions`, with a comment claiming it's "so Flutter clients can detect subscription status changes" — but no client code consumes it. Dead schema config; flag as an opportunistic-refactor (§15) drop candidate during Atlas baselining |
+| Go replacement | n/a — polling per existing subscription-refresh design |
+| data/config conversion | `supabase/schemas/subscription/tables/realtime.sql` still runs `ALTER PUBLICATION supabase_realtime ADD TABLE public.user_subscriptions`, with a comment claiming it's "so Flutter clients can detect subscription status changes" — but no client code consumes it. Dead schema config; flag as an opportunistic-refactor drop candidate during Atlas baselining |
 | temporary coexistence | None |
 | disposition | **No — unused** (confirms design doc §16); one dead schema object to clean up |
 
@@ -218,10 +309,10 @@ re-registration is a one-time flip, not a coexistence period).
 
 | Column | Value |
 |---|---|
-| Functions | `create-express-dashboard-link`, `payout-setup`, `handle-stripe-webhook` (Connect scope only — see 1.1 Finding 2), `generate-upload-url` |
+| Functions | `create-express-dashboard-link`, `payout-setup`, `handle-stripe-webhook` (Connect scope only — see 3.1 Finding 2), `generate-upload-url` |
 | used-by feature | payout (Flutter `stripe_payout_repository.dart`), evidence + profile (`generate-upload-url`, shared) |
-| direct-client-call? | Yes for 3 of 4 (`create-express-dashboard-link`, `payout-setup`, `generate-upload-url` — via `.functions.invoke`, §4); No for `handle-stripe-webhook` (external Stripe Dashboard webhook registration only) |
-| Go replacement | Straightforward Go endpoints behind app auth middleware / signature verification (§1.3) |
+| direct-client-call? | Yes for 3 of 4 (`create-express-dashboard-link`, `payout-setup`, `generate-upload-url` — via `.functions.invoke`); No for `handle-stripe-webhook` (external Stripe Dashboard webhook registration only) |
+| Go replacement | Straightforward Go endpoints behind app auth middleware / signature verification (§3.3) |
 | data/config conversion | Stripe secret key + webhook signing secret move from Supabase Vault to Go config/secret store; R2 credentials move similarly for `generate-upload-url` |
 | temporary coexistence | None; Stripe webhook endpoint URL must be **re-registered** in the Stripe Dashboard at cutover — a one-time flip, not a coexistence period |
 | disposition | **Port to Go endpoint** |
@@ -231,10 +322,10 @@ re-registration is a one-time flip, not a coexistence period).
 | Column | Value |
 |---|---|
 | Functions | `delete-account`, `send-notification` |
-| used-by feature | account (Flutter + webapp, both callers per §1.3); notification (reached only via DB's `notify_event`, no direct client caller) |
+| used-by feature | account (Flutter + webapp, both callers per §3.3); notification (reached only via DB's `notify_event`, no direct client caller) |
 | direct-client-call? | Yes for `delete-account` (Flutter `account_repository.dart:28` + webapp `account/delete/page.tsx:52`); No for `send-notification` (Postgres → `notify_event` → `pg_net` only) |
-| Go replacement | `delete-account` → Go endpoint + worker, idempotent saga (§14, see also §3 T7-3 below); `send-notification` → Go endpoint + worker (FCM) — needs an equivalent trigger point since Postgres stops calling out over HTTP |
-| data/config conversion | `delete-account`'s current implementation is best-effort/non-transactional across Stripe transfer, subscription cancel, Connect deauth, R2 cleanup — §14 requires converting this to persisted, retryable deletion state; `send-notification`'s Firebase Admin credentials move to Go config |
+| Go replacement | `delete-account` → Go endpoint + worker, idempotent saga (§5.2.3); `send-notification` → Go endpoint + worker (FCM) — needs an equivalent trigger point since Postgres stops calling out over HTTP |
+| data/config conversion | `delete-account`'s current implementation is best-effort/non-transactional across Stripe transfer, subscription cancel, Connect deauth, R2 cleanup — the Go port must convert this to persisted, retryable deletion state; `send-notification`'s Firebase Admin credentials move to Go config |
 | temporary coexistence | None; both callers of `delete-account` (Flutter + webapp) must be re-pointed together at cutover |
 | disposition | **Port to Go endpoint + worker** |
 
@@ -245,8 +336,8 @@ re-registration is a one-time flip, not a coexistence period).
 | Functions | `execute-pending-payouts`, `sweep-r2-stale-objects` |
 | used-by feature | reward/payout; common (R2 hygiene) |
 | direct-client-call? | No — both reached only via Postgres cron (`net.http_post`), never from Flutter/webapp |
-| Go replacement | Go worker jobs (durable, §12) — the `pg_net` HTTP hop is dropped entirely, becoming an in-process worker call |
-| data/config conversion | `execute-pending-payouts` and `delete-account`'s reward-payout step share near-duplicate Stripe-transfer + `deduct_reward_for_payout` logic — §1.3 recommends consolidating into one Go domain function during the port |
+| Go replacement | Go worker jobs (durable) — the `pg_net` HTTP hop is dropped entirely, becoming an in-process worker call |
+| data/config conversion | `execute-pending-payouts` and `delete-account`'s reward-payout step share near-duplicate Stripe-transfer + `deduct_reward_for_payout` logic — recommend consolidating into one Go domain function during the port |
 | temporary coexistence | None |
 | disposition | **Port to Go worker** |
 
@@ -255,7 +346,7 @@ re-registration is a one-time flip, not a coexistence period).
 | Column | Value |
 |---|---|
 | Function | `billing-setup` |
-| used-by feature | billing (Flutter `stripe_billing_repository.dart:22`) — **confirmed dead**, see 1.1 Finding 3 |
+| used-by feature | billing (Flutter `stripe_billing_repository.dart:22`) — **confirmed dead**, see 3.1 Finding 3 |
 | direct-client-call? | Yes in code, but unreachable in practice (no mounted UI caller) |
 | Go replacement | None — not ported |
 | data/config conversion | n/a — delete Flutter caller alongside (`stripe_billing_repository.dart`, `billing_setup_section.dart`, `billing_controller.dart`'s billing-setup wiring) |
@@ -267,9 +358,9 @@ re-registration is a one-time flip, not a coexistence period).
 | Column | Value |
 |---|---|
 | Function | `create-stripe-checkout` |
-| used-by feature | webapp `SubscribeButton.tsx` (removal target, §6) |
+| used-by feature | webapp `SubscribeButton.tsx` (removal target, §9) |
 | direct-client-call? | Yes, webapp only — no Flutter caller |
-| Go replacement | None — web subscribe checkout is removed per §9/§11, not ported |
+| Go replacement | None — web subscribe checkout is removed per §9/§11 of the program design, not ported |
 | data/config conversion | n/a |
 | temporary coexistence | None |
 | disposition | **Dropped** (web subscribe removed) |
@@ -281,7 +372,7 @@ re-registration is a one-time flip, not a coexistence period).
 | Function | `handle-google-play-rtdn` |
 | used-by feature | subscription — see the dedicated Google Play RTDN row below |
 | direct-client-call? | No — external Google Cloud Pub/Sub push only |
-| Go replacement | None on our side — RevenueCat ingests RTDN directly (§11) |
+| Go replacement | None on our side — RevenueCat ingests RTDN directly (program §11) |
 | data/config conversion | See Google Play RTDN row |
 | temporary coexistence | None |
 | disposition | **Removed** |
@@ -293,85 +384,110 @@ re-registration is a one-time flip, not a coexistence period).
 | Function | `recommend-payout-topup` |
 | used-by feature | operator only — no automated caller found (no cron entry, no app invocation); auth via `X-Operator-Secret` |
 | direct-client-call? | No (not app-facing); manual operator invocation only |
-| Go replacement | **Go operator endpoint** (resolved by operator adjudication — see §2 "Operator resolutions," item on `get_payout_topup_metrics`: the endpoint exposes that read-only aggregate) |
+| Go replacement | **Go operator endpoint** (resolved by operator adjudication — the ambiguity between "endpoint or standalone operator script" is closed in favor of the endpoint) |
 | data/config conversion | `OPERATOR_AUTH_TOKEN` moves to Go config |
 | temporary coexistence | None |
-| disposition | **Port as a Go operator endpoint** (resolved; no longer "endpoint or script" — see §2) |
+| disposition | **Port as a Go operator endpoint** (resolved) |
 
 **Edge Functions reconciliation:** 4 (endpoint) + 2 (endpoint+worker) + 2
 (worker) + 1 (drop, unused) + 1 (dropped, feature removed) + 1 (removed,
-externally replaced) + 1 (operator tool) = **12 of 12**, matching §1.3's
+externally replaced) + 1 (operator tool) = **12 of 12**, matching §3.3's
 totals line exactly ("2 dropped, 1 removed, 1 operator tool, 2 → worker, 6 →
-endpoint [4 endpoint-only + 2 endpoint+worker]"). Plus the **`payout-request`
-launch-blocker** (§4, §1.3): Flutter calls `.functions.invoke('payout-request')`
-but no such Edge Function exists (404 today) — needs a net-new Go payout
-endpoint, not a port; see §3.
+endpoint [4 endpoint-only + 2 endpoint+worker]"). Separately, `payout-request`
+(Appendix C, §3.3) was investigated: Flutter calls
+`.functions.invoke('payout-request')` but no such Edge Function exists — the
+whole call path is **dead/unmounted code** (zero callers of the Flutter
+method, its dialog is never mounted), not a reachable launch-blocker. **No
+Go endpoint is built for it.** The dead client code is removed in the Phase 5
+payout migration. See §5.1 and §10.F for the full resolution and evidence.
+*(This corrects an earlier framing in the canonical source, which described
+`payout-request` at this point as needing "a net-new Go payout endpoint, not
+a port" — that framing was superseded by the source's own later §3.1/§7.F
+investigation and is not carried forward here.)*
 
 #### DB Functions (68)
 
 | Column | Value |
 |---|---|
-| used-by feature | All — full per-function table in §2 |
-| direct-client-call? | Mixed — 21 of 68 called directly from Flutter via `.rpc()`/`.rpc<T>()` (§4's rpc table, 21 call sites = 21 distinct functions, zero duplicates); the rest are internal (triggers, other functions, or Edge Functions only) |
-| Go replacement | Category split: business orchestration / authorization / external side-effect (41) → Go; integrity-atomicity / query-set (23) → stay in Postgres; obsolete Supabase-only support (4) → delete |
-| data/config conversion | `auth.uid()`-gated functions (14, category 4) become explicit user-scoped SQL called from Go with an app-supplied user id; `get_point_for_matching_strategy` (#9) becomes a single Go constant — all its callers move to Go under the max-Go refinement, so no Postgres copy is retained (§2.3 #9); `handle_new_user` (#43) is a special case — its trigger *mechanism* dies with Supabase Auth, but its provisioning logic (profile/notification_settings/user_ratings/point_wallet/trial_point_wallet creation) needs an explicit Go-side "create user" onboarding step, not a drop (§2, resolved — Go) |
-| temporary coexistence | None; per §2, "completion is NOT all functions deleted" — complex transactional routines may remain behind the Go store post-cutover |
-| disposition | **Split** (refined max-Go, §2.1a) — **Go 48 / Go-tx SQL 15 / DB trigger 1 (`handle_updated_at`) / delete 4** = 68; no business function stays as a Postgres stored function (matches §2's tally exactly) |
+| used-by feature | All — full per-function table in Appendix A |
+| direct-client-call? | Mixed — 21 of 68 called directly from Flutter via `.rpc()`/`.rpc<T>()` (Appendix C's rpc table, 21 call sites = 21 distinct functions, zero duplicates); the rest are internal (triggers, other functions, or Edge Functions only) |
+| Go replacement | Every function is decomposed into its logic/routing/orchestration/validation component (→ Go) and its irreducible atomic statement, if any (→ store SQL issued inside a Go-owned transaction). See §4 for the full 5-way classification: **DB invariant/helper 1 · Store query 4 · Go transaction 38 · Go service/worker 21 · Drop 4 = 68** (Go-managed = 63 of 68). `auth.uid()`-gated functions (14) become explicit user-scoped SQL called from Go with an app-supplied user id; `get_point_for_matching_strategy` becomes a single Go constant — all its callers move to Go, so no Postgres copy is retained; `handle_new_user` is a special case — its trigger *mechanism* dies with Supabase Auth, but its provisioning logic (profile/notification_settings/user_ratings/point_wallet/trial_point_wallet creation) needs an explicit Go-side "create user" onboarding step, not a drop |
+| data/config conversion | See Go replacement above; Appendix A carries the full per-function evidence |
+| temporary coexistence | None; store-owned SQL statements for locking/ledger operations live behind the Go store post-cutover, not as callable Postgres stored functions |
+| disposition | **Split** — see §4/Appendix A for the per-function classification; no business function stays as a Postgres stored function; the sole DB-side survivor is the `handle_updated_at` housekeeping trigger helper |
+
+*(The canonical source's original text for this row described a "Go 48 /
+Go-tx SQL 15 / DB trigger 1 / delete 4" split and, in an earlier framing
+retained from before its own max-Go refinement, described "integrity-atomicity
+/ query-set (23) → stay in Postgres" — that "stay in Postgres" framing
+described a pre-refinement categorization and is a business-function
+staying-in-Postgres statement the merge brief requires not be carried
+forward. This row instead cites §4's operator-approved 5-way tally
+directly.)*
 
 #### Triggers (36)
 
 | Column | Value |
 |---|---|
-| used-by feature | matching, judgement, evidence, rating, task, auth (onboarding) for the 15 business triggers; all domains with `updated_at` columns for the 21 housekeeping triggers (§2) |
+| used-by feature | matching, judgement, evidence, rating, task, auth (onboarding) for the 15 business triggers; all domains with `updated_at` columns for the 21 housekeeping triggers |
 | direct-client-call? | No — fire on DB writes only, never called directly |
-| Go replacement | 21 housekeeping (`set_updated_at`) stay as minimal DB triggers; **all 15 business triggers move to Go** (refined max-Go, §2.1a) — 12 as Go logic, 3 as Go-tx SQL statements Go issues in the same transaction as the write that used to fire them; the 5 previously-"stay" invariant/derived-state triggers dissolve because Go becomes the sole writer (see §2.4, §2.9) |
-| data/config conversion | Go-side equivalents for the 10 moved triggers become explicit calls inside the same business-orchestration functions that already move (e.g., `settle_evidence_timeout`'s notify step folds into the Go evidence-settlement flow) |
-| temporary coexistence | None — new schema ships without the 10 moved triggers from day one |
-| disposition | **Split** (refined max-Go, §2.1a) — 21 housekeeping stay as DB triggers; **all 15 business triggers → Go (12) / Go-tx SQL (3)** (matches §2's tally: 15 + 21 = 36) |
+| Go replacement | 21 housekeeping (`set_updated_at`) stay as minimal DB triggers, all calling `handle_updated_at`; **all 15 business triggers dissolve into Go** — some as plain Go orchestration logic, others as a single atomic SQL statement Go issues inside the same transaction as the write that used to fire the trigger. See §4/Appendix B for the per-trigger mechanism. |
+| data/config conversion | The Go-side equivalents for the dissolved business triggers become explicit calls inside the same business-orchestration functions that already move to Go (e.g., `settle_evidence_timeout`'s notify step folds into the Go evidence-settlement flow) |
+| temporary coexistence | None — new schema ships without the 15 business triggers from day one |
+| disposition | **Split** — 21 housekeeping stay as DB triggers; **all 15 business triggers → Go** (matches Appendix B's tally: 15 + 21 = 36) |
 
 #### Cron (10)
 
 | Column | Value |
 |---|---|
-| used-by feature | matching (1), judgement (3), notification (3), reward (2), common/R2 (1) — full table in §2 |
+| used-by feature | matching (1), judgement (3), notification (3), reward (2), common/R2 (1) — full table in §4.3 |
 | direct-client-call? | No — internal `pg_cron` schedule, unreachable by any client |
-| Go replacement | Go `worker`'s internal scheduler (§12); supercronic/ticker as periodic enqueue trigger; **all 10** business jobs move — "none of the 10 are pure DB-internal maintenance" (§2), so nothing stays as `pg_cron` |
-| data/config conversion | 2 of 10 (`sweep-r2-stale-objects`, `execute-pending-payouts`) already call out via `pg_net`/`net.http_post` to Edge Functions today — these become direct in-process Go worker jobs, dropping the HTTP hop; underlying SQL for 3 of 10 (`detect_and_handle_review_timeouts`, `detect_auto_confirms`, `detect_and_handle_evidence_timeouts`) can remain Postgres functions the worker calls via RPC rather than being rewritten (§2) |
+| Go replacement | Go `worker`'s internal scheduler; supercronic/ticker as periodic enqueue trigger; **all 10** business jobs move — none of the 10 is pure DB-internal maintenance, so nothing stays as `pg_cron` |
+| data/config conversion | 2 of 10 (`sweep-r2-stale-objects`, `execute-pending-payouts`) already call out via `pg_net`/`net.http_post` to Edge Functions today — these become direct in-process Go worker jobs, dropping the HTTP hop. The SQL underlying 3 of 10 (`detect_and_handle_review_timeouts`, `detect_auto_confirms`, `detect_and_handle_evidence_timeouts`) is issued directly by the Go worker as Go-owned/store-SQL statements each tick, state directly against Postgres — **not** as a call to a retained stored function, and not via RPC. |
 | temporary coexistence | None — `pg_cron` schedule entries retire with the old DB |
-| disposition | **Move to Go worker** — all 10 (matches §2's tally) |
+| disposition | **Move to Go worker** — all 10 |
+
+*(The canonical source's original text for this row stated that the SQL for
+those 3 cron jobs "can remain Postgres functions the worker calls via RPC
+rather than being rewritten" — that framing is exactly the "cron may remain
+a Postgres function called via RPC" statement the merge brief requires not
+be carried forward, and was itself superseded within the canonical source's
+own later revision (§4.3 below, "no RPC needed"). This row reflects the
+corrected, final position: all cron logic is Go-issued SQL, not a stored
+function invoked over RPC.)*
 
 #### Stripe Connect (payouts)
 
 | Column | Value |
 |---|---|
 | used-by feature | payout (Flutter `stripe_payout_repository.dart`), reward/payout cron+worker |
-| direct-client-call? | Yes — `payout-setup`, `create-express-dashboard-link` via `.functions.invoke`; `payout-request` is referenced in code but its call path is dead/unmounted (never reachable — §3.1); `execute-pending-payouts` reached only by DB cron, never by a client |
-| Go replacement | Go endpoints for onboarding / dashboard-link; Go worker for `execute-pending-payouts`; `handle-stripe-webhook`'s `account.updated` handler only (1.1 Finding 2). **`payout-request` gets no Go endpoint — its manual-payout path is dead/unmounted and is removed (§3.1, §7.F)** |
-| data/config conversion | `stripe_accounts`'s 4 Connect columns (`stripe_connect_account_id`, `charges_enabled`, `payouts_enabled`, `connect_requirements`) carry over as-is (1.1 Finding 1); Stripe API key + Connect webhook signing secret move from Supabase Vault to Go config/secret store; webapp's static `stripe/connect/return`/`refresh` pages must keep resolving post-webapp-migration (§6) |
+| direct-client-call? | Yes — `payout-setup`, `create-express-dashboard-link` via `.functions.invoke`; `payout-request` is referenced in code but its call path is dead/unmounted (never reachable — §5.1); `execute-pending-payouts` reached only by DB cron, never by a client |
+| Go replacement | Go endpoints for onboarding / dashboard-link; Go worker for `execute-pending-payouts`; `handle-stripe-webhook`'s `account.updated` handler only (3.1 Finding 2). **`payout-request` gets no Go endpoint — its manual-payout path is dead/unmounted and is removed (§5.1, §10.F)** |
+| data/config conversion | `stripe_accounts`'s 4 Connect columns (`stripe_connect_account_id`, `charges_enabled`, `payouts_enabled`, `connect_requirements`) carry over as-is (3.1 Finding 1); Stripe API key + Connect webhook signing secret move from Supabase Vault to Go config/secret store; webapp's static `stripe/connect/return`/`refresh` pages must keep resolving post-webapp-migration (§9) |
 | temporary coexistence | None; Stripe webhook endpoint URL re-registration in the Stripe Dashboard is a one-time cutover flip |
-| disposition | **Keep — port to Go** (money-out, unchanged per §11); `payout-request` is **not** a blocker — the manual-payout path is dead/unmounted, disposition **remove** (§3.1, §7.F) |
+| disposition | **Keep — port to Go** (money-out, unchanged per program §11); `payout-request` is **not** a blocker — the manual-payout path is dead/unmounted, disposition **remove** (§5.1, §10.F) |
 
 #### Stripe Billing (subscription / card-on-file)
 
 | Column | Value |
 |---|---|
-| used-by feature | billing (Flutter `stripe_billing_repository.dart` — **confirmed dead**, 1.1 Finding 3), webapp `SubscribeButton.tsx`/`pricing`/`dashboard` (removal targets, §6) |
+| used-by feature | billing (Flutter `stripe_billing_repository.dart` — **confirmed dead**, 3.1 Finding 3), webapp `SubscribeButton.tsx`/`pricing`/`dashboard` (removal targets, §9) |
 | direct-client-call? | Yes in code but dead in practice — `billing-setup` has no mounted UI caller; `create-stripe-checkout`'s only caller (`SubscribeButton.tsx`) is itself a removal target |
-| Go replacement | **None** — subscription entitlement moves to RevenueCat (§11 "Money in"); Stripe Billing is dropped outright, not ported |
-| data/config conversion | n/a — being deleted; `stripe_accounts`'s 6 Billing-only columns become dead columns, drop during Atlas baselining (§15) rather than carry into the new schema; `handle-stripe-webhook`'s 3 subscription-event handlers drop from the Go port (1.1 Finding 2) |
+| Go replacement | **None** — subscription entitlement moves to RevenueCat (program §11 "Money in"); Stripe Billing is dropped outright, not ported |
+| data/config conversion | n/a — being deleted; `stripe_accounts`'s 6 Billing-only columns become dead columns, drop during Atlas baselining rather than carry into the new schema; `handle-stripe-webhook`'s 3 subscription-event handlers drop from the Go port (3.1 Finding 2) |
 | temporary coexistence | None — dropped, no port, no coexistence |
-| disposition | **Drop** — `billing-setup` (unused legacy) + `create-stripe-checkout` (web subscribe removed); Flutter's `stripe_billing_repository.dart` + `billing_setup_section.dart` should be deleted, not ported (1.1 Finding 3) |
+| disposition | **Drop** — `billing-setup` (unused legacy) + `create-stripe-checkout` (web subscribe removed); Flutter's `stripe_billing_repository.dart` + `billing_setup_section.dart` should be deleted, not ported (3.1 Finding 3) |
 
 #### Google Play RTDN
 
 | Column | Value |
 |---|---|
-| used-by feature | subscription — server-to-server only, no Flutter/webapp caller (§1.3) |
+| used-by feature | subscription — server-to-server only, no Flutter/webapp caller |
 | direct-client-call? | No — external Google Cloud Pub/Sub push subscription, OIDC-token-verified |
-| Go replacement | **None on our side** — RevenueCat ingests Google Play RTDN directly (§11); `handle-google-play-rtdn` is removed outright, not ported |
+| Go replacement | **None on our side** — RevenueCat ingests Google Play RTDN directly (program §11); `handle-google-play-rtdn` is removed outright, not ported |
 | data/config conversion | Google Play Developer Console's Pub/Sub topic/RTDN target must be repointed from our Supabase function URL to RevenueCat's ingestion endpoint — RC-side setup, not app code. **Not explicitly called out as a step in any Phase 0/5 roadmap text reviewed for this investigation; worth confirming it's on the RevenueCat setup checklist** before Phase 5 |
 | temporary coexistence | None — cutover is a config change on Google's/RevenueCat's side, not a code coexistence period |
-| disposition | **Removed** — RevenueCat takes over (confirms §11/§16) |
+| disposition | **Removed** — RevenueCat takes over (confirms program §11/§16) |
 
 #### R2
 
@@ -382,50 +498,49 @@ endpoint, not a port; see §3.
 | Go replacement | Go endpoint issues the presigned URL (replaces `generate-upload-url`); Go worker runs the stale-object sweep (replaces `sweep-r2-stale-objects`) — both already covered under the Edge Function rows above |
 | data/config conversion | R2 itself is unchanged — already the object store, already S3-compatible, already presigned-URL-based; only the presign-issuing process moves from a Supabase Edge Function to a Go endpoint; R2 credentials move from Supabase function env vars to Go's config/secret store |
 | temporary coexistence | None — the R2 bucket/objects are not migrating data, only the presign-issuer changes |
-| disposition | **Keep, re-point issuer** — R2 stays; only the Go-vs-Edge-Function presign issuer changes (design doc §16's "Storage: No / target R2" reflects that R2 was already the real storage target, not new) |
+| disposition | **Keep, re-point issuer** — R2 stays; only the Go-vs-Edge-Function presign issuer changes. Note the separate launch-blocker (§5.3): evidence objects today are designed around a public R2 domain and must move to a private bucket + authorized presigned downloads (Phase 4). |
 
 #### FCM
 
 | Column | Value |
 |---|---|
-| used-by feature | notification — `user_fcm_tokens` table + `notification_repository.dart`'s register/unregister; dispatch reached via `notify_event()` → `send-notification`, called from many DB triggers/RPCs across the schema (fan-out out of scope for §1.3's edge-function-only table) |
-| direct-client-call? | Yes for token registration (2 `.from('user_fcm_tokens')` call sites, §4); No for dispatch (server-side only) |
-| Go replacement | Go endpoint for token registration (covered under PostgREST row); Go endpoint + worker for dispatch (covered under Edge Function "endpoint + worker" row) — §1.3 flags the Go port needs an equivalent trigger point (synchronous Go-API call vs. worker-consumed outbox) since Postgres stops calling out via `pg_net` |
-| data/config conversion | Firebase Admin SDK credentials move from Supabase function env vars to Go's config/secret store; the 10 Go notification-dispatch triggers/functions (category 5, §2) become the new call sites feeding FCM dispatch, replacing `notify_event`'s `pg_net` hop |
+| used-by feature | notification — `user_fcm_tokens` table + `notification_repository.dart`'s register/unregister; dispatch reached via `notify_event()` → `send-notification`, called from many DB triggers/RPCs across the schema |
+| direct-client-call? | Yes for token registration (2 `.from('user_fcm_tokens')` call sites, Appendix C); No for dispatch (server-side only) |
+| Go replacement | Go endpoint for token registration (covered under PostgREST row); Go endpoint + worker for dispatch (covered under Edge Function "endpoint + worker" row) — the Go port needs an equivalent trigger point (synchronous Go-API call vs. worker-consumed outbox) since Postgres stops calling out via `pg_net` |
+| data/config conversion | Firebase Admin SDK credentials move from Supabase function env vars to Go's config/secret store; the Go notification-dispatch functions (§4) become the new call sites feeding FCM dispatch, replacing `notify_event`'s `pg_net` hop |
 | temporary coexistence | None |
 | disposition | **Keep provider, replace dispatch path** — FCM itself unchanged; Postgres→`pg_net`→Edge-Function dispatch replaced by Go-native dispatch (endpoint or worker/outbox) |
 
-### 1.3 Edge Function detail table
+### 3.3 Edge Function detail table
 
-> Source: `docs/superpowers/plans/phase0-parts/01b-edge-functions.md`. Source
-> of truth for target disposition: program design doc §17 "Edge Function →
-> Go Mapping." Enumerates every directory under `supabase/functions/`
-> (excluding dotfiles and `.env`/`.env.staging`, which were not opened) as of
-> 2026-07-22. For each function: purpose (from its `index.ts` entrypoint),
-> caller(s) (Flutter, webapp, or internal Postgres cron/trigger), the §17 Go
-> destination, and a disposition summary.
+> Source of truth for target disposition: program design doc §17 "Edge
+> Function → Go Mapping." Enumerates every directory under
+> `supabase/functions/` (excluding dotfiles and `.env`/`.env.staging`, which
+> were not opened) as of 2026-07-22. For each function: purpose (from its
+> `index.ts` entrypoint), caller(s) (Flutter, webapp, or internal Postgres
+> cron/trigger), the §17 Go destination, and a disposition summary.
 
 | Edge function | Purpose | Caller(s) | Go destination (§17) | Disposition |
 |---|---|---|---|---|
-| `billing-setup` | Creates/fetches a Stripe `Customer` and issues a `SetupIntent` + ephemeral key for off-session card registration. | `peppercheck_flutter/lib/features/billing/data/stripe_billing_repository.dart:22` (`_supabase.functions.invoke('billing-setup')`). | **Drop — currently unused.** | Callable code path exists in Flutter, but §17 states its UI (`BillingSetupSection`) is not mounted on any screen — dead legacy flow from a pre-IAP billing design. Remove with the dormant Stripe billing UI/repo (D8); do not port. |
+| `billing-setup` | Creates/fetches a Stripe `Customer` and issues a `SetupIntent` + ephemeral key for off-session card registration. | `peppercheck_flutter/lib/features/billing/data/stripe_billing_repository.dart:22` (`_supabase.functions.invoke('billing-setup')`). | **Drop — currently unused.** | Callable code path exists in Flutter, but its UI (`BillingSetupSection`) is not mounted on any screen — dead legacy flow from a pre-IAP billing design. Remove with the dormant Stripe billing UI/repo (D8); do not port. |
 | `create-stripe-checkout` | Resolves/creates a Stripe `Customer`, looks up a `Price` by lookup key or explicit `price_id`, creates a Stripe Checkout `Session` (subscription or one-off) and returns its URL. | `peppercheck-webapp/src/components/SubscribeButton.tsx:36`. | **Dropped** (web subscribe removed). | Only caller is the webapp's web-pricing/checkout flow, which §9 marks as a remove target (purchase moves to in-app IAP). Consistent with the design doc; drop entirely, no Go port. |
 | `create-express-dashboard-link` | Authenticates the user, looks up their `stripe_accounts.stripe_connect_account_id`, and creates a Stripe Express **login link** to the connected account's dashboard. | `peppercheck_flutter/lib/features/payout/data/stripe_payout_repository.dart:73` (`invoke('create-express-dashboard-link')`). | Go endpoint (Stripe Connect). | Straightforward auth + Stripe Connect passthrough; port as a Go endpoint behind the app's auth middleware. |
-| `payout-setup` | Gets-or-creates a `stripe_accounts` row + Stripe Express Connect account for the user, refreshes `charges_enabled`/`payouts_enabled`/`connect_requirements`, and returns a Stripe `accountLinks` onboarding URL (`refresh_url`/`return_url` point at `peppercheck-webapp/.../stripe/connect/{refresh,return}`). | `peppercheck_flutter/lib/features/payout/data/stripe_payout_repository.dart:57` (`invoke('payout-setup')`). | Go endpoint (Stripe Connect onboarding). | Port as a Go endpoint; note the coupling to the webapp's static `stripe/connect/return`/`refresh` pages (kept per §6) — those return/refresh URLs must keep resolving after the webapp migrates. |
-| `execute-pending-payouts` | Batch job: fetches up to 100 `reward_payouts` rows with `status='pending'`, creates an idempotent Stripe `Transfer` per row to the referee's Connect account, marks each payout success/failed, and deducts the reward wallet via the `deduct_reward_for_payout` RPC. On per-row failure, calls `notify_event` with `notification_payout_failed_referee`. | Postgres cron, not a client. `supabase/schemas/reward/cron/cron_execute_pending_payouts.sql:4,8` schedules a `net.http_post` to `.../functions/v1/execute-pending-payouts`. | Go **worker** (durable). | Money-moving batch job; §17 explicitly routes it to the durable Go worker rather than an HTTP endpoint. No Flutter/webapp caller — only reachable via the DB cron. See §3 T7-1 for an idempotency gap in this function. |
-| `recommend-payout-topup` | Operator-only report: reads `get_payout_topup_metrics` RPC + live Stripe balance, computes a recommended Stripe balance top-up (JPY) to cover projected referee payout obligations through month end, and returns the recommendation with a "transfer-initiate deadline" (7 JP business days before the next scheduled payout run). Auth via constant-time `X-Operator-Secret` header check against `OPERATOR_AUTH_TOKEN`. | No caller found in `peppercheck_flutter/lib/`, `peppercheck-webapp/src`, or `supabase/schemas` cron/trigger SQL — only referenced in `supabase/functions/.env.example` (env var docs) and `supabase/config.toml` (function registration). Invoked manually by the operator (`X-Operator-Secret` design confirms this). | **Operator tool.** | Not app-facing and not cron-scheduled. **Resolved by operator adjudication**: port to a **Go operator endpoint** (see §2 "Operator resolutions") — the ambiguity between "endpoint or standalone operator script" is closed in favor of the endpoint. |
-| `handle-stripe-webhook` | Verifies the Stripe webhook signature and handles `checkout.session.completed`, `customer.subscription.{updated,deleted}`, `invoice.payment_succeeded`, and `account.updated` — upserts `user_subscriptions`, resets subscription points via `reset_subscription_points` RPC, deactivates trial points, and syncs `stripe_accounts.{charges_enabled,payouts_enabled,connect_requirements}` on Connect account changes. | External: registered as a webhook endpoint URL in the Stripe Dashboard, not invoked from app code. No caller found in `peppercheck_flutter/lib/` or `peppercheck-webapp/src`; `supabase/snippets/setup_stripe_account_webhook_test.sql` is manual test setup only. | Go endpoint (signed, idempotent). | Port as a signature-verified Go endpoint; must stay idempotent per §17 given Stripe's at-least-once delivery. Re-register the endpoint URL with Stripe as part of cutover. **Scope narrowing**: per 1.1 Finding 2, the Go port keeps only the `account.updated` (Connect) case — the 3 Billing case-handlers are dropped, not carried over by default. |
-| `handle-google-play-rtdn` | Verifies a Google Pub/Sub push OIDC token, decodes the RTDN envelope, and on subscription notifications fetches Play `subscriptionsv2` state, upserts `user_subscriptions`, resets points, and deactivates trial points. Always returns HTTP 200 (even on internal failure) to avoid Pub/Sub retry storms. | External: registered as a Google Cloud Pub/Sub push subscription endpoint, not invoked from app code. No caller found in `peppercheck_flutter/lib/` or `peppercheck-webapp/src`; only referenced in `supabase/functions/.env.example` and `supabase/config.toml`. | **Removed** (RevenueCat ingests RTDN). | §17: RevenueCat takes over Google Play RTDN ingestion, so this function is dropped outright, not ported. |
-| `generate-upload-url` | Authenticates the user, validates `content_type`/extension/file size, verifies task ownership (for `kind='evidence'`) or scopes to the caller (`kind='avatar'`), derives a namespaced R2 key, and returns an R2 (S3-compatible) presigned `PUT` URL plus the eventual public URL. | `peppercheck_flutter/lib/features/evidence/data/evidence_repository.dart:40` and `peppercheck_flutter/lib/features/profile/data/profile_repository.dart:73` (both `invoke('generate-upload-url')`). | Go endpoint (R2 presigned upload). | Port as a Go endpoint; per the global engineering policy the Go API should keep issuing presigned URLs rather than handing R2 keys to the client — this function already does that. |
-| `delete-account` | Multi-step account-deletion saga: checks `check_account_deletable` RPC, (unless `force`) pays out any positive reward wallet balance via a Stripe `Transfer` before deletion, best-effort cancels an active Stripe subscription and deauthorizes the Connect account, best-effort deletes R2 avatar objects, then calls `auth.admin.deleteUser` (DB `CASCADE`/`SET NULL` handles the rest). | `peppercheck_flutter/lib/features/account/data/account_repository.dart:28` (`invoke('delete-account')`) and `peppercheck-webapp/src/app/[locale]/account/delete/page.tsx:52` (same function, web account-deletion page — kept per §6). | Go endpoint + worker (idempotent saga, §14). | Two callers (Flutter + webapp), both must be re-pointed at the Go endpoint. §17/§14 call for an idempotent saga design — the current implementation is best-effort/non-transactional across several external side effects (Stripe transfer, subscription cancel, Connect deauth, R2 cleanup), which is exactly the gap §14 flags for the Go port. See §3 T7-3. |
-| `send-notification` | Looks up FCM tokens for a set of `user_ids`, sends a localized multicast push (Android + APNs loc-key payloads) via Firebase Admin, and prunes tokens FCM reports as invalid/unregistered. | Postgres, not a client. `supabase/schemas/notification/functions/notify_event.sql:55,70` (`notify_event()` calls `net.http_post` to the `send-notification` Edge Function; doc comment on line 70 confirms). `notify_event` itself is called from many DB triggers/RPCs across the schema (out of scope for this table). | Go endpoint + worker (FCM). | No direct Flutter/webapp caller — reached only via the DB's `notify_event` helper. Go port needs an equivalent trigger point (either the Go API calling out synchronously, or a worker consuming an outbox/queue) rather than Postgres calling out over HTTP via `pg_net`. |
-| `sweep-r2-stale-objects` | Cron sweep: deletes evidence-photo R2 objects under `evidence/<date>/` older than 90 days, and deletes orphaned/stale `avatar/<userId>/` objects (any object that isn't the user's current `avatar_url`, with a 10-minute grace period to avoid racing fresh uploads). Supports `dry_run`. | Postgres cron, not a client. `supabase/schemas/common/cron/cron_sweep_r2_stale_objects.sql:8,12` schedules a `net.http_post` to `.../functions/v1/sweep-r2-stale-objects`. | Go **worker**. | No Flutter/webapp caller — only reachable via the DB cron, same pattern as `execute-pending-payouts`. §17 routes both stale-object sweep and payout execution to the durable Go worker. |
+| `payout-setup` | Gets-or-creates a `stripe_accounts` row + Stripe Express Connect account for the user, refreshes `charges_enabled`/`payouts_enabled`/`connect_requirements`, and returns a Stripe `accountLinks` onboarding URL (`refresh_url`/`return_url` point at `peppercheck-webapp/.../stripe/connect/{refresh,return}`). | `peppercheck_flutter/lib/features/payout/data/stripe_payout_repository.dart:57` (`invoke('payout-setup')`). | Go endpoint (Stripe Connect onboarding). | Port as a Go endpoint; note the coupling to the webapp's static `stripe/connect/return`/`refresh` pages (kept per §9) — those return/refresh URLs must keep resolving after the webapp migrates. |
+| `execute-pending-payouts` | Batch job: fetches up to 100 `reward_payouts` rows with `status='pending'`, creates an idempotent Stripe `Transfer` per row to the referee's Connect account, marks each payout success/failed, and deducts the reward wallet via the `deduct_reward_for_payout` RPC. On per-row failure, calls `notify_event` with `notification_payout_failed_referee`. | Postgres cron, not a client. `supabase/schemas/reward/cron/cron_execute_pending_payouts.sql:4,8` schedules a `net.http_post` to `.../functions/v1/execute-pending-payouts`. | Go **worker** (durable). | Money-moving batch job; §17 explicitly routes it to the durable Go worker rather than an HTTP endpoint. No Flutter/webapp caller — only reachable via the DB cron. See §5.2.1 (T7-1) for an idempotency gap in this function. |
+| `recommend-payout-topup` | Operator-only report: reads `get_payout_topup_metrics` RPC + live Stripe balance, computes a recommended Stripe balance top-up (JPY) to cover projected referee payout obligations through month end, and returns the recommendation with a "transfer-initiate deadline" (7 JP business days before the next scheduled payout run). Auth via constant-time `X-Operator-Secret` header check against `OPERATOR_AUTH_TOKEN`. | No caller found in `peppercheck_flutter/lib/`, `peppercheck-webapp/src`, or `supabase/schemas` cron/trigger SQL — only referenced in `supabase/functions/.env.example` (env var docs) and `supabase/config.toml` (function registration). Invoked manually by the operator (`X-Operator-Secret` design confirms this). | **Operator tool.** | Not app-facing and not cron-scheduled. **Resolved by operator adjudication**: port to a **Go operator endpoint** — the ambiguity between "endpoint or standalone operator script" is closed in favor of the endpoint. |
+| `handle-stripe-webhook` | Verifies the Stripe webhook signature and handles `checkout.session.completed`, `customer.subscription.{updated,deleted}`, `invoice.payment_succeeded`, and `account.updated` — upserts `user_subscriptions`, resets subscription points via `reset_subscription_points` RPC, deactivates trial points, and syncs `stripe_accounts.{charges_enabled,payouts_enabled,connect_requirements}` on Connect account changes. | External: registered as a webhook endpoint URL in the Stripe Dashboard, not invoked from app code. No caller found in `peppercheck_flutter/lib/` or `peppercheck-webapp/src`; `supabase/snippets/setup_stripe_account_webhook_test.sql` is manual test setup only. | Go endpoint (signed, idempotent). | Port as a signature-verified Go endpoint; must stay idempotent given Stripe's at-least-once delivery. Re-register the endpoint URL with Stripe as part of cutover. **Scope narrowing**: per 3.1 Finding 2, the Go port keeps only the `account.updated` (Connect) case — the 3 Billing case-handlers are dropped, not carried over by default. |
+| `handle-google-play-rtdn` | Verifies a Google Pub/Sub push OIDC token, decodes the RTDN envelope, and on subscription notifications fetches Play `subscriptionsv2` state, upserts `user_subscriptions`, resets points, and deactivates trial points. Always returns HTTP 200 (even on internal failure) to avoid Pub/Sub retry storms. | External: registered as a Google Cloud Pub/Sub push subscription endpoint, not invoked from app code. No caller found in `peppercheck_flutter/lib/` or `peppercheck-webapp/src`; only referenced in `supabase/functions/.env.example` and `supabase/config.toml`. | **Removed** (RevenueCat ingests RTDN). | RevenueCat takes over Google Play RTDN ingestion, so this function is dropped outright, not ported. |
+| `generate-upload-url` | Authenticates the user, validates `content_type`/extension/file size, verifies task ownership (for `kind='evidence'`) or scopes to the caller (`kind='avatar'`), derives a namespaced R2 key, and returns an R2 (S3-compatible) presigned `PUT` URL plus the eventual public URL. | `peppercheck_flutter/lib/features/evidence/data/evidence_repository.dart:40` and `peppercheck_flutter/lib/features/profile/data/profile_repository.dart:73` (both `invoke('generate-upload-url')`). | Go endpoint (R2 presigned upload). | Port as a Go endpoint; per the global engineering policy the Go API should keep issuing presigned URLs rather than handing R2 keys to the client — this function already does that. Note the private-bucket launch-blocker (§5.3). |
+| `delete-account` | Multi-step account-deletion saga: checks `check_account_deletable` RPC, (unless `force`) pays out any positive reward wallet balance via a Stripe `Transfer` before deletion, best-effort cancels an active Stripe subscription and deauthorizes the Connect account, best-effort deletes R2 avatar objects, then calls `auth.admin.deleteUser` (DB `CASCADE`/`SET NULL` handles the rest). | `peppercheck_flutter/lib/features/account/data/account_repository.dart:28` (`invoke('delete-account')`) and `peppercheck-webapp/src/app/[locale]/account/delete/page.tsx:52` (same function, web account-deletion page — kept per §9). | Go endpoint + worker (idempotent saga). | Two callers (Flutter + webapp), both must be re-pointed at the Go endpoint. The Go port needs an idempotent saga design — the current implementation is best-effort/non-transactional across several external side effects (Stripe transfer, subscription cancel, Connect deauth, R2 cleanup). See §5.2.3 (T7-3). |
+| `send-notification` | Looks up FCM tokens for a set of `user_ids`, sends a localized multicast push (Android + APNs loc-key payloads) via Firebase Admin, and prunes tokens FCM reports as invalid/unregistered. | Postgres, not a client. `supabase/schemas/notification/functions/notify_event.sql:55,70` (`notify_event()` calls `net.http_post` to the `send-notification` Edge Function). `notify_event` itself is called from many DB triggers/RPCs across the schema (out of scope for this table). | Go endpoint + worker (FCM). | No direct Flutter/webapp caller — reached only via the DB's `notify_event` helper. Go port needs an equivalent trigger point (either the Go API calling out synchronously, or a worker consuming an outbox/queue) rather than Postgres calling out over HTTP via `pg_net`. |
+| `sweep-r2-stale-objects` | Cron sweep: deletes evidence-photo R2 objects under `evidence/<date>/` older than 90 days, and deletes orphaned/stale `avatar/<userId>/` objects (any object that isn't the user's current `avatar_url`, with a 10-minute grace period to avoid racing fresh uploads). Supports `dry_run`. | Postgres cron, not a client. `supabase/schemas/common/cron/cron_sweep_r2_stale_objects.sql:8,12` schedules a `net.http_post` to `.../functions/v1/sweep-r2-stale-objects`. | Go **worker**. | No Flutter/webapp caller — only reachable via the DB cron, same pattern as `execute-pending-payouts`. Both stale-object sweep and payout execution route to the durable Go worker. |
 
 **Totals: 12 edge function directories found → 12 rows.** 2 dropped
 (`billing-setup`, `create-stripe-checkout`), 1 removed (`handle-google-play-rtdn`),
 1 operator tool (`recommend-payout-topup`), 2 → Go worker (`execute-pending-payouts`,
 `sweep-r2-stale-objects`), 6 → Go endpoint (`create-express-dashboard-link`,
 `payout-setup`, `handle-stripe-webhook`, `generate-upload-url`, `delete-account`,
-`send-notification`; the latter two are endpoint **+** worker per §17).
+`send-notification`; the latter two are endpoint **+** worker).
 
 Verification:
 
@@ -436,11 +551,14 @@ $ ls -1 supabase/functions/ | grep -v '^\.' | wc -l
 
 Confirms exactly 12 edge function directories, matching the 12 rows above.
 
-> The `payout-request` launch-blocker (Flutter calls a nonexistent Edge
-> Function) is documented in full, with proposed fix and owning phase, in
-> §3 — not repeated here to avoid duplication.
+> `payout-request` (Flutter calls a nonexistent Edge Function) was
+> investigated and resolved as dead/unmounted code — see §5.1 for the full
+> evidence and disposition (remove, not implement). *(The canonical source's
+> original note here promised "proposed fix and owning phase" as if it were
+> still an open blocker; that framing is corrected — the resolution is
+> "remove," not "fix and ship.")*
 
-### 1.4 Completeness verification
+### 3.4 Completeness verification
 
 **Every §16 integration has a row.** Program design doc §16 lists 11 items:
 PostgreSQL ✓, Supabase Auth ✓, PostgREST ✓, RLS ✓, Storage ✓, Realtime ✓,
@@ -453,46 +571,45 @@ ask to split Stripe) ✓. Plus 2 rows requested beyond §16's own list: R2, FCM
 rows in the design doc). **Total: 21 rows**, all with a non-empty
 `disposition` cell.
 
-**Every edge-function disposition matches §1.3.** Reconciled inline above:
-4 (endpoint) + 2 (endpoint+worker) + 2 (worker) + 1 (drop) + 1 (dropped) + 1
-(removed) + 1 (operator tool) = 12 of 12, matching §1.3's totals line
-exactly, plus the `payout-request` launch-blocker carried forward to §3.
+**Every edge-function disposition matches §3.3.** Reconciled: 4 (endpoint) +
+2 (endpoint+worker) + 2 (worker) + 1 (drop) + 1 (dropped) + 1 (removed) + 1
+(operator tool) = 12 of 12, matching §3.3's totals line exactly. Separately,
+`payout-request` was investigated and resolved as dead code (not a
+launch-blocker) — see §5.1.
 
-**DB-logic disposition summary matches §2's tally.** DB Functions row:
-Go 48 / Go-tx SQL 15 / DB trigger 1 / delete 4 — copied from §2's
-"Function tally (v2)" table (refined max-Go, §2.1a), not re-derived. Triggers
-row: 21 housekeeping stay / all 15 business → Go 12 + Go-tx SQL 3 — copied from
-§2's "Trigger tally (v2)."
-Cron row: 10/10 move to Go worker — copied from §2's cron table.
+**DB-logic disposition summary matches §4's tally.** DB Functions row: DB
+invariant/helper 1 / Store query 4 / Go transaction 38 / Go service/worker
+21 / Drop 4 = 68 — copied from §4's function tally, not re-derived. Triggers
+row: 21 housekeeping stay / all 15 business → Go — copied from §4/Appendix
+B's trigger tally. Cron row: 10/10 move to Go worker — copied from §4.3's
+cron table.
 
-**No empty disposition cells.** All 21 rows in 1.2 carry an explicit
-disposition value (Keep/Replace/Split/Drop/Removed/Port/etc.) — verified by
-re-reading each row while assembling this document.
+**No empty disposition cells.** All 21 rows in 3.2 carry an explicit
+disposition value (Keep/Replace/Split/Drop/Removed/Port/etc.).
 
-### 1.5 Concerns for Phase 0 sign-off
+### 3.5 Concerns for Phase 0 sign-off
 
 1. **`stripe_accounts` needs an explicit split decision before the Atlas
    baseline is drafted** — this document identifies which columns are
-   Connect vs. Billing (1.1 Finding 1), but whether the new schema keeps
+   Connect vs. Billing (3.1 Finding 1), but whether the new schema keeps
    one table with the Billing columns dropped, or splits into two tables, is
    a schema-design decision for whoever drafts the Atlas baseline, not
    decided here.
-2. **`handle-stripe-webhook`'s scope narrowing (1.1 Finding 2) is a
+2. **`handle-stripe-webhook`'s scope narrowing (3.1 Finding 2) is a
    correction to the naive "one porting unit" framing.** Flag this explicitly
    to whoever executes the Edge Function → Go port so the 3 Billing
    case-handlers aren't carried over by default.
 3. **Recommend deleting `stripe_billing_repository.dart` +
    `billing_setup_section.dart` + their controller wiring as one PR**, now
-   that 1.1 Finding 3 confirms `BillingSetupSection` has zero mount
-   points — this resolves §4's open question with a concrete answer
-   (delete, don't port) rather than leaving it as a pending joint decision.
+   that 3.1 Finding 3 confirms `BillingSetupSection` has zero mount
+   points — delete, don't port.
 4. **`profiles.stripe_connect_account_id` (bonus finding) and the dead
    `ALTER PUBLICATION supabase_realtime` statement (Realtime row) are both
-   schema debris outside §2's function/trigger/cron scope** — neither is a
+   schema debris outside §4's function/trigger/cron scope** — neither is a
    function, trigger, or cron entry, so neither could have been caught by
    that inventory's grep methodology. Worth a broader one-time schema-debris
-   sweep during Atlas baselining (§15) rather than assuming §2's 68/36/10
-   counts are the complete list of things to clean up.
+   sweep during Atlas baselining rather than assuming §4's 68/36/10 counts
+   are the complete list of things to clean up.
 5. **Google Play RTDN's Play-Console-side repointing to RevenueCat isn't
    named as an explicit step anywhere read for this investigation** (design
    doc §11 says "RC ingests RTDN" but doesn't spell out the Play Console
@@ -507,51 +624,114 @@ re-reading each row while assembling this document.
    (`execute-pending-payouts`, `sweep-r2-stale-objects`) are invoked from
    Postgres via `pg_net`'s `net.http_post`, not from application code. This
    repo-only investigation did not enumerate every DB trigger that
-   ultimately calls `notify_event` → `send-notification`; that fan-out is
-   out of scope for §1.3's table and would need its own inventory if the Go
-   port changes the trigger point (e.g., moving from synchronous `pg_net`
-   calls to a worker-consumed outbox).
-8. This document reuses part-file findings verbatim per the assembly
-   brief's instruction ("do not re-derive counts — cite them") — any
-   correction to the underlying counts should be made in the source
+   ultimately calls `notify_event` → `send-notification`; that fan-out would
+   need its own inventory if the Go port changes the trigger point (e.g.,
+   moving from synchronous `pg_net` calls to a worker-consumed outbox).
+8. This document reuses the underlying investigation's findings verbatim per
+   the assembly brief's instruction ("do not re-derive counts — cite them")
+   — any correction to the underlying counts should be made in the source
    investigation, then this baseline re-assembled.
 
-## 2. DB Logic Classification
+### 3.6 Per-feature quick reference (from supplement)
 
-> **Refined on 2026-07-23 under the operator-adopted max-Go rule (§2.1a).**
-> Every disposition of the 23 functions and 5 business triggers previously
-> tagged *stay-in-Postgres* was re-derived by decomposing the actual SQL. The
-> 41 previously-*move-to-Go* functions, 10 *move-to-Go* business triggers, and
-> 4 *delete* functions carry forward (vocabulary *move-to-Go* → *Go*). Every
-> row below cites the SQL that justifies its disposition. Subsections `2.1a`,
-> `2.9`, and `2.10` are additions from this refinement.
+> Source: supplement §4. A feature-oriented view of the same call-site
+> inventory as Appendix C, useful as a quick-reference table; the master
+> table above (§3.2) and Appendix C remain the fuller/authoritative sources
+> for column detail and per-call-site Go endpoint mapping.
 
-### 2.1 Classification framework (original, program design §13)
+#### Flutter direct data calls by feature
 
-Each function / business trigger / cron was originally tagged with one of
-six categories, then a coarse disposition:
+| Feature | Current direct calls | Target owner and disposition |
+|---|---|---|
+| account | `check_account_deletable`; `delete-account` | `account` Go service and deletion worker. |
+| authentication | Supabase auth state, Google ID-token exchange, sign-out | Firebase Auth adapter; app-level auth contract; `/api/v1/me`. |
+| billing/subscription | `user_subscriptions`, `point_wallets`, `trial_point_wallets`, `get_point_for_matching_strategy` | `subscription` and `point` API endpoints; RevenueCat client gateway. |
+| dormant Stripe billing | `billing-setup`, `stripe_accounts` payment-method fields | Drop repository, controller, widget, and domain types. Stripe Billing is not Stripe Connect. |
+| currency | `currencies` | Reference-data API or embedded cache seeded from the Go database. |
+| evidence | `generate-upload-url`; submit/update/resubmit; timeout confirmation | `evidence` API plus private R2 upload/download intents. |
+| judgement | judge, confirm, review-timeout confirmation | `judgement` API and transactional store operations. |
+| matching | availability/blocked-date reads and seven RPC mutations | `matching` API; durable worker for automatic matching and timeouts. |
+| notification | FCM token upsert/delete; Supabase auth listener | `notification` API and app-level auth listener. |
+| payment dashboard | `get_payment_summary` | `payment_summary` query endpoint. |
+| payout | Connect status; onboarding; dashboard link; dead `payout-request` | `payout` API for Connect. Drop manual payout request; retain monthly batch payout. |
+| profile | profile reads/updates; avatar upload | `profile` API plus avatar upload intent. |
+| report | report insert/read | `report` API with internal-user authorization. |
+| task | create/update/delete, task queries, active-referee query | `task` API with contract DTOs; remove PostgREST-shaped response mapping. |
 
-1. integrity/atomicity → stay-in-Postgres
-2. query/set → stay-in-Postgres
-3. business orchestration → move-to-Go
-4. authorization → move-to-Go
-5. external side effect → move-to-Go (endpoint or worker)
-6. obsolete Supabase support → delete
+The 24 Supabase-importing files are the removal checklist. Presentation code
+must stop reading `Supabase.instance.client.auth.currentUser`; only the
+authentication feature may depend on Firebase SDK types.
 
-Retained by default: wallet/ledger mutations, job claiming (`FOR UPDATE
-SKIP LOCKED`), row-locked state transitions. Moved by default: `auth.uid()`
-checks, notification dispatch, external HTTP, provider webhooks,
-UI-oriented response assembly.
+#### Flutter RPC targets (21)
 
-> **Superseded for disposition-assignment purposes by 2.1a.** The category
-> number (1–6) in each row of 2.3/2.4 below is retained as a descriptive tag
-> for the SQL's original dominant nature (useful for cross-referencing prior
-> work), but the **disposition** in this v2 document is assigned by
-> decomposing each function per 2.1a — not by a direct category→disposition
-> lookup. This is exactly why category-1/2 functions no longer all map to
-> "stay."
+`cancel_referee_assignment`, `check_account_deletable`,
+`confirm_evidence_timeout`, `confirm_judgement_and_rate_referee`,
+`confirm_review_timeout`, `create_referee_available_time_slot`,
+`create_referee_blocked_date`, `create_task`,
+`delete_referee_available_time_slot`, `delete_referee_blocked_date`,
+`delete_task`, `get_active_referee_tasks`,
+`get_payment_summary`, `get_point_for_matching_strategy`, `judge_evidence`,
+`resubmit_evidence`, `submit_evidence`,
+`update_evidence`, `update_referee_available_time_slot`,
+`update_referee_blocked_date`, and `update_task`.
 
-### 2.1a Classification criterion (refined, max-Go, operator-adopted 2026-07-23)
+#### Webapp Supabase use
+
+| Current route/component | Supabase use | Disposition |
+|---|---|---|
+| account deletion | Auth, `check_account_deletable`, `delete-account` | Replace with provider-neutral support request; in-app deletion remains primary. |
+| auth callback and login | Supabase OAuth/session | Remove. |
+| dashboard | Auth and subscription query | Remove. |
+| pricing and `SubscribeButton` | Auth, plan query, Stripe Checkout Edge Function | Remove. |
+| Tokushoho page | Plan-price query | Keep page; render reviewed legal/config data without client DB access. |
+| Supabase browser/server/middleware helpers | Supabase SSR | Remove with Next.js. |
+
+## 4. DB Logic Classification
+
+> Sources: supplement §5 intro (5-way taxonomy definitions), supplement §5/§6/§7
+> (per-function/trigger/cron assignment), canonical §2 (evidence, per-domain
+> insight subsections, refined max-Go criterion). Full per-function and
+> per-trigger tables live in **Appendix A** and **Appendix B**; this section
+> holds the taxonomy, the tally, a per-domain summary, and the notable
+> cross-function implications.
+
+### 4.1 The 5-way taxonomy
+
+Every schema function and business trigger is assigned exactly one of:
+
+- **DB invariant/helper** — retain only a constraint or minimal
+  invariant/housekeeping trigger helper in Postgres. Duplicate user-facing
+  validation in Go when needed for stable API errors.
+- **Store query** — remove the callable database function. Keep typed,
+  explicit SQL in the Go Postgres store, pass the internal user ID as a
+  parameter, and assemble API DTOs in Go.
+- **Go transaction** — remove the callable database function. Go owns the
+  business decision and transaction boundary; store statements use the
+  minimum required locks, conditional DML, constraints, and ledger inserts.
+- **Go service/worker** — remove the callable database function. Go owns
+  validation, authorization, scheduling, orchestration, or external side
+  effects and uses ordinary store queries or a narrower Go-owned
+  transaction.
+- **Drop** — obsolete provider/support code with no target equivalent.
+
+Atomicity alone is not a reason to retain a stored function. The default is
+a Go-owned transaction with pure Go tests for domain rules and
+real-Postgres tests for locking, concurrency, idempotency, and constraints.
+A callable business stored function is an exception and requires a
+documented set-based or measured performance reason; none of the current 68
+functions has that exception at the Phase 0 baseline.
+
+This taxonomy is deliberately compatible with the canonical baseline's
+separately-derived "max-Go" refinement (§4.1a below): "Go transaction" and
+"Go service/worker" both correspond to cases where the canonical baseline's
+finer-grained pass calls out an irreducible atomic statement as **Go-tx
+SQL** — i.e., store SQL issued by the Go store inside a Go-owned
+transaction, with the surrounding checks/branches in Go. Where Appendix A's
+evidence notes say "Go-tx SQL" or "atomic store SQL," read that as the SQL
+half of a "Go transaction"/"Go service/worker" classification under this
+5-way taxonomy — not as a retained callable stored function.
+
+### 4.1a Classification criterion (refined, max-Go, operator-adopted 2026-07-23)
 
 **Crux:** atomicity comes from the *transaction + row lock*, which the Go
 store controls — not from the code living in a PL/pgSQL stored function.
@@ -562,291 +742,177 @@ the tx is exercised by real-Postgres integration tests). Triggers that
 enforce invariants across arbitrary write paths are no longer load-bearing
 once Go is the only writer. Lean to Go for testability.
 
-**Decompose each function** (do not classify whole-function by dominant
-nature). Assign every function and business trigger one of these
-dispositions:
-
-- **Go** — decision / branch / routing / orchestration / validation /
-  derived-state transition / aggregate recompute / authorization.
-  Reimplemented as Go code.
-- **Go-tx SQL** — the *irreducible* atomic statement(s) (`SELECT … FOR
-  UPDATE`, `… FOR UPDATE SKIP LOCKED` claim, ledger `INSERT`, balance
-  `UPDATE`) or a single set-based `UPDATE … FROM`, issued by the Go store
-  **inside a Go-owned transaction**. The PL/pgSQL stored function is
-  **dissolved** — this is a *move*, the SQL text just executes from Go, and
-  the surrounding checks/branches move to Go.
-- **DB constraint** — a pure invariant better expressed as a real `CHECK` /
-  `UNIQUE` / FK constraint.
-- **DB trigger** — housekeeping only (`set_updated_at` family). May
-  alternatively move to the Go data layer; note as "either."
-- **delete** — obsolete / dead.
-
 Under this rule almost no *business* PL/pgSQL function stays as a stored
 function. Something stays in the DB only with a concrete justification
-written against the actual SQL.
+written against the actual SQL — and, at this baseline, only
+`handle_updated_at` has that justification.
 
-### 2.2 Object counts (unchanged from 2026-07-22 baseline)
+### 4.2 Function tally
 
-| Object | grep count | Baseline expectation | Match |
-|---|---|---|---|
-| `CREATE [OR REPLACE] FUNCTION` | 68 | ~68 | yes |
-| `CREATE [OR REPLACE] TRIGGER` | 36 | 36 | yes (21 housekeeping + 15 business) |
-| `cron.schedule(...)` | 10 | 10 | yes |
-| `CREATE POLICY` | 63 | 63 | yes |
-| `auth.users` references | 16 | ~13 FK anchors | see 2026-07-22 baseline note |
-
-Unaffected by this v2 pass — these are structural counts, not dispositions.
-
-### 2.3 Functions (68)
-
-Dispositions marked **Δ** were re-derived for this v2 pass (previously
-stay-in-Postgres); all other rows are carried forward with the vocabulary
-renamed (`move-to-Go` → `Go`) and are noted **(unaffected)**. A small number
-of unaffected rows had their *note* text lightly touched because they name
-a function whose disposition changed underneath them — these are marked
-**(note updated)**.
-
-| # | function | file | category | disposition (v2) | note |
-|---|---|---|---|---|---|
-| 1 | `process_pending_requests()` | `matching/functions/process_pending_requests.sql` | 3 | Go (worker) *(note updated)* | Cron orchestrator: expires stale pending requests (refunds via `route_unlock_points`, now **Go** — dissolved, see #23), retries `process_matching` for the rest. |
-| 2 | `update_referee_available_time_slot(...)` | `matching/functions/update_referee_available_time_slot.sql` | 4 | Go *(unaffected)* | `auth.uid()`-gated single-row CRUD + overlap validation. |
-| 3 | `create_matching_request(...)` | `matching/functions/create_matching_request.sql` | 3 | Go *(note updated)* | Locks points (`lock_points`, now **Go-tx SQL**, see #51) then inserts request; hardcoded strategy→cost table (TODO comment in source already flags this). |
-| 4 | `detect_and_handle_referee_timeouts()` | `matching/functions/detect_referee_timeouts.sql` | 6 | delete (verify before drop) *(unaffected)* | Dead code, unscheduled/unreferenced. Not one of the 23 re-derived here — re-confirmed only, not re-litigated. See baseline 2.7.1. |
-| 5 | `create_referee_available_time_slot(...)` | `matching/functions/create_referee_available_time_slot.sql` | 4 | Go *(unaffected)* | `auth.uid()`-gated CRUD + overlap validation. |
-| 6 | `auto_score_timeout_referee()` [trigger fn] | `matching/functions/auto_score_timeout_referee.sql` | 3 | Go *(unaffected, see §2.9)* | Inserts negative referee rating on `review_timeout` confirm. Once ported, must also invoke #24's recompute Go-tx SQL (rating_histories write) — see 2.9. Dedup with #29 per baseline 2.7.3. |
-| 7 | `process_matching(uuid)` | `matching/functions/process_matching.sql` | 3 | Go *(unaffected)* | Core matching algorithm + 2 `notify_event` calls. |
-| 8 | `trigger_process_matching()` [trigger fn] | `matching/functions/process_matching.sql` (L265) | 3 | Go *(unaffected)* | Thin wrapper invoking `process_matching`. |
-| 9 | `get_point_for_matching_strategy(strategy)` | `matching/functions/get_point_for_matching_strategy.sql` | 2 | **Go** Δ | Pure stateless lookup with **no table access** (`IF p_strategy = 'standard' THEN RETURN 1; ELSE RAISE EXCEPTION...`). No atomicity to lose. Every remaining caller (#28, #29, #34) itself moves off Postgres in this v2 pass, so there is no longer a retained-Postgres caller requiring a shared copy — single Go constant, no cross-language drift risk. |
-| 10 | `create_referee_blocked_date(...)` | `matching/functions/create_referee_blocked_date.sql` | 4 | Go *(unaffected)* | `auth.uid()`-gated CRUD. |
-| 11 | `cancel_referee_assignment(uuid)` | `matching/functions/cancel_referee_assignment.sql` | 3 | Go *(unaffected)* | Multi-step: cancel request, delete judgement, insert re-match request, notify. |
-| 12 | `get_active_referee_tasks()` | `matching/functions/get_active_referee_tasks.sql` | 4 | Go *(unaffected)* | `auth.uid()`-scoped read, UI-shaped `jsonb` assembly. |
-| 13 | `delete_referee_available_time_slot(uuid)` | `matching/functions/delete_referee_available_time_slot.sql` | 4 | Go *(unaffected)* | `auth.uid()`-gated delete. |
-| 14 | `get_payment_summary()` | `payment_summary/functions/get_payment_summary.sql` | 4 | Go *(unaffected)* | `auth.uid()`-scoped dashboard aggregate read; UI-shaped response. |
-| 15 | `delete_referee_blocked_date(uuid)` | `matching/functions/delete_referee_blocked_date.sql` | 4 | Go *(unaffected)* | `auth.uid()`-gated delete. |
-| 16 | `update_referee_blocked_date(...)` | `matching/functions/update_referee_blocked_date.sql` | 4 | Go *(unaffected)* | `auth.uid()`-gated CRUD. |
-| 17 | `lock_trial_points(...)` | `trial_point/functions/lock_trial_points.sql` | 1 | **Go-tx SQL** Δ | Bundles the availability check (`IF (v_balance - v_locked) < p_amount THEN RAISE EXCEPTION`) with `SELECT ... FOR UPDATE`, `locked = locked + p_amount`, and the ledger `INSERT`. Check → Go; lock+mutation+ledger-insert is the irreducible atomic sequence, stays as Go-tx SQL (backed by the existing `trial_point_wallets_balance_gte_locked` / `locked >= 0` CHECK constraints as a DB-level backstop). |
-| 18 | `deactivate_trial_points(uuid)` | `trial_point/functions/deactivate_trial_points.sql` | 1 | **Go-tx SQL** Δ | The `IF v_is_active IS NULL` / `IF NOT v_is_active` idempotency short-circuits collapse into one guarded statement: `UPDATE trial_point_wallets SET is_active=false WHERE user_id=$1 AND is_active=true` + the informational ledger `INSERT`, both Go-tx SQL. Zero rows affected is the no-op case — no separate Go branch needed. |
-| 19 | `route_consume_points(...)` | `trial_point/functions/route_consume_points.sql` | 1 | **Go** Δ | Pure routing dispatcher — `SELECT point_source FROM task_referee_requests` (unlocked read) then `IF v_point_source = 'trial' ... ELSE ...` branches to `consume_trial_points`/`consume_points`. No wallet mutation of its own; dissolves entirely into a Go branch calling #22/#50's Go-tx SQL. |
-| 20 | `unlock_trial_points(...)` | `trial_point/functions/unlock_trial_points.sql` | 1 | **Go-tx SQL** Δ | Same shape as #17: `IF v_locked < p_amount THEN RAISE EXCEPTION` → Go; `SELECT ... FOR UPDATE` + `locked = locked - p_amount` + ledger `INSERT` → Go-tx SQL. |
-| 21 | `route_referee_reward(...)` | `trial_point/functions/route_referee_reward.sql` | 1 | **Go** Δ | `SELECT is_obligation FROM task_referee_requests` then branches. Obligation path: `SELECT ... FOR UPDATE` on oldest pending `referee_obligations` row + `UPDATE ... SET status='fulfilled'` (this sub-sequence is Go-tx SQL). Non-obligation path calls `grant_reward` (#66, Go-tx SQL). The branch itself is Go; it issues one of two Go-tx SQL statements depending on `is_obligation`. |
-| 22 | `consume_trial_points(...)` | `trial_point/functions/consume_trial_points.sql` | 1 | **Go-tx SQL** Δ | `IF v_balance < p_amount` / `IF v_locked < p_amount` checks → Go. `SELECT ... FOR UPDATE`, the `balance/locked` mutation, the ledger `INSERT`, and the fixed-count `FOR v_i IN 1..p_amount LOOP INSERT INTO referee_obligations` are the atomic Go-tx SQL sequence (the loop is a batch insert, not a decision). |
-| 23 | `route_unlock_points(...)` | `trial_point/functions/route_unlock_points.sql` | 1 | **Go** Δ | Identical shape to #19 — pure `point_source` routing dispatcher to `unlock_trial_points`/`unlock_points`, no mutation of its own. |
-| 24 | `update_user_ratings()` [trigger fn] | `rating/functions/update_user_ratings.sql` | 2 | **Go-tx SQL** Δ | No branching beyond `TG_OP = 'DELETE'` (picks `OLD`/`NEW`). Each recompute is one set-based statement: `UPDATE user_ratings SET tasker_positive_count = agg.pos, tasker_positive_pct = ... FROM (SELECT count(*) FILTER(...), count(*) FROM rating_histories WHERE ratee_id=$1 AND rating_type='tasker') agg WHERE user_id=$1` (and the referee equivalent) — textbook "single set-based `UPDATE … FROM`." The `AFTER INSERT OR DELETE OR UPDATE` trigger dissolves: Go is the sole writer of `rating_histories` (via #6, #29, #34, #36), so Go runs these two statements in the same transaction as every `rating_histories` write instead of relying on a trigger firing on arbitrary paths. See 2.9. |
-| 25 | `notify_judgement_confirmed()` [trigger fn] | `judgement/triggers/on_judgement_confirmed_notify.sql` | 5 | Go *(unaffected, see §2.9)* | Push-notification dispatch (2x `notify_event`) on auto-confirm. Fires on the same `is_confirmed: false→true` transition as #26/#27/#57 — see 2.9 for the unified Go orchestration point. |
-| 26 | `close_referee_request_on_confirmed()` [trigger fn] | `judgement/triggers/on_judgement_confirmed_close_request.sql` | 1 | **Go-tx SQL** Δ | Single-statement, PK-scoped `UPDATE task_referee_requests SET status='closed' WHERE id=NEW.id`, no branching beyond the trigger's own `WHEN (NEW.is_confirmed = true AND OLD.is_confirmed = false)` filter. The filter is subsumed by the caller's control flow (Go already knows it just flipped `is_confirmed`) — collapses to one Go-tx SQL statement issued in the same transaction as the judgement-confirm write. See 2.9. |
-| 27 | `handle_judgement_confirmed()` [trigger fn] | `judgement/triggers/on_judgement_confirmed.sql` | 5 | Go *(unaffected, see §2.9)* | Push-notification dispatch on manual confirm; skips if `is_auto_confirmed`. Same transition as #25/#26/#57 — see 2.9. |
-| 28 | `settle_evidence_timeout()` [trigger fn] | `judgement/triggers/on_evidence_timeout_settle.sql` | 5 | Go *(note updated)* | Mixed: wallet settlement via `route_consume_points`/`route_referee_reward` (both now **Go**, see #19/#21) + close request (now **Go-tx SQL**, see #26) + 2x `notify_event`. Classified by its externally-visible side effect; the sub-calls are now Go orchestration calling Go-tx SQL, not separate Postgres RPCs. |
-| 29 | `settle_review_timeout()` [trigger fn] | `judgement/triggers/on_review_timeout_settle.sql` | 5 | Go *(note updated, see §2.9)* | Same pattern as #28: unlock points (`route_unlock_points`, now **Go**, see #23) + negative rating insert (now feeds #24's Go-tx SQL) + close (now **Go-tx SQL**, see #26/#57) + 2x notify. Redundant rating insert with #6 — resolved by operator adjudication, baseline 2.7.3. |
-| 30 | `on_judgements_status_changed()` [trigger fn] | `judgement/triggers/on_judgements_status_changed.sql` | 5 | Go *(unaffected)* | Status-change → notification key mapping + dispatch. |
-| 31 | `judge_evidence(...)` | `judgement/functions/judge_evidence.sql` | 4 | Go *(unaffected)* | `auth.uid()`-gated single state transition (approve/reject). |
-| 32 | `confirm_evidence_timeout(uuid)` | `judgement/functions/confirm_evidence_timeout.sql` | 4 | Go *(note updated, see §2.9)* | `auth.uid()`-gated idempotent confirm; sets `is_confirmed = TRUE` (source comment: "triggers `on_all_judgements_confirmed_close_task`"). With that trigger dissolved (#57 → Go-tx SQL), the Go port of this handler must now explicitly issue #57's (and #26's, #25's, #27's) Go-tx SQL / Go logic in the same transaction — see 2.9. |
-| 33 | `confirm_review_timeout(uuid)` | `judgement/functions/confirm_review_timeout.sql` | 4 | Go *(note updated, see §2.9)* | Same shape and same implication as #32 — sets `is_confirmed = TRUE`, source comment references the now-dissolved close-task trigger. See 2.9. |
-| 34 | `detect_auto_confirms()` | `judgement/functions/detect_auto_confirms.sql` | 1 | **Go (worker orchestration)** Δ | Not a single atomic statement. Decomposes into: the `FOR ... FOR UPDATE OF j SKIP LOCKED` eligibility+claim query (Go-tx SQL, claims a batch of rows); the per-row `IF v_rec.status IN ('approved','rejected')` branch (Go); calls into `get_point_for_matching_strategy` (#9, Go), `route_consume_points` (#19, Go → #50 Go-tx SQL), `route_referee_reward` (#21, Go → #66 Go-tx SQL); the `INSERT INTO rating_histories ... ON CONFLICT (judgement_id, rating_type) DO NOTHING` (Go-tx SQL, backed by the existing `unique_rating_per_judgement` constraint); and the final `UPDATE judgements SET is_auto_confirmed=true, is_confirmed=true` (Go-tx SQL) which — with #25/#26/#27/#57 dissolved — must be immediately followed by Go explicitly invoking those in the same transaction (see 2.9). Overall: Go worker orchestration issuing five distinct Go-tx SQL statements per claimed row. |
-| 35 | `detect_and_handle_review_timeouts()` | `judgement/functions/detect_review_timeouts.sql` | 2 | **Go-tx SQL** Δ | Exactly one statement, no branching: `UPDATE judgements j SET status='review_timeout' ... FROM task_referee_requests trr JOIN tasks t ... WHERE j.status='in_review' AND v_now > (t.due_date + INTERVAL '3 hours')` — textbook "single set-based `UPDATE … FROM`," issued verbatim by the Go worker each tick; no stored function needed. |
-| 36 | `confirm_judgement_and_rate_referee(...)` | `judgement/functions/confirm_judgement_and_rate_referee.sql` | 3 | Go *(unaffected, see §2.9)* | Multi-step: settle wallet + grant reward + insert rating + confirm, all `auth.uid()`-gated. Inserts `rating_histories` (feeds #24's Go-tx SQL) and sets `is_confirmed=TRUE` (must now explicitly invoke #26/#57's Go-tx SQL and #25/#27's Go logic — see 2.9). **See §3 T7-2** — no explicit row lock; a race is possible under wallet headroom. |
-| 37 | `on_task_evidences_upserted_notify_referee()` [trigger fn] | `evidence/triggers/on_task_evidences_upserted_notify_referee.sql` | 5 | Go *(unaffected)* | Notification dispatch on evidence insert/update. |
-| 38 | `validate_evidence_due_date()` [trigger fn] | `evidence/functions/validate_evidence_due_date.sql` | 1 | **Go** Δ | Pure read-only guard: `SELECT t.due_date ... IF v_now > v_due_date THEN RAISE EXCEPTION`. No mutation, no lock. Needs `tasks.due_date` (another table), so it cannot become a same-table `CHECK` constraint. Moves to Go as a pre-write validation in the evidence create/resubmit handlers — no atomicity lost, since nothing else contends on a single evidence row's due-date check. |
-| 39 | `resubmit_evidence(...)` | `evidence/functions/resubmit_evidence.sql` | 3 | Go *(unaffected)* | Multi-table: evidence update, asset add/remove, judgement status transition, `auth.uid()`-gated. |
-| 40 | `update_evidence(...)` | `evidence/functions/update_evidence.sql` | 4 | Go *(unaffected)* | `auth.uid()`-gated evidence + asset CRUD. |
-| 41 | `submit_evidence(...)` | `evidence/functions/submit_evidence.sql` | 3 | Go *(unaffected)* | Multi-table: evidence insert, asset insert, judgement status transition, `auth.uid()`-gated. |
-| 42 | `detect_and_handle_evidence_timeouts()` | `evidence/functions/detect_evidence_timeouts.sql` | 2 | **Go-tx SQL** Δ | Same shape as #35: one `UPDATE judgements j SET status='evidence_timeout' ... FROM task_referee_requests trr JOIN tasks t ... LEFT JOIN task_evidences te ... WHERE j.status='awaiting_evidence' AND v_now > t.due_date AND te.id IS NULL`, no branching. |
-| 43 | `handle_new_user()` [trigger fn] | `auth/functions/handle_new_user.sql` | 3 | Go *(unaffected)* | Provisions profile + notification_settings + user_ratings + point_wallet + trial_point_wallet on signup. Business logic moves; trigger mechanism (Supabase `auth.users`) is what's obsolete. Confirmed D2 provisioning path, baseline 2.7.4. |
-| 44 | `notify_event(...)` | `notification/functions/notify_event.sql` | 5 | Go *(unaffected)* | Reads Vault secrets, calls `net.http_post`. External side effect. |
-| 45 | `send_deadline_reminder(...)` | `notification/functions/send_deadline_reminder.sql` | 5 | Go *(unaffected)* | Idempotency log insert + `notify_event` dispatch. |
-| 46 | `detect_judgement_deadline_warnings()` | `notification/functions/detect_judgement_deadline_warnings.sql` | 5 | Go *(unaffected)* | Scans + dispatches reminders. |
-| 47 | `detect_evidence_deadline_warnings()` | `notification/functions/detect_evidence_deadline_warnings.sql` | 5 | Go *(unaffected)* | Same pattern as #46. |
-| 48 | `detect_auto_confirm_deadline_warnings()` | `notification/functions/detect_auto_confirm_deadline_warnings.sql` | 5 | Go *(unaffected)* | Same pattern as #46; default OFF. |
-| 49 | `reset_subscription_points(...)` | `point/functions/reset_subscription_points.sql` | 1 | **Go (orchestration)** Δ | Multiple business decisions: the idempotency check (`SELECT id FROM point_ledger WHERE reason='plan_renewal' AND description=v_description` — a fragile description-string idempotency key, flagged in 2.10), the wallet-not-found fallback (`INSERT ... IF NOT FOUND`), and the "record expiry of unused points" decision (`IF v_available > 0`) are Go branches. The atomic reads/writes (`SELECT ... FOR UPDATE`, the two possible `INSERT`s, the reset `UPDATE`) are Go-tx SQL statements Go issues once it has picked a branch. |
-| 50 | `consume_points(...)` | `point/functions/consume_points.sql` | 1 | **Go-tx SQL** Δ | Same pattern as #22 minus the obligation loop: `IF v_balance < p_amount` / `IF v_locked < p_amount` → Go; `SELECT ... FOR UPDATE`, the `balance/locked` `UPDATE`, and the ledger `INSERT` → Go-tx SQL. |
-| 51 | `lock_points(...)` | `point/functions/lock_points.sql` | 1 | **Go-tx SQL** Δ | Brief's own worked example: `IF (v_balance - v_locked) < p_amount THEN RAISE EXCEPTION` (availability check) → Go; `SELECT ... FOR UPDATE`, `locked = locked + p_amount`, and the ledger `INSERT` are the irreducible Go-tx SQL sequence. |
-| 52 | `unlock_points(...)` | `point/functions/unlock_points.sql` | 1 | **Go-tx SQL** Δ | Same shape as #51/#20: `IF v_locked < p_amount` → Go; `SELECT ... FOR UPDATE` + `locked = locked - p_amount` + ledger `INSERT` → Go-tx SQL. |
-| 53 | `handle_updated_at()` [trigger fn] | `common/functions/handle_updated_at.sql` | 2 | **DB trigger (either)** Δ | The one function the refined rule explicitly carves out: "housekeeping only (`set_updated_at` family) … may alternatively move to the Go data layer; note as either." Trivial `NEW.updated_at = NOW()`, no business logic, no atomicity concern. Kept as a DB trigger for the 21 housekeeping call sites (2.4); equally valid for the Go store to set `updated_at` explicitly on every `UPDATE` instead. |
-| 54 | `is_task_referee(task_uuid, user_uuid)` | `profile/functions/auth_helpers.sql` (L1) | 6 | delete *(unaffected)* | RLS-only helper; tied to the broader RLS retirement, not today's dead-code list. |
-| 55 | `is_task_referee_candidate(task_uuid, user_uuid)` | `profile/functions/auth_helpers.sql` (L19) | 6 | delete *(unaffected)* | Same note as #54. |
-| 56 | `is_task_tasker(task_uuid, user_uuid)` | `profile/functions/auth_helpers.sql` (L37) | 6 | delete (verify before drop) *(unaffected)* | Fully unreferenced. Baseline 2.7.2. |
-| 57 | `close_task_if_all_judgements_confirmed()` [trigger fn] | `task/triggers/on_all_judgements_confirmed_close_task.sql` | 1 | **Go-tx SQL** Δ | The three-statement body (`SELECT trr.task_id`, `PERFORM ... FOR UPDATE` lock, `IF NOT EXISTS (...) THEN UPDATE tasks SET status='closed'`) collapses into one atomic statement: `UPDATE tasks SET status='closed' WHERE id=$1 AND status <> 'closed' AND NOT EXISTS (SELECT 1 FROM judgements j JOIN task_referee_requests trr ON j.id=trr.id WHERE trr.task_id=$1 AND j.is_confirmed=false)`. No separate lock step needed, no business branching left — single conditional `UPDATE`, Go-tx SQL. See 2.9. |
-| 58 | `create_task(...)` | `task/functions/create_task.sql` | 3 | Go *(unaffected)* | Multi-step: validate inputs, validate open-requirements, insert task, create referee requests (locks points). |
-| 59 | `update_task(...)` | `task/functions/update_task.sql` | 3 | Go *(unaffected)* | Same multi-step pattern as #58, plus ownership + status-transition checks. |
-| 60 | `delete_task(uuid)` | `task/functions/delete_task.sql` | 4 | Go *(unaffected)* | `auth.uid()`-gated ownership + status check + single delete. |
-| 61 | `validate_task_inputs(...)` | `task/functions/utils/validate_task_inputs.sql` | 3 | Go *(unaffected)* | Pure business-rule validation. |
-| 62 | `create_task_referee_requests_from_json(...)` | `task/functions/utils/create_task_referee_requests_from_json.sql` | 3 | Go *(note updated)* | Multi-step: cost calc, trial-vs-regular point-source decision, loop insert + lock (calls `lock_trial_points`/`lock_points`, now **Go-tx SQL**, see #17/#51). |
-| 63 | `validate_task_open_requirements(...)` | `task/functions/utils/validate_task_open_requirements.sql` | 3 | Go *(unaffected)* | Business-rule validation: due-date minimum, point-balance sufficiency. |
-| 64 | `prepare_monthly_payouts(...)` | `reward/functions/prepare_monthly_payouts.sql` | 3 | Go (worker) *(unaffected)* | Batch orchestration: last-day-of-month guard, exchange-rate lookup, Stripe Connect readiness check, payout row insert, notify. |
-| 65 | `deduct_reward_for_payout(...)` | `reward/functions/deduct_reward_for_payout.sql` | 1 | **Go-tx SQL** Δ | Optimistic-concurrency single statement, no `FOR UPDATE` needed: `UPDATE reward_wallets SET balance=balance-p_amount WHERE user_id=$1 AND balance >= p_amount`; `IF NOT FOUND THEN RAISE EXCEPTION` is Go's zero-rows-affected handling, not a separate decision. Plus the ledger `INSERT`. |
-| 66 | `grant_reward(...)` | `reward/functions/grant_reward.sql` | 1 | **Go-tx SQL** Δ | Single `INSERT ... ON CONFLICT (user_id) DO UPDATE SET balance = reward_wallets.balance + p_amount` upsert, no branching, plus the ledger `INSERT`. |
-| 67 | `get_payout_topup_metrics(text)` | `reward/functions/get_payout_topup_metrics.sql` | 2 | **Go-tx SQL** Δ | Read-only, but the four `SELECT`s (active exchange rate, sum of wallet balances, month-to-date ledger earnings, singleton `payout_topup_config`) need a **consistent snapshot across statements** while payouts are being processed concurrently elsewhere — that consistency comes from one Go-owned (read) transaction, not a PL/pgSQL wrapper. Refines baseline 2.7.5: the *SQL* dissolves into a plain Go-tx SQL query set behind the same Go operator endpoint; the "Postgres function callable via RPC" framing is no longer needed. |
-| 68 | `check_account_deletable()` | `account/functions/check_account_deletable.sql` | 4 | Go *(unaffected)* | `auth.uid()`-gated read-only precondition check. |
-
-#### Function tally (v2)
-
-| Disposition | Count | Of which, from the 23 re-derived this pass |
-|---|---|---|
-| Go | 48 | 7 (#9, #19, #21, #23, #34, #38, #49) |
-| Go-tx SQL | 15 | 15 (#17, #18, #20, #22, #24, #26, #35, #42, #50, #51, #52, #57, #65, #66, #67) |
-| DB trigger (either) | 1 | 1 (#53) |
-| DB constraint | 0 | 0 |
-| delete | 4 | 0 (unaffected, re-confirmed) |
-| **Total** | **68** | **23** |
-
-**DB constraint = 0, by design, not oversight.** None of the 23 decompose
-into a *new* invariant that needs a fresh `CHECK`/`UNIQUE` constraint —
-the two invariants the wallet functions implicitly protect (`balance >= 0`,
-`locked >= 0`, `balance >= locked`) are **already** real `CHECK` constraints
-on `point_wallets`/`trial_point_wallets` (see `supabase/schemas/point/tables/point_wallets.sql`,
-`supabase/schemas/trial_point/tables/trial_point_wallets.sql`), predating
-this classification and out of scope of the function/trigger inventory
-(the original T3 inventory only counted `CREATE FUNCTION`/`TRIGGER`/`cron.schedule`/`POLICY`,
-not table constraints). Those existing `CHECK`s are the real DB-level
-backstop for the sufficiency checks that move to Go — noted per-row above.
-
-### 2.4 Business triggers (15) + housekeeping summary
-
-| # | trigger | file | function called | category | disposition (v2) |
-|---|---|---|---|---|---|
-| 1 | `on_task_referee_requests_update_process_matching` | `matching/triggers/on_task_referee_requests_update_process_matching.sql` | `trigger_process_matching()` | 3 | Go *(unaffected)* |
-| 2 | `on_task_referee_requests_insert_process_matching` | `matching/triggers/on_task_referee_requests_insert_process_matching.sql` | `trigger_process_matching()` | 3 | Go *(unaffected)* |
-| 3 | `on_rating_histories_change_update_user_ratings` | `rating/triggers/on_rating_histories_change_update_user_ratings.sql` | `update_user_ratings()` | 2 | **Go-tx SQL** Δ — see 2.3 #24. Trigger dissolves entirely (no `CREATE TRIGGER` remains); Go issues the two recompute `UPDATE ... FROM` statements in the same transaction as every Go-initiated `rating_histories` write. |
-| 4 | `on_judgement_confirmed_notify` | `judgement/triggers/on_judgement_confirmed_notify.sql` | `notify_judgement_confirmed()` | 5 | Go *(unaffected)* |
-| 5 | `on_judgement_confirmed_close_request` | `judgement/triggers/on_judgement_confirmed_close_request.sql` | `close_referee_request_on_confirmed()` | 1 | **Go-tx SQL** Δ — see 2.3 #26. Trigger dissolves; Go issues the single PK-scoped `UPDATE task_referee_requests SET status='closed'` right after it writes `is_confirmed=true`, in the same transaction. |
-| 6 | `on_evidence_timeout_settle` | `judgement/triggers/on_evidence_timeout_settle.sql` | `settle_evidence_timeout()` | 5 | Go *(unaffected)* |
-| 7 | `on_judgements_timeout_score_referee` | `judgement/triggers/on_judgements_timeout_score_referee.sql` | `auto_score_timeout_referee()` | 3 | Go *(unaffected)* |
-| 8 | `on_judgements_status_changed` | `judgement/triggers/on_judgements_status_changed.sql` | `on_judgements_status_changed()` | 5 | Go *(unaffected)* |
-| 9 | `on_review_timeout_settle` | `judgement/triggers/on_review_timeout_settle.sql` | `settle_review_timeout()` | 5 | Go *(unaffected)* |
-| 10 | `on_judgement_confirmed` | `judgement/triggers/on_judgement_confirmed.sql` | `handle_judgement_confirmed()` | 5 | Go *(unaffected)* |
-| 11 | `on_task_evidences_insert_validate_due_date` | `evidence/triggers/on_task_evidences_insert_validate_due_date.sql` | `validate_evidence_due_date()` | 1 | **Go** Δ — see 2.3 #38. Trigger dissolves; the pre-write due-date guard runs as Go validation in the evidence-create handler. |
-| 12 | `on_task_evidences_upserted_notify_referee` | `evidence/triggers/on_task_evidences_upserted_notify_referee.sql` | `on_task_evidences_upserted_notify_referee()` | 5 | Go *(unaffected)* |
-| 13 | `on_task_evidences_update_validate_due_date` | `evidence/triggers/on_task_evidences_update_validate_due_date.sql` | `validate_evidence_due_date()` | 1 | **Go** Δ — see 2.3 #38 and row 11 above. Same function, second call site (evidence-resubmit handler); trigger dissolves. |
-| 14 | `on_auth_user_created` | `auth/triggers/on_auth_user_created.sql` | `handle_new_user()` | 3 | Go *(unaffected)* (mechanism deleted, logic ported — resolved, baseline 2.7.4) |
-| 15 | `on_all_judgements_confirmed_close_task` | `task/triggers/on_all_judgements_confirmed_close_task.sql` | `close_task_if_all_judgements_confirmed()` | 1 | **Go-tx SQL** Δ — see 2.3 #57. Trigger dissolves into one conditional `UPDATE tasks ... WHERE NOT EXISTS (...)` statement issued by Go. |
-
-**Housekeeping triggers (21, summary row):** all `on_<table>_update_set_updated_at`
-triggers across `matching`, `trial_point`, `rating`, `judgement`, `evidence`,
-`notification`, `point`, `subscription`, `profile`, `task`, `reward` (×4),
-`report`, `stripe` — all call `handle_updated_at()`. Category 2, disposition
-**DB trigger (either)** *(unaffected in count; wording refined to match 2.1a's
-explicit housekeeping carve-out — see 2.3 #53)*.
-
-#### Trigger tally (v2)
+Assigning each of the 68 functions its class from the supplement's §5
+per-function assignment, then applying three operator-approved resolutions
+(§4.6), yields:
 
 | Disposition | Count |
-|---|---|
-| Go (business) | 12 (2 flipped from stay: #11, #13; 10 unaffected) |
-| Go-tx SQL (business) | 3 (all flipped from stay: #3, #5, #15) |
-| DB trigger — literal `CREATE TRIGGER` remaining (business) | 0 |
-| DB trigger (either) — housekeeping (1 summary row = 21 triggers) | 21 |
-| **Total triggers accounted for** | **15 + 21 = 36** |
+|---|---:|
+| DB invariant/helper | 1 |
+| Store query | 4 |
+| Go transaction | 38 |
+| Go service/worker | 21 |
+| Drop | 4 |
+| **Total** | **68** |
 
-**Notable result:** under the refined rule, **zero of the 5 previously-stay
-business triggers remain a literal Postgres `CREATE TRIGGER`.** 3 dissolve
-into Go-tx SQL statements Go issues inside the same transaction as the
-write that used to fire them; 2 dissolve into ordinary Go validation. This
-matches the rule's own crux — "triggers that enforce invariants across
-arbitrary write paths are no longer load-bearing once Go is the only
-writer" — and is the central, reportable consequence of this v2 pass. See
-2.9 for the orchestration implications this creates.
+**Go-managed = 63 of 68** (Go transaction + Go service/worker). The single
+DB invariant is `handle_updated_at` — trivial `NEW.updated_at = NOW()`
+housekeeping with no business logic and no atomicity concern; it is the one
+function the refined rule explicitly carves out as staying DB-side (it may
+equally validly move to the Go data layer instead — noted as "either" in
+Appendix A).
 
-### 2.5 Cron (10)
+**This is the tally required by the merge brief, and it is exact**: DB
+invariant/helper 1 · Store query 4 · Go transaction 38 · Go service/worker
+21 · Drop 4 = 68.
 
-Structurally unaffected (all 10 still move to the Go worker's own
-scheduler); three notes are updated because they cited functions whose
-disposition changed.
+### 4.3 Cron tally
 
-| # | schedule name | frequency | job | disposition | note |
-|---|---|---|---|---|---|
-| 1 | `process-pending-requests` | hourly (`0 * * * *`) | `matching/cron/cron_process_pending_requests.sql` → `process_pending_requests()` | Go (worker) *(unaffected)* | |
-| 2 | `detect-review-timeouts` | every 5 min | `judgement/cron/cron_detect_review_timeout.sql` → `detect_and_handle_review_timeouts()` | Go (worker) *(note updated)* | Scheduling moves; the SQL statement itself is now **Go-tx SQL** (2.3 #35) — the Go worker issues the exact `UPDATE ... FROM` text directly each tick. No stored function/RPC needed (previously noted as "can remain a Postgres function the worker calls via RPC" — superseded). |
-| 3 | `detect-auto-confirms` | hourly | `judgement/cron/cron_detect_auto_confirm.sql` → `detect_auto_confirms()` | Go (worker) *(note updated)* | Function dissolves into Go worker orchestration (2.3 #34): a `FOR UPDATE SKIP LOCKED` claim query plus several Go-tx SQL mutations per claimed row. No RPC to a stored function (previously noted as a keep-as-Postgres-function candidate — superseded). |
-| 4 | `detect-evidence-timeouts` | every 5 min | `judgement/cron/cron_detect_evidence_timeout.sql` → `detect_and_handle_evidence_timeouts()` | Go (worker) *(note updated)* | Same as row 2 — the SQL is now **Go-tx SQL** (2.3 #42), issued directly by the worker; no RPC needed. |
-| 5 | `detect-auto-confirm-deadline-warnings` | every minute | `notification/cron/cron_detect_auto_confirm_deadline_warnings.sql` → `detect_auto_confirm_deadline_warnings()` | Go (worker) *(unaffected)* | |
-| 6 | `detect-evidence-deadline-warnings` | every minute | `notification/cron/cron_detect_evidence_deadline_warnings.sql` → `detect_evidence_deadline_warnings()` | Go (worker) *(unaffected)* | |
-| 7 | `detect-judgement-deadline-warnings` | every minute | `notification/cron/cron_detect_judgement_deadline_warnings.sql` → `detect_judgement_deadline_warnings()` | Go (worker) *(unaffected)* | |
-| 8 | `sweep-r2-stale-objects` | daily 18:00 UTC | `common/cron/cron_sweep_r2_stale_objects.sql` → `net.http_post` | Go (worker) *(unaffected)* | |
-| 9 | `prepare-monthly-payouts` | `0 15 28-31 * *` | `reward/cron/cron_prepare_monthly_payouts.sql` → `prepare_monthly_payouts('JPY')` | Go (worker) *(unaffected)* | |
-| 10 | `execute-pending-payouts` | every 30 min | `reward/cron/cron_execute_pending_payouts.sql` → `net.http_post` | Go (worker) *(unaffected)* | See baseline §3 T7-1 for a job-claiming gap in this function. |
+All 10 cron schedules move to the Go worker's own scheduler, issuing state
+directly against Postgres (Go-owned SQL statements, or calls into the
+already-Go-classified functions above) — **not** via RPC to a retained
+stored function:
 
-### 2.6 RLS summary (unchanged, out of scope for this v2 pass)
+| # | schedule name | frequency | job | worker target |
+|---|---|---|---|---|
+| 1 | `process-pending-requests` | hourly (`0 * * * *`) | `matching/cron/cron_process_pending_requests.sql` → `process_pending_requests()` | Matching expiry/rematch job (Go service/worker, Appendix A #1). |
+| 2 | `detect-review-timeouts` | every 5 min | `judgement/cron/cron_detect_review_timeout.sql` → `detect_and_handle_review_timeouts()` | Review-timeout job. The Go worker issues the underlying `UPDATE ... FROM` statement directly each tick (Appendix A #35) — no stored function, no RPC. |
+| 3 | `detect-auto-confirms` | hourly | `judgement/cron/cron_detect_auto_confirm.sql` → `detect_auto_confirms()` | Judgement auto-confirm job (Go service/worker, Appendix A #34): a `FOR UPDATE SKIP LOCKED` claim query plus several Go-issued mutations per claimed row. |
+| 4 | `detect-evidence-timeouts` | every 5 min | `judgement/cron/cron_detect_evidence_timeout.sql` → `detect_and_handle_evidence_timeouts()` | Evidence-timeout job. Same pattern as row 2 — the SQL is issued directly by the worker (Appendix A #42); no RPC needed. |
+| 5 | `detect-auto-confirm-deadline-warnings` | every minute | `notification/cron/cron_detect_auto_confirm_deadline_warnings.sql` → `detect_auto_confirm_deadline_warnings()` | Notification reminder job. |
+| 6 | `detect-evidence-deadline-warnings` | every minute | `notification/cron/cron_detect_evidence_deadline_warnings.sql` → `detect_evidence_deadline_warnings()` | Notification reminder job. |
+| 7 | `detect-judgement-deadline-warnings` | every minute | `notification/cron/cron_detect_judgement_deadline_warnings.sql` → `detect_judgement_deadline_warnings()` | Notification reminder job. |
+| 8 | `sweep-r2-stale-objects` | daily 18:00 UTC | `common/cron/cron_sweep_r2_stale_objects.sql` → `net.http_post` | R2 cleanup job. |
+| 9 | `prepare-monthly-payouts` | `0 15 28-31 * *` | `reward/cron/cron_prepare_monthly_payouts.sql` → `prepare_monthly_payouts('JPY')` | Monthly payout preparation job. |
+| 10 | `execute-pending-payouts` | every 30 min | `reward/cron/cron_execute_pending_payouts.sql` → `net.http_post` | Stripe payout execution job. See §5.2.1 (T7-1) for a job-claiming gap in this function. |
 
-63 `CREATE POLICY` statements — disposition unaffected by the function/
-trigger re-classification above. Carried forward verbatim from the
-2026-07-22 baseline: **retire all 63** to Go application-layer authz, with
-wallet/ledger-adjacent policies (point, trial_point, reward) as possible
-defense-in-depth candidates — a Go-implementation decision, not resolved
-here (baseline 2.7.6, still open).
+The worker owns scheduling, persistent job rows, retries, idempotency keys,
+and `FOR UPDATE SKIP LOCKED` claiming. The API only persists webhook inbox
+events and commands.
 
-### 2.7 Operator resolutions (2026-07-22, carried forward; one refined below)
+### 4.4 Trigger tally
 
-The five resolved items and one open item from the 2026-07-22 baseline are
-carried forward unchanged **except 2.7.5**, whose "access path" framing is
-refined by this pass's Go-tx SQL classification of `get_payout_topup_metrics`.
+| Disposition | Count |
+|---|---:|
+| DB trigger — housekeeping (`handle_updated_at`, 1 summary row = 21 triggers) | 21 |
+| Go (business, dissolves into Go orchestration logic or Go-issued atomic SQL) | 15 |
+| **Total** | **36** |
 
-- **2.7.1** `detect_and_handle_referee_timeouts()` — delete, verify before
-  drop. Unaffected (not one of the 23).
-- **2.7.2** `is_task_tasker(...)` — delete candidate, verify before drop.
-  Unaffected (not one of the 23).
-- **2.7.3** `auto_score_timeout_referee()` + `settle_review_timeout()`
-  redundant rating insert — move-to-Go (now: Go) with dedup. Unaffected in
-  substance; both feed into #24's now-Go-tx-SQL recompute (2.9).
-- **2.7.4** `handle_new_user()` / `on_auth_user_created` — confirmed
-  move-to-Go (now: Go), D2 provisioning path. Unaffected.
-- **2.7.5** `get_payout_topup_metrics(text)` — **refined.** The 2026-07-22
-  resolution said the read-only aggregate SQL "may stay in Postgres behind
-  the Go store" as a PL/pgSQL function called via a Go operator endpoint.
-  This v2 pass finds no reason for the PL/pgSQL wrapper itself to survive:
-  the four `SELECT`s need cross-statement consistency, which a Go-owned
-  transaction gives for free (2.3 #67). **Refined resolution:** the SQL
-  text (four `SELECT`s) is issued directly by the Go operator endpoint
-  inside one read transaction — Go-tx SQL, not a stored function. The
-  *access path* (Go operator endpoint, not a Supabase Edge Function) is
-  unchanged from the original resolution.
-- **2.7.6** RLS defense-in-depth candidates — remains open, unaffected.
+All 21 housekeeping triggers call `handle_updated_at()` and remain minimal
+database housekeeping. **All 15 business triggers dissolve into Go** —
+zero business triggers remain a literal Postgres `CREATE TRIGGER`. See
+Appendix B for the full per-trigger mapping (which function each replaces,
+and whether it dissolves into plain Go logic or a single Go-issued atomic
+SQL statement).
 
-### 2.8 Original ambiguous items (source investigation, pre-resolution)
+### 4.5 Per-domain summary
 
-Unchanged from the 2026-07-22 baseline — retained verbatim for audit trail.
-See `docs/superpowers/specs/2026-07-22-phase0-baseline.md` §2.8 (lines
-798–807); not reproduced here since none concern the 23 re-derived by this
-pass.
+| Domain | Functions | Business triggers | Notable dispositions |
+|---|---:|---:|---|
+| Account / identity / common | 4 (Appendix A #43, #53, #68, plus `handle_new_user`'s trigger) | 1 (`on_auth_user_created`) | `handle_updated_at` is the sole DB invariant; `handle_new_user`'s provisioning logic moves to Go, only its Supabase-Auth trigger mechanism dies. |
+| Evidence | 5 (#37–#41) | 3 (due-date guards ×2, upsert-notify) | `validate_evidence_due_date` reclassified DB invariant → Go service/worker (§4.6, resolution 1) since it's a cross-table check. |
+| Judgement | 12 (#25–#36) | 7 | Four call sites that set `is_confirmed=true` must each explicitly re-run the cascade the dissolved triggers used to fire automatically — see §4.7. |
+| Matching | 15 (#1–#11 and others) | 2 (`process_matching` triggers) | `trigger_process_matching` reclassified Drop → Go service/worker (§4.6, resolution 3); `detect_and_handle_referee_timeouts` reclassified Go service/worker → Drop (§4.6, resolution 2). |
+| Notification / summaries / points / RLS helpers | 13 (#44–#52 notification+point, #54–#56 RLS helpers) | 0 (RLS helpers are not triggers) | 3 RLS helper functions are pure Drop candidates (RLS retirement, not today's dead-code list). |
+| Rating / reward / task / trial points | 19 (#57–#67 and trial-point functions) | 2 (rating recompute, task-close) | Wallet/ledger functions all decompose into a Go check + an irreducible Go-issued atomic SQL statement (lock/consume/unlock, grant/deduct). |
 
-### 2.9 New implications of dissolving the 5 previously-"stay" business triggers (v2 addition)
+(Counts above are grouped for readability; Appendix A is the authoritative
+per-function source and Appendix B the authoritative per-trigger source.)
 
-Reading the actual trigger definitions surfaced something the disposition
+### 4.6 Operator-approved resolutions applied to the supplement's classification
+
+The supplement's §5 per-function pass (5-way taxonomy) is the base
+assignment for every function. Three resolutions, approved by the operator,
+are layered on top to produce the §4.2 tally:
+
+1. **`validate_evidence_due_date`: DB invariant → Go service/worker.** Move
+   to Go; it is a cross-table check (`tasks.due_date` read from an
+   `task_evidences` write), so it cannot become a same-table `CHECK`
+   constraint. Go is the sole write path once the API is the only writer,
+   so no atomicity is lost by moving the guard into Go's pre-write
+   validation.
+2. **`detect_and_handle_referee_timeouts`: → Drop.** Currently
+   unused/unscheduled (zero callers, zero cron entries — see Appendix A
+   #4). If ever needed, design it as a new Go worker requirement, not a
+   port of this dead function.
+3. **`trigger_process_matching`: → Go service/worker.** The SQL wrapper
+   itself is deleted (it is a thin trigger-function wrapper around
+   `process_matching`), but the matching behavior it invokes moves to Go as
+   a service/worker responsibility — "Go service/worker" is a more accurate
+   disposition than "Drop," since the underlying capability (processing a
+   matching request) is very much still needed, just invoked explicitly by
+   the API/worker instead of fired by a trigger.
+
+Beyond these three, additional ambiguous items carried from the canonical
+baseline's own investigation remain recorded for the owning feature phase
+(not Phase 0 blockers):
+
+- `is_task_tasker` — delete candidate, verify before drop (its siblings
+  `is_task_referee`/`is_task_referee_candidate` are **not** drop
+  candidates — both are actively called from `task/policies/tasks_policies.sql`
+  and are tied to the broader RLS retirement, not today's dead-code list).
+- `auto_score_timeout_referee()` + `settle_review_timeout()` insert a
+  redundant negative rating — both are Go-classified with dedup recommended
+  (see §4.7).
+- `get_payout_topup_metrics(text)` — the four read-only `SELECT`s need
+  cross-statement consistency; that comes from one Go-owned read
+  transaction, not a PL/pgSQL wrapper. The *access path* (Go operator
+  endpoint, not a Supabase Edge Function) is unchanged.
+- RLS defense-in-depth candidates (wallet/ledger-adjacent policies in
+  point, trial_point, reward domains) — remains an open Go-implementation
+  decision, not resolved here.
+
+### 4.7 Shared post-confirm orchestration: four call sites, one cascade
+
+> Carried from canonical §2.9.
+
+Reading the actual trigger definitions surfaces something the disposition
 table alone doesn't show: **four separate triggers currently fire off the
 exact same condition** — `AFTER UPDATE ON judgements ... WHEN (NEW.is_confirmed
 = true AND OLD.is_confirmed = false)` (or the equivalent `IS NULL OR ... =
 false` form):
 
-- `on_judgement_confirmed_notify` → `notify_judgement_confirmed()` (2.3 #25, Go)
-- `on_judgement_confirmed_close_request` → `close_referee_request_on_confirmed()` (2.3 #26, **Go-tx SQL**)
-- `on_judgement_confirmed` → `handle_judgement_confirmed()` (2.3 #27, Go)
-- `on_all_judgements_confirmed_close_task` → `close_task_if_all_judgements_confirmed()` (2.3 #57, **Go-tx SQL**)
+- `on_judgement_confirmed_notify` → `notify_judgement_confirmed()` (Appendix A #25, Go)
+- `on_judgement_confirmed_close_request` → `close_referee_request_on_confirmed()` (Appendix A #26, Go — atomic SQL)
+- `on_judgement_confirmed` → `handle_judgement_confirmed()` (Appendix A #27, Go)
+- `on_all_judgements_confirmed_close_task` → `close_task_if_all_judgements_confirmed()` (Appendix A #57, Go — atomic SQL)
 
 Plus, separately, every write that inserts a `rating_histories` row today
 fires `on_rating_histories_change_update_user_ratings` → `update_user_ratings()`
-(2.3 #24, **Go-tx SQL**).
+(Appendix A #24, Go — atomic SQL).
 
 Once Go becomes the sole writer and these 5 triggers are dropped, **the four
 call sites that currently set `judgements.is_confirmed = TRUE` must each
 explicitly perform the work the triggers used to cascade automatically**:
 
-| Call site (2.3 #) | Sets `is_confirmed=true` | Inserts `rating_histories` | Must now explicitly run |
+| Call site (Appendix A #) | Sets `is_confirmed=true` | Inserts `rating_histories` | Must now explicitly run |
 |---|---|---|---|
-| `confirm_judgement_and_rate_referee` (#36) | yes | yes | #24 Go-tx SQL, #26 Go-tx SQL, #57 Go-tx SQL, #25/#27 Go (notify) |
-| `confirm_evidence_timeout` (#32) | yes | no | #26 Go-tx SQL, #57 Go-tx SQL, #25/#27 Go (notify) |
-| `confirm_review_timeout` (#33) | yes | no | #26 Go-tx SQL, #57 Go-tx SQL, #25/#27 Go (notify) |
-| `detect_auto_confirms` (#34) | yes | yes | #24 Go-tx SQL, #26 Go-tx SQL, #57 Go-tx SQL, #25/#27 Go (notify) |
+| `confirm_judgement_and_rate_referee` (#36) | yes | yes | #24, #26, #57 (atomic SQL), #25/#27 (Go, notify) |
+| `confirm_evidence_timeout` (#32) | yes | no | #26, #57 (atomic SQL), #25/#27 (Go, notify) |
+| `confirm_review_timeout` (#33) | yes | no | #26, #57 (atomic SQL), #25/#27 (Go, notify) |
+| `detect_auto_confirms` (#34) | yes | yes | #24, #26, #57 (atomic SQL), #25/#27 (Go, notify) |
 
 **Recommendation for the owning feature phase (not decided here):** implement
 one shared Go orchestration helper (e.g. `onJudgementConfirmed(tx, judgementID)`)
 that all four call sites invoke inside their transaction, rather than
 re-implementing the same four-to-five-statement sequence independently at
-each site. This mirrors — and extends — the dedup the operator already
-approved for the #6/#29 redundant rating insert (baseline 2.7.3): once
-triggers no longer provide the "fires everywhere automatically" guarantee,
-that guarantee has to be re-created deliberately in Go, and a single shared
-helper is the natural place to do it. Flagged for operator/implementer
-awareness, not a Phase 0 blocker.
+each site. This mirrors — and extends — the dedup already approved for the
+`auto_score_timeout_referee`/`settle_review_timeout` redundant rating insert
+(§4.6): once triggers no longer provide the "fires everywhere automatically"
+guarantee, that guarantee has to be re-created deliberately in Go, and a
+single shared helper is the natural place to do it. Flagged for
+operator/implementer awareness, not a Phase 0 blocker.
 
-### 2.10 New ambiguous items surfaced by this pass (for operator confirmation)
+### 4.8 Two fragility notes surfaced by the classification pass
+
+> Carried from canonical §2.10.
 
 1. **`reset_subscription_points`'s idempotency key is a `description` string
    match, not a real constraint.** The guard is
@@ -854,43 +920,67 @@ awareness, not a Phase 0 blocker.
    AND description = 'Subscription renewal: ' || p_invoice_id LIMIT 1` — a
    free-text column doing duplicate-detection work. It works today, but it's
    fragile (whitespace/formatting changes to the description silently break
-   idempotency) and it's exactly the kind of thing the refined rule's "DB
-   constraint" bucket exists for. **Not classified as DB constraint here**
-   because doing so would require a schema change (e.g. a dedicated
-   `related_id`/invoice-id column with a `UNIQUE (user_id, reason,
-   related_id)` constraint) that's a real design decision, not a
-   reclassification of existing SQL. Flagged for the owning phase (point
-   domain), not resolved here.
+   idempotency). **Not classified as a DB constraint here** because doing so
+   would require a schema change (e.g. a dedicated `related_id`/invoice-id
+   column with a `UNIQUE (user_id, reason, related_id)` constraint) that's a
+   real design decision, not a reclassification of existing SQL. Flagged
+   for the owning phase (point domain), not resolved here.
 2. **`get_point_for_matching_strategy`'s hardcoded `'standard' → 1` mapping**
-   duplicates as a Go constant with no remaining Postgres copy (2.3 #9). The
-   2026-07-22 baseline (line 1442-1446 of the assembled doc) already flagged
-   this as "a real drift risk if the lookup table ever grows past the single
-   hardcoded case" for the *old* split (Go duplicate + Postgres original);
-   under v2 there is only one copy (Go), so the drift risk this flagged is
-   **resolved by elimination**, not by discipline — worth noting explicitly
-   since the old note's phrasing ("duplicated constant") no longer applies.
-3. **Confirm the 2.9 "shared Go helper" recommendation is the intended
-   design**, or whether the four call sites are expected to each inline
-   the post-confirm sequence independently. Either is workable; the
-   recommendation is for consistency and lower regression risk, not a
-   correctness requirement.
+   becomes a single Go constant with no remaining Postgres copy (Appendix A
+   #9). Because every caller moves to Go under the max-Go refinement, there
+   is only one copy (Go) — the drift risk a duplicated-constant framing
+   would otherwise carry is resolved by elimination, not by discipline.
 
-## 3. Launch-Blocker Register
+### 4.9 RLS (unaffected by the function/trigger reclassification)
 
-> Synthesized from `docs/superpowers/plans/phase0-parts/01b-edge-functions.md`
-> (the `payout-request` orphan) and the financial-integrity risks surfaced
-> by §5's critical-journey behavior catalog, which the operator adjudicated
-> into this register as candidates on 2026-07-22.
+63 `CREATE POLICY` statements across 30 files, 13 policy domains. Disposition
+unchanged: **retire all 63** to Go application-layer authz, with
+wallet/ledger-adjacent policies (point, trial_point, reward) as possible
+defense-in-depth candidates — a Go-implementation decision, remaining open
+(§4.6).
 
-### 3.1 `payout-request` — investigated, NOT a launch blocker (dead path)
+## 5. Launch-Blocker Register
+
+> Union of the canonical baseline's launch-blocker register (§3, incl. the
+> `payout-request` investigation and the T7-1/T7-2/T7-3 financial-integrity
+> candidates surfaced by the journey catalog) and the supplement's §12.3
+> launch-blocker assignments table. The canonical baseline's deep evidence
+> is preserved verbatim for the financial-integrity items; the supplement's
+> shorter items are added without re-deriving evidence not already gathered.
+
+| # | Finding | Owning phase |
+|---|---|---|
+| 1 | `payout-request` dead manual-payout path — **resolved: remove, not implement** | Phase 5 cleanup |
+| 2 | Payout idempotency gaps (`execute-pending-payouts` lacks `FOR UPDATE SKIP LOCKED`; `reward_payouts.stripe_transfer_id` has no `UNIQUE` constraint) | Phase 5 |
+| 3 | Judgement double-confirm race (`confirm_judgement_and_rate_referee` has no row lock) | Phase 5 |
+| 4 | Account deletion is not a persisted, provider-neutral, re-runnable saga | Phase 6 |
+| 5 | Evidence objects are designed around a public R2 domain | Phase 4 |
+| 6 | Stripe webhook env-var name mismatch (`STRIPE_WEBHOOK_SIGNING_SECRET` vs `STRIPE_WEBHOOK_SECRET`) | Phase 5 |
+| 7 | Premium price discrepancy (Google seed JPY 2,580 vs. later design JPY 2,480) | Phase 5 |
+| 8 | Firebase Auth + Sign in with Apple absent | Phase 2 |
+| 9 | RevenueCat entitlement + durable reconciliation absent | Phase 5 |
+| 10 | No rehearsed off-VPS restore/PITR path | Phase 1 skeleton + Phase 7 rehearsal |
+
+Items 1–4 are reasoned-not-test-confirmed for the current code (Phase 0
+does not write executable characterization tests against the system being
+deleted); the Go rewrite must build the corresponding safeguards per program
+design §11 (payout/webhook idempotency), §14 (account-deletion saga), and
+§24 (testing strategy). All three are already on the program's §23
+"never-defer" safety-valve list ("ledger + payout idempotency; in-app + web
+account deletion") — closing them is not optional schedule-pressure scope.
+
+### 5.1 `payout-request` — investigated, NOT a launch blocker (dead path)
 
 **Status:** Resolved 2026-07-23. The manual-payout path is **dead/unmounted
-code**; disposition is **remove** (drop candidate, §7.F), not implement. Not a
-launch blocker.
+code**; disposition is **remove** (drop candidate, §10.F), not implement.
+Not a launch blocker.
 
-> **Supersedes earlier phrasing.** Where §1 (edge/Stripe inventory), §4, and §5
-> still describe `payout-request` as a "launch-blocker" or a net-new Go endpoint,
-> this section is the authoritative disposition: it is dead code to remove.
+> **This is the authoritative disposition.** Anywhere else in the
+> underlying investigation that once described `payout-request` as a
+> "launch-blocker" or a net-new Go endpoint to build has been corrected
+> in-place in this merged document (see §3.2's Edge Functions reconciliation
+> and Stripe Connect row, and §3.3's edge-function-detail closing note) — do
+> not carry forward the earlier "implement it" framing.
 
 **Evidence:**
 - `supabase/functions/` contains no `payout-request` directory (`ls
@@ -909,38 +999,38 @@ launch blocker.
 
   So `payout-request` can never be invoked by a user and cannot 404 in
   practice. It is a remnant of the removed `payout_jobs`-era manual-payout
-  architecture; the approved payout flow is the monthly `reward_payouts` batch
-  (`prepare_monthly_payouts` → `execute-pending-payouts`).
+  architecture; the approved payout flow is the monthly `reward_payouts`
+  batch (`prepare_monthly_payouts` → `execute-pending-payouts`).
 
 **Disposition:** Remove the dead manual-payout path — Flutter
 `payout_amount_dialog.dart`, `stripe_payout_repository.requestPayout()` + its
 `PayoutRequestResponse` DTO, and the unused `dashboard.requestPayout` /
-`dashboard.payoutRequested` i18n keys (§7.F). No Go endpoint is built. The
+`dashboard.payoutRequested` i18n keys (§10.F). No Go endpoint is built. The
 earlier "launch-blocker → implement in Phase 5" reading was based only on the
 missing-function grep, before the mounting/caller check. Removal lands whenever
 the payout feature is migrated (Phase 5 cleanup).
 
-### 3.2 T7 financial-integrity risks — operator-adjudicated candidates
+### 5.2 T7 financial-integrity risks — operator-adjudicated candidates
 
 > **Adjudication basis note (applies to all three items below):** these
 > findings are reasoned from reading the current Supabase implementation
-> (SQL functions/triggers, Edge Functions) as documented in §5's critical-
+> (SQL functions/triggers, Edge Functions) as documented in §6's critical-
 > journey behavior catalog — they are **not test-confirmed**. Phase 0 does
 > not write executable characterization tests against the system being
-> deleted (Phase 0 spec §2, "Tests" scoping row). The Go rewrite must build
-> the corresponding safeguard per program design §11 (payout/webhook
-> idempotency — "Stripe account/event IDs protected by unique constraints"),
-> §14 (account-deletion saga — "idempotent, persisted deletion state"), and
-> §24 (testing strategy — ledger/payout idempotency and deletion-retry
-> tests). All three are already on the program's §23 "never-defer" safety-
-> valve list ("ledger + payout idempotency; in-app + web account
-> deletion") — so closing them is not optional schedule-pressure scope.
+> deleted. The Go rewrite must build the corresponding safeguard per program
+> design §11 (payout/webhook idempotency — "Stripe account/event IDs
+> protected by unique constraints"), §14 (account-deletion saga —
+> "idempotent, persisted deletion state"), and §24 (testing strategy —
+> ledger/payout idempotency and deletion-retry tests). All three are already
+> on the program's §23 "never-defer" safety-valve list ("ledger + payout
+> idempotency; in-app + web account deletion") — so closing them is not
+> optional schedule-pressure scope.
 
 #### T7-1 — Payout idempotency gaps
 
 **Status:** Candidate — verify in owning phase.
 
-**Evidence** (from §5, flow (c) Payout — Invariants and Edge cases):
+**Evidence** (from §6, flow (c) Payout — Invariants and Edge cases):
 - `execute-pending-payouts` does not claim rows before working them: it
   `SELECT`s `status='pending'` rows and only flips status to
   `success`/`failed` *after* the Stripe call — there is no `FOR UPDATE SKIP
@@ -976,7 +1066,7 @@ item within it).
 
 **Status:** Candidate — verify in owning phase.
 
-**Evidence** (from §5, flow (d) Judgement state machine — Edge cases):
+**Evidence** (from §6, flow (d) Judgement state machine — Edge cases):
 `confirm_judgement_and_rate_referee` does `SELECT ... INTO v_judgement FROM
 judgements j JOIN ...` with **no `FOR UPDATE`**, then later checks
 `is_confirmed` and settles. Two near-simultaneous calls (e.g. a double-tap
@@ -1015,7 +1105,7 @@ landing in Phase 4).
 
 **Status:** Candidate — verify in owning phase.
 
-**Evidence** (from §5, flow (e) Account deletion — Invariants and Edge
+**Evidence** (from §6, flow (e) Account deletion — Invariants and Edge
 cases):
 - `reward_wallets.user_id` is `ON DELETE CASCADE` to `auth.users(id)`
   (`supabase/schemas/reward/tables/reward_wallets.sql`) — a reward wallet,
@@ -1043,246 +1133,49 @@ product decision on whether `force=true` should still attempt payout (or
 block deletion) before the reward-wallet cascade fires, rather than
 silently losing the balance as today's implementation does.
 
-**Owning phase:** Phase 6 — Account deletion & cleanup (program §22: "idempotent
-deletion saga across Firebase/RC/Stripe/R2/DB").
+**Owning phase:** Phase 6 — Account deletion & cleanup (program §22:
+"idempotent deletion saga across Firebase/RC/Stripe/R2/DB").
 
-## 4. Flutter API-Surface Map
+### 5.3 Additional launch-blockers (from the supplement)
 
-> Source: `docs/superpowers/plans/phase0-parts/04-flutter-api-surface.md`.
-> Every place `peppercheck_flutter/lib/` talks to Supabase directly:
-> PostgREST table calls (`.from(`), Postgres RPC calls (`.rpc(`), and Edge
-> Function invocations (`.functions.invoke`), plus the small set of Supabase
-> Auth calls that don't fit those three kinds but are needed for full file
-> coverage.
+> Source: supplement §12.3. Shorter items not independently re-derived with
+> deep SQL evidence by the canonical investigation; carried here at the
+> supplement's own level of detail.
 
-### 4.1 Grep-count reconciliation (baseline vs. actual)
+| Finding | Assigned phase |
+|---|---|
+| Evidence objects are currently designed around a public R2 domain | Phase 4: private bucket access and authorized presigned downloads. |
+| Firebase Auth and Sign in with Apple are absent | Phase 2. |
+| RevenueCat and durable reconciliation are absent | Phase 5. |
+| Premium price differs between current Google seed and later design (JPY 2,580 vs. JPY 2,480) | Phase 5/store-console verification. See §8 for the full subscription-baseline framing. |
+| No rehearsed off-VPS restore/PITR path | Phase 1 skeleton and Phase 7 rehearsal. See §12.1 for the accepted recovery decisions this gates against. |
+| Stripe webhook unit test sets `STRIPE_WEBHOOK_SIGNING_SECRET` while runtime uses `STRIPE_WEBHOOK_SECRET` | Replace in Go tests; production config consistently uses `STRIPE_WEBHOOK_SECRET`. |
 
-The baseline grep commands and their literal counts:
+(Account deletion's persisted-saga gap and the dead `payout-request` path
+are the supplement's remaining two §12.3 rows; both are already covered in
+full above as T7-3 and §5.1 respectively, so they are not repeated in this
+table.)
 
-```
-grep -rn "\.from(" peppercheck_flutter/lib/       → 31 lines
-grep -rn "\.rpc(" peppercheck_flutter/lib/        → 19 lines
-grep -rn "\.functions\.invoke" peppercheck_flutter/lib/ → 7 lines
-grep -rln "supabase_flutter\|Supabase\.instance\|SupabaseClient" peppercheck_flutter/lib/ → 24 files
-```
+## 6. Critical Journey & Behavior Catalog
 
-All four raw counts match the stated baseline exactly. However, two of the
-three counts include noise or undercounts once inspected line-by-line:
-
-#### `.from(` — 31 raw hits, only **18 are real Supabase calls**
-
-`grep "\.from("` also matches Dart's built-in `Map<K, V>.from(...)` and
-`List<T>.from(...)` collection constructors, which are unrelated to
-`SupabaseQueryBuilder.from('table_name')`. Of the 31 hits:
-
-- **18** are genuine `SupabaseClient.from('table_name')` PostgREST calls (see table below).
-- **13** are Dart `Map.from(...)` / `List.from(...)` false positives:
-  `notification/application/fcm_service.dart:151`;
-  `task/data/task_repository.dart:107,114,118,136,221,227,231,248` (8 hits);
-  `task/presentation/widgets/task_creation/matching_strategy_selection_section.dart:45,57`;
-  `account/data/account_repository.dart:37`;
-  `billing/presentation/widgets/plan_selection_bottom_sheet.dart:44`.
-
-This matters for the refactor headcount: the real PostgREST surface is 18
-call sites over 9 tables, not 31.
-
-#### `.rpc(` — 19 vs. 21: the independent reviewer's 21 is correct
-
-`grep "\.rpc("` requires the literal substring `.rpc(` — no characters
-between `rpc` and `(`. It misses **generic-typed** calls of the form
-`_supabase.rpc<String>('function_name', ...)`, because `<String>` sits
-between `rpc` and `(`. Two call sites use this generic form and were
-silently dropped by the baseline grep:
-
-- `peppercheck_flutter/lib/features/matching/data/matching_repository.dart:43` — `_supabase.rpc<String>('create_referee_available_time_slot', ...)`
-- `peppercheck_flutter/lib/features/matching/data/matching_repository.dart:90` — `_supabase.rpc<String>('create_referee_blocked_date', ...)`
-
-**Reconciled count: 21 `.rpc(` call sites, 21 distinct function names, zero
-duplicates** (verified by extracting every function-name string literal
-immediately following `.rpc(`/`.rpc<...>(` — no name repeats). The 19-vs-21
-discrepancy is a **miss in the original grep pattern** (it doesn't tolerate
-a generic type argument), not duplicate call sites collapsing to fewer
-function names. A pattern like `grep -E "\.rpc(<[^>]+>)?\("` would have
-caught all 21 in one pass. This closes program design doc §28's "reconcile
-exact Flutter RPC count (measured 19; reviewer 21)" item: **21 is correct.**
-
-#### `.functions.invoke` — 7 call sites, 6 distinct functions (confirmed)
-
-`generate-upload-url` is invoked from two features (`evidence` and
-`profile`), sharing one Edge Function; the other 5 invocations are each
-1:1 with a distinct function name. 7 call sites / 6 distinct names matches
-the stated baseline exactly — no discrepancy here.
-
-### 4.2 Call-site table
-
-`kind` is one of `from`, `rpc`, `invoke`. A supplementary `auth` group (5
-sites, 4 files) is appended after — these are Supabase Auth SDK calls
-(client init, sign-in, sign-out, auth-state stream) that don't fit
-`from`/`rpc`/`invoke` but are part of the same migration surface and are
-needed to account for all 24 Supabase-importing files.
-
-#### `from` (PostgREST) — 18 call sites
-
-| kind | symbol/table | file:line | feature | maps to (Go endpoint) |
-|---|---|---|---|---|
-| from | `referee_available_time_slots` (select, eq user_id) | `peppercheck_flutter/lib/features/matching/data/matching_repository.dart:22` | matching | `GET /api/v1/matching/availability` |
-| from | `referee_blocked_dates` (select, order) | `peppercheck_flutter/lib/features/matching/data/matching_repository.dart:76` | matching | `GET /api/v1/matching/blocked-dates` |
-| from | `user_fcm_tokens` (upsert onConflict:token) | `peppercheck_flutter/lib/features/notification/data/notification_repository.dart:30` | notification | `POST /api/v1/notifications/fcm-tokens` |
-| from | `user_fcm_tokens` (delete eq token) | `peppercheck_flutter/lib/features/notification/data/notification_repository.dart:49` | notification | `DELETE /api/v1/notifications/fcm-tokens/{token}` |
-| from | `profiles` (select, eq id, single — `fetchProfile`) | `peppercheck_flutter/lib/features/profile/data/profile_repository.dart:24` | profile | `GET /api/v1/me` (per design doc §"Identity & client boundary") |
-| from | `profiles` (update timezone — `updateTimezone`) | `peppercheck_flutter/lib/features/profile/data/profile_repository.dart:38` | profile | `PATCH /api/v1/me` — TBD (feature phase) whether one combined PATCH or field-specific endpoints |
-| from | `profiles` (update username — `updateUsername`) | `peppercheck_flutter/lib/features/profile/data/profile_repository.dart:50` | profile | `PATCH /api/v1/me` — TBD (feature phase); note current code also has bespoke unique-username (`23505`) error handling to preserve |
-| from | `profiles` (update avatar_url — `updateAvatar`) | `peppercheck_flutter/lib/features/profile/data/profile_repository.dart:102` | profile | `PATCH /api/v1/me` — TBD (feature phase); paired with `generate-upload-url` invoke below |
-| from | `tasks` (select, nested joins — list own tasks) | `peppercheck_flutter/lib/features/task/data/task_repository.dart:87` | task | `GET /api/v1/tasks` |
-| from | `tasks` (select, nested joins — `getTask(id)`) | `peppercheck_flutter/lib/features/task/data/task_repository.dart:204` | task | `GET /api/v1/tasks/{id}` |
-| from | `reports` (insert — `submitReport`) | `peppercheck_flutter/lib/features/report/data/report_repository.dart:25` | report | `POST /api/v1/reports` |
-| from | `reports` (select id, eq reporter_id+task_id, maybeSingle — `hasReported`) | `peppercheck_flutter/lib/features/report/data/report_repository.dart:39` | report | `GET /api/v1/reports/exists?task_id=...` — TBD (feature phase) exact shape |
-| from | `currencies` (select, eq code, single) | `peppercheck_flutter/lib/features/currency/data/currency_repository.dart:29` | currency | `GET /api/v1/currencies/{code}` |
-| from | `user_subscriptions` (select subset, maybeSingle) | `peppercheck_flutter/lib/features/billing/data/billing_repository.dart:24` | billing | `GET /api/v1/billing/subscription` |
-| from | `point_wallets` (select balance, maybeSingle) | `peppercheck_flutter/lib/features/billing/data/billing_repository.dart:45` | billing (point) | `GET /api/v1/points/wallet` |
-| from | `trial_point_wallets` (select balance/locked/is_active, maybeSingle) | `peppercheck_flutter/lib/features/billing/data/billing_repository.dart:63` | billing (point) | `GET /api/v1/points/trial-wallet` |
-| from | `stripe_accounts` (select charges/payouts_enabled+requirements, maybeSingle) | `peppercheck_flutter/lib/features/payout/data/stripe_payout_repository.dart:23` | payout | `GET /api/v1/payout/account` |
-| from | `stripe_accounts` (select pm_brand/last4/exp, single) | `peppercheck_flutter/lib/features/billing/data/stripe_billing_repository.dart:41` | billing | Resolved by §1.1 Finding 3 — this file is confirmed dead code alongside `billing-setup`; not ported |
-
-#### `rpc` (Postgres RPC) — 21 call sites, 21 distinct functions
-
-| kind | symbol/table | file:line | feature | maps to (Go endpoint) |
-|---|---|---|---|---|
-| rpc | `create_referee_available_time_slot` (generic `.rpc<String>(`) | `peppercheck_flutter/lib/features/matching/data/matching_repository.dart:43` | matching | `POST /api/v1/matching/availability` (§2.3 #5, Go) |
-| rpc | `update_referee_available_time_slot` | `peppercheck_flutter/lib/features/matching/data/matching_repository.dart:56` | matching | `PATCH /api/v1/matching/availability/{id}` (§2.3 #2, Go) |
-| rpc | `delete_referee_available_time_slot` | `peppercheck_flutter/lib/features/matching/data/matching_repository.dart:68` | matching | `DELETE /api/v1/matching/availability/{id}` (§2.3 #13, Go) |
-| rpc | `create_referee_blocked_date` (generic `.rpc<String>(`) | `peppercheck_flutter/lib/features/matching/data/matching_repository.dart:90` | matching | `POST /api/v1/matching/blocked-dates` (§2.3 #10, Go) |
-| rpc | `update_referee_blocked_date` | `peppercheck_flutter/lib/features/matching/data/matching_repository.dart:107` | matching | `PATCH /api/v1/matching/blocked-dates/{id}` (§2.3 #16, Go) |
-| rpc | `delete_referee_blocked_date` | `peppercheck_flutter/lib/features/matching/data/matching_repository.dart:119` | matching | `DELETE /api/v1/matching/blocked-dates/{id}` (§2.3 #15, Go) |
-| rpc | `cancel_referee_assignment` | `peppercheck_flutter/lib/features/matching/data/matching_repository.dart:123` | matching | `POST /api/v1/matching/assignments/{id}/cancel` (§2.3 #11, Go) |
-| rpc | `get_payment_summary` | `peppercheck_flutter/lib/features/payment_dashboard/data/payment_summary_repository.dart:18` | payment_dashboard | `GET /api/v1/payments/summary` (§2.3 #14, Go) |
-| rpc | `judge_evidence` | `peppercheck_flutter/lib/features/judgement/data/judgement_repository.dart:20` | judgement | `POST /api/v1/judgements/judge` (§2.3 #31, Go) |
-| rpc | `confirm_judgement_and_rate_referee` | `peppercheck_flutter/lib/features/judgement/data/judgement_repository.dart:40` | judgement | `POST /api/v1/judgements/{id}/confirm` (§2.3 #36, Go; see §3 T7-2) |
-| rpc | `confirm_review_timeout` | `peppercheck_flutter/lib/features/judgement/data/judgement_repository.dart:56` | judgement | `POST /api/v1/judgements/{id}/confirm-review-timeout` (§2.3 #33, Go) |
-| rpc | `submit_evidence` | `peppercheck_flutter/lib/features/evidence/data/evidence_repository.dart:94` | evidence | `POST /api/v1/evidence` (§2.3 #41, Go) |
-| rpc | `update_evidence` | `peppercheck_flutter/lib/features/evidence/data/evidence_repository.dart:128` | evidence | `PATCH /api/v1/evidence/{id}` (§2.3 #40, Go) |
-| rpc | `resubmit_evidence` | `peppercheck_flutter/lib/features/evidence/data/evidence_repository.dart:164` | evidence | `POST /api/v1/evidence/{id}/resubmit` (§2.3 #39, Go) |
-| rpc | `confirm_evidence_timeout` | `peppercheck_flutter/lib/features/evidence/data/evidence_repository.dart:182` | evidence | `POST /api/v1/evidence/confirm-timeout` (§2.3 #32, Go) |
-| rpc | `create_task` | `peppercheck_flutter/lib/features/task/data/task_repository.dart:32` | task | `POST /api/v1/tasks` (§2.3 #58, Go) |
-| rpc | `update_task` | `peppercheck_flutter/lib/features/task/data/task_repository.dart:56` | task | `PATCH /api/v1/tasks/{id}` (§2.3 #59, Go) |
-| rpc | `delete_task` | `peppercheck_flutter/lib/features/task/data/task_repository.dart:65` | task | `DELETE /api/v1/tasks/{id}` (§2.3 #60, Go) |
-| rpc | `get_active_referee_tasks` | `peppercheck_flutter/lib/features/task/data/task_repository.dart:155` | task | `GET /api/v1/tasks/active` (§2.3 #12, Go) |
-| rpc | `check_account_deletable` | `peppercheck_flutter/lib/features/account/data/account_repository.dart:17` | account | `GET /api/v1/account/deletable` (§2.3 #68, Go; also called from the `delete-account` Edge Function per §1.3) |
-| rpc | `get_point_for_matching_strategy` | `peppercheck_flutter/lib/features/billing/data/billing_repository.dart:72` | billing (point) | TBD (feature phase) — §2.3 #9 makes this a **single Go constant** (all callers move to Go under the max-Go refinement; no Postgres copy retained); the value is served by the owning Go endpoint, not a standalone RPC |
-
-#### `invoke` (Edge Function) — 7 call sites, 6 distinct functions
-
-| kind | symbol/table | file:line | feature | maps to (Go endpoint) |
-|---|---|---|---|---|
-| invoke | `generate-upload-url` | `peppercheck_flutter/lib/features/evidence/data/evidence_repository.dart:39` | evidence | `POST /api/v1/uploads/presign` (per §1.3: Go endpoint, R2 presigned upload; shared with profile) |
-| invoke | `generate-upload-url` | `peppercheck_flutter/lib/features/profile/data/profile_repository.dart:72` | profile | same as above — shared Edge Function, one Go endpoint |
-| invoke | `delete-account` | `peppercheck_flutter/lib/features/account/data/account_repository.dart:27` | account | `POST /api/v1/account/delete` (per §1.3: Go endpoint + worker, idempotent saga — also called from webapp; see §3 T7-3) |
-| invoke | `payout-setup` | `peppercheck_flutter/lib/features/payout/data/stripe_payout_repository.dart:57` | payout | `POST /api/v1/payout/setup` (per §1.3: Go endpoint, Stripe Connect onboarding) |
-| invoke | `create-express-dashboard-link` | `peppercheck_flutter/lib/features/payout/data/stripe_payout_repository.dart:72` | payout | `POST /api/v1/payout/dashboard-link` (per §1.3: Go endpoint, Stripe Connect passthrough) |
-| invoke | `payout-request` | `peppercheck_flutter/lib/features/payout/data/stripe_payout_repository.dart:92` | payout | **Dead path — never reachable**: the calling `requestPayout()` has 0 callers and `PayoutAmountDialog` is never mounted. No Go endpoint needed; remove the dead code (§3.1, §7.F). |
-| invoke | `billing-setup` | `peppercheck_flutter/lib/features/billing/data/stripe_billing_repository.dart:22` | billing | Per §1.3: **Drop — currently unused** (dead pre-IAP billing flow); do not port. Its only caller, `stripe_billing_repository.dart`, is dormant legacy code per that doc's disposition. |
-
-#### `auth` (Supabase Auth SDK, non-CRUD) — 5 call sites, 4 files
-
-Not part of the `{from, rpc, invoke}` kinds, but included for completeness
-and because they are exactly the surface the design doc's identity-
-migration phase replaces.
-
-| kind | symbol/table | file:line | feature | maps to (Go endpoint) |
-|---|---|---|---|---|
-| auth | `Supabase.initialize(...)` (client bootstrap) | `peppercheck_flutter/lib/app/app_startup.dart:69` | app (startup) | N/A — replaced by Firebase Auth SDK init + Go API base-URL config (design doc, Phase 2 "Identity & client boundary") |
-| auth | `Supabase.instance.client.auth.onAuthStateChange` | `peppercheck_flutter/lib/features/authentication/data/auth_state_provider.dart:8` | authentication | N/A — replaced by Firebase Auth state stream |
-| auth | `Supabase.instance.client.auth.signInWithIdToken(...)` | `peppercheck_flutter/lib/features/authentication/data/authentication_repository.dart:30` | authentication | N/A — replaced by Firebase Auth sign-in + `GET /api/v1/me` token exchange (design doc login flow) |
-| auth | `Supabase.instance.client.auth.signOut()` | `peppercheck_flutter/lib/features/authentication/data/authentication_repository.dart:44` | authentication | N/A — replaced by Firebase Auth sign-out |
-| auth | `Supabase.instance.client.auth.onAuthStateChange.listen(...)` | `peppercheck_flutter/lib/features/notification/application/fcm_service.dart:55` | notification | N/A — FCM (un)registration should hang off the new Firebase Auth state stream instead |
-
-### 4.3 `presentation/` clean-arch violations
-
-`grep -rln "supabase\|Supabase" peppercheck_flutter/lib/features/*/presentation/`
-returns **7 files** — 2 more than the design doc's already-flagged 5
-(evidence submission, judgement section, task-detail info, report menu
-button, withdraw-matching button). The 2 additional hits are
-`task_detail_screen.dart` (the screen itself, not just its
-`task_detail_info_section.dart` sub-widget) and
-`in_app_purchase_controller.dart`.
-
-Every single hit is the same pattern: `Supabase.instance.client.auth.currentUser?.id`
-— reading the current user's ID directly from the Supabase SDK inside a
-`presentation/` widget/controller instead of getting it from a repository or
-an app-level current-user provider. No `.from(`/`.rpc(`/`.invoke` calls leak
-into `presentation/`; the violation is scoped entirely to auth-state access.
-
-| feature | file:line | call |
-|---|---|---|
-| billing | `peppercheck_flutter/lib/features/billing/presentation/in_app_purchase_controller.dart:61` | `Supabase.instance.client.auth.currentUser?.id` |
-| evidence | `peppercheck_flutter/lib/features/evidence/presentation/widgets/evidence_submission_section.dart:81` | `Supabase.instance.client.auth.currentUser?.id` |
-| judgement | `peppercheck_flutter/lib/features/judgement/presentation/widgets/judgement_section.dart:56` | `Supabase.instance.client.auth.currentUser?.id` |
-| judgement | `peppercheck_flutter/lib/features/judgement/presentation/widgets/judgement_section.dart:65` | `Supabase.instance.client.auth.currentUser?.id` |
-| report | `peppercheck_flutter/lib/features/report/presentation/widgets/report_menu_button.dart:22` | `Supabase.instance.client.auth.currentUser?.id` |
-| task | `peppercheck_flutter/lib/features/task/presentation/task_detail_screen.dart:65` | `Supabase.instance.client.auth.currentUser?.id` (equality check) |
-| task | `peppercheck_flutter/lib/features/task/presentation/task_detail_screen.dart:90` | `Supabase.instance.client.auth.currentUser?.id` |
-| task | `peppercheck_flutter/lib/features/task/presentation/task_detail_screen.dart:110` | `Supabase.instance.client.auth.currentUser?.id` |
-| task | `peppercheck_flutter/lib/features/task/presentation/widgets/task_detail/task_detail_info_section.dart:158` | `Supabase.instance.client.auth.currentUser?.id` |
-| task | `peppercheck_flutter/lib/features/task/presentation/widgets/task_detail/withdraw_matching_button.dart:31` | `Supabase.instance.client.auth.currentUser?.id` |
-
-**10 individual call sites across 7 files.** All fixable the same way: expose
-the current-user ID via the app-level current-user provider the design doc
-already calls for ("other features must not import `firebase_auth` or read
-an SDK singleton" — design doc, identity section), rather than reaching into
-the Supabase (soon Firebase) SDK from `presentation/`.
-
-### 4.4 Verification
-
-```
-$ comm -23 <(sort -u /tmp/pc-sbfiles.txt) <(grep -oE "peppercheck_flutter/lib/[^ :]+\.dart" 04-flutter-api-surface.md | sort -u)
-(empty)
-```
-
-Empty output confirms all 24 Supabase-importing files are represented
-somewhere in the source investigation (19 in the `from`/`rpc`/`invoke`
-tables + `auth` table = 23 distinct data/auth files, plus `presentation/`
-violation files already counted among those 23 where they overlap — every
-file in the Supabase-importing set appears at least once).
-
-### 4.5 Concerns for Phase 0 sign-off
-
-- The `.from(` Go-endpoint mappings above (`/api/v1/...`) are this
-  investigation's coarse proposals, not confirmed design-doc routes — the
-  design doc only fixes `/api/v1/me` explicitly. Treat every route in this
-  section except `/api/v1/me` as a naming suggestion to revisit in the
-  owning feature phase (Phase 3 profile/reports/notifications, Phase 4
-  task/matching/evidence/judgement, Phase 5 billing/points/payout), not a
-  locked contract.
-- `stripe_billing_repository.dart:41` (`.from('stripe_accounts')` reading
-  card-on-file info) — resolved by §1.1 Finding 3: confirmed dead code,
-  deleted alongside `billing-setup`, not ported.
-- `payout-request` (invoke) is a confirmed pre-existing bug — see §3.1;
-  repeated here only because this table would otherwise imply it maps
-  cleanly like its sibling payout calls.
-- The `presentation/` violation count (7 files, 10 call sites) is larger than
-  the 5 files the design doc names. All 10 are the same trivial
-  `currentUser?.id` pattern, so the fix is mechanical and low-risk, but scope
-  the fix-it task to all 7 files, not just the 5 originally flagged.
-
-## 5. Critical Journey & Behavior Catalog
-
-> Source: `docs/superpowers/plans/phase0-parts/05-journey-catalog.md`.
-> Documents the **expected behavior** of five high-risk flows as acceptance
-> specs, grounded in the current Supabase implementation (SQL
-> functions/triggers + Edge Functions + Flutter repositories), so the future
-> Go rewrite can be validated against the same invariants. These are **not
-> executable tests** — they are read-only characterizations of behavior that
-> already exists, plus the pgTAP tests that already assert it. Where the
-> target Go/Firebase design changes behavior (chiefly auth — Apple is
-> net-new), that is called out explicitly as "today" vs. "target." Three
-> edge cases surfaced here are promoted to launch-blocker candidates in §3
-> (T7-1, T7-2, T7-3) — cross-referenced inline below.
+> Source: canonical §5. Documents the **expected behavior** of five
+> high-risk flows as acceptance specs, grounded in the current Supabase
+> implementation (SQL functions/triggers + Edge Functions + Flutter
+> repositories), so the future Go rewrite can be validated against the same
+> invariants. These are **not executable tests** — they are read-only
+> characterizations of behavior that already exists, plus the pgTAP tests
+> that already assert it. Where the target Go/Firebase design changes
+> behavior (chiefly auth — Apple is net-new), that is called out explicitly
+> as "today" vs. "target." Three edge cases surfaced here were promoted to
+> launch-blocker candidates in §5 (T7-1, T7-2, T7-3) — cross-referenced
+> inline below. §6.6 appends the supplement's characterization-asset →
+> migration-gate table.
 
 Flows covered: (a) auth (Google today, Apple net-new), (b) point/trial-point
 ledger, (c) payout (Stripe Connect), (d) judgement state machine, (e) account
 deletion.
 
-### 5(a) Auth — Google (current) + Apple (net-new)
+### 6(a) Auth — Google (current) + Apple (net-new)
 
 #### Code paths
 - Flutter: `peppercheck_flutter/lib/features/authentication/data/authentication_repository.dart`
@@ -1343,7 +1236,7 @@ deletion.
    wallets + notification_settings + user_ratings, config-driven initial
    trial grant) as an explicit onboarding step — this is business logic that
    moves, the `AFTER INSERT ON auth.users` **mechanism** is what disappears
-   (§2.7.4, resolved).
+   (§4.6, resolved).
 4. `GET /api/v1/me` returns the resolved profile.
 
 #### Expected behavior
@@ -1407,12 +1300,13 @@ provisioned rows. **Gap:** no test asserts `profiles`/`notification_settings`/
 `user_ratings`/`point_wallets` are also created, or that a username-collision
 retry succeeds/exhausts correctly.
 
-### 5(b) Point / trial-point ledger
+### 6(b) Point / trial-point ledger
 
 #### Code paths
-- DB access (refined max-Go, §2.3 #17–23, #49–52): the wallet lock/consume/unlock
-  are **Go-tx SQL** issued inside a Go-owned transaction; the `route_*`
-  dispatchers become plain **Go** — none remain stored functions:
+- DB access (refined max-Go, Appendix A #17–23, #49–52): the wallet
+  lock/consume/unlock are Go-issued atomic SQL inside a Go-owned
+  transaction; the `route_*` dispatchers become plain Go — none remain
+  stored functions:
   `supabase/schemas/point/functions/{lock,consume,unlock}_points.sql`,
   `supabase/schemas/trial_point/functions/{lock,consume,unlock}_trial_points.sql`,
   `deactivate_trial_points.sql`, and routing dispatchers
@@ -1491,7 +1385,7 @@ retry succeeds/exhausts correctly.
   `confirm_judgement_and_rate_referee`/`detect_auto_confirms`) are gated by
   the judgement's `status` and `is_confirmed` — see flow (d) for exactly how,
   and for the one identified gap (no explicit row lock on `judgements`
-  outside `detect_auto_confirms`; see §3 T7-2).
+  outside `detect_auto_confirms`; see §5.2 T7-2).
 - All wallet mutations use `SELECT ... FOR UPDATE` on the wallet row itself,
   serializing concurrent lock/consume/unlock calls **for the same user** —
   but this only protects the wallet row; it does not by itself prevent a
@@ -1512,11 +1406,10 @@ retry succeeds/exhausts correctly.
   user) returns silently (`v_is_active IS NULL → RETURN`) — correct no-op,
   but worth an explicit Go-side unit test since it's easy to instead treat
   `NULL` as falsy and skip the early return.
-- `get_point_for_matching_strategy` (category 2, stays in Postgres) is a
-  hardcoded lookup (`'standard' → 1`) shared by retained triggers; per §2.3
-  #9, Go callers get a **duplicated constant** rather than calling through —
-  this is a real drift risk if the lookup table ever grows past the single
-  hardcoded case; flagged, not silently duplicate-and-forget.
+- `get_point_for_matching_strategy` is a hardcoded lookup (`'standard' → 1`)
+  shared by the callers that move to Go (Appendix A #9); under max-Go it
+  becomes a single Go constant with no remaining Postgres copy — see §4.8
+  for why the drift risk this previously flagged is resolved by elimination.
 
 #### pgTAP evidence
 - `supabase/tests/test_reward_system.sql`: Tests 1–5 cover `lock_points`
@@ -1544,20 +1437,22 @@ retry succeeds/exhausts correctly.
   protection, but it is asserted here by code reading, not by a concurrency
   test.
 
-### 5(c) Payout (Stripe Connect)
+### 6(c) Payout (Stripe Connect)
 
 #### Code paths
-- DB access (now **Go-tx SQL**, §2.3 #65–66): `supabase/schemas/reward/functions/grant_reward.sql`,
-  `deduct_reward_for_payout.sql`; (Go worker, category 3):
-  `prepare_monthly_payouts.sql`.
+- DB access (now Go-issued atomic SQL, Appendix A #65–66):
+  `supabase/schemas/reward/functions/grant_reward.sql`,
+  `deduct_reward_for_payout.sql`; (Go worker): `prepare_monthly_payouts.sql`.
 - Edge Functions: `supabase/functions/payout-setup/` (onboarding —
   Stripe Express Connect account get-or-create + `accountLinks`),
   `create-express-dashboard-link/` (Express login link),
   `execute-pending-payouts/` (batch Stripe Transfer execution, cron-driven).
 - **Missing**: `payout-request` — Flutter calls
   `stripe_payout_repository.dart:92` (`_supabase.functions.invoke('payout-request', ...)`)
-  but no `supabase/functions/payout-request/` directory exists; this 404s in
-  production today (confirmed launch-blocker, §3.1).
+  but no `supabase/functions/payout-request/` directory exists; **resolved as
+  dead/unmounted code, not a launch blocker** (§5.1) — the call path is
+  unreachable, so this does not 404 in production against any real user
+  action.
 - Cron: `supabase/schemas/reward/cron/cron_prepare_monthly_payouts.sql`
   (`0 15 28-31 * *`, guarded to actual last day), `cron_execute_pending_payouts.sql`
   (every 30 min, `net.http_post` → `execute-pending-payouts`).
@@ -1624,7 +1519,7 @@ retry succeeds/exhausts correctly.
 - `reward_wallets.user_id` is `ON DELETE CASCADE` to `auth.users(id)` — a
   reward wallet (and any un-paid-out balance it holds) is deleted outright,
   not orphaned or preserved, when the owning account is deleted. This is
-  directly relevant to flow (e)'s `force=true` edge case below, and to §3
+  directly relevant to flow (e)'s `force=true` edge case below, and to §5.2
   T7-3.
 - Stripe transfer id **is not protected by a DB unique constraint**:
   `reward_payouts.stripe_transfer_id` (`supabase/schemas/reward/tables/reward_payouts.sql`)
@@ -1633,7 +1528,7 @@ retry succeeds/exhausts correctly.
   idempotency-key deduplication and (b) the `deduct_reward_for_payout`
   optimistic-concurrency check — not on a DB constraint that would catch,
   e.g., two *different* `reward_payouts` rows accidentally referencing the
-  same real-world transfer. **See §3 T7-1.**
+  same real-world transfer. **See §5.2 T7-1.**
 
 #### Edge cases
 - **`execute-pending-payouts` does not claim rows before working them**: it
@@ -1648,22 +1543,22 @@ retry succeeds/exhausts correctly.
   for the same row concurrently — the atomic `WHERE balance >= amount`
   update means only one succeeds and the other raises, which is logged as
   `CRITICAL: Deduct failed` but does not roll back the already-`success`
-  payout row. **See §3 T7-1** — confirm the Go worker's job-claiming
-  pattern (durable row/`FOR UPDATE SKIP LOCKED` per §12) closes this gap
-  rather than inheriting it.
-- **`payout-request` is a confirmed 404 today** — the referee-initiated
-  "request payout now" action in the Flutter app has no working backend.
-  This is a Phase-0 launch-blocker, see §3.1; the Go implementation needs to
-  decide UX (immediate transfer vs. queue a `pending` row for the next
-  worker run) before porting.
+  payout row. **See §5.2 T7-1** — confirm the Go worker's job-claiming
+  pattern (durable row/`FOR UPDATE SKIP LOCKED`) closes this gap rather than
+  inheriting it.
+- **`payout-request` has no working backend** — the referee-initiated
+  "request payout now" action in the Flutter app was investigated and found
+  unreachable (§5.1): its only caller has zero call sites and its dialog is
+  never mounted. It cannot 404 in practice because a user can never trigger
+  it. No Go implementation decision is needed here beyond confirming removal.
 - **Two independent Stripe-transfer + wallet-deduct code paths**
   (`execute-pending-payouts` and `delete-account`'s inline payout step) —
   both call `deduct_reward_for_payout` after their own `stripe.transfers.create`,
   but are otherwise unrelated implementations. A behavior difference between
   them (e.g., account-deletion payout has no retry/backoff, is inline in an
   HTTP request instead of a worker) is a real product-behavior gap to
-  reconcile, not just a code-duplication cleanup, when porting to Go
-  (§1.3 already flags this for consolidation).
+  reconcile, not just a code-duplication cleanup, when porting to Go (§3.2
+  already flags this for consolidation).
 - Exchange-rate change mid-batch: `rate_per_point` is snapshotted onto each
   `reward_payouts` row at prepare time, so a rate change between prepare and
   execute does not retroactively affect already-prepared amounts — but
@@ -1685,7 +1580,7 @@ Function's Stripe-call-then-deduct sequence (it can't — Stripe calls aren't
 mockable from pgTAP), and no test covers the two-concurrent-workers race
 described above.
 
-### 5(d) Judgement state machine
+### 6(d) Judgement state machine
 
 #### Code paths
 - Table: `supabase/schemas/judgement/tables/judgements.sql` — `status` enum
@@ -1804,7 +1699,7 @@ judgement's `status` or flips `is_confirmed` back to `false`.
   `judgements` row in `confirm_judgement_and_rate_referee` (unlike
   `detect_auto_confirms`, which does lock via `FOR UPDATE OF j SKIP LOCKED`).
   See Edge cases for the resulting race and why it is likely — but not
-  certainly — still safe today. **See §3 T7-2.**
+  certainly — still safe today. **See §5.2 T7-2.**
 - `reopen_count` is monotonic and capped (`< 1` guard means at most one
   resubmission ever, going forward from `0` to `1`).
 
@@ -1831,7 +1726,7 @@ judgement's `status` or flips `is_confirmed` back to `false`.
   constraint placed after the money-moving calls, not by an explicit lock —
   a future code change (e.g., reordering the rating insert earlier, or
   removing it) would silently remove this protection. **Registered as a
-  launch-blocker candidate, §3 T7-2** — recommend the Go port add an
+  launch-blocker candidate, §5.2 T7-2** — recommend the Go port add an
   explicit row lock (or a `WHERE is_confirmed = false` guard on the final
   UPDATE combined with checking `ROW_COUNT`) rather than relying on this
   incidental ordering. Not covered by any existing pgTAP test — the
@@ -1855,7 +1750,7 @@ judgement's `status` or flips `is_confirmed` back to `false`.
   negative rating that `settle_review_timeout()` already inserts — both are
   guarded by `ON CONFLICT (judgement_id, rating_type) DO NOTHING`, so
   today's behavior is correct despite the duplication — **resolved by
-  operator adjudication, §2.7.3** (Go with dedup).
+  operator adjudication, §4.6** (Go with dedup).
 
 #### pgTAP evidence
 - `supabase/tests/test_judge_evidence.sql`: approve/reject happy paths,
@@ -1883,9 +1778,9 @@ judgement's `status` or flips `is_confirmed` back to `false`.
   confirm flow regression-checked (Test 8), referee RLS read access
   preserved after timeout (Test 9).
 - **Gap**: as noted above, no test exercises the concurrent double-confirm
-  race in `confirm_judgement_and_rate_referee` (§3 T7-2).
+  race in `confirm_judgement_and_rate_referee` (§5.2 T7-2).
 
-### 5(e) Account deletion
+### 6(e) Account deletion
 
 #### Code paths
 - DB: `supabase/schemas/account/functions/check_account_deletable.sql`.
@@ -1894,7 +1789,7 @@ judgement's `status` or flips `is_confirmed` back to `false`.
 - Flutter: `peppercheck_flutter/lib/features/account/data/account_repository.dart`
   (`checkDeletable()`, `deleteAccount({force})`).
 - Web: `peppercheck-webapp/src/app/[locale]/account/delete/page.tsx` also
-  calls the same `delete-account` function (per §1.3).
+  calls the same `delete-account` function.
 - Target (design doc §14, §22 Phase 6): idempotent, persisted deletion
   state; each external step independently retryable; covers Firebase user
   deletion/token revocation, RevenueCat customer, Stripe Connect, R2, FCM
@@ -1947,7 +1842,7 @@ judgement's `status` or flips `is_confirmed` back to `false`.
 - `force=true` bypasses the payout-must-succeed gate entirely (skips step 3
   altogether — a user with a positive reward balance who forces deletion
   loses that balance, since nothing pays it out or otherwise preserves it).
-  **See §3 T7-3.**
+  **See §5.2 T7-3.**
 
 #### Invariants
 - **CASCADE deletes**: `profiles`, `point_wallets` (and, by extension,
@@ -1976,7 +1871,7 @@ judgement's `status` or flips `is_confirmed` back to `false`.
   side effect from a deletion attempt that ultimately failed. The design
   doc's target of "idempotent, persisted deletion state" (§14) is meant to
   close exactly this gap by making each external step its own durable,
-  retryable unit rather than an in-line all-in-one HTTP handler. **See §3
+  retryable unit rather than an in-line all-in-one HTTP handler. **See §5.2
   T7-3.**
 - **Each external step is retryable — but only weakly so today**: none of
   Stripe transfer, Stripe subscription cancel, Stripe Connect deauth, or R2
@@ -2003,7 +1898,7 @@ judgement's `status` or flips `is_confirmed` back to `false`.
   outright with the account, not orphaned or preserved for later payout.
   Confirm this is accepted product behavior (user explicitly forcing past a
   payout failure accepts losing the balance), not an accidental fund-loss
-  bug, before porting as-is. **See §3 T7-3.**
+  bug, before porting as-is. **See §5.2 T7-3.**
 - **Retry after a step-7 failure with step-3 already applied**: as described
   in Invariants — the account survives (not deleted) but the user has
   already lost their reward balance to a payout that happened during a
@@ -2022,7 +1917,7 @@ judgement's `status` or flips `is_confirmed` back to `false`.
   after a **direct** `DELETE FROM auth.users` — it does not (and, being
   pgTAP, cannot easily) exercise the Edge Function's Stripe/R2 steps, their
   ordering, or a simulated mid-saga failure and retry. This is the biggest
-  test gap of the five flows in this catalog, and matches §1.3's framing of
+  test gap of the five flows in this catalog, and matches §3.3's framing of
   `delete-account` as "best-effort/non-transactional... exactly the gap §14
   flags for the Go port."
 
@@ -2038,157 +1933,218 @@ on `tasks.tasker_id`, `task_referee_requests.matched_referee_id`,
 coverage of the `delete-account` Edge Function itself (out of reach for
 pgTAP — it's Deno/TypeScript with live Stripe/R2 calls).
 
-### 5.1 Verification
+### 6.5 Verification
 
 All five flows above have at least a `Preconditions`, `Steps`, `Expected
 behavior`, `Invariants`, and `Edge cases` subsection, and each cites the
 pgTAP test file(s) that characterize it today (or explicitly notes the gap
 where no pgTAP test reaches the flow, as with parts of (a) and all of the
 external-side-effect portion of (e)). The three edge cases promoted to
-launch-blocker candidates (§3 T7-1, T7-2, T7-3) are cross-referenced inline
-above at their source location in flows (c), (d), and (e) respectively.
+launch-blocker candidates (§5.2 T7-1, T7-2, T7-3) are cross-referenced
+inline above at their source location in flows (c), (d), and (e)
+respectively.
 
-## 6. Reduced Web Route Table
+### 6.6 Existing characterization assets → migration gates
 
-> Source: `docs/superpowers/plans/phase0-parts/06-web-routes.md`. Source of
-> truth for target disposition: program design doc §9 "Web Frontend (Go +
-> htmx)," cross-referenced with the milestone table in §22 and the
-> testing/risk notes in §24/§27. Enumerates every App Router route file in
-> `peppercheck-webapp` (`page.tsx`, `page.ts`, `route.ts`, excluding
-> `node_modules` and `.next`) as of 2026-07-22, and every file in the webapp
-> that imports the `@supabase` npm packages directly.
+> Source: supplement §12.2.
 
-### 6.1 Route table
-
-| Route (URL pattern) | File | Disposition | Target / redirect-to | Note |
-|---|---|---|---|---|
-| `/`, `/{locale}` | `src/app/[locale]/page.tsx` | **Keep** | — | Marketing homepage. Bare `/` (no locale prefix) 307-redirects to `/{defaultLocale}` (`en`) via the `next-intl` middleware — `routing.ts` does not override `localePrefix`, so it defaults to `'always'`. §9 lists `/` explicitly as kept. No Supabase usage. |
-| `/{locale}/legal/privacy` | `src/app/[locale]/legal/privacy/page.tsx` | **Keep** | — | Static content, server component. §9: legal pages "must be updated to reflect actual providers" (Firebase Auth, RevenueCat, R2, VPS/Postgres operator, Stripe Connect, backup storage) as compliance content, not generated from architecture assumptions. No Supabase usage. |
-| `/{locale}/legal/terms` | `src/app/[locale]/legal/terms/page.tsx` | **Keep** | — | Static content, server component. Same provider-accuracy note as privacy. No Supabase usage. |
-| `/{locale}/legal/refund` | `src/app/[locale]/legal/refund/page.tsx` | **Keep** | — | Static content. Same provider-accuracy note as privacy. No Supabase usage (verified via Step 2 whole-webapp grep; not individually re-read). |
-| `/{locale}/legal/tokushoho` | `src/app/[locale]/legal/tokushoho/page.tsx` | **Keep** | — | Static content (特定商取引法 disclosure). Same provider-accuracy note as privacy. No Supabase usage (verified via Step 2 grep; not individually re-read). |
-| `/{locale}/account/delete` | `src/app/[locale]/account/delete/page.tsx` | **Keep** | — | Provider-neutral account + data deletion request page, per §9 ("any user, Google or Apple, without reinstalling") and §14. **Uses Supabase directly**: `supabase.auth.getUser()`, `supabase.rpc('check_account_deletable')`, `supabase.functions.invoke('delete-account', ...)` via `createClient` from `@/lib/supabase/client`. This dependency is *not* caught by the literal `@supabase` grep in 6.2 (it imports the local wrapper, not the npm package by name), but it is real and must be re-pointed at Firebase Auth + the Go API when this route is ported to Go/htmx. Flagged as a concern below. |
-| `/{locale}/stripe/connect/return` | `src/app/[locale]/stripe/connect/return/page.tsx` | **Keep** | — | Renders `<StaticInfoPage translationNamespace="StripeConnect.return" />`. No Supabase usage. Stripe Connect (Express) onboarding-return landing page; unchanged per §11 ("Money out — payouts → Stripe Connect (Express), unchanged"). |
-| `/{locale}/stripe/connect/refresh` | `src/app/[locale]/stripe/connect/refresh/page.tsx` | **Keep** | — | Renders `<StaticInfoPage translationNamespace="StripeConnect.refresh" />`. No Supabase usage. Same disposition as return page. |
-| `/{locale}/auth/callback` | `src/app/[locale]/auth/callback/route.ts` | **Remove** | *(none — see note)* | Supabase OAuth callback handler: reads `?code=`, calls `supabase.auth.exchangeCodeForSession(code)`, then redirects to `?next=` (default `/dashboard`) or, on error, to `/{locale}/auth/auth-code-error` (that error page does not exist in the current tree — dead link already). Not a page a user bookmarks or links to; it is only ever reached mid-flow from `login/page.tsx`'s `signInWithOAuth`. Once web login is removed, nothing in the app initiates this flow, so §9's "removed Next.js URLs must 301-redirect" arguably doesn't require a replacement target here — but flagged as **needs program confirmation** (see Concerns) rather than asserted. |
-| `/{locale}/login` | `src/app/[locale]/login/page.tsx` | **Redirect** | `/` (homepage) | Web login (Supabase `signInWithOAuth`, Google only). §9 explicit remove target ("web login"). Auth moves entirely in-app (Firebase, §10). §9 does not specify a literal redirect target for this URL; `/` is proposed here per the general "old URLs redirect" policy in §22's milestone table and §27 — **needs program confirmation**. |
-| `/{locale}/dashboard` | `src/app/[locale]/dashboard/page.tsx` | **Redirect** | `/` (homepage) | Subscription dashboard: reads `user_subscriptions` (joined to `subscription_plans`) via the Supabase server client, redirects unauthenticated users to `/login`. §9 explicit remove target ("subscription dashboard"). Subscription state moves to RevenueCat, viewed in-app. Redirect target proposed, not specified in §9 — **needs program confirmation**. |
-| `/{locale}/pricing` | `src/app/[locale]/pricing/page.tsx` | **Redirect** | `/` (homepage) | Web pricing/checkout page: reads current subscription via Supabase server client, renders `<SubscribeButton>`. §9 explicit remove target ("web pricing/checkout"). Purchase moves to the in-app IAP paywall. Redirect target proposed, not specified in §9 — **needs program confirmation**. |
-
-**Totals: 12 route files found → 8 keep / 1 remove / 3 redirect.**
-
-#### Non-route removal target named in §9
-
-`src/components/SubscribeButton.tsx` — client component (`'use client'`),
-rendered only by `pricing/page.tsx`. Uses `createClient` from
-`@/lib/supabase/client` to check `auth.getUser()` before starting checkout.
-§9 names it explicitly as a remove target. It is **not** a route file (no
-`page.tsx`/`route.ts`/`page.ts`), so it does not get a row in the table above
-or count toward the route-file totals — listed here only for completeness
-against §9's remove list.
-
-#### Middleware (not a route file, but load-bearing for the redirect design)
-
-`src/middleware.ts` (site-wide Next.js middleware) wraps two concerns in one
-function: `next-intl`'s `createMiddleware(routing)` (locale detection /
-prefixing) and `updateSession()` from `src/lib/supabase/middleware.ts`
-(Supabase SSR session refresh — §9's explicit "Supabase SSR middleware"
-remove target). When the Supabase half is removed, the locale-routing half
-must be preserved independently (or reimplemented equivalently in Go/htmx)
-for the kept routes to keep working. This file is excluded from the route
-table by pattern (not `page`/`route`), so it has no row above; flagged as a
-concern below since it's directly relevant to §9's scope.
-
-#### Support/contact route
-
-Not present in the current tree as of 2026-07-22 (`find` for `*contact*` /
-`*support*` under `peppercheck-webapp` returned no route files). §9 lists a
-support/contact route as conditional: "a support/contact route if needed."
-Today, contact information lives as an embedded "Contact Us" section (via the
-`ObfuscatedEmail` component) inside `legal/privacy`, `legal/terms`, and
-`legal/tokushoho` — not a standalone route. No table row, since no
-corresponding file was found.
-
-### 6.2 Supabase usage in the webapp
-
-Files matching `grep -rln "@supabase" peppercheck-webapp --include="*.ts" --include="*.tsx"` (excluding `node_modules`, `.next`) — i.e. files that import the `@supabase/*` npm packages directly:
-
-| File | Purpose | Consumers (purpose category) |
+| Journey/invariant | Existing baseline | Migration gate |
 |---|---|---|
-| `peppercheck-webapp/src/lib/supabase/server.ts` | Server-side (SSR) Supabase client factory (`createClient`), used in React Server Components / route handlers. | `dashboard/page.tsx` (dashboard — subscription query, `auth.getUser`), `pricing/page.tsx` (pricing — current-subscription check), `auth/callback/route.ts` (callback — `exchangeCodeForSession`). |
-| `peppercheck-webapp/src/lib/supabase/middleware.ts` | `updateSession()` — refreshes/validates the Supabase auth session cookie on every request. | Invoked from `src/middleware.ts`, the site-wide middleware (see note above); underpins auth gating for login/dashboard/account-deletion. |
-| `peppercheck-webapp/src/lib/supabase/client.ts` | Browser-side Supabase client factory (`createClient`), used in `'use client'` components. | `login/page.tsx` (login — `signInWithOAuth` Google), `components/SubscribeButton.tsx` (subscribe — checkout auth check), `account/delete/page.tsx` (account-deletion — `auth.getUser`, `rpc('check_account_deletable')`, `functions.invoke('delete-account')`). |
+| profile bootstrap/username | `profile_username.test.sql` | Port to identity integration tests with internal UUID. |
+| task deletion/authz | `delete_task.test.sql` | Add create/update and cross-user API cases. |
+| matching/availability/refunds | `test_referee_availability.sql` | Add concurrent claim and worker-retry cases. |
+| active referee ordering | `get_active_referee_tasks.test.sql` | Preserve ordering in API DTO integration test. |
+| evidence update/resubmit | `update_evidence.test.sql`, `resubmit_evidence.test.sql` | Add private-object authorization and finalize/cleanup cases. |
+| judgement and confirmation | `test_judge_evidence.sql`, `test_confirm_judgement.sql` | Port status, authz, idempotency, and close-flow cases. |
+| evidence/review/auto-confirm timeouts | timeout and auto-confirm SQL suites | Port to fake-clock worker + real-Postgres tests. |
+| point/trial settlement | trial/point SQL suites | Retain real-Postgres atomicity and add concurrent mutation tests. |
+| subscription point reset | `reset_subscription_points.test.sql` | Add duplicate RevenueCat event and reconciliation tests. |
+| reward payout | `test_reward_payout.sql`; payout metrics pgTAP | Add duplicate job/Stripe retry and crash-between-transfer-and-ledger cases. |
+| Stripe webhook | small mocked Edge tests | Replace with raw-body signature, duplicate inbox, Connect `account.updated`, and retry tests. |
+| R2 cleanup | helper tests only | Add upload/download ownership tests and staging cleanup rehearsal. |
+| reports | `reports.test.sql` | Add API cross-user/duplicate tests. |
+| account deletion | `account_deletion.test.sql` | Add persisted saga retry for every external step. |
+| reminders | `deadline_reminders.test.sql` | Port deduplication and timezone cases to worker tests. |
+| payment summary | `get_payment_summary.test.sql` | Preserve empty, trial, reward, payout, and date projections. |
 
-**3 files match `@supabase` directly.** All three are thin client-factory
-wrappers under `src/lib/supabase/`; the actual Supabase calls (`.auth.*`,
-`.from(...)`, `.rpc(...)`, `.functions.invoke(...)`) live in the consumer
-pages/components listed in the "Consumers" column, which import these
-wrappers via the `@/lib/supabase/...` path alias — a string that does not
-contain the literal substring `@supabase`, so those consumer files correctly
-do **not** appear in the grep match set even though they are Supabase
-consumers. This is why `account/delete/page.tsx` (a **kept** route) is called
-out separately in 6.1: it depends on Supabase indirectly and needs a
-Firebase Auth + Go API rework despite not showing up in this list.
+Do not expand tests for code already classified **Drop**. Preserve the
+current SQL tests until the equivalent Go/Postgres tests pass, then relocate
+retained pgTAP coverage to `db/tests/`.
 
-### 6.3 Verification
+## 7. Edge Function & Webhook Disposition
 
-- Every route file found (12 files) appears exactly once in the route table
-  above, each with a disposition. Confirmed by construction — table built
-  directly from the enumerated file list.
-- Every `@supabase`-matching file (3 files) appears in the Supabase-usage
-  list above. Confirmed by construction — same set, no additions or
-  omissions.
+> Source: supplement §8, reconciled with canonical §1.3/§3.3 (identical
+> dispositions — the fuller per-function purpose/caller narrative lives in
+> §3.3 above; this section is the concise operational summary).
 
-### 6.4 Concerns / open questions for the program
+| Current function/path | Caller/trigger | Disposition and Go owner |
+|---|---|---|
+| `billing-setup` | Dormant Flutter code | Drop with obsolete Stripe Billing UI. |
+| `create-stripe-checkout` | Web pricing | Drop; subscriptions are store IAP through RevenueCat. |
+| `create-express-dashboard-link` | Flutter | `payout` authenticated endpoint. |
+| `delete-account` | Flutter and web | `account` endpoint + persisted deletion worker. |
+| `execute-pending-payouts` | cron | `payout` worker with Stripe idempotency. |
+| `generate-upload-url` | Evidence and profile | `evidence`/`profile` endpoints backed by shared R2 adapter. |
+| `handle-google-play-rtdn` | Google Pub/Sub | Drop after RevenueCat receives store notifications. |
+| `handle-stripe-webhook` | Stripe | Signed webhook inbox; retain Connect events, remove Checkout subscription logic. |
+| `payout-setup` | Flutter | `payout` Connect-onboarding endpoint. |
+| `recommend-payout-topup` | Operator secret | Go operator endpoint or CLI; keep outside public API. |
+| `send-notification` | `pg_net`/database functions | FCM adapter consumed by notification worker. |
+| `sweep-r2-stale-objects` | cron | R2 cleanup worker. |
+| missing `payout-request` | Dead Flutter method | Drop caller and unmounted dialog; do not port (§5.1). |
 
-1. **Redirect targets for `login`, `dashboard`, `pricing` are proposed, not
-   specified.** §9 only says removed URLs "must 301-redirect"; it does not
-   name a target. All three are proposed here as redirecting to `/`
-   (homepage) as the simplest safe default. Needs explicit program
-   confirmation before implementation, especially if any of these URLs are
-   indexed/linked externally (App Store/Play listing, ads, old emails) and
-   a more specific landing page would serve users better than the bare
-   homepage.
-2. **`auth/callback` disposition (remove, no redirect) is inferred, not
-   stated.** It is technically a "removed" URL, but functionally it is a
-   machine-to-machine OAuth callback with no bookmark/link value once web
-   login is gone. Recommend explicit sign-off that it does not need a 301,
-   given §9's "removed Next.js URLs must 301-redirect" is otherwise
-   unconditional in its wording.
-3. **`account/delete/page.tsx` (kept) has a live Supabase dependency** not
-   visible to a literal `@supabase` grep (see 6.1 and 6.2 above). Any future
-   automated check for "webapp still has Supabase deps" that greps for the
-   npm package name only will miss this; recommend also grepping for
-   `@/lib/supabase` (the local alias) or, better, doing the actual Go/htmx
-   port of this page before relying on grep-based verification that
-   Supabase is fully removed from the webapp.
-4. **`src/middleware.ts` is a load-bearing file not captured by the
-   route-file patterns.** It's the only place `next-intl` locale routing and
-   the Supabase SSR session refresh currently intersect; removing the latter
-   (§9's explicit "Supabase SSR middleware" target) requires preserving or
-   reimplementing the former for every kept route to continue resolving
-   `/{locale}/...` correctly. Worth a line item in whatever plan implements
-   §9, not just a route-by-route port.
-5. **`auth/callback/route.ts` already redirects to a nonexistent page**
-   (`/{locale}/auth/auth-code-error` has no matching file in the current
-   tree) on the Supabase error path. Pre-existing dead link, unrelated to
-   this refactor's scope but noted in case it causes confusion when reading
-   the route's behavior.
+**Reconciliation with §3.3.** This table's 12 rows (plus the separately
+tracked `payout-request` dead path) match §3.3's per-function purpose/caller
+detail row-for-row and disposition-for-disposition — no discrepancy was
+found between the two source documents on Edge Function disposition. §3.3
+is the fuller reference for exact caller file:line evidence; this table is
+the quick-reference summary.
 
-## 7. Unused Code / Schema Drop Candidates (D8)
+### 7.1 Webhook rules
 
-> Source: `docs/superpowers/plans/phase0-parts/07-drop-candidates.md`.
-> Cross-references: program design doc §15 "Opportunistic Refactor Scope
-> (bounded)," §17 "Edge Function → Go Mapping" (`billing-setup` row), §28 "To
-> Confirm During Phase 0" (D8 candidates); §2 (T3 schema dead-code flags);
-> §1.3 (`billing-setup` disposition); §4 (`stripe_billing_repository.dart:41`
-> flag).
+- RevenueCat: authorization header + HMAC over the raw body, durable inbox,
+  duplicate event-ID guard, prompt response, then subscriber reconciliation.
+- Stripe: signature verification over the raw body, durable inbox, unique
+  event ID, prompt response, worker processing.
+- Sandbox and production endpoints/config are separated.
+
+### 7.2 RevenueCat webhook cost (short form)
+
+RevenueCat currently documents webhooks as a Pro integration. The Pro plan
+is free up to USD 2,500 monthly tracked revenue and then charges 1% of
+tracked revenue. That is accepted for the pre-launch scale. Sources:
+[pricing](https://www.revenuecat.com/pricing/) and
+[webhook security/retries](https://www.revenuecat.com/docs/integrations/webhooks).
+
+A deeper, independently-sourced verification of this cost claim (confirming
+both webhooks *and* the REST API used for server-side reconciliation are
+covered by the same free-to-$2,500-MTR plan) is carried in full at §12.2,
+alongside the rest of the D4 (subscription/RevenueCat) decision record.
+
+## 8. Subscription Baseline
+
+> Source: supplement §10, verbatim. **Framing note:** the product IDs,
+> point allocations, and prices below live in the app-store consoles and
+> RevenueCat dashboard, not in the declarative Postgres schema — they are
+> **store-console-authoritative** and must be verified against both
+> consoles (and reconciled with the legal/pricing display) in Phase 5,
+> not assumed frozen by this document.
+
+Inherited identity decision: RevenueCat App User ID is the internal PepperCheck
+UUID, never Firebase UID, email, or an anonymous RevenueCat ID.
+
+| Plan | Store product ID (Apple and Google) | Monthly points |
+|---|---|---:|
+| Light | `light_monthly` | 5 |
+| Standard | `standard_monthly` | 10 |
+| Premium | `premium_monthly` | 20 |
+
+- One entitlement, `peppercheck_subscription`, represents paid access.
+- The default offering exposes three custom packages keyed by plan.
+- A database/config product map resolves platform + product ID to plan and
+  points; webhook code never derives a plan by trimming a string suffix.
+- Initial purchase and every renewal reset available subscription points to
+  the plan allocation, preserve locked points, and expire unused available
+  points.
+- Event/transaction identity deduplicates each reset.
+- First paid activation permanently deactivates remaining trial points.
+  Expiry or cancellation does not reactivate them; outstanding referee
+  obligations survive.
+- The store and RevenueCat dashboards are authoritative for price display.
+  The repository contains a known Premium discrepancy: the current Google
+  seed is JPY 2,580 while the later cross-platform design specifies JPY
+  2,480. **Phase 5 must reconcile both store consoles and the legal display
+  before sandbox tests** (also tracked as a launch-blocker register item,
+  §5.3).
+
+## 9. Web Route Freeze
+
+> Source: supplement §11, reconciled with the canonical baseline's
+> route-by-route audit. Production stays on `peppercheck.dev`; staging stays
+> on `staging.peppercheck.dev`. JSON API routes share the same origins under
+> `/api/v1`, avoiding another public hostname.
+
+| Route | Decision |
+|---|---|
+| `/` and `/{locale}` | Keep marketing home; preserve locale redirect behavior. |
+| `/{locale}/legal/privacy` | Keep and update providers/data handling. |
+| `/{locale}/legal/terms` | Keep. |
+| `/{locale}/legal/refund` | Keep and align with IAP. |
+| `/{locale}/legal/tokushoho` | Keep; render reviewed product/legal data. |
+| `/{locale}/account/delete` | Keep as provider-neutral deletion/support resource. |
+| `/{locale}/stripe/connect/return` | Keep. |
+| `/{locale}/stripe/connect/refresh` | Keep. |
+| support/contact route | Add if the deletion resource cannot reuse an existing contact channel. |
+| `/{locale}/auth/callback` | 301 to localized home. |
+| `/{locale}/login` | 301 to localized home. |
+| `/{locale}/dashboard` | 301 to localized home. |
+| `/{locale}/pricing` | 301 to localized home or an IAP explanation section. |
+
+**Totals:** 8 keep / 1 conditional-add (support/contact) / 4 redirect
+(`auth/callback`, `login`, `dashboard`, `pricing`, all → localized home or an
+IAP explanation section).
+
+### 9.1 Reconciliation with the canonical route audit
+
+The canonical baseline's independent route-by-route audit (12 route files
+enumerated from `peppercheck-webapp`) reaches the **same 8 keep / 4
+redirect** split, with one framing difference the operator resolves here:
+the canonical audit treated `/{locale}/auth/callback` as a plain **Remove**
+(no redirect target), flagging "does this need a 301 at all?" as an open
+question, since it is a machine-to-machine OAuth callback with no
+bookmark/link value once web login is gone. This document adopts the
+supplement's more concrete decision — **redirect `auth/callback` to the
+localized home, uniformly with `login`/`dashboard`/`pricing`** — closing
+that open question with the simpler, uniform rule (every removed
+Supabase-auth/subscription URL 301s to the localized home) rather than
+carving out an exception.
+
+Additional context preserved from the canonical audit, not restated as
+open questions:
+
+- `src/components/SubscribeButton.tsx` is a non-route removal target
+  (client component rendered only by `pricing/page.tsx`); it has no route
+  file of its own and is deleted alongside the `pricing` route.
+- `src/middleware.ts` intersects two concerns: `next-intl` locale routing
+  and the Supabase SSR session-refresh (`updateSession()`). Removing the
+  Supabase half (this refactor's whole point) requires preserving or
+  reimplementing the locale-routing half for every kept route to keep
+  resolving `/{locale}/...` correctly — a line item for whoever implements
+  this section's routes, not just a route-by-route port.
+- `/{locale}/account/delete` (kept) has a **live Supabase dependency** not
+  visible to a literal `@supabase` package-name grep: it imports the local
+  `@/lib/supabase/client` wrapper (`supabase.auth.getUser()`,
+  `supabase.rpc('check_account_deletable')`,
+  `supabase.functions.invoke('delete-account')`). Any future automated
+  check for "webapp still has Supabase deps" must also grep for
+  `@/lib/supabase`, not just the npm package name — or, better, do the
+  actual Go/htmx port of this page before relying on grep-based
+  verification.
+- `auth/callback/route.ts`'s existing Supabase-error path already redirects
+  to a nonexistent page (`/{locale}/auth/auth-code-error` has no matching
+  file in the current tree) — a pre-existing dead link, unrelated to this
+  refactor's scope, noted only to avoid confusion when reading the route's
+  current behavior.
+- Only 3 webapp files match a literal `@supabase` import
+  (`src/lib/supabase/{server,client,middleware}.ts`); all Supabase calls in
+  consumer pages/components go through these thin wrappers via the
+  `@/lib/supabase/...` path alias, which is why `account/delete/page.tsx`
+  doesn't show up in a plain `@supabase` grep despite being a real Supabase
+  consumer (see previous bullet).
+
+## 10. Unused Code / Schema Drop Candidates (D8)
+
+> Source: canonical §7. Cross-references: program design doc §15
+> "Opportunistic Refactor Scope (bounded)," §17 "Edge Function → Go Mapping"
+> (`billing-setup` row), §28 "To Confirm During Phase 0" (D8 candidates); §4
+> (schema dead-code flags); §7 (`billing-setup` disposition); Appendix C
+> (`stripe_billing_repository.dart:41` flag).
 
 This is a **candidate list only** — nothing here has been deleted. Every row
-below carries the grep evidence used to conclude "no caller," and every §2
+below carries the grep evidence used to conclude "no caller," and every
 schema candidate is explicitly marked "verify before drop" per the source
-investigation's own hedge (also now reflected as the operator's resolution
-in §2.7.1 / §2.7.2).
+investigation's own hedge (also reflected as the operator's resolution in
+§4.6).
 
 **Explicit exclusion:** the **trial-point** system (`lock_trial_points`,
 `consume_trial_points`, `route_*`, and the Flutter domain/data/presentation
@@ -2196,11 +2152,11 @@ code that reads `point_wallets`/`trial_point_wallets`/`user_subscriptions`,
 including files that happen to live under the legacy `features/billing/`
 directory name) is **active, production code and stays**. It is a different
 system from the dormant Stripe user-billing set below, despite sharing a
-directory. See MEMORY note "Billing → Point Rename": `features/billing/` is a
-legacy name; trial-point code belongs there for now and is out of scope for
-this drop list.
+directory. See MEMORY note "Billing → Point Rename": `features/billing/` is
+a legacy name; trial-point code belongs there for now and is out of scope
+for this drop list.
 
-### 7.A. Dormant Stripe user-billing set (Flutter) — not mounted, safe-to-drop candidate
+### 10.A. Dormant Stripe user-billing set (Flutter) — not mounted, safe-to-drop candidate
 
 Design doc §17 states `BillingSetupSection` is not mounted on any screen.
 Re-verified independently: the whole call graph (widget → controller →
@@ -2211,7 +2167,7 @@ subgraph with **zero inbound references from anywhere else in the app**.
 |---|---|---|---|
 | `peppercheck_flutter/lib/features/billing/presentation/widgets/billing_setup_section.dart` (`BillingSetupSection` widget) | `grep -rn "BillingSetupSection" peppercheck_flutter/lib/` → only the class declaration itself (line 11). `grep -rn "billing_setup_section" peppercheck_flutter/lib/` (filename/import search) → **zero hits outside the file itself** — no screen imports or mounts it. | Phase 5 (Financial & subscription) — same area as the rest of `features/billing/` | Low. No caller anywhere; deleting cannot break another screen. |
 | `peppercheck_flutter/lib/features/billing/presentation/billing_controller.dart` (+ `.g.dart`) | `grep -rln "billing_controller\.dart'" peppercheck_flutter/lib/` → only imported by `billing_setup_section.dart` (dead per above) and its own generated file. `billingControllerProvider` has no `ref.watch`/`ref.read` call sites outside `billing_setup_section.dart`. | Phase 5 | Low. Sole consumer is already-dead widget. |
-| `peppercheck_flutter/lib/features/billing/data/stripe_billing_repository.dart` (+ `.g.dart`) | `grep -rln "stripe_billing_repository" peppercheck_flutter/lib/` → only `billing_controller.dart` (dead per above) and its own generated file import it. Calls `_supabase.functions.invoke('billing-setup')` (dormant edge fn, see 7.D) and reads `stripe_accounts.{pm_brand,pm_last4,pm_exp_month,pm_exp_year}` (dead columns, see 7.B). | Phase 5 | Low. Transitively dead; confirmed no other repository reads these columns (see 7.B). |
+| `peppercheck_flutter/lib/features/billing/data/stripe_billing_repository.dart` (+ `.g.dart`) | `grep -rln "stripe_billing_repository" peppercheck_flutter/lib/` → only `billing_controller.dart` (dead per above) and its own generated file import it. Calls `_supabase.functions.invoke('billing-setup')` (dormant edge fn, see 10.D) and reads `stripe_accounts.{pm_brand,pm_last4,pm_exp_month,pm_exp_year}` (dead columns, see 10.B). | Phase 5 | Low. Transitively dead; confirmed no other repository reads these columns (see 10.B). |
 | `peppercheck_flutter/lib/features/billing/domain/stripe_billing_setup_session.dart` (+ `.freezed.dart`, `.g.dart`) | Only referenced from `stripe_billing_repository.dart` (dead per above); `grep -rln "StripeBillingSetupSession\|stripeBillingSetupSession"` returns only this domain file's own 3 generated/source files. | Phase 5 | Low. Pure DTO with one dead caller. |
 | `peppercheck_flutter/lib/features/billing/domain/default_billing_method.dart` (+ `.freezed.dart`, `.g.dart`) | `grep -rln "DefaultBillingMethod"` → only `stripe_billing_repository.dart` and `billing_controller.dart` (both dead per above) plus its own generated files. | Phase 5 | Low. Pure DTO with only dead callers. |
 
@@ -2222,15 +2178,15 @@ Go-side work (pure deletion, no replacement needed), the operator may also
 choose to pull it forward into Phase 0/1 as a zero-risk pre-cleanup — flagging
 as an option, not asserting a phase change.
 
-### 7.B. Dormant Stripe user-billing set (schema) — orphaned `stripe_accounts` columns
+### 10.B. Dormant Stripe user-billing set (schema) — orphaned `stripe_accounts` columns
 
 These columns back the same abandoned "off-session card registration" feature
-as 7.A. Verified independently: **never written by any function or Edge
-Function**, and (once 7.A is confirmed) never read either.
+as 10.A. Verified independently: **never written by any function or Edge
+Function**, and (once 10.A is confirmed) never read either.
 
 | artifact | evidence it is unused | drop in phase | risk |
 |---|---|---|---|
-| `stripe_accounts.default_payment_method_id`, `.pm_brand`, `.pm_last4`, `.pm_exp_month`, `.pm_exp_year` (`supabase/schemas/stripe/tables/stripe_accounts.sql:9-13`) | `grep -rn "pm_brand\|pm_last4\|pm_exp_month\|pm_exp_year\|default_payment_method_id" supabase/functions/billing-setup/index.ts supabase/functions/handle-stripe-webhook/index.ts` → no hits in either function (the two Stripe-account-touching Edge Functions never write these fields). Only reader is `stripe_billing_repository.dart:42` (dead, 7.A). `stripe_accounts_policies.sql` has no column-specific policy referencing them. | Phase 5 (same Atlas pass that touches `stripe/` schema for Connect payout work) | Low-medium. Columns are always NULL today (never written) so dropping loses no data; medium only in that this is a physical schema change (needs an Atlas migration) vs. the pure-deletion Flutter rows above. Confirm no out-of-repo tool (admin script, BI query) reads these columns before dropping. |
+| `stripe_accounts.default_payment_method_id`, `.pm_brand`, `.pm_last4`, `.pm_exp_month`, `.pm_exp_year` (`supabase/schemas/stripe/tables/stripe_accounts.sql:9-13`) | `grep -rn "pm_brand\|pm_last4\|pm_exp_month\|pm_exp_year\|default_payment_method_id" supabase/functions/billing-setup/index.ts supabase/functions/handle-stripe-webhook/index.ts` → no hits in either function (the two Stripe-account-touching Edge Functions never write these fields). Only reader is `stripe_billing_repository.dart:42` (dead, 10.A). `stripe_accounts_policies.sql` has no column-specific policy referencing them. | Phase 5 (same Atlas pass that touches `stripe/` schema for Connect payout work) | Low-medium. Columns are always NULL today (never written) so dropping loses no data; medium only in that this is a physical schema change (needs an Atlas migration) vs. the pure-deletion Flutter rows above. Confirm no out-of-repo tool (admin script, BI query) reads these columns before dropping. |
 
 **Not a candidate:** the `stripe_accounts` **table** itself stays — it backs
 the active Stripe Connect payout flow (`stripe_connect_account_id`,
@@ -2240,48 +2196,48 @@ by `prepare_monthly_payouts()`, `stripe_payout_repository.dart`,
 `handle-stripe-webhook`, `delete-account`). Only the 5 card-on-file columns
 above are dead.
 
-### 7.C. §2 schema dead-code candidates — independently re-verified, "verify before drop"
+### 10.C. Schema dead-code candidates — independently re-verified, "verify before drop"
 
 Per the assembly brief, these are **not asserted for removal** — re-running
-the §2 grep independently, scoped to the current `supabase/schemas/`
+the grep independently, scoped to the current `supabase/schemas/`
 (declarative source of truth; `supabase/migrations/` is historical and out
-of scope per §2's own scoping note).
+of scope per that inventory's own scoping note).
 
 | artifact | evidence it is unused | drop in phase | risk |
 |---|---|---|---|
-| `detect_and_handle_referee_timeouts()` (`supabase/schemas/matching/functions/detect_referee_timeouts.sql`) | `grep -rn "detect_and_handle_referee_timeouts" supabase/ peppercheck_flutter/lib/ peppercheck-webapp/src` → only hits are the function's own definition (`matching/functions/detect_referee_timeouts.sql`, `CREATE OR REPLACE FUNCTION` + `COMMENT ON FUNCTION`) and its historical `CREATE OR REPLACE` in two old migration files (`20251005123145_init.sql`, `20260124153250_...sql`) — no call site anywhere, ever, in any migration or schema file. Confirmed separately: `grep -rn "detect_and_handle_referee_timeouts" $(find supabase/schemas -path "*/cron/*" -name "*.sql")` → no hits in any of the 10 cron files (it has no `cron.schedule` entry, unlike its judgement-domain duplicate `detect_and_handle_review_timeouts()`, which is scheduled). | Phase 4 (Core task lifecycle — matching domain) | **Verify before drop** — resolved by operator adjudication, §2.7.1. Zero callers/cron entries confirmed independently. §2's own ambiguous-item #1 flags this could have been *meant* to be wired to a cron schedule that was never added, rather than intentionally dead — confirm intent with the operator before dropping, don't assume it's safe to silently drop the underlying business rule (referee timeout detection) along with the function. |
-| `is_task_tasker(task_uuid, user_uuid)` (`supabase/schemas/profile/functions/auth_helpers.sql:37`) | `grep -rn "is_task_tasker" supabase/schemas/` → only its own definition, `ALTER FUNCTION`, and `COMMENT ON FUNCTION` (3 hits, all in `auth_helpers.sql` itself); **zero calls** from any current RLS policy or function in `supabase/schemas/`. Note: `grep -rn "is_task_tasker" supabase/migrations/` **does** show call sites in 3 historical migrations (`20251005123145_init.sql`, `20260123091601_refactor_judgements_table.sql`, `20260213051955_remove_judgements_view.sql`) — the function *was* called by earlier versions of judgement-related policies/functions that have since been refactored to drop the call. This corroborates rather than contradicts §2: the current schema state (source of truth) has zero callers; the historical trail explains *why* it looks vestigial rather than never-used. | Phase 4 (task/judgement domain — matches the file's historical callers) or Phase 3 if `profile/functions/auth_helpers.sql` as a whole is swept when the `profile` feature migrates; either is defensible, operator's call. | **Verify before drop** — resolved by operator adjudication, §2.7.2. Its two siblings in the same file — `is_task_referee()` and `is_task_referee_candidate()` — are **not** drop candidates: both are actively called once each from `task/policies/tasks_policies.sql` (confirmed by `grep -rn "is_task_referee\b\|is_task_referee_candidate" supabase/schemas/`), and their disposition is tied to the broader "retire all 63 RLS policies to Go authz" plan (§2.6 RLS summary), not to today's dead-code list. Do not conflate the three `auth_helpers.sql` functions. |
+| `detect_and_handle_referee_timeouts()` (`supabase/schemas/matching/functions/detect_referee_timeouts.sql`) | `grep -rn "detect_and_handle_referee_timeouts" supabase/ peppercheck_flutter/lib/ peppercheck-webapp/src` → only hits are the function's own definition (`matching/functions/detect_referee_timeouts.sql`, `CREATE OR REPLACE FUNCTION` + `COMMENT ON FUNCTION`) and its historical `CREATE OR REPLACE` in two old migration files (`20251005123145_init.sql`, `20260124153250_...sql`) — no call site anywhere, ever, in any migration or schema file. Confirmed separately: `grep -rn "detect_and_handle_referee_timeouts" $(find supabase/schemas -path "*/cron/*" -name "*.sql")` → no hits in any of the 10 cron files (it has no `cron.schedule` entry, unlike its judgement-domain duplicate `detect_and_handle_review_timeouts()`, which is scheduled). | Phase 4 (Core task lifecycle — matching domain) | **Verify before drop** — resolved by operator adjudication (§4.6, and reclassified Drop under the merged 5-way tally, §4.2/Appendix A #4). Zero callers/cron entries confirmed independently. This could have been *meant* to be wired to a cron schedule that was never added, rather than intentionally dead — confirm intent with the operator before dropping, don't assume it's safe to silently drop the underlying business rule (referee timeout detection) along with the function. |
+| `is_task_tasker(task_uuid, user_uuid)` (`supabase/schemas/profile/functions/auth_helpers.sql:37`) | `grep -rn "is_task_tasker" supabase/schemas/` → only its own definition, `ALTER FUNCTION`, and `COMMENT ON FUNCTION` (3 hits, all in `auth_helpers.sql` itself); **zero calls** from any current RLS policy or function in `supabase/schemas/`. Note: `grep -rn "is_task_tasker" supabase/migrations/` **does** show call sites in 3 historical migrations (`20251005123145_init.sql`, `20260123091601_refactor_judgements_table.sql`, `20260213051955_remove_judgements_view.sql`) — the function *was* called by earlier versions of judgement-related policies/functions that have since been refactored to drop the call. This corroborates rather than contradicts the current state: the current schema state (source of truth) has zero callers; the historical trail explains *why* it looks vestigial rather than never-used. | Phase 4 (task/judgement domain — matches the file's historical callers) or Phase 3 if `profile/functions/auth_helpers.sql` as a whole is swept when the `profile` feature migrates; either is defensible, operator's call. | **Verify before drop** — resolved by operator adjudication (§4.6). Its two siblings in the same file — `is_task_referee()` and `is_task_referee_candidate()` — are **not** drop candidates: both are actively called once each from `task/policies/tasks_policies.sql` (confirmed by `grep -rn "is_task_referee\b\|is_task_referee_candidate" supabase/schemas/`), and their disposition is tied to the broader "retire all 63 RLS policies to Go authz" plan (§4.9), not to today's dead-code list. Do not conflate the three `auth_helpers.sql` functions. |
 
-### 7.D. Cross-reference: `billing-setup` Edge Function (already flagged in §1.3)
+### 10.D. Cross-reference: `billing-setup` Edge Function (already flagged in §3.3/§7)
 
-Not re-tabulated in full here — §1.3 already classifies `billing-setup` as
-**"Drop — currently unused"** and this section's 7.A independently confirms
+Not re-tabulated in full here — §3.3/§7 already classify `billing-setup` as
+**"Drop — currently unused"** and this section's 10.A independently confirms
 its only caller (`stripe_billing_repository.dart`) is itself dead code with
 zero upstream callers. Both findings agree: drop the `billing-setup` Edge
-Function together with the Flutter subgraph in 7.A, in the same PR, so the
+Function together with the Flutter subgraph in 10.A, in the same PR, so the
 client and server sides of the dead feature are removed atomically.
 
-### 7.E. Summary
+### 10.E. Summary
 
 | Group | Count | Disposition |
 |---|---|---|
 | A — Flutter dormant Stripe billing set | 5 files (+ 5 generated siblings) | Drop candidate, Phase 5 (or earlier as zero-risk pre-cleanup) |
 | B — `stripe_accounts` orphaned columns | 5 columns on 1 table | Drop candidate, Phase 5 |
-| C — §2 schema dead functions | 2 functions | Verify before drop (resolved, §2.7.1/2.7.2), Phase 3/4 |
-| D — `billing-setup` Edge Function | 1 function | Already flagged in §1.3; drop together with A |
-| F — dead manual-payout path | `payout_amount_dialog.dart` + `requestPayout()` + DTO + i18n keys | Found 2026-07-23 (§3.1, §7.F); remove in the payout migration (Phase 5) |
+| C — schema dead functions | 2 functions | Verify before drop (resolved, §4.6), Phase 3/4 |
+| D — `billing-setup` Edge Function | 1 function | Already flagged in §3.3/§7; drop together with A |
+| F — dead manual-payout path | `payout_amount_dialog.dart` + `requestPayout()` + DTO + i18n keys | Resolved (§5.1, §10.F); remove in the payout migration (Phase 5) |
 | Excluded | trial-point + subscription/point/IAP code in `features/billing/` | **Stays** — active production code, not evaluated for removal |
 
 No other unused-code candidates were found within this task's grep scope
-(Flutter dormant-billing verification + §2 schema corroboration). A broader
+(Flutter dormant-billing verification + schema corroboration). A broader
 open-ended dead-code sweep of the rest of the codebase was not performed —
 out of scope per §15's "bounded" cleanup rule (opportunistic cleanup only in
 areas already being migrated, not a general audit).
 
-### 7.F. Dead manual-payout path (`payout-request`) — added 2026-07-23
+### 10.F. Dead manual-payout path (`payout-request`)
 
-Found while re-verifying §3.1 (outside the original T6 grep scope). The referee
-"request payout now" feature is fully dead/unmounted code:
+The referee "request payout now" feature is fully dead/unmounted code (full
+investigation and evidence at §5.1):
 
 | artifact | evidence it is unused | drop in phase | risk |
 |---|---|---|---|
@@ -2290,31 +2246,189 @@ Found while re-verifying §3.1 (outside the original T6 grep scope). The referee
 | unused i18n keys `dashboard.requestPayout` / `dashboard.payoutRequested` | Only referenced by the dead dialog. | Phase 5 | Low. Localization-only. |
 
 Remnant of the removed `payout_jobs`-era manual-payout architecture; the
-approved flow is the monthly `reward_payouts` batch. Remove rather than port —
-see §3.1.
+approved flow is the monthly `reward_payouts` batch. Remove rather than
+port — see §5.1.
 
-## 8. Decisions Ledger
+## 11. Data Seed & Tester-Data Policy
 
-> Source: `docs/superpowers/plans/phase0-parts/08a-decisions-ledger.md`
-> (ledger) and `docs/superpowers/plans/phase0-parts/08b-revenuecat-cost.md`
-> (D4 cost verification detail). **D2 and D4 are accepted by the operator as
-> of 2026-07-22** — the source part file's "Proposed — awaiting operator
-> acceptance" status is superseded below.
+> Source: canonical §9, enriched with the supplement's §12.1 itemized
+> reference/config seed list.
 
-### 8.1 Accepted
+### 11.1 Go-live data strategy (program D9)
+
+The Go-live DB is built **fresh** from Atlas migrations + reference seed
+data. **No historical migration, no dual-write.** Testers re-create their
+account via normal Firebase login (a new internal `users.id` UUID); old
+profile rows are not imported (identity mismatch under §8 — a few testers
+re-enter their profile).
+
+- No tester profile, auth identity, task, evidence, judgement, wallet,
+  ledger, subscription, payout, report, notification, or R2 object is
+  migrated.
+- Testers sign in through Firebase and receive a new internal UUID and
+  generated username, then re-enter optional profile data.
+- Never copy profile rows from Supabase because their IDs are Supabase Auth
+  IDs.
+
+### 11.2 Current seed state (measured)
+
+- `supabase/config.toml` `[db.seed]` references `sql_paths = ["./seed.sql"]`,
+  but **no `supabase/seed.sql` exists** — there is no persistent row-seed
+  today.
+- Reference data is expressed as schema DDL: enum types
+  (`matching`, `trial_point`, `subscription`, `point`, … `tables/enums.sql`)
+  and any singleton config tables (`BOOLEAN PK DEFAULT true` pattern).
+
+### 11.3 Seed subset for the fresh DB (to build during the Atlas baseline, Phase 1)
+
+Reference/config seed set for the new database (itemized, supplement §12.1):
+
+- currencies;
+- matching strategy cost/config and matching-time config;
+- Light/Standard/Premium plans and platform product mapping (see §8 for the
+  store-console-authoritative caveat);
+- trial-point initial grant config;
+- reward exchange rate;
+- payout top-up config;
+- notification-setting defaults and any stable template keys.
+
+| Data | Kept? | Note |
+|------|-------|------|
+| Enum types | Yes (DDL) | Part of the schema; recreated by migrations. |
+| Singleton config rows (matching config, trial-point grant config, reward exchange rate, payout top-up config, notification defaults) | Yes | Enumerate during Atlas baseline; seed as reference rows. |
+| Currencies | Yes | Reference data. |
+| Product-to-plan / entitlement mapping | Yes (Phase 5) | Config/DB data for RevenueCat; not needed until Phase 5. |
+| Tester accounts / profiles | **No** | Recreate via login (D9). |
+| Historical tasks / ledgers / payouts | **No** | Disposable internal-test data (D9). |
+
+**Tester data worth keeping: none** (default per D9). The old Supabase env
+may stay read-only briefly for **comparison only** — never rollback, never
+in the runtime path.
+
+No real user identifier or provider credential belongs in seed data.
+
+## 12. Accepted Operational Decisions
+
+> Source: supplement §13, verbatim, plus the canonical baseline's accepted
+> D2 (identity) and D4 (subscription/RevenueCat) decisions and the full D4
+> cost-verification investigation (§12.2). **These decisions replace any
+> earlier "open decision / decide-by Phase 7" framing** for RPO/RTO, VPS
+> provider/region/size, monitoring/alerting, domains, or release dates — an
+> earlier draft of the canonical baseline recorded these as open
+> (decide-by-Phase-7) items; that framing is superseded by the accepted
+> decisions below and is not carried forward.
+
+**Accepted 2026-07-23.** These choices define implementation defaults but do
+not by themselves purchase or change external services.
+
+### 12.1 Recovery
+
+- **RPO: 15 minutes. RTO: 4 hours.** A 24-hour loss window is unacceptable
+  once point/reward/payout state exists.
+- Start with the 15-minute RPO. Reassess a 5-minute target and then a
+  1-minute target after measuring WAL archive lag, archive volume/cost, and
+  restore reliability. Do not claim the shorter target until restore drills
+  demonstrate it consistently.
+- Recurring encrypted physical base backups plus continuous WAL archiving to
+  B2 provide point-in-time recovery. A custom-format `pg_dump` is retained
+  as an independent daily logical fallback; it is not part of WAL replay.
+- Keep recoverable physical backup sets and all dependent WAL needed for
+  30-day point-in-time recovery, plus 30 daily logical dumps.
+- Encrypt client-side with an `age` recipient; the backup container only has
+  the public recipient. Also enable B2 SSE-B2.
+- Use a private B2 bucket with 30-day governance Object Lock and a
+  lifecycle policy after the lock expires. B2 documents both
+  [Object Lock](https://www.backblaze.com/docs/cloud-storage-object-lock) and
+  [server-side encryption](https://www.backblaze.com/docs/cloud-storage-server-side-encryption).
+- Restore monthly into a separate database and run authenticated API smoke
+  tests.
+
+R2 objects use unique, non-overwritten keys. R2 does not provide S3 bucket
+versioning, although it has retention bucket locks. Because account
+deletion must eventually purge user data, copy referenced objects daily to a
+separate B2 backup prefix with the same 30-day disclosed retention instead
+of indefinitely locking the delivery bucket. Cloudflare documents
+[bucket locks](https://developers.cloudflare.com/r2/buckets/bucket-locks/) and
+the unsupported S3 `PutBucketVersioning` operation in its
+[compatibility matrix](https://developers.cloudflare.com/r2/api/s3/api/).
+
+This directly gates the launch-blocker register's "no rehearsed off-VPS
+restore/PITR path" item (§5.3): the accepted decisions above define what the
+Phase 1 skeleton must implement and what the Phase 7 rehearsal must
+exercise.
+
+### 12.2 VPS and environments
+
+**Accepted 2026-07-23.**
+
+- Provider/region: DigitalOcean Basic Droplets in Singapore (`sgp1`). The
+  operator's existing familiarity reduces operational risk, and the stack
+  stays portable with no DigitalOcean-specific API in application packages.
+- Production starts on a dedicated 1 GiB RAM / 1 vCPU / 25 GiB SSD Droplet.
+  It runs only Caddy, the Go API, worker, PostgreSQL, and backup
+  components. Images are built in CI rather than on the VPS, and logs are
+  size-limited.
+- Staging runs on a separate Droplet and starts at 1 GiB unless measured
+  integration workloads require more. It has independent Compose state,
+  PostgreSQL data, credentials, and external-provider configuration.
+- Only Caddy exposes ports 80/443 on either host. Production uses
+  `peppercheck.dev`; staging uses `staging.peppercheck.dev`.
+- Re-measure memory, disk, latency, and restore time before enabling
+  production. Resize production to 2 GiB after any OOM, recurring swap use,
+  sustained memory pressure, or failure to meet the four-hour restore
+  target. DigitalOcean documents current
+  [Basic Droplet pricing](https://www.digitalocean.com/pricing/droplets),
+  [regional availability](https://docs.digitalocean.com/platform/regional-availability/),
+  and [vertical resizing](https://docs.digitalocean.com/products/droplets/how-to/resize/).
+
+### 12.3 Monitoring
+
+- Better Stack is the default provider-neutral external monitoring service
+  for PepperCheck and future services: public liveness/readiness, TLS,
+  response time, and critical worker/backup heartbeats. Paid use is
+  acceptable when shared visibility and alerting exceed the free
+  allowance: [pricing](https://betterstack.com/pricing).
+- DigitalOcean Monitoring remains the default host-level source for Droplet
+  CPU, load, memory, disk usage/I/O, and bandwidth alerts. Do not duplicate
+  these metrics in Better Stack without an application-level use case.
+- Better Stack telemetry is opt-in per service, not an automatic full-volume
+  export. Start with short retention, warning/error logs, low-cardinality
+  application metrics, and sampled traces. Configure usage/spend alerts
+  before increasing volume or retention.
+- Alert by email first; add paid phone/SMS escalation after real on-call
+  demand.
+- The application remains vendor-neutral: structured stdout logs and
+  Prometheus-compatible/OpenTelemetry telemetry, with no Better Stack types
+  in feature packages.
+
+### 12.4 Milestone-based release timing
+
+No release or code-freeze date is fixed during Phase 0. This is a
+solo-operated business without an external calendar commitment, so quality
+and recovery gates take precedence over an aspirational date.
+
+Review effort after Phases 1, 2, and 4 without turning those reviews into
+release commitments. After Phase 6 and the Phase 7 staging, restore, and
+release-journey gates pass, select the store-submission date and begin an
+approximately one-week blocker-only freeze. Never shorten the plan by
+dropping the non-deferrable controls listed in the parent strategy.
+
+### 12.5 Identity (D2) and Subscription (D4) — accepted
+
+> Source: canonical §8.1.
 
 | # | Decision | Basis | Status |
 |---|----------|-------|--------|
 | D2 | Firebase Auth for authentication; PepperCheck owns an internal `users.id` UUID as the FK anchor + RevenueCat App User ID; `user_identities(issuer, subject)` maps Firebase → internal; provider unification via Firebase account linking; never use Firebase UID as a domain PK. | Program design §10, D2. | **Accepted** (operator sign-off 2026-07-22) |
-| D4 | RevenueCat for subscription entitlement (durable deduplicated reconciled webhook); Stripe Connect retained for payouts; web Stripe Checkout + `billing-setup` dropped. | Program design §11, D4. RevenueCat cost verified (8.2 below): webhooks **and** REST API are included in the RevenueCat Pro plan, **free up to $2,500 MTR** (1% of tracked revenue thereafter). **D4 stands as-is; no cost note needed.** | **Accepted** (operator sign-off 2026-07-22) |
+| D4 | RevenueCat for subscription entitlement (durable deduplicated reconciled webhook); Stripe Connect retained for payouts; web Stripe Checkout + `billing-setup` dropped. | Program design §11, D4. RevenueCat cost verified (§12.6 below): webhooks **and** REST API are included in the RevenueCat Pro plan, **free up to $2,500 MTR** (1% of tracked revenue thereafter). **D4 stands as-is; no cost note needed.** | **Accepted** (operator sign-off 2026-07-22) |
 
-### 8.2 D4 cost verification detail (RevenueCat webhook/REST API cost)
+### 12.6 D4 cost verification detail (RevenueCat webhook/REST API cost)
 
-> Source: `08b-revenuecat-cost.md`. Verifies, from official
-> `revenuecat.com` sources only, whether a durable webhook and the REST API
-> used for server-side reconciliation require a paid RevenueCat tier, and
-> the monthly tracked revenue (MTR) threshold at which RevenueCat billing
-> begins. Research only — no pricing asserted from memory.
+> Source: canonical §8.2. Verifies, from official `revenuecat.com` sources
+> only, whether a durable webhook and the REST API used for server-side
+> reconciliation require a paid RevenueCat tier, and the monthly tracked
+> revenue (MTR) threshold at which RevenueCat billing begins. Research
+> only — no pricing asserted from memory.
 
 #### Finding
 
@@ -2343,17 +2457,17 @@ plan:
 Read together: RevenueCat consolidated its old Free/Starter/Pro tier split
 into one plan, called "Pro," that is free up to the MTR threshold. The
 "legacy plans without access to webhooks" language refers to old,
-pre-consolidation plans that some existing customers may still be grandfathered
-into — it is not a currently-purchasable tier. For a new integration (this
-project's case), the only plan available is Pro, and it includes webhooks
-from the start, at $0, below the MTR threshold.
+pre-consolidation plans that some existing customers may still be
+grandfathered into — it is not a currently-purchasable tier. For a new
+integration (this project's case), the only plan available is Pro, and it
+includes webhooks from the start, at $0, below the MTR threshold.
 
 Webhook delivery/durability characteristics also confirmed on the same page
 (relevant to D4's "durable, deduplicated" webhook design, not a pricing
 point): at-least-once delivery, retries up to 5 times over 5/10/20/40/80
 minutes, 60-second response timeout, and an explicit note that duplicate
-delivery can happen — "recommending idempotent processing using event IDs to
-prevent duplicate handling."
+delivery can happen — "recommending idempotent processing using event IDs
+to prevent duplicate handling."
 
 ##### REST API
 
@@ -2425,107 +2539,412 @@ scope for this webhook-specific check).
   cannot itself observe (irrelevant to the webhook/API cost question, noted
   only for completeness).
 - Enterprise-tier terms (volume discounts, custom SLAs) are explicitly
-  "custom pricing" per the official pricing page — no numbers are published,
-  so nothing further can be confirmed there. Not relevant to D4 at this
-  project's scale.
+  "custom pricing" per the official pricing page — no numbers are
+  published, so nothing further can be confirmed there. Not relevant to D4
+  at this project's scale.
 
-### 8.3 Open decisions (decide-by phase)
+### 12.7 Deferred, not open
 
-| Decision | Options / notes | Decide-by phase |
-|----------|-----------------|-----------------|
-| RPO/RTO target | Daily dump ⇒ up to 24 h data loss. If unacceptable, add WAL/PITR or use managed Postgres (program §20). | Phase 7 (Staging/release) |
-| VPS provider / region / size | Initial ~2 GB RAM working hypothesis; re-estimate if staging+production share one VPS (§18). | Phase 7 |
-| staging + production co-location | Same VPS (separate Compose project/network/volume/secrets) vs separate hosts. | Phase 7 |
-| Monitoring / alert provider | Managed uptime/log alerting acceptable; custom platform out of scope (§21). | Phase 7 |
-| B2 retention count + encryption | 7–30 generations; encrypt (pg_dump is not encrypted) (§20). | Phase 7 |
-| Domains / DNS | Per-environment domains (§18). | Phase 7 |
-| Concrete dates + code freeze | Set after the Phase 0 velocity check (§23), not now. | End of Phase 0 |
+- **RevenueCat product/entitlement mapping** → Phase 5 implementation
+  detail (config/DB data, program §11), not a Phase 0 blocker.
+- **Point / trial-point reset behavior** → **already decided**: points
+  reset on renewal, not accumulate (PR #339). Cite, do not re-litigate.
 
-### 8.4 Deferred, not open (recorded to close program §28)
+## 13. Phase 1 Handoff
 
-- **RevenueCat product/entitlement mapping** → Phase 5 implementation detail (config/DB data, program §11), not a Phase 0 blocker.
-- **Point / trial-point reset behavior** → **already decided**: points reset on renewal, not accumulate (PR #339). Cite, do not re-litigate.
+> Source: supplement §14.
 
-## 9. Seed / Tester-Data Policy
+Phase 0 is complete. The Phase 1 implementation plan must use this baseline
+to create:
 
-> Source: `docs/superpowers/plans/phase0-parts/09-seed-policy.md`.
+1. the Go module and API/worker lifecycle;
+2. provider-independent Atlas schema with internal user IDs;
+3. local Compose/Caddy/Postgres skeleton;
+4. migration/runtime DB role separation;
+5. durable job and webhook inbox primitives;
+6. backup/WAL skeleton matching the accepted RPO/RTO (§12.1);
+7. CI gates for Go, Atlas, Postgres, and image builds.
 
-### 9.1 Go-live data strategy (program D9)
-
-The Go-live DB is built **fresh** from Atlas migrations + reference seed data. **No
-historical migration, no dual-write.** Testers re-create their account via normal
-Firebase login (a new internal `users.id` UUID); old profile rows are not imported
-(identity mismatch under §10 — a few testers re-enter their profile).
-
-### 9.2 Current seed state (measured)
-
-- `supabase/config.toml` `[db.seed]` references `sql_paths = ["./seed.sql"]`, but
-  **no `supabase/seed.sql` exists** — there is no persistent row-seed today.
-- Reference data is expressed as schema DDL: enum types
-  (`matching`, `trial_point`, `subscription`, `point`, … `tables/enums.sql`) and
-  any singleton config tables (`BOOLEAN PK DEFAULT true` pattern).
-
-### 9.3 Seed subset for the fresh DB (to build during the Atlas baseline, Phase 1)
-
-| Data | Kept? | Note |
-|------|-------|------|
-| Enum types | Yes (DDL) | Part of the schema; recreated by migrations. |
-| Singleton config rows (e.g. deadline/point config) | Yes | Enumerate during Atlas baseline; seed as reference rows. |
-| Product-to-plan / entitlement mapping | Yes (Phase 5) | Config/DB data for RevenueCat; not needed until Phase 5. |
-| Tester accounts / profiles | **No** | Recreate via login (D9). |
-| Historical tasks / ledgers / payouts | **No** | Disposable internal-test data (D9). |
-
-**Tester data worth keeping: none** (default per D9). The old Supabase env may stay
-read-only briefly for **comparison only** — never rollback, never in the runtime path.
+**No Phase 1 code should port a feature RPC, Edge Function, or web route
+yet.**
 
 ---
 
 ## Done Checklist
 
-> Per Phase 0 spec §7. Each item ticked with the section of this baseline
-> that satisfies it.
+> Each item ticked with the section of this merged baseline that satisfies
+> it.
 
-- [x] Every external integration has an owner/disposition (§16 table
-      complete). → **§1** (21-row master dependency inventory, §1.2,
-      completeness-verified in §1.4; plus the 12-row edge function detail in
-      §1.3).
-- [x] 68 functions / 15 business triggers / 10 cron classified. → **§2**
-      (refined max-Go, §2.1a: §2.3 Functions table, 68 rows, tally Go 48 /
-      Go-tx SQL 15 / DB trigger 1 / delete 4; §2.4 Business triggers, 15 rows,
-      all → Go 12 + Go-tx SQL 3, plus 21 housekeeping DB triggers; §2.5 Cron,
-      10 rows, all → Go worker). Ambiguities resolved in §2.7; new items in §2.10.
-- [x] All launch-blockers identified, each assigned an owning phase. → **§3**
-      (§3.1 `payout-request` — investigated and **resolved as dead/unmounted
-      code, not a blocker**; removal tracked in §7.F. §3.2 T7-1/T7-2/T7-3
-      financial-integrity candidates, owning phases Phase 5, Phase 5, Phase 6,
-      each with evidence + proposed fix).
-- [x] High-risk journey behavior catalog complete. → **§5** (5 flows —
-      auth, point/trial-point ledger, payout, judgement state machine,
-      account deletion — each with preconditions, steps, expected behavior,
-      invariants, edge cases, and pgTAP evidence or an explicit test gap;
-      verified complete in §5.1).
-- [x] Web routes finalized as keep / remove / redirect. → **§6** (§6.1,
-      12 routes: 8 keep / 1 remove / 3 redirect, verified in §6.3).
-- [x] Unused-code drop candidates concretely listed. → **§7** (§7.A–7.D:
+- [x] Flutter and web Supabase calls measured and assigned to target
+      features. → **§2** (reproducible measurements) + **§3** (dependency
+      inventory, §3.2 master table + §3.6 per-feature view) + **Appendix C**
+      (full Flutter API-surface map).
+- [x] All 68 schema functions classified. → **§4** (5-way taxonomy, tally
+      DB invariant/helper 1 / Store query 4 / Go transaction 38 / Go
+      service/worker 21 / Drop 4 = 68, with the 3 operator resolutions
+      applied) + **Appendix A** (full per-function table with evidence).
+- [x] All 36 schema triggers classified. → **§4.4** (21 housekeeping stay /
+      15 business → Go) + **Appendix B** (full per-trigger table).
+- [x] All 10 cron schedules classified. → **§4.3** (all 10 → Go worker,
+      issuing state directly, not via RPC).
+- [x] All 12 Edge Functions and the orphaned `payout-request` call
+      classified. → **§3.3** (12-row detail table) + **§7** (concise
+      disposition table) + **§5.1** (`payout-request` investigation and
+      resolution).
+- [x] Firebase, Stripe, R2, IAP, webhook, web-hosting, backup, and
+      monitoring integrations have a target owner or an explicit removal
+      decision. → **§3.2** (master table, all 21 rows) + **§7** (webhook
+      rules) + **§12** (accepted recovery/VPS/monitoring decisions).
+- [x] Reduced web routes and redirects fixed. → **§9** (8 keep / 1
+      conditional-add / 4 redirect, reconciled with the canonical audit).
+- [x] Tester-profile migration decision and reference-data seed set fixed.
+      → **§11** (fresh-DB strategy + itemized seed set).
+- [x] Identity and subscription model inherited from the parent strategy.
+      → **§12.5** (D2 identity, D4 subscription, both accepted) + **§8**
+      (subscription baseline detail).
+- [x] Existing high-risk characterization coverage recorded with migration
+      gates. → **§6** (five journey flows with pgTAP evidence) + **§6.6**
+      (characterization-asset → migration-gate table).
+- [x] Owner accepts the recovery, VPS/environment, and monitoring
+      decisions. → **§12.1–§12.4** (all accepted 2026-07-23).
+- [x] Release timing is intentionally milestone-based; no calendar date is
+      required to exit Phase 0. → **§12.4**.
+- [x] All launch-blockers identified, each assigned an owning phase. →
+      **§5** (10-item union register: `payout-request` resolved as dead
+      code, not a blocker; T7-1/T7-2/T7-3 financial-integrity candidates
+      with deep evidence; 6 additional supplement-sourced items).
+- [x] Unused-code drop candidates concretely listed. → **§10** (10.A–10.F:
       5 Flutter files + generated siblings, 5 orphaned schema columns, 2
-      schema dead functions marked verify-before-drop, 1 Edge Function;
-      summarized in §7.E).
-- [x] Identity (D2) and subscription (D4) decisions accepted; RevenueCat
-      cost verified. → **§8** (§8.1: D2 and D4 both **Accepted**,
-      operator sign-off 2026-07-22; §8.2: RevenueCat webhook + REST API
-      cost verified from official sources — $0 below $2,500 MTR, 1%
-      thereafter, no separate paid gate).
-- [x] Open decisions recorded with a decide-by phase. → **§8.3** (RPO/RTO,
-      VPS provider/region/size, staging+production co-location,
-      monitoring/alert provider, B2 retention+encryption, domains/DNS,
-      concrete dates+code freeze — all recorded with a decide-by phase,
-      mostly Phase 7).
+      schema dead functions marked verify-before-drop, 1 Edge Function, 1
+      dead manual-payout path).
 
-**No gaps.** All eight Done-checklist items are satisfied by this baseline.
-The deliverable definition in Phase 0 spec §3 also calls for a Flutter
-API-surface map (§4 here) and a seed/tester-data policy (§9 here); both are
-included even though the Done checklist doesn't name them as separate line
-items — they are covered implicitly by "every external integration has an
-owner/disposition" (§4 is the Flutter-side view of the same inventory) and
-are not themselves gating criteria per §7 of the Phase 0 spec.
+**No gaps.** Every Done-checklist item carried by either source document is
+satisfied by this merged baseline.
 
+---
+
+## Appendix A — Full SQL function classification (68)
+
+> Per-function 5-way classification (§4's taxonomy, supplement §5 base
+> assignment + the 3 operator-approved resolutions from §4.6), with the
+> canonical baseline's SQL-cited evidence note preserved per function.
+> Numbering (#1–68) matches the canonical baseline's own numbering and is
+> the numbering referenced by `#N` citations throughout this document.
+> **Δ** marks the 3 functions whose disposition changed under the §4.6
+> resolutions relative to the supplement's original assignment.
+
+| # | function | file | class (5-way) | evidence note |
+|---|---|---|---|---|
+| 1 | `process_pending_requests()` | `matching/functions/process_pending_requests.sql` | Go service/worker | Cron orchestrator: expires stale pending requests (refunds via `route_unlock_points`, now Go — dissolved, see #23), retries `process_matching` for the rest. |
+| 2 | `update_referee_available_time_slot(...)` | `matching/functions/update_referee_available_time_slot.sql` | Go service/worker | `auth.uid()`-gated single-row CRUD + overlap validation. |
+| 3 | `create_matching_request(...)` | `matching/functions/create_matching_request.sql` | Go transaction | Locks points (`lock_points`, now Go-issued atomic SQL, see #51) then inserts request; hardcoded strategy→cost table (TODO comment in source already flags this). |
+| 4 | `detect_and_handle_referee_timeouts()` | `matching/functions/detect_referee_timeouts.sql` | **Drop** Δ | Dead code, unscheduled/unreferenced (zero callers, zero cron entries — see §10.C). Resolution: currently unused/unscheduled; if ever needed, design as a new Go worker requirement, not a port. |
+| 5 | `create_referee_available_time_slot(...)` | `matching/functions/create_referee_available_time_slot.sql` | Go service/worker | `auth.uid()`-gated CRUD + overlap validation. |
+| 6 | `auto_score_timeout_referee()` [trigger fn] | `matching/functions/auto_score_timeout_referee.sql` | Go transaction | Inserts negative referee rating on `review_timeout` confirm. Once ported, must also invoke #24's recompute statement (rating_histories write) — see §4.7. Dedup with #29 per §4.6. |
+| 7 | `process_matching(uuid)` | `matching/functions/process_matching.sql` | Go service/worker | Core matching algorithm + 2 `notify_event` calls. |
+| 8 | `trigger_process_matching()` [trigger fn] | `matching/functions/process_matching.sql` (L265) | **Go service/worker** Δ | Thin wrapper invoking `process_matching`. Resolution: the SQL wrapper itself is deleted, but the matching behavior it invokes moves to Go — "Go service/worker" is more accurate than "Drop" since the underlying capability is still needed, just invoked explicitly instead of trigger-fired. |
+| 9 | `get_point_for_matching_strategy(strategy)` | `matching/functions/get_point_for_matching_strategy.sql` | Go service/worker | Pure stateless lookup with no table access (`IF p_strategy = 'standard' THEN RETURN 1; ELSE RAISE EXCEPTION...`). No atomicity to lose. Every remaining caller (#28, #29, #34) itself moves off Postgres, so there is no retained-Postgres caller requiring a shared copy — single Go constant, no cross-language drift risk (see §4.8). |
+| 10 | `create_referee_blocked_date(...)` | `matching/functions/create_referee_blocked_date.sql` | Go service/worker | `auth.uid()`-gated CRUD. |
+| 11 | `cancel_referee_assignment(uuid)` | `matching/functions/cancel_referee_assignment.sql` | Go transaction | Multi-step: cancel request, delete judgement, insert re-match request, notify. |
+| 12 | `get_active_referee_tasks()` | `matching/functions/get_active_referee_tasks.sql` | Store query | `auth.uid()`-scoped read, UI-shaped `jsonb` assembly. |
+| 13 | `delete_referee_available_time_slot(uuid)` | `matching/functions/delete_referee_available_time_slot.sql` | Go service/worker | `auth.uid()`-gated delete. |
+| 14 | `get_payment_summary()` | `payment_summary/functions/get_payment_summary.sql` | Store query | `auth.uid()`-scoped dashboard aggregate read; UI-shaped response. |
+| 15 | `delete_referee_blocked_date(uuid)` | `matching/functions/delete_referee_blocked_date.sql` | Go service/worker | `auth.uid()`-gated delete. |
+| 16 | `update_referee_blocked_date(...)` | `matching/functions/update_referee_blocked_date.sql` | Go service/worker | `auth.uid()`-gated CRUD. |
+| 17 | `lock_trial_points(...)` | `trial_point/functions/lock_trial_points.sql` | Go transaction | Bundles the availability check (`IF (v_balance - v_locked) < p_amount THEN RAISE EXCEPTION`) with `SELECT ... FOR UPDATE`, `locked = locked + p_amount`, and the ledger `INSERT`. Check → Go; lock+mutation+ledger-insert is the irreducible atomic sequence (backed by the existing `trial_point_wallets_balance_gte_locked` / `locked >= 0` CHECK constraints as a DB-level backstop). |
+| 18 | `deactivate_trial_points(uuid)` | `trial_point/functions/deactivate_trial_points.sql` | Go transaction | The `IF v_is_active IS NULL` / `IF NOT v_is_active` idempotency short-circuits collapse into one guarded statement: `UPDATE trial_point_wallets SET is_active=false WHERE user_id=$1 AND is_active=true` + the informational ledger `INSERT`. Zero rows affected is the no-op case — no separate Go branch needed. |
+| 19 | `route_consume_points(...)` | `trial_point/functions/route_consume_points.sql` | Go transaction | Pure routing dispatcher — `SELECT point_source FROM task_referee_requests` (unlocked read) then `IF v_point_source = 'trial' ... ELSE ...` branches to `consume_trial_points`/`consume_points`. No wallet mutation of its own; dissolves entirely into a Go branch calling #22/#50's atomic SQL. |
+| 20 | `unlock_trial_points(...)` | `trial_point/functions/unlock_trial_points.sql` | Go transaction | Same shape as #17: `IF v_locked < p_amount THEN RAISE EXCEPTION` → Go; `SELECT ... FOR UPDATE` + `locked = locked - p_amount` + ledger `INSERT` → atomic store SQL. |
+| 21 | `route_referee_reward(...)` | `trial_point/functions/route_referee_reward.sql` | Go transaction | `SELECT is_obligation FROM task_referee_requests` then branches. Obligation path: `SELECT ... FOR UPDATE` on oldest pending `referee_obligations` row + `UPDATE ... SET status='fulfilled'` (atomic SQL). Non-obligation path calls `grant_reward` (#66). The branch itself is Go; it issues one of two atomic SQL statements depending on `is_obligation`. |
+| 22 | `consume_trial_points(...)` | `trial_point/functions/consume_trial_points.sql` | Go transaction | `IF v_balance < p_amount` / `IF v_locked < p_amount` checks → Go. `SELECT ... FOR UPDATE`, the `balance/locked` mutation, the ledger `INSERT`, and the fixed-count `FOR v_i IN 1..p_amount LOOP INSERT INTO referee_obligations` are the atomic sequence (the loop is a batch insert, not a decision). |
+| 23 | `route_unlock_points(...)` | `trial_point/functions/route_unlock_points.sql` | Go transaction | Identical shape to #19 — pure `point_source` routing dispatcher to `unlock_trial_points`/`unlock_points`, no mutation of its own. |
+| 24 | `update_user_ratings()` [trigger fn] | `rating/functions/update_user_ratings.sql` | Go transaction | No branching beyond `TG_OP = 'DELETE'` (picks `OLD`/`NEW`). Each recompute is one set-based statement: `UPDATE user_ratings SET tasker_positive_count = agg.pos, ... FROM (SELECT count(*) FILTER(...), count(*) FROM rating_histories WHERE ratee_id=$1 AND rating_type='tasker') agg WHERE user_id=$1` (and the referee equivalent) — textbook single set-based `UPDATE … FROM`. The `AFTER INSERT OR DELETE OR UPDATE` trigger dissolves: Go is the sole writer of `rating_histories` (via #6, #29, #34, #36), so Go runs these two statements in the same transaction as every `rating_histories` write instead of relying on a trigger firing on arbitrary paths. See §4.7. |
+| 25 | `notify_judgement_confirmed()` [trigger fn] | `judgement/triggers/on_judgement_confirmed_notify.sql` | Go transaction | Push-notification dispatch (2x `notify_event`) on auto-confirm. Fires on the same `is_confirmed: false→true` transition as #26/#27/#57 — see §4.7 for the unified Go orchestration point. |
+| 26 | `close_referee_request_on_confirmed()` [trigger fn] | `judgement/triggers/on_judgement_confirmed_close_request.sql` | Go transaction | Single-statement, PK-scoped `UPDATE task_referee_requests SET status='closed' WHERE id=NEW.id`, no branching beyond the trigger's own `WHEN` filter. The filter is subsumed by the caller's control flow (Go already knows it just flipped `is_confirmed`) — collapses to one atomic statement issued in the same transaction as the judgement-confirm write. See §4.7. |
+| 27 | `handle_judgement_confirmed()` [trigger fn] | `judgement/triggers/on_judgement_confirmed.sql` | Go transaction | Push-notification dispatch on manual confirm; skips if `is_auto_confirmed`. Same transition as #25/#26/#57 — see §4.7. |
+| 28 | `settle_evidence_timeout()` [trigger fn] | `judgement/triggers/on_evidence_timeout_settle.sql` | Go transaction | Mixed: wallet settlement via `route_consume_points`/`route_referee_reward` (both Go, #19/#21) + close request (atomic SQL, see #26) + 2x `notify_event`. Classified by its externally-visible side effect; the sub-calls are Go orchestration calling atomic SQL, not separate Postgres RPCs. |
+| 29 | `settle_review_timeout()` [trigger fn] | `judgement/triggers/on_review_timeout_settle.sql` | Go transaction | Same pattern as #28: unlock points (`route_unlock_points`, #23) + negative rating insert (feeds #24's recompute) + close (see #26/#57) + 2x notify. Redundant rating insert with #6 — resolved by operator adjudication, §4.6. |
+| 30 | `on_judgements_status_changed()` [trigger fn] | `judgement/triggers/on_judgements_status_changed.sql` | Go transaction | Status-change → notification key mapping + dispatch. |
+| 31 | `judge_evidence(...)` | `judgement/functions/judge_evidence.sql` | Go transaction | `auth.uid()`-gated single state transition (approve/reject). |
+| 32 | `confirm_evidence_timeout(uuid)` | `judgement/functions/confirm_evidence_timeout.sql` | Go transaction | `auth.uid()`-gated idempotent confirm; sets `is_confirmed = TRUE` (source comment: "triggers `on_all_judgements_confirmed_close_task`"). With that trigger dissolved (#57), the Go port of this handler must now explicitly issue #57's (and #26's, #25's, #27's) sequence in the same transaction — see §4.7. |
+| 33 | `confirm_review_timeout(uuid)` | `judgement/functions/confirm_review_timeout.sql` | Go transaction | Same shape and same implication as #32 — sets `is_confirmed = TRUE`, source comment references the now-dissolved close-task trigger. See §4.7. |
+| 34 | `detect_auto_confirms()` | `judgement/functions/detect_auto_confirms.sql` | Go service/worker | Not a single atomic statement. Decomposes into: the `FOR ... FOR UPDATE OF j SKIP LOCKED` eligibility+claim query (claims a batch of rows); the per-row `IF v_rec.status IN ('approved','rejected')` branch (Go); calls into `get_point_for_matching_strategy` (#9), `route_consume_points` (#19 → #50), `route_referee_reward` (#21 → #66); the `INSERT INTO rating_histories ... ON CONFLICT (judgement_id, rating_type) DO NOTHING` (backed by the existing `unique_rating_per_judgement` constraint); and the final `UPDATE judgements SET is_auto_confirmed=true, is_confirmed=true` which — with #25/#26/#27/#57 dissolved — must be immediately followed by Go explicitly invoking those in the same transaction (see §4.7). Overall: Go worker orchestration issuing five distinct atomic-SQL statements per claimed row. |
+| 35 | `detect_and_handle_review_timeouts()` | `judgement/functions/detect_review_timeouts.sql` | Go service/worker | Exactly one statement, no branching: `UPDATE judgements j SET status='review_timeout' ... FROM task_referee_requests trr JOIN tasks t ... WHERE j.status='in_review' AND v_now > (t.due_date + INTERVAL '3 hours')` — textbook single set-based `UPDATE … FROM`, issued verbatim by the Go worker each tick; no stored function needed. |
+| 36 | `confirm_judgement_and_rate_referee(...)` | `judgement/functions/confirm_judgement_and_rate_referee.sql` | Go transaction | Multi-step: settle wallet + grant reward + insert rating + confirm, all `auth.uid()`-gated. Inserts `rating_histories` (feeds #24's recompute) and sets `is_confirmed=TRUE` (must now explicitly invoke #26/#57's atomic SQL and #25/#27's Go logic — see §4.7). See §5.2 T7-2 — no explicit row lock; a race is possible under wallet headroom. |
+| 37 | `on_task_evidences_upserted_notify_referee()` [trigger fn] | `evidence/triggers/on_task_evidences_upserted_notify_referee.sql` | Go transaction | Notification dispatch on evidence insert/update. |
+| 38 | `validate_evidence_due_date()` [trigger fn] | `evidence/functions/validate_evidence_due_date.sql` | **Go service/worker** Δ | Pure read-only guard: `SELECT t.due_date ... IF v_now > v_due_date THEN RAISE EXCEPTION`. No mutation, no lock. Needs `tasks.due_date` (another table), so it cannot become a same-table CHECK constraint. Moves to Go as a pre-write validation in the evidence create/resubmit handlers — no atomicity lost, since nothing else contends on a single evidence row's due-date check. Resolution: move to Go; cross-table so not a same-table CHECK; Go is the sole write path. |
+| 39 | `resubmit_evidence(...)` | `evidence/functions/resubmit_evidence.sql` | Go transaction | Multi-table: evidence update, asset add/remove, judgement status transition, `auth.uid()`-gated. |
+| 40 | `update_evidence(...)` | `evidence/functions/update_evidence.sql` | Go transaction | `auth.uid()`-gated evidence + asset CRUD. |
+| 41 | `submit_evidence(...)` | `evidence/functions/submit_evidence.sql` | Go transaction | Multi-table: evidence insert, asset insert, judgement status transition, `auth.uid()`-gated. |
+| 42 | `detect_and_handle_evidence_timeouts()` | `evidence/functions/detect_evidence_timeouts.sql` | Go service/worker | Same shape as #35: one `UPDATE judgements j SET status='evidence_timeout' ... FROM task_referee_requests trr JOIN tasks t ... LEFT JOIN task_evidences te ... WHERE j.status='awaiting_evidence' AND v_now > t.due_date AND te.id IS NULL`, no branching. |
+| 43 | `handle_new_user()` [trigger fn] | `auth/functions/handle_new_user.sql` | Go transaction | Provisions profile + notification_settings + user_ratings + point_wallet + trial_point_wallet on signup. Business logic moves; trigger mechanism (Supabase `auth.users`) is what's obsolete. Confirmed D2 provisioning path. |
+| 44 | `notify_event(...)` | `notification/functions/notify_event.sql` | Go service/worker | Reads Vault secrets, calls `net.http_post`. External side effect. |
+| 45 | `send_deadline_reminder(...)` | `notification/functions/send_deadline_reminder.sql` | Go service/worker | Idempotency log insert + `notify_event` dispatch. |
+| 46 | `detect_judgement_deadline_warnings()` | `notification/functions/detect_judgement_deadline_warnings.sql` | Go service/worker | Scans + dispatches reminders. |
+| 47 | `detect_evidence_deadline_warnings()` | `notification/functions/detect_evidence_deadline_warnings.sql` | Go service/worker | Same pattern as #46. |
+| 48 | `detect_auto_confirm_deadline_warnings()` | `notification/functions/detect_auto_confirm_deadline_warnings.sql` | Go service/worker | Same pattern as #46; default OFF. |
+| 49 | `reset_subscription_points(...)` | `point/functions/reset_subscription_points.sql` | Go transaction | Multiple business decisions: the idempotency check (`SELECT id FROM point_ledger WHERE reason='plan_renewal' AND description=v_description` — a fragile description-string idempotency key, flagged in §4.8), the wallet-not-found fallback (`INSERT ... IF NOT FOUND`), and the "record expiry of unused points" decision (`IF v_available > 0`) are Go branches. The atomic reads/writes (`SELECT ... FOR UPDATE`, the two possible `INSERT`s, the reset `UPDATE`) are store SQL statements Go issues once it has picked a branch. |
+| 50 | `consume_points(...)` | `point/functions/consume_points.sql` | Go transaction | Same pattern as #22 minus the obligation loop: `IF v_balance < p_amount` / `IF v_locked < p_amount` → Go; `SELECT ... FOR UPDATE`, the `balance/locked` `UPDATE`, and the ledger `INSERT` → store SQL. |
+| 51 | `lock_points(...)` | `point/functions/lock_points.sql` | Go transaction | `IF (v_balance - v_locked) < p_amount THEN RAISE EXCEPTION` (availability check) → Go; `SELECT ... FOR UPDATE`, `locked = locked + p_amount`, and the ledger `INSERT` are the irreducible store-SQL sequence. |
+| 52 | `unlock_points(...)` | `point/functions/unlock_points.sql` | Go transaction | Same shape as #51/#20: `IF v_locked < p_amount` → Go; `SELECT ... FOR UPDATE` + `locked = locked - p_amount` + ledger `INSERT` → store SQL. |
+| 53 | `handle_updated_at()` [trigger fn] | `common/functions/handle_updated_at.sql` | **DB invariant/helper** | Trivial `NEW.updated_at = NOW()`, no business logic, no atomicity concern. Kept as a DB trigger for the 21 housekeeping call sites (Appendix B); equally valid for the Go store to set `updated_at` explicitly on every `UPDATE` instead. The one function the refined rule explicitly carves out as DB-side — the sole DB invariant/helper in the tally. |
+| 54 | `is_task_referee(task_uuid, user_uuid)` | `profile/functions/auth_helpers.sql` (L1) | Drop | RLS-only helper; tied to the broader RLS retirement, not today's dead-code list. |
+| 55 | `is_task_referee_candidate(task_uuid, user_uuid)` | `profile/functions/auth_helpers.sql` (L19) | Drop | Same note as #54. |
+| 56 | `is_task_tasker(task_uuid, user_uuid)` | `profile/functions/auth_helpers.sql` (L37) | Drop | Fully unreferenced (verify before drop, §10.C). |
+| 57 | `close_task_if_all_judgements_confirmed()` [trigger fn] | `task/triggers/on_all_judgements_confirmed_close_task.sql` | Go transaction | The three-statement body (`SELECT trr.task_id`, `PERFORM ... FOR UPDATE` lock, `IF NOT EXISTS (...) THEN UPDATE tasks SET status='closed'`) collapses into one atomic statement: `UPDATE tasks SET status='closed' WHERE id=$1 AND status <> 'closed' AND NOT EXISTS (SELECT 1 FROM judgements j JOIN task_referee_requests trr ON j.id=trr.id WHERE trr.task_id=$1 AND j.is_confirmed=false)`. No separate lock step needed, no business branching left. See §4.7. |
+| 58 | `create_task(...)` | `task/functions/create_task.sql` | Go transaction | Multi-step: validate inputs, validate open-requirements, insert task, create referee requests (locks points). |
+| 59 | `update_task(...)` | `task/functions/update_task.sql` | Go transaction | Same multi-step pattern as #58, plus ownership + status-transition checks. |
+| 60 | `delete_task(uuid)` | `task/functions/delete_task.sql` | Go transaction | `auth.uid()`-gated ownership + status check + single delete. |
+| 61 | `validate_task_inputs(...)` | `task/functions/utils/validate_task_inputs.sql` | Go service/worker | Pure business-rule validation. |
+| 62 | `create_task_referee_requests_from_json(...)` | `task/functions/utils/create_task_referee_requests_from_json.sql` | Go transaction | Multi-step: cost calc, trial-vs-regular point-source decision, loop insert + lock (calls `lock_trial_points`/`lock_points`, atomic SQL, #17/#51). |
+| 63 | `validate_task_open_requirements(...)` | `task/functions/utils/validate_task_open_requirements.sql` | Go transaction | Business-rule validation: due-date minimum, point-balance sufficiency. |
+| 64 | `prepare_monthly_payouts(...)` | `reward/functions/prepare_monthly_payouts.sql` | Go service/worker | Batch orchestration: last-day-of-month guard, exchange-rate lookup, Stripe Connect readiness check, payout row insert, notify. |
+| 65 | `deduct_reward_for_payout(...)` | `reward/functions/deduct_reward_for_payout.sql` | Go transaction | Optimistic-concurrency single statement, no `FOR UPDATE` needed: `UPDATE reward_wallets SET balance=balance-p_amount WHERE user_id=$1 AND balance >= p_amount`; `IF NOT FOUND THEN RAISE EXCEPTION` is Go's zero-rows-affected handling, not a separate decision. Plus the ledger `INSERT`. |
+| 66 | `grant_reward(...)` | `reward/functions/grant_reward.sql` | Go transaction | Single `INSERT ... ON CONFLICT (user_id) DO UPDATE SET balance = reward_wallets.balance + p_amount` upsert, no branching, plus the ledger `INSERT`. |
+| 67 | `get_payout_topup_metrics(text)` | `reward/functions/get_payout_topup_metrics.sql` | Store query | Read-only, but the four `SELECT`s (active exchange rate, sum of wallet balances, month-to-date ledger earnings, singleton `payout_topup_config`) need a consistent snapshot across statements while payouts are being processed concurrently elsewhere — that consistency comes from one Go-owned (read) transaction, not a PL/pgSQL wrapper. The SQL dissolves into a plain store query set behind the same Go operator endpoint. |
+| 68 | `check_account_deletable()` | `account/functions/check_account_deletable.sql` | Store query | `auth.uid()`-gated read-only precondition check. |
+
+### Function tally (confirms §4.2)
+
+| Disposition | Count | Of which changed by §4.6 resolutions |
+|---|---:|---:|
+| DB invariant/helper | 1 | 0 |
+| Store query | 4 | 0 |
+| Go transaction | 38 | 0 |
+| Go service/worker | 21 | +1 (#38), −1 (#4), +1 (#8) net +1 |
+| Drop | 4 | +1 (#4), −1 (#8) net 0 |
+| **Total** | **68** | |
+
+(Net effect of the 3 resolutions vs. the supplement's unmodified assignment:
+DB invariant/helper 2→1, Drop 4→4 unchanged in count but different members
+[`trigger_process_matching` leaves, `detect_and_handle_referee_timeouts`
+enters], Go service/worker 20→21. Store query and Go transaction are
+untouched by the resolutions. See §4.2/§4.6 for the full derivation.)
+
+## Appendix B — Full trigger classification (36)
+
+> 21 housekeeping (keep, DB-side) + 15 business (→ Go), from the
+> supplement's §6 base table + the canonical baseline's §2.4 per-trigger
+> evidence.
+
+### B.1 Housekeeping triggers — keep (21)
+
+All call `handle_updated_at` (Appendix A #53) and remain minimal database
+housekeeping:
+
+| Trigger | Table |
+|---|---|
+| `on_task_evidences_update_set_updated_at` | `task_evidences` |
+| `on_judgement_threads_update_set_updated_at` | `judgement_threads` |
+| `on_judgements_update_set_updated_at` | `judgements` |
+| `on_matching_config_update_set_updated_at` | `matching_config` |
+| `on_referee_available_time_slots_update_set_updated_at` | `referee_available_time_slots` |
+| `on_referee_blocked_dates_update_set_updated_at` | `referee_blocked_dates` |
+| `on_task_referee_requests_update_set_updated_at` | `task_referee_requests` |
+| `on_user_fcm_tokens_update_set_updated_at` | `user_fcm_tokens` |
+| `on_point_wallets_update_set_updated_at` | `point_wallets` |
+| `on_profiles_update_set_updated_at` | `profiles` |
+| `on_user_ratings_update_set_updated_at` | `user_ratings` |
+| `on_reports_update_set_updated_at` | `reports` |
+| `on_payout_topup_config_update_set_updated_at` | `payout_topup_config` |
+| `on_reward_exchange_rates_update_set_updated_at` | `reward_exchange_rates` |
+| `on_reward_payouts_update_set_updated_at` | `reward_payouts` |
+| `on_reward_wallets_update_set_updated_at` | `reward_wallets` |
+| `on_stripe_accounts_update_set_updated_at` | `stripe_accounts` |
+| `on_user_subscriptions_update_set_updated_at` | `user_subscriptions` |
+| `on_tasks_update_set_updated_at` | `tasks` |
+| `on_trial_point_config_update_set_updated_at` | `trial_point_config` |
+| `on_trial_point_wallets_update_set_updated_at` | `trial_point_wallets` |
+
+### B.2 Business triggers — all dissolve into Go (15)
+
+| # | trigger | file | function called (Appendix A #) | disposition | mechanism |
+|---|---|---|---|---|---|
+| 1 | `on_task_referee_requests_update_process_matching` | `matching/triggers/on_task_referee_requests_update_process_matching.sql` | `trigger_process_matching()` (#8) | → Go | Trigger dissolves; matching processing is invoked explicitly by the API/worker instead of trigger-fired (§4.6 resolution 3). |
+| 2 | `on_task_referee_requests_insert_process_matching` | `matching/triggers/on_task_referee_requests_insert_process_matching.sql` | `trigger_process_matching()` (#8) | → Go | Same as row 1, second call site (insert). |
+| 3 | `on_rating_histories_change_update_user_ratings` | `rating/triggers/on_rating_histories_change_update_user_ratings.sql` | `update_user_ratings()` (#24) | → Go | Trigger dissolves entirely (no `CREATE TRIGGER` remains); Go issues the two recompute `UPDATE ... FROM` statements in the same transaction as every Go-initiated `rating_histories` write. |
+| 4 | `on_judgement_confirmed_notify` | `judgement/triggers/on_judgement_confirmed_notify.sql` | `notify_judgement_confirmed()` (#25) | → Go | Push-notification dispatch folds into the shared post-confirm orchestration, §4.7. |
+| 5 | `on_judgement_confirmed_close_request` | `judgement/triggers/on_judgement_confirmed_close_request.sql` | `close_referee_request_on_confirmed()` (#26) | → Go | Trigger dissolves; Go issues the single PK-scoped `UPDATE task_referee_requests SET status='closed'` right after it writes `is_confirmed=true`, in the same transaction. |
+| 6 | `on_evidence_timeout_settle` | `judgement/triggers/on_evidence_timeout_settle.sql` | `settle_evidence_timeout()` (#28) | → Go | Wallet settlement + close + notify fold into Go orchestration calling atomic SQL. |
+| 7 | `on_judgements_timeout_score_referee` | `judgement/triggers/on_judgements_timeout_score_referee.sql` | `auto_score_timeout_referee()` (#6) | → Go | Negative-rating insert on review-timeout confirm; dedup with #29 per §4.6. |
+| 8 | `on_judgements_status_changed` | `judgement/triggers/on_judgements_status_changed.sql` | `on_judgements_status_changed()` (#30) | → Go | Status-change → notification key mapping + dispatch. |
+| 9 | `on_review_timeout_settle` | `judgement/triggers/on_review_timeout_settle.sql` | `settle_review_timeout()` (#29) | → Go | Unlock points + rating insert + close + notify fold into Go orchestration. |
+| 10 | `on_judgement_confirmed` | `judgement/triggers/on_judgement_confirmed.sql` | `handle_judgement_confirmed()` (#27) | → Go | Push-notification dispatch on manual confirm; skips if auto-confirmed. |
+| 11 | `on_task_evidences_insert_validate_due_date` | `evidence/triggers/on_task_evidences_insert_validate_due_date.sql` | `validate_evidence_due_date()` (#38) | → Go | Trigger dissolves; the pre-write due-date guard runs as Go validation in the evidence-create handler (§4.6 resolution 1). |
+| 12 | `on_task_evidences_upserted_notify_referee` | `evidence/triggers/on_task_evidences_upserted_notify_referee.sql` | `on_task_evidences_upserted_notify_referee()` (#37) | → Go | Notification dispatch on evidence insert/update. |
+| 13 | `on_task_evidences_update_validate_due_date` | `evidence/triggers/on_task_evidences_update_validate_due_date.sql` | `validate_evidence_due_date()` (#38) | → Go | Same function, second call site (evidence-resubmit handler); trigger dissolves. |
+| 14 | `on_auth_user_created` | `auth/triggers/on_auth_user_created.sql` | `handle_new_user()` (#43) | → Go | Mechanism (Supabase `auth.users` trigger) deleted; provisioning logic ported to an explicit Go onboarding step, D2. |
+| 15 | `on_all_judgements_confirmed_close_task` | `task/triggers/on_all_judgements_confirmed_close_task.sql` | `close_task_if_all_judgements_confirmed()` (#57) | → Go | Trigger dissolves into one conditional `UPDATE tasks ... WHERE NOT EXISTS (...)` statement issued by Go. |
+
+**Notable result:** under the max-Go rule, **zero of the 15 business
+triggers remain a literal Postgres `CREATE TRIGGER`.** Several (rows 3, 5,
+15, and the two `validate_evidence_due_date` call sites at rows 11/13)
+dissolve into a single Go-issued atomic SQL statement; the rest dissolve
+into ordinary Go orchestration/notification logic. This matches the max-Go
+crux — "triggers that enforce invariants across arbitrary write paths are
+no longer load-bearing once Go is the only writer" — and creates the
+orchestration implication documented at §4.7 (four call sites must each
+explicitly re-run the cascade these triggers used to fire automatically).
+
+### Trigger tally (confirms §4.4)
+
+| Disposition | Count |
+|---|---:|
+| DB trigger — housekeeping (1 summary row = 21 triggers) | 21 |
+| Go (business, all 15 dissolve) | 15 |
+| **Total** | **36** |
+
+## Appendix C — Full Flutter API-surface map
+
+> Source: canonical §4 (`docs/superpowers/plans/phase0-parts/04-flutter-api-surface.md`).
+> Every place `peppercheck_flutter/lib/` talks to Supabase directly:
+> PostgREST table calls (`.from(`), Postgres RPC calls (`.rpc(`), and Edge
+> Function invocations (`.functions.invoke`), plus the small set of Supabase
+> Auth calls that don't fit those three kinds but are needed for full file
+> coverage, plus the `presentation/`-layer clean-arch violations. The
+> reconciliation of the raw grep counts against the verified counts (18
+> `.from`, 21 `.rpc`, 7 `.invoke`) is covered in §2 above; this appendix is
+> the full call-site detail.
+
+### C.1 `from` (PostgREST) — 18 call sites
+
+| kind | symbol/table | file:line | feature | maps to (Go endpoint) |
+|---|---|---|---|---|
+| from | `referee_available_time_slots` (select, eq user_id) | `peppercheck_flutter/lib/features/matching/data/matching_repository.dart:22` | matching | `GET /api/v1/matching/availability` |
+| from | `referee_blocked_dates` (select, order) | `peppercheck_flutter/lib/features/matching/data/matching_repository.dart:76` | matching | `GET /api/v1/matching/blocked-dates` |
+| from | `user_fcm_tokens` (upsert onConflict:token) | `peppercheck_flutter/lib/features/notification/data/notification_repository.dart:30` | notification | `POST /api/v1/notifications/fcm-tokens` |
+| from | `user_fcm_tokens` (delete eq token) | `peppercheck_flutter/lib/features/notification/data/notification_repository.dart:49` | notification | `DELETE /api/v1/notifications/fcm-tokens/{token}` |
+| from | `profiles` (select, eq id, single — `fetchProfile`) | `peppercheck_flutter/lib/features/profile/data/profile_repository.dart:24` | profile | `GET /api/v1/me` (design-doc-fixed) |
+| from | `profiles` (update timezone — `updateTimezone`) | `peppercheck_flutter/lib/features/profile/data/profile_repository.dart:38` | profile | `PATCH /api/v1/me` — TBD (feature phase) whether one combined PATCH or field-specific endpoints |
+| from | `profiles` (update username — `updateUsername`) | `peppercheck_flutter/lib/features/profile/data/profile_repository.dart:50` | profile | `PATCH /api/v1/me` — TBD (feature phase); note current code also has bespoke unique-username (`23505`) error handling to preserve |
+| from | `profiles` (update avatar_url — `updateAvatar`) | `peppercheck_flutter/lib/features/profile/data/profile_repository.dart:102` | profile | `PATCH /api/v1/me` — TBD (feature phase); paired with `generate-upload-url` invoke below |
+| from | `tasks` (select, nested joins — list own tasks) | `peppercheck_flutter/lib/features/task/data/task_repository.dart:87` | task | `GET /api/v1/tasks` |
+| from | `tasks` (select, nested joins — `getTask(id)`) | `peppercheck_flutter/lib/features/task/data/task_repository.dart:204` | task | `GET /api/v1/tasks/{id}` |
+| from | `reports` (insert — `submitReport`) | `peppercheck_flutter/lib/features/report/data/report_repository.dart:25` | report | `POST /api/v1/reports` |
+| from | `reports` (select id, eq reporter_id+task_id, maybeSingle — `hasReported`) | `peppercheck_flutter/lib/features/report/data/report_repository.dart:39` | report | `GET /api/v1/reports/exists?task_id=...` — TBD (feature phase) exact shape |
+| from | `currencies` (select, eq code, single) | `peppercheck_flutter/lib/features/currency/data/currency_repository.dart:29` | currency | `GET /api/v1/currencies/{code}` |
+| from | `user_subscriptions` (select subset, maybeSingle) | `peppercheck_flutter/lib/features/billing/data/billing_repository.dart:24` | billing | `GET /api/v1/billing/subscription` |
+| from | `point_wallets` (select balance, maybeSingle) | `peppercheck_flutter/lib/features/billing/data/billing_repository.dart:45` | billing (point) | `GET /api/v1/points/wallet` |
+| from | `trial_point_wallets` (select balance/locked/is_active, maybeSingle) | `peppercheck_flutter/lib/features/billing/data/billing_repository.dart:63` | billing (point) | `GET /api/v1/points/trial-wallet` |
+| from | `stripe_accounts` (select charges/payouts_enabled+requirements, maybeSingle) | `peppercheck_flutter/lib/features/payout/data/stripe_payout_repository.dart:23` | payout | `GET /api/v1/payout/account` |
+| from | `stripe_accounts` (select pm_brand/last4/exp, single) | `peppercheck_flutter/lib/features/billing/data/stripe_billing_repository.dart:41` | billing | Resolved by §3.1 Finding 3 — this file is confirmed dead code alongside `billing-setup`; not ported |
+
+### C.2 `rpc` (Postgres RPC) — 21 call sites, 21 distinct functions
+
+| kind | symbol/table | file:line | feature | maps to (Go endpoint) |
+|---|---|---|---|---|
+| rpc | `create_referee_available_time_slot` (generic `.rpc<String>(`) | `peppercheck_flutter/lib/features/matching/data/matching_repository.dart:43` | matching | `POST /api/v1/matching/availability` (Appendix A #5) |
+| rpc | `update_referee_available_time_slot` | `peppercheck_flutter/lib/features/matching/data/matching_repository.dart:56` | matching | `PATCH /api/v1/matching/availability/{id}` (Appendix A #2) |
+| rpc | `delete_referee_available_time_slot` | `peppercheck_flutter/lib/features/matching/data/matching_repository.dart:68` | matching | `DELETE /api/v1/matching/availability/{id}` (Appendix A #13) |
+| rpc | `create_referee_blocked_date` (generic `.rpc<String>(`) | `peppercheck_flutter/lib/features/matching/data/matching_repository.dart:90` | matching | `POST /api/v1/matching/blocked-dates` (Appendix A #10) |
+| rpc | `update_referee_blocked_date` | `peppercheck_flutter/lib/features/matching/data/matching_repository.dart:107` | matching | `PATCH /api/v1/matching/blocked-dates/{id}` (Appendix A #16) |
+| rpc | `delete_referee_blocked_date` | `peppercheck_flutter/lib/features/matching/data/matching_repository.dart:119` | matching | `DELETE /api/v1/matching/blocked-dates/{id}` (Appendix A #15) |
+| rpc | `cancel_referee_assignment` | `peppercheck_flutter/lib/features/matching/data/matching_repository.dart:123` | matching | `POST /api/v1/matching/assignments/{id}/cancel` (Appendix A #11) |
+| rpc | `get_payment_summary` | `peppercheck_flutter/lib/features/payment_dashboard/data/payment_summary_repository.dart:18` | payment_dashboard | `GET /api/v1/payments/summary` (Appendix A #14) |
+| rpc | `judge_evidence` | `peppercheck_flutter/lib/features/judgement/data/judgement_repository.dart:20` | judgement | `POST /api/v1/judgements/judge` (Appendix A #31) |
+| rpc | `confirm_judgement_and_rate_referee` | `peppercheck_flutter/lib/features/judgement/data/judgement_repository.dart:40` | judgement | `POST /api/v1/judgements/{id}/confirm` (Appendix A #36; see §5.2 T7-2) |
+| rpc | `confirm_review_timeout` | `peppercheck_flutter/lib/features/judgement/data/judgement_repository.dart:56` | judgement | `POST /api/v1/judgements/{id}/confirm-review-timeout` (Appendix A #33) |
+| rpc | `submit_evidence` | `peppercheck_flutter/lib/features/evidence/data/evidence_repository.dart:94` | evidence | `POST /api/v1/evidence` (Appendix A #41) |
+| rpc | `update_evidence` | `peppercheck_flutter/lib/features/evidence/data/evidence_repository.dart:128` | evidence | `PATCH /api/v1/evidence/{id}` (Appendix A #40) |
+| rpc | `resubmit_evidence` | `peppercheck_flutter/lib/features/evidence/data/evidence_repository.dart:164` | evidence | `POST /api/v1/evidence/{id}/resubmit` (Appendix A #39) |
+| rpc | `confirm_evidence_timeout` | `peppercheck_flutter/lib/features/evidence/data/evidence_repository.dart:182` | evidence | `POST /api/v1/evidence/confirm-timeout` (Appendix A #32) |
+| rpc | `create_task` | `peppercheck_flutter/lib/features/task/data/task_repository.dart:32` | task | `POST /api/v1/tasks` (Appendix A #58) |
+| rpc | `update_task` | `peppercheck_flutter/lib/features/task/data/task_repository.dart:56` | task | `PATCH /api/v1/tasks/{id}` (Appendix A #59) |
+| rpc | `delete_task` | `peppercheck_flutter/lib/features/task/data/task_repository.dart:65` | task | `DELETE /api/v1/tasks/{id}` (Appendix A #60) |
+| rpc | `get_active_referee_tasks` | `peppercheck_flutter/lib/features/task/data/task_repository.dart:155` | task | `GET /api/v1/tasks/active` (Appendix A #12) |
+| rpc | `check_account_deletable` | `peppercheck_flutter/lib/features/account/data/account_repository.dart:17` | account | `GET /api/v1/account/deletable` (Appendix A #68; also called from the `delete-account` Edge Function) |
+| rpc | `get_point_for_matching_strategy` | `peppercheck_flutter/lib/features/billing/data/billing_repository.dart:72` | billing (point) | TBD (feature phase) — Appendix A #9 makes this a **single Go constant** (all callers move to Go under the max-Go refinement; no Postgres copy retained); the value is served by the owning Go endpoint, not a standalone RPC |
+
+### C.3 `invoke` (Edge Function) — 7 call sites, 6 distinct functions
+
+| kind | symbol/table | file:line | feature | maps to (Go endpoint) |
+|---|---|---|---|---|
+| invoke | `generate-upload-url` | `peppercheck_flutter/lib/features/evidence/data/evidence_repository.dart:39` | evidence | `POST /api/v1/uploads/presign` (§3.3: Go endpoint, R2 presigned upload; shared with profile) |
+| invoke | `generate-upload-url` | `peppercheck_flutter/lib/features/profile/data/profile_repository.dart:72` | profile | same as above — shared Edge Function, one Go endpoint |
+| invoke | `delete-account` | `peppercheck_flutter/lib/features/account/data/account_repository.dart:27` | account | `POST /api/v1/account/delete` (§3.3: Go endpoint + worker, idempotent saga — also called from webapp; see §5.2 T7-3) |
+| invoke | `payout-setup` | `peppercheck_flutter/lib/features/payout/data/stripe_payout_repository.dart:57` | payout | `POST /api/v1/payout/setup` (§3.3: Go endpoint, Stripe Connect onboarding) |
+| invoke | `create-express-dashboard-link` | `peppercheck_flutter/lib/features/payout/data/stripe_payout_repository.dart:72` | payout | `POST /api/v1/payout/dashboard-link` (§3.3: Go endpoint, Stripe Connect passthrough) |
+| invoke | `payout-request` | `peppercheck_flutter/lib/features/payout/data/stripe_payout_repository.dart:92` | payout | **Dead path — never reachable**: the calling `requestPayout()` has 0 callers and `PayoutAmountDialog` is never mounted. No Go endpoint needed; remove the dead code (§5.1, §10.F). |
+| invoke | `billing-setup` | `peppercheck_flutter/lib/features/billing/data/stripe_billing_repository.dart:22` | billing | §3.3: **Drop — currently unused** (dead pre-IAP billing flow); do not port. Its only caller, `stripe_billing_repository.dart`, is dormant legacy code per that doc's disposition. |
+
+### C.4 `auth` (Supabase Auth SDK, non-CRUD) — 5 call sites, 4 files
+
+Not part of the `{from, rpc, invoke}` kinds, but included for completeness
+and because they are exactly the surface the design doc's identity-
+migration phase replaces.
+
+| kind | symbol/table | file:line | feature | maps to (Go endpoint) |
+|---|---|---|---|---|
+| auth | `Supabase.initialize(...)` (client bootstrap) | `peppercheck_flutter/lib/app/app_startup.dart:69` | app (startup) | N/A — replaced by Firebase Auth SDK init + Go API base-URL config (design doc, Phase 2 "Identity & client boundary") |
+| auth | `Supabase.instance.client.auth.onAuthStateChange` | `peppercheck_flutter/lib/features/authentication/data/auth_state_provider.dart:8` | authentication | N/A — replaced by Firebase Auth state stream |
+| auth | `Supabase.instance.client.auth.signInWithIdToken(...)` | `peppercheck_flutter/lib/features/authentication/data/authentication_repository.dart:30` | authentication | N/A — replaced by Firebase Auth sign-in + `GET /api/v1/me` token exchange (design doc login flow) |
+| auth | `Supabase.instance.client.auth.signOut()` | `peppercheck_flutter/lib/features/authentication/data/authentication_repository.dart:44` | authentication | N/A — replaced by Firebase Auth sign-out |
+| auth | `Supabase.instance.client.auth.onAuthStateChange.listen(...)` | `peppercheck_flutter/lib/features/notification/application/fcm_service.dart:55` | notification | N/A — FCM (un)registration should hang off the new Firebase Auth state stream instead |
+
+### C.5 `presentation/` clean-arch violations
+
+`grep -rln "supabase\|Supabase" peppercheck_flutter/lib/features/*/presentation/`
+returns **7 files** — 2 more than the program design doc's already-flagged
+5 (evidence submission, judgement section, task-detail info, report menu
+button, withdraw-matching button). The 2 additional hits are
+`task_detail_screen.dart` (the screen itself, not just its
+`task_detail_info_section.dart` sub-widget) and
+`in_app_purchase_controller.dart`.
+
+Every single hit is the same pattern: `Supabase.instance.client.auth.currentUser?.id`
+— reading the current user's ID directly from the Supabase SDK inside a
+`presentation/` widget/controller instead of getting it from a repository or
+an app-level current-user provider. No `.from(`/`.rpc(`/`.invoke` calls leak
+into `presentation/`; the violation is scoped entirely to auth-state access.
+
+| feature | file:line | call |
+|---|---|---|
+| billing | `peppercheck_flutter/lib/features/billing/presentation/in_app_purchase_controller.dart:61` | `Supabase.instance.client.auth.currentUser?.id` |
+| evidence | `peppercheck_flutter/lib/features/evidence/presentation/widgets/evidence_submission_section.dart:81` | `Supabase.instance.client.auth.currentUser?.id` |
+| judgement | `peppercheck_flutter/lib/features/judgement/presentation/widgets/judgement_section.dart:56` | `Supabase.instance.client.auth.currentUser?.id` |
+| judgement | `peppercheck_flutter/lib/features/judgement/presentation/widgets/judgement_section.dart:65` | `Supabase.instance.client.auth.currentUser?.id` |
+| report | `peppercheck_flutter/lib/features/report/presentation/widgets/report_menu_button.dart:22` | `Supabase.instance.client.auth.currentUser?.id` |
+| task | `peppercheck_flutter/lib/features/task/presentation/task_detail_screen.dart:65` | `Supabase.instance.client.auth.currentUser?.id` (equality check) |
+| task | `peppercheck_flutter/lib/features/task/presentation/task_detail_screen.dart:90` | `Supabase.instance.client.auth.currentUser?.id` |
+| task | `peppercheck_flutter/lib/features/task/presentation/task_detail_screen.dart:110` | `Supabase.instance.client.auth.currentUser?.id` |
+| task | `peppercheck_flutter/lib/features/task/presentation/widgets/task_detail/task_detail_info_section.dart:158` | `Supabase.instance.client.auth.currentUser?.id` |
+| task | `peppercheck_flutter/lib/features/task/presentation/widgets/task_detail/withdraw_matching_button.dart:31` | `Supabase.instance.client.auth.currentUser?.id` |
+
+**10 individual call sites across 7 files.** All fixable the same way: expose
+the current-user ID via the app-level current-user provider the design doc
+already calls for ("other features must not import `firebase_auth` or read
+an SDK singleton" — design doc, identity section), rather than reaching into
+the Supabase (soon Firebase) SDK from `presentation/`.
+
+### C.6 Verification
+
+```
+$ comm -23 <(sort -u /tmp/pc-sbfiles.txt) <(grep -oE "peppercheck_flutter/lib/[^ :]+\.dart" 04-flutter-api-surface.md | sort -u)
+(empty)
+```
+
+Empty output confirms all 24 Supabase-importing files are represented
+somewhere in the source investigation (19 in the `from`/`rpc`/`invoke`
+tables + `auth` table = 23 distinct data/auth files, plus `presentation/`
+violation files already counted among those 23 where they overlap — every
+file in the Supabase-importing set appears at least once).
+
+### C.7 Concerns for Phase 0 sign-off
+
+- The `.from(` Go-endpoint mappings above (`/api/v1/...`) are this
+  investigation's coarse proposals, not confirmed design-doc routes — the
+  design doc only fixes `/api/v1/me` explicitly. Treat every route in this
+  section except `/api/v1/me` as a naming suggestion to revisit in the
+  owning feature phase (Phase 3 profile/reports/notifications, Phase 4
+  task/matching/evidence/judgement, Phase 5 billing/points/payout), not a
+  locked contract.
+- `stripe_billing_repository.dart:41` (`.from('stripe_accounts')` reading
+  card-on-file info) — resolved by §3.1 Finding 3: confirmed dead code,
+  deleted alongside `billing-setup`, not ported.
+- `payout-request` (invoke) is a confirmed pre-existing bug — see §5.1;
+  repeated here only because this table would otherwise imply it maps
+  cleanly like its sibling payout calls.
+- The `presentation/` violation count (7 files, 10 call sites) is larger than
+  the 5 files the design doc names. All 10 are the same trivial
+  `currentUser?.id` pattern, so the fix is mechanical and low-risk, but scope
+  the fix-it task to all 7 files, not just the 5 originally flagged.
