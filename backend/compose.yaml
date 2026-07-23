@@ -28,15 +28,20 @@ services:
       - -c
       - archive_mode=on
       - -c
-      - archive_command=test ! -f /wal-archive/%f && cp %p /wal-archive/%f
+      - archive_command=/usr/local/bin/archive-wal.sh %p %f
       - -c
-      - archive_timeout=60
+      # 900s (15min) matches the accepted RPO (docs/superpowers/specs/2026-07-22-phase0-baseline.md).
+      # 60s forced a 16MiB segment every minute (~22.5 GiB/day of WAL); nothing
+      # yet prunes /wal-archive or ships it off-site (B2) — retention/pruning +
+      # off-site upload is Phase 7 and a pre-VPS-deploy requirement.
+      - archive_timeout=900
       - -c
       - max_wal_senders=3
     volumes:
       - pgdata:/var/lib/postgresql/data
       - wal-archive:/wal-archive
       - ./deploy/postgres/init:/docker-entrypoint-initdb.d:ro
+      - ./deploy/postgres/archive-wal.sh:/usr/local/bin/archive-wal.sh:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d peppercheck"]
       interval: 5s
