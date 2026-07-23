@@ -46,7 +46,14 @@ Feature packages (`internal/identity`, `internal/task`, …) with the
   (`down-v` then `up`) — the migrator can't create the `atlas` schema on its own
   (no database-level `CREATE`), so a stale volume would fail migration. Local
   data is disposable (fresh-start policy). For a persistent DB you would instead
-  apply the delta once by hand, e.g. `CREATE SCHEMA atlas AUTHORIZATION peppercheck_migrator;`.
+  apply the delta once by hand — create the schema **and move the existing
+  history table into it**, otherwise Atlas reads an empty `atlas.atlas_schema_revisions`
+  and thinks no migrations are applied:
+
+  ```sql
+  CREATE SCHEMA atlas AUTHORIZATION peppercheck_migrator;
+  ALTER TABLE public.atlas_schema_revisions SET SCHEMA atlas;
+  ```
 - **Atlas is pinned to `v1.2.0`** (Standard distribution, used unauthenticated =
   free). Match it on your machine — Homebrew can't pin a specific version, so
   use the install script:
