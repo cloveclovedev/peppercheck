@@ -252,9 +252,11 @@ type TokenVerifier interface {
 
 ### 5.5 Config
 
-- Add `FIREBASE_PROJECT_ID` (per environment). In Compose it is injected into the
-  `api` service with a dummy default so the stack boots offline / in CI; a real
-  per-env project is needed to actually verify tokens.
+- Add `FIREBASE_PROJECT_ID` (per environment). Compose injects it into the `api`
+  service **fail-closed** (`${FIREBASE_PROJECT_ID:?…}`) so a missing value fails
+  loudly rather than booting into silent auth failures; `.env.example` carries a
+  dummy so local `make up` still works, staging/production must set the real
+  value, and CI passes an explicit dummy.
 - **HTTP port — single source of truth.** The port is defined **once** as
   `API_PORT` in the Compose `.env`; the `api` service maps it to `PORT` and Caddy
   reads the same `API_PORT` for its upstream (`reverse_proxy api:{$API_PORT}`).
@@ -277,18 +279,27 @@ first, deviate with a concrete reason" bar is met).
 
 `lib/core/network/`:
 - **`ApiClient`** wrapping one `Dio`:
-  - **base URL** by build env (`AppConfig`/`AppEnvironment`): dev local
-    `http://10.0.2.2:8765` (Android) / `http://127.0.0.1:8765` (iOS sim, via the
-    existing `10.0.2.2 → 127.0.0.1` startup rewrite); staging
+  - **base URL** by build env (`AppConfig`/`AppEnvironment`): dev goes **through
+    Caddy on `:80`** (the api is not host-published) — `http://10.0.2.2`
+    (Android) / `http://127.0.0.1` (iOS sim, via the existing
+    `10.0.2.2 → 127.0.0.1` startup rewrite); staging
     `https://staging.peppercheck.dev`; production `https://peppercheck.dev`.
+    **Dev cleartext HTTP must be allowed for the dev flavor only:** an Android
+    `network_security_config` permitting cleartext to `10.0.2.2`/`localhost`, and
+    an iOS ATS exception (`NSAllowsLocalNetworking`). Staging/production are HTTPS
+    (no exception). Handled in the Flutter plan (P2-4).
   - **Auth interceptor:** attaches `Authorization: Bearer <token>` on
     authenticated requests, where the token comes from an injected
-    `IdTokenProvider` (`Future<String?> Function({bool forceRefresh})`) — **not**
-    a direct `firebase_auth` call, so `core/network` never imports the Firebase
-    SDK. `features/auth` supplies the Firebase-backed implementation
-    (`({forceRefresh}) => FirebaseAuth.instance.currentUser?.getIdToken(forceRefresh)`)
-    and wires it in at app composition. On `401`, the interceptor asks the
-    provider to force-refresh and retries **once, for idempotent GET only**.
+    `IdTokenProvider` — **not** a direct `firebase_auth` call, so `core/network`
+    never imports the Firebase SDK:
+    ```dart
+    typedef IdTokenProvider = Future<String?> Function({required bool forceRefresh});
+    ```
+    `features/auth` supplies the Firebase-backed implementation
+    (`({required forceRefresh}) async => FirebaseAuth.instance.currentUser?.getIdToken(forceRefresh)`)
+    and wires it in at app composition. On `401`, the interceptor calls the
+    provider with `forceRefresh: true` and retries **once, for idempotent GET
+    only**.
   - **Request-ID interceptor:** propagate/echo `X-Request-Id`.
   - **Timeouts:** bounded connect/receive/send.
   - **No auto-retry of non-idempotent mutations.**
@@ -323,22 +334,34 @@ import `firebase_auth` (enforced by a CI architecture import check).
 - **Remove Supabase from the auth path:** the auth-state provider and repository
   no longer import `supabase_flutter`. `Supabase.initialize(...)` stays in
   startup for un-migrated data features (§3).
+- **Rename the feature `authentication` → `auth` (P2-5), per §4.** The current
+  dir is `lib/features/authentication/`; P2-5 renames it to `lib/features/auth/`
+  and updates imports (mechanical). This is where the convention is applied (§15).
 - **Migrate existing auth consumers in the same PR (P2-5) — do not leave them
-  dangling.** Several consumers bind Supabase-specific auth types today and break
-  when the provider changes; each is updated to the neutral current-user contract
-  so the branch still compiles (the data behind them stays non-functional until
-  its own phase — narrowing, §3). The chosen approach is **update the consumers**,
-  not a compat facade or feature gate:
+  dangling.** Several consumers bind Supabase-specific auth types today (the
+  `currentUserProvider`'s `User?`, or `authState.value?.session`) and break when
+  the contract's type changes; each is updated to the neutral current-user
+  contract so the branch still compiles (the data behind them stays
+  non-functional until its own phase — narrowing, §3). The chosen approach is
+  **update the consumers**, not a compat facade or feature gate. Known consumers:
   - `lib/app/routing/app_router.dart` (`authState.value?.session`) → the
     contract's signed-in state.
-  - `lib/features/matching/presentation/controllers/referee_availability_controller.dart`
-    (`session?.user.id`) and
-    `lib/features/profile/presentation/providers/current_profile_provider.dart`
-    (`currentUserProvider`) → `AppUser.internalUserId` from the contract.
-  - `lib/features/notification/application/fcm_service.dart` (listens to
-    `Supabase…onAuthStateChange`) → the new auth-state. The FCM listener is part
-    of the auth path, so this is required to satisfy the "auth path no longer
-    uses the Supabase SDK" done criterion (§12).
+  - `…/matching/…/referee_availability_controller.dart` (`session?.user.id`),
+    `…/profile/…/current_profile_provider.dart` (`currentUserProvider`),
+    `…/home/…/widgets/task_card.dart` (`currentUserProvider?.id`),
+    `…/profile/…/avatar_edit_controller.dart` and
+    `…/profile/…/username_edit_controller.dart` (`currentUserProvider…user.id`)
+    → `AppUser.internalUserId` from the contract.
+  - `…/notification/application/fcm_service.dart` (listens to
+    `Supabase…onAuthStateChange`) → the new auth-state.
+- **FCM token sync is explicitly disabled until Phase 3, not left as a silent
+  no-op.** `notification/data/notification_repository.dart` upserts the FCM token
+  keyed on the **Supabase** current user, which is null after the auth switch, so
+  it would silently no-op. P2-5 gates token registration off (a clear "disabled
+  until the notification feature migrates in Phase 3" guard) rather than relying
+  on a silent failure. That, plus moving the `fcm_service` listener off
+  `onAuthStateChange`, satisfies the "auth path no longer uses the Supabase SDK"
+  done criterion (§12).
 
 ### 6.3 Post-login navigation
 
@@ -406,18 +429,20 @@ unique violation re-resolves with no duplicate. `TokenVerifier` via the fake.
 - valid token, second call → same UUID (no duplicate);
 - **user isolation:** a token for user B never returns user A's user (seed of
   the authz-isolation pattern);
-- error-envelope stability (stable codes).
+- error-envelope contract: stable `code` + non-empty `requestId` for `401
+  unauthenticated` and `503 unavailable`, asserted through the real RequestID
+  middleware chain.
 
 **Schema / DB integration:** the constraint behavior — `UNIQUE(issuer, subject)`,
 `users` ↔ `user_identities` FK cascade, and no-orphan-`users` on rollback — is
 covered by the Go store integration tests (CI-enforced via `make test`), plus a
-transactional assert-SQL file `backend/db/tests/test_identity_constraints.sql` in
-the repo's existing `db/tests/` style. **Note:** the repo has **no pgTAP runner**
-and no CI wiring for `db/tests/` today (Phase 1's `test_role_separation.sql` is
-assert-SQL, not pgTAP). Whether to stand up a real pgTAP/assert-SQL CI runner or
-keep the manual convention is an **open operator decision**; the strategy's
-"pgTAP" wording (§24) is aspirational until then. (Migrations applying cleanly to
-an empty DB is already checked by Phase 1 CI.)
+transactional **assert-SQL** file `backend/db/tests/test_identity_constraints.sql`
+in the repo's existing `db/tests/` style. `db/tests/*.sql` **is** run in CI
+(`ci-backend.yml` already runs `test_role_separation.sql`); Phase 2 generalizes
+that step to a `db/tests/*.sql` loop so the new file runs automatically. No pgTAP
+is introduced — the strategy's "pgTAP" wording (§24) is aspirational; this uses
+assert-SQL. (Migrations applying cleanly to an empty DB is already checked by
+Phase 1 CI.)
 
 **Flutter:**
 - `core/network` `ApiClient` (fake HTTP): auth interceptor attaches the header;
@@ -468,7 +493,7 @@ each (§3). Go first (verifiable via curl + token), then Flutter, then Apple.
 |----|-------|---------|
 | P2-1 | Go | Structure reorg: `internal/platform/*` → `internal/core/*` (Phase 1 packages); adopt the §4 convention. Mechanical, compiler + tests verify. |
 | P2-2 | Go | `platform/auth` `TokenVerifier` (Firebase impl + fake); auth middleware; error envelope; `FIREBASE_PROJECT_ID`; local port `8765`. |
-| P2-3 | Go | `identity` feature (`domain`/`service`/`store`/`handler`); `GET /api/v1/me`; authz-isolation + API integration + pgTAP tests. |
+| P2-3 | Go | `identity` feature (`domain`/`service`/`store`/`handler`); `GET /api/v1/me`; authz-isolation + API integration + db/tests assert-SQL constraint tests. |
 | P2-4 | Flutter | `core/network` `ApiClient` (base URL, token/request-id interceptors, timeouts, error mapping); add `firebase_auth`; base-URL config. |
 | P2-5 | Flutter | `features/auth` Firebase adapter (**Google**); app-level current-user contract exposing the internal UUID; remove Supabase from the auth path → **Google end-to-end**. |
 | P2-6 | Flutter + infra | Apple Sign-In (`sign_in_with_apple`, nonce, `linkWithCredential`); operator/infra checklist (§7) → **Apple end-to-end**. Single emulator verification pass. |
