@@ -45,7 +45,14 @@ IOS_DEVICE="" ANDROID_DEVICE=""
 
 start_backend() {
   echo "==> Starting backend (FIREBASE_PROJECT_ID=$FIREBASE_PROJECT)"
-  ( cd "$BACKEND_DIR" && FIREBASE_PROJECT_ID="$FIREBASE_PROJECT" make up )
+  if ! ( cd "$BACKEND_DIR" && FIREBASE_PROJECT_ID="$FIREBASE_PROJECT" make up ); then
+    echo
+    echo "backend failed to start. If compose reported a missing variable"
+    echo "(e.g. API_PORT), your backend/.env predates a template change and"
+    echo "make up won't overwrite it. Refresh it (values are throwaway dev-only)"
+    echo "and retry:   cp backend/.env.example backend/.env"
+    exit 1
+  fi
   printf '==> Waiting for %s ' "$API_HEALTH_URL"
   for i in $(seq 1 60); do
     code="$(curl -s -o /dev/null -w '%{http_code}' "$API_HEALTH_URL" || true)"
