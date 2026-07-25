@@ -2,9 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:logger/logger.dart';
 import 'package:peppercheck_flutter/app/app_logger.dart';
-import 'package:peppercheck_flutter/features/auth/data/apple_nonce.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 part 'auth_repository.g.dart';
 
@@ -59,20 +57,15 @@ class AuthRepository {
     return GoogleAuthProvider.credential(idToken: idToken);
   }
 
+  /// Signs in with Apple via Firebase's recommended provider flow: firebase_auth
+  /// drives the native Apple UI and handles the nonce internally. See
+  /// docs/operations/firebase-apple-signin-method.md for why this replaces the
+  /// manual sign_in_with_apple + credential path.
   Future<void> signInWithApple() async {
-    final nonce = generateAppleNonce();
-    final appleCredential = await SignInWithApple.getAppleIDCredential(
-      scopes: const [
-        AppleIDAuthorizationScopes.email,
-        AppleIDAuthorizationScopes.fullName,
-      ],
-      nonce: nonce.sha256Hex,
-    );
-    final idToken = appleCredential.identityToken;
-    if (idToken == null) {
-      throw StateError('Apple sign-in returned no identity token');
-    }
-    await completeAppleSignIn(idToken: idToken, rawNonce: nonce.raw);
+    final provider = AppleAuthProvider()
+      ..addScope('email')
+      ..addScope('name');
+    await _auth.signInWithProvider(provider);
   }
 
   /// Exchanges the Apple identity token for a Firebase sign-in. On
