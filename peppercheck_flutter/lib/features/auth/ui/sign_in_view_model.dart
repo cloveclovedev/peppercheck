@@ -1,8 +1,8 @@
 import 'package:peppercheck_flutter/app/app_logger.dart';
-import 'package:peppercheck_flutter/features/authentication/data/authentication_repository.dart';
+import 'package:peppercheck_flutter/features/auth/data/auth_repository.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-part 'authentication_controller.g.dart';
+part 'sign_in_view_model.g.dart';
 
 @riverpod
 class AuthenticationController extends _$AuthenticationController {

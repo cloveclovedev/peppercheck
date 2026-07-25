@@ -1,4 +1,4 @@
-import 'package:peppercheck_flutter/features/authentication/data/auth_state_provider.dart';
+import 'package:peppercheck_flutter/features/auth/application/auth_state.dart';
 import 'package:peppercheck_flutter/features/profile/data/profile_repository.dart';
 import 'package:peppercheck_flutter/features/profile/domain/profile.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';

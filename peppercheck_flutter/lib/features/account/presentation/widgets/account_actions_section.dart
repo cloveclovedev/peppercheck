@@ -8,7 +8,7 @@ import 'package:peppercheck_flutter/common_widgets/destructive_action_button.dar
 import 'package:peppercheck_flutter/features/account/data/account_repository.dart';
 import 'package:peppercheck_flutter/features/account/presentation/account_deletion_controller.dart';
 import 'package:peppercheck_flutter/features/account/presentation/widgets/delete_account_confirmation_dialog.dart';
-import 'package:peppercheck_flutter/features/authentication/data/authentication_repository.dart';
+import 'package:peppercheck_flutter/features/auth/data/auth_repository.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 
 class AccountActionsSection extends ConsumerWidget {

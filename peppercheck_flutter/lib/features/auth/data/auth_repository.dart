@@ -4,7 +4,7 @@ import 'package:peppercheck_flutter/app/app_logger.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-part 'authentication_repository.g.dart';
+part 'auth_repository.g.dart';
 
 class AuthenticationRepository {
   final GoogleSignIn _googleSignIn = GoogleSignIn.instance;

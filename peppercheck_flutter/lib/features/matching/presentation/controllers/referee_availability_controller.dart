@@ -1,4 +1,4 @@
-import 'package:peppercheck_flutter/features/authentication/data/auth_state_provider.dart';
+import 'package:peppercheck_flutter/features/auth/application/auth_state.dart';
 import 'package:peppercheck_flutter/features/matching/data/matching_repository.dart';
 import 'package:peppercheck_flutter/features/matching/domain/referee_available_time_slot.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';

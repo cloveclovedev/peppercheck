@@ -1,7 +1,7 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-part 'auth_state_provider.g.dart';
+part 'auth_state.g.dart';
 
 @Riverpod(keepAlive: true)
 Stream<AuthState> authStateChanges(Ref ref) {
