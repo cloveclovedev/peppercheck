@@ -32,10 +32,11 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     env:
-      # go tests + atlas apply run AS THE MIGRATOR: it owns the tables (so tests
-      # can TRUNCATE) and, via ALTER DEFAULT PRIVILEGES, the app role gets DML on
-      # them — which the role-separation step below verifies.
+      # Most integration tests run as the migrator because their fixture cleanup
+      # uses TRUNCATE. The identity store also runs once through APP_DATABASE_URL
+      # so CI exercises the same least-privilege role used in production.
       DATABASE_URL: postgres://peppercheck_migrator:migrator_ci_pw@localhost:5432/peppercheck?sslmode=disable
+      APP_DATABASE_URL: postgres://peppercheck_app:app_ci_pw@localhost:5432/peppercheck?sslmode=disable
       # Consumed by the real 00-roles.sh:
       PGHOST: localhost
       PGPASSWORD: postgres

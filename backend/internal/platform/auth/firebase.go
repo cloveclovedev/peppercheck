@@ -52,7 +52,9 @@ func NewFirebaseVerifier(ctx context.Context, projectID string) (*FirebaseVerifi
 // public-key fetch) with its own timeout. An invalid/expired token returns
 // ErrInvalidToken (the caller maps it to 401); any other failure — a public-key
 // fetch, network error, or timeout — is wrapped and returned as-is so the caller
-// can treat it as 503 and log the cause. It is NOT the user's fault.
+// can treat it as 503 and log the cause. It is NOT the user's fault. This method
+// intentionally does not check token revocation or whether the Firebase user was
+// disabled; the immediate-lockout policy is tracked in the operations follow-up.
 func (v *FirebaseVerifier) Verify(ctx context.Context, rawToken string) (Identity, error) {
 	ctx, cancel := context.WithTimeout(ctx, v.timeout)
 	defer cancel()
