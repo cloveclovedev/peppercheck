@@ -34,7 +34,7 @@ final class UsernameEditControllerProvider
 }
 
 String _$usernameEditControllerHash() =>
-    r'71602a65ba13dadbc1567076eed029183c03ec00';
+    r'59fb8dc8ca610541ed29b8c1a7f1f42e6cb38348';
 
 abstract class _$UsernameEditController extends $AsyncNotifier<void> {
   FutureOr<void> build();
