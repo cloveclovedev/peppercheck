@@ -1,0 +1,14 @@
+# Install as /etc/systemd/system/peppercheck-host-checks.timer alongside
+# the matching .service (peppercheck-host-checks.service) -- see
+# backend/deploy/provision/MONITORING.md.
+[Unit]
+Description=Run peppercheck-host-checks.service every 5 minutes
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=5min
+AccuracySec=30s
+Unit=peppercheck-host-checks.service
+
+[Install]
+WantedBy=timers.target

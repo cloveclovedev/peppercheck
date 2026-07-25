@@ -1,5 +1,6 @@
-h1:ZN4eZMmGqUMiysY8LF4950pSG1u4WZvU1PmyEADYNc4=
+h1:qAsG6A17Du7a/bs7YMypIa7prUryJT8OSf6fwCcNHBA=
 20260723132843_phase1_baseline.sql h1:6ruU5+0h61Vu2x1TdLLKgdyKkqVcOHj5k5mTSyy/LJQ=
 20260723142427_add_jobs.sql h1:gtIwPrilHLjMbx/7vsVSI8R2USaKfauzUbU8PH3cLjc=
 20260723143726_add_webhook_inbox.sql h1:IXSVNx+WE9EJ+f1msmGlM2dD0sHPKMbPHGzqHhv+rxQ=
 20260725114029_add_user_identities_user_id_index.sql h1:sY0AMmd9WUIcQTunkVVCpNrQfiMy/Jpy0NmoTpoJees=
+20260725174940_add_restore_sentinel.sql h1:Wsm4+ts8TWzvt5cwSRUcr68NggpH6QYH58o+F+ExUvE=

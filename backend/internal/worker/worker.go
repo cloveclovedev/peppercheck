@@ -1,7 +1,10 @@
 // Package worker runs Postgres-backed durable jobs. A ticker drives a claim
 // loop; each due job is dispatched to a registered handler and marked
 // succeeded, rescheduled with backoff, or failed. Phase 1 registers only a
-// noop handler to exercise the machinery.
+// noop handler to exercise the machinery. Each RunDue cycle that drains the
+// queue without error optionally POSTs to a Better Stack heartbeat URL
+// (HEARTBEAT_URL_WORKER, Phase 7-A monitoring) so an external monitor can
+// alert if the worker stops running entirely.
 package worker
 
 import (
@@ -9,6 +12,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"time"
 
 	"github.com/cloveclovedev/peppercheck/backend/internal/core/config"
@@ -24,20 +28,40 @@ type Worker struct {
 	logger   *slog.Logger
 	handlers map[string]Handler
 	interval time.Duration
+
+	heartbeatURL string
+	httpClient   *http.Client
+	// heartbeatInterval throttles heartbeat POSTs: RunDue drains on every
+	// tick (interval ~1s), and an idle worker drains cleanly every tick, so
+	// pinging on each drain would send tens of thousands of heartbeats per
+	// day and risk being rate-limited by Better Stack. At most one ping per
+	// heartbeatInterval is sent instead. Kept comfortably below any sane
+	// monitor grace period so a genuinely stopped worker is still detected
+	// promptly.
+	heartbeatInterval time.Duration
+	lastHeartbeat     time.Time
 }
 
 // New builds a Worker over an open database handle.
 func New(db *sql.DB, logger *slog.Logger) *Worker {
 	return &Worker{
-		store:    jobs.NewStore(db),
-		logger:   logger,
-		handlers: map[string]Handler{},
-		interval: time.Second,
+		store:             jobs.NewStore(db),
+		logger:            logger,
+		handlers:          map[string]Handler{},
+		interval:          time.Second,
+		httpClient:        &http.Client{Timeout: 5 * time.Second},
+		heartbeatInterval: 60 * time.Second,
 	}
 }
 
 // Register binds a handler to a job kind.
 func (w *Worker) Register(kind string, h Handler) { w.handlers[kind] = h }
+
+// SetHeartbeatURL configures the optional Better Stack heartbeat URL POSTed
+// to after every RunDue cycle that drains the queue without error. Leaving
+// it empty (the default) disables heartbeats entirely -- not every
+// environment monitors the worker this way.
+func (w *Worker) SetHeartbeatURL(url string) { w.heartbeatURL = url }
 
 // RunDue drains every currently-due job, then returns. It stops early if ctx is
 // cancelled or a claim errors.
@@ -54,10 +78,48 @@ func (w *Worker) RunDue(ctx context.Context) error {
 			return err
 		}
 		if j == nil {
+			w.sendHeartbeat(ctx)
 			return nil
 		}
 		w.process(ctx, j)
 	}
+}
+
+// sendHeartbeat POSTs to the configured Better Stack heartbeat URL, if any.
+// It is deliberately best-effort: a heartbeat is a liveness signal for an
+// external monitor, not part of job-processing correctness, so a failure
+// here is logged at warn level and never propagated -- it must never break,
+// delay, or retry job processing. It is also throttled to at most one
+// successful ping per heartbeatInterval (see the field comment) so an idle
+// worker draining every ~1s tick does not flood the heartbeat endpoint.
+func (w *Worker) sendHeartbeat(ctx context.Context) {
+	if w.heartbeatURL == "" {
+		return
+	}
+	// Throttle against the last SUCCESSFUL ping: a failed POST does not
+	// advance lastHeartbeat, so a transient failure is retried on the next
+	// drain rather than being suppressed for a whole interval.
+	if !w.lastHeartbeat.IsZero() && time.Since(w.lastHeartbeat) < w.heartbeatInterval {
+		return
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, w.heartbeatURL, nil)
+	if err != nil {
+		// Do not log w.heartbeatURL itself -- Better Stack heartbeat URLs
+		// carry an auth token in the path.
+		w.logger.Warn("heartbeat request build failed", "error", err)
+		return
+	}
+	resp, err := w.httpClient.Do(req)
+	if err != nil {
+		w.logger.Warn("heartbeat POST failed", "error", err)
+		return
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode >= 300 {
+		w.logger.Warn("heartbeat POST returned non-2xx", "status", resp.StatusCode)
+		return
+	}
+	w.lastHeartbeat = time.Now()
 }
 
 func (w *Worker) process(ctx context.Context, j *jobs.Job) {
@@ -110,8 +172,9 @@ func (w *Worker) Loop(ctx context.Context) error {
 }
 
 // Run wires the built-in handlers and loops until ctx is cancelled.
-func Run(ctx context.Context, _ config.Config, logger *slog.Logger, db *sql.DB) error {
+func Run(ctx context.Context, cfg config.Config, logger *slog.Logger, db *sql.DB) error {
 	w := New(db, logger)
+	w.SetHeartbeatURL(cfg.HeartbeatURLWorker)
 	w.Register("noop", func(context.Context, *jobs.Job) error { return nil })
 	return w.Loop(ctx)
 }

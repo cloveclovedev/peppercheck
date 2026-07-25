@@ -1,0 +1,14 @@
+# Install as /etc/systemd/system/peppercheck-wal-freshness.timer alongside
+# the matching .service (peppercheck-wal-freshness.service) -- see
+# backend/deploy/provision/MONITORING.md.
+[Unit]
+Description=Run peppercheck-wal-freshness.service every 2 minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=2min
+AccuracySec=10s
+Unit=peppercheck-wal-freshness.service
+
+[Install]
+WantedBy=timers.target

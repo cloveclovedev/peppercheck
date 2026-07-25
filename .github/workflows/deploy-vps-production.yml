@@ -1,0 +1,83 @@
+name: deploy-vps-production
+
+# Promotion by digest ("build once -> promote", design doc §5.4): production
+# never rebuilds or re-pushes images. It re-deploys the EXACT release
+# manifest digest that ci-backend.yml's `tag-validated` job already stamped
+# `staging-validated-<sha>` onto after that digest passed staging's smoke
+# test. This workflow only re-verifies that stamp (never trusts the operator
+# to have picked a validated digest by hand), resolves the validated commit
+# SHA out of the manifest itself, and calls the same reusable deploy-vps.yml
+# used by staging with env: production -- whose own `environment: production`
+# is what supplies the required-reviewer gate (this caller sets no
+# `secrets:` block; workflow_call cannot forward Environment secrets from the
+# caller, so deploy-vps.yml reads the `production` Environment's secrets
+# itself).
+#
+# Dispatched manually, post-cutover: the operator picks a manifest digest
+# that has already run on staging (see the release-checklist skill for the
+# rest of the per-deploy operator flow).
+
+on:
+  workflow_dispatch:
+    inputs:
+      manifest_digest:
+        description: "OCI digest (sha256:...) of the peppercheck-release manifest to promote to production -- must already carry a staging-validated-<sha> tag in GHCR"
+        type: string
+        required: true
+
+jobs:
+  verify-staging-validated:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: read
+    outputs:
+      sha: ${{ steps.resolve.outputs.sha }}
+    steps:
+      - name: Install oras
+        uses: oras-project/setup-oras@v2
+        with:
+          version: "1.2.0"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve manifest SHA and confirm staging-validated-<sha> resolves to the same digest
+        id: resolve
+        env:
+          MANIFEST_DIGEST: ${{ inputs.manifest_digest }}
+        run: |
+          set -euo pipefail
+          oras pull "ghcr.io/cloveclovedev/peppercheck-release@${MANIFEST_DIGEST}" -o m
+          sha=$(jq -er '.sha' m/manifest.json)
+          echo "manifest sha: $sha"
+
+          validated_digest=$(oras resolve "ghcr.io/cloveclovedev/peppercheck-release:staging-validated-${sha}")
+          if [ "$validated_digest" != "$MANIFEST_DIGEST" ]; then
+            echo "::error::staging-validated-${sha} resolves to ${validated_digest}, not the requested ${MANIFEST_DIGEST} -- production only deploys staging-validated artifacts"
+            exit 1
+          fi
+
+          echo "confirmed staging-validated-${sha} resolves to ${MANIFEST_DIGEST}"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
+  # deploy-vps.yml is a workflow_call target, so this job may only set
+  # with/secrets/needs/if/permissions -- no steps/runs-on/env/concurrency of
+  # its own. `pc-prod` is the tailnet MagicDNS name for the production
+  # Droplet. No `secrets:` block; see the header comment above.
+  deploy-production:
+    needs: verify-staging-validated
+    permissions:
+      id-token: write # Tailscale OIDC -- id-token defaults to none and must be explicitly forwarded to the called workflow
+      contents: read
+      packages: read
+    uses: ./.github/workflows/deploy-vps.yml
+    with:
+      env: production
+      host: peppercheck.dev
+      ssh_host: pc-prod
+      sha: ${{ needs.verify-staging-validated.outputs.sha }}
+      manifest_digest: ${{ inputs.manifest_digest }}

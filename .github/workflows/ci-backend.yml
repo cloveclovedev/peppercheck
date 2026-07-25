@@ -2,14 +2,23 @@ name: ci-backend
 
 on:
   workflow_dispatch:
+  # "Build once -> promote": the image job only pushes to GHCR + publishes the
+  # release manifest on this trigger (see the image job's PUBLISH env below).
+  push:
+    branches:
+      - refactor/go-api-vps
+    paths:
+      - 'backend/**'
+      - '.github/workflows/ci-backend.yml'
   pull_request:
     paths:
       - 'backend/**'
       - '.github/workflows/ci-backend.yml'
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+# No workflow-level concurrency: a workflow-level cancel-in-progress: true
+# would cancel every job in an in-flight run, including a downstream deploy
+# job (Task 9) that must never be interrupted mid-deploy. `go` and `image`
+# each get their own fast-cancelling group below instead.
 
 defaults:
   run:
@@ -18,6 +27,9 @@ defaults:
 jobs:
   go:
     runs-on: ubuntu-latest
+    concurrency:
+      group: ci-go-${{ github.ref }}
+      cancel-in-progress: true
     services:
       postgres:
         image: postgres:17
@@ -107,8 +119,25 @@ jobs:
         # skip re-execution when DATABASE_URL is unchanged).
         run: go test -race -p 1 -count=1 ./...
 
+      - name: Bats tests for deployment scripts (switch-deployment.sh, write-secret.sh)
+        # deployment.bats covers switch-deployment.sh's atomicity and
+        # write-secret.sh's allowlist/path-traversal hardening (Task 6) --
+        # runs against a throwaway temp workspace, never the real host. Kept
+        # in this job so a failure here also blocks `image` (needs: go) and
+        # therefore the whole deploy chain, the same as a Go test failure.
+        run: docker run --rm -v "$PWD/scripts":/code -w /code bats/bats:latest deployment.bats
+
   image:
+    needs: go
     runs-on: ubuntu-latest
+    concurrency:
+      group: ci-image-${{ github.ref }}
+      cancel-in-progress: true
+    # id-token is deliberately NOT requested here -- Tailscale OIDC belongs to
+    # the deploy workflow (Task 8/9), not this build/push job.
+    permissions:
+      contents: read
+      packages: write
     defaults:
       run:
         working-directory: backend
@@ -122,11 +151,231 @@ jobs:
       AGE_RECIPIENT: age1ci
       API_PORT: "8765"
       FIREBASE_PROJECT_ID: ci
+      # "Build once -> promote" (design doc §5.4): the release manifest needs
+      # to be built at the integration-branch SHA, not a throwaway PR SHA, so
+      # only push images / publish the manifest on that push trigger. PR runs
+      # still build all three Dockerfiles (this is the PR-validation value of
+      # this job) but never touch GHCR -- which also sidesteps the read-only
+      # GITHUB_TOKEN that PRs from forks receive.
+      PUBLISH: ${{ github.event_name == 'push' && github.ref == 'refs/heads/refactor/go-api-vps' }}
+    outputs:
+      sha: ${{ github.sha }}
+      backend_digest: ${{ steps.build-backend.outputs.digest }}
+      postgres_digest: ${{ steps.build-postgres.outputs.digest }}
+      backup_digest: ${{ steps.build-backup.outputs.digest }}
+      manifest_digest: ${{ steps.push-manifest.outputs.digest }}
     steps:
       - uses: actions/checkout@v4
+
       - name: Validate Compose syntax (incl. backup profile)
         run: docker compose --profile backup config >/dev/null
-      - name: Build api image
-        run: docker build -t peppercheck-backend:ci .
+
+      - name: Assert prod compose config invariants
+        # assert-prod-config.sh fills in its own placeholder env/secrets for
+        # everything compose.prod.yaml requires (PC_ENV, IMAGE_*,
+        # CADDY_SITE_ADDRESS, PGBACKREST_REPO1_S3_*, ./secrets/* files, ...) so
+        # it needs no extra env here -- it only needs jq, which is preinstalled
+        # on the ubuntu-latest runner.
+        run: ./scripts/assert-prod-config.sh
+
+      - uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GHCR
+        if: env.PUBLISH == 'true'
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Three images, one per Dockerfile (backend/Dockerfile,
+      # deploy/postgres/Dockerfile, deploy/backup/Dockerfile). All three
+      # always build (Dockerfile validation on every PR); only PUBLISH runs
+      # push to GHCR and produce a real `outputs.digest`.
+      - name: Build backend image
+        id: build-backend
+        uses: docker/build-push-action@v7
+        with:
+          context: backend
+          push: ${{ env.PUBLISH == 'true' }}
+          tags: ghcr.io/cloveclovedev/peppercheck-backend:${{ github.sha }}
+
+      - name: Build postgres image
+        id: build-postgres
+        uses: docker/build-push-action@v7
+        with:
+          context: backend/deploy/postgres
+          push: ${{ env.PUBLISH == 'true' }}
+          tags: ghcr.io/cloveclovedev/peppercheck-postgres:${{ github.sha }}
+
       - name: Build backup image
-        run: docker build -t peppercheck-backup:ci deploy/backup
+        id: build-backup
+        uses: docker/build-push-action@v7
+        with:
+          context: backend/deploy/backup
+          push: ${{ env.PUBLISH == 'true' }}
+          tags: ghcr.io/cloveclovedev/peppercheck-backup:${{ github.sha }}
+
+      - name: Install oras
+        if: env.PUBLISH == 'true'
+        uses: oras-project/setup-oras@v2
+        with:
+          version: "1.2.0"
+
+      - name: Resolve atlas/caddy base-image digests
+        if: env.PUBLISH == 'true'
+        id: base-digests
+        run: |
+          set -euo pipefail
+          # `imagetools inspect`'s plain-text output prints the top-level
+          # (index) Digest first -- for a multi-arch tag like caddy:2 that is
+          # the manifest-LIST digest, which is exactly what a later
+          # `docker pull caddy@sha256:...` needs to still resolve the right
+          # platform on the VPS.
+          atlas_digest=$(docker buildx imagetools inspect arigaio/atlas:1.2.0 | awk '/^Digest:/{print $2; exit}')
+          caddy_digest=$(docker buildx imagetools inspect caddy:2 | awk '/^Digest:/{print $2; exit}')
+          if [ -z "$atlas_digest" ] || [ -z "$caddy_digest" ]; then
+            echo "failed to resolve atlas/caddy digest" >&2
+            exit 1
+          fi
+          echo "atlas=arigaio/atlas@${atlas_digest}" >> "$GITHUB_OUTPUT"
+          echo "caddy=docker.io/library/caddy@${caddy_digest}" >> "$GITHUB_OUTPUT"
+
+      - name: Write release manifest
+        if: env.PUBLISH == 'true'
+        run: |
+          set -euo pipefail
+          cat > manifest.json <<JSON
+          {
+            "sha": "${{ github.sha }}",
+            "backend": "ghcr.io/cloveclovedev/peppercheck-backend@${{ steps.build-backend.outputs.digest }}",
+            "postgres": "ghcr.io/cloveclovedev/peppercheck-postgres@${{ steps.build-postgres.outputs.digest }}",
+            "backup": "ghcr.io/cloveclovedev/peppercheck-backup@${{ steps.build-backup.outputs.digest }}",
+            "atlas": "${{ steps.base-digests.outputs.atlas }}",
+            "caddy": "${{ steps.base-digests.outputs.caddy }}"
+          }
+          JSON
+          cat manifest.json
+
+      - name: Push release manifest to GHCR (OCI artifact)
+        if: env.PUBLISH == 'true'
+        id: push-manifest
+        run: |
+          set -euo pipefail
+          # oras reuses the docker credential store populated by the GHCR
+          # login step above -- no separate `oras login` needed.
+          #
+          # `--format go-template='{{.digest}}'` (oras >=1.2.0 formatted
+          # output) prints ONLY the pushed manifest digest to stdout as a
+          # single stable field -- deterministic, unlike grepping oras's
+          # human-readable "Digest:" summary (which is not contractually
+          # stdout-vs-stderr). Captured with `|| true` so a genuinely empty
+          # result trips the explicit fail-closed check below with a clear
+          # message instead of a bare `set -e` abort mid-pipe.
+          digest=$(oras push "ghcr.io/cloveclovedev/peppercheck-release:${{ github.sha }}" \
+            --artifact-type application/vnd.peppercheck.release.v1+json \
+            --format go-template='{{.digest}}' \
+            manifest.json:application/json || true)
+          if [ -z "$digest" ]; then
+            echo "failed to capture manifest digest from oras push output" >&2
+            exit 1
+          fi
+          echo "manifest digest: $digest"
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+
+  # Re-checks the branch head SHA immediately before deploy-staging, right
+  # after the (slow) image build. Two runs of this workflow can overlap when
+  # two pushes land close together; deploy-vps.yml's own concurrency group
+  # deliberately never cancels an in-flight deploy (a cancelled run could
+  # strand the Droplet mid-migrate/switch), so nothing upstream stops an
+  # older run's deploy-staging from starting after a newer run's has already
+  # shipped. This job is the guard: if `github.sha` is no longer the actual
+  # branch head by the time `image` finishes, it fails closed and
+  # deploy-staging (needs: [image, guard]) is skipped rather than deploying a
+  # stale commit over a newer one.
+  guard:
+    needs: image
+    if: github.event_name == 'push' && github.ref == 'refs/heads/refactor/go-api-vps'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Confirm this SHA is still the branch head
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          API_URL: ${{ github.api_url }}
+          BRANCH_REF: heads/refactor/go-api-vps
+          RUN_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          head_sha=$(curl -sS -f \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "${API_URL}/repos/${REPO}/git/ref/${BRANCH_REF}" \
+            | jq -er '.object.sha')
+          if [ "$head_sha" != "$RUN_SHA" ]; then
+            echo "::error::$RUN_SHA is no longer the head of $BRANCH_REF (head is now $head_sha) -- a newer push superseded this run, refusing to deploy a stale commit"
+            exit 1
+          fi
+          echo "confirmed $RUN_SHA is still the head of $BRANCH_REF"
+
+  # "Build once -> promote" (design doc §5.4): only the integration-branch
+  # push reaches this job (image.outputs.* are empty on PR runs since PUBLISH
+  # is false there, and this job's own `if` also gates on the branch push).
+  # deploy-vps.yml is a workflow_call target, so this job may only set
+  # with/secrets/needs/if/permissions -- no steps/runs-on/env/concurrency of
+  # its own; the reusable workflow's `environment: staging` and its own
+  # `concurrency: deploy-staging` apply here. No `secrets:` block: the
+  # reusable workflow reads `staging` Environment secrets
+  # (BWS_TOKEN/SSH_DEPLOY_KEY/SSH_HOST_KEY) itself via its own
+  # `environment: ${{ inputs.env }}`, workflow_call cannot forward Environment
+  # secrets from the caller anyway. `pc-staging` is the tailnet MagicDNS name
+  # for the staging Droplet.
+  deploy-staging:
+    needs: [image, guard]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/refactor/go-api-vps'
+    permissions:
+      id-token: write # Tailscale OIDC -- id-token defaults to none and must be explicitly forwarded to the called workflow
+      contents: read
+      packages: read
+    uses: ./.github/workflows/deploy-vps.yml
+    with:
+      env: staging
+      host: staging.peppercheck.dev
+      ssh_host: pc-staging
+      sha: ${{ needs.image.outputs.sha }}
+      manifest_digest: ${{ needs.image.outputs.manifest_digest }}
+
+  # Stamps the promotion record: `staging-validated-<sha>` tag on the exact
+  # manifest digest that just passed staging's smoke test. This tag is
+  # created ONLY here -- deploy-vps-production.yml requires it to resolve to
+  # the requested digest before it will deploy anything to production, so a
+  # digest can only reach production after it has actually run (and smoke-
+  # passed) on staging first.
+  tag-validated:
+    needs: [image, deploy-staging]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/refactor/go-api-vps'
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+      - name: Install oras
+        uses: oras-project/setup-oras@v2
+        with:
+          version: "1.2.0"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Tag manifest as staging-validated-<sha>
+        env:
+          MANIFEST_DIGEST: ${{ needs.image.outputs.manifest_digest }}
+          DEPLOY_SHA: ${{ needs.image.outputs.sha }}
+        run: |
+          set -euo pipefail
+          oras tag "ghcr.io/cloveclovedev/peppercheck-release@${MANIFEST_DIGEST}" "staging-validated-${DEPLOY_SHA}"
