@@ -46,14 +46,27 @@ cleanup_temps() {
 }
 
 # rclone (not the MinIO "mc" client, which collides with Debian's unrelated
-# "mc" / GNU Midnight Commander package) uploads the finished artifact. It
-# reads AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY via env_auth=true --
-# entrypoint.sh exports both from the same B2 key pgBackRest itself uses, so
-# no separate rclone config file/credential is needed.
+# "mc" / GNU Midnight Commander package) uploads the finished artifact. The
+# remote is configured through RCLONE_CONFIG_* env vars rather than an inline
+# `:s3,...:` connection string on purpose: in a connection string any value
+# containing a colon must be quoted, and an unquoted host:port endpoint (the
+# local MinIO `minio:9000`) or a scheme (`https://...`) misparses -- rclone
+# then silently builds a wrong URL (e.g. `https://minio/9000%2C...`) and the
+# upload never reaches the intended remote. A bare-hostname B2 endpoint
+# parses fine either way, so the bug would pass in production and only surface
+# against a host:port endpoint. The env-var form passes each value literally,
+# so a host:port endpoint is safe. `env_auth=true` reads AWS_ACCESS_KEY_ID/
+# AWS_SECRET_ACCESS_KEY, which entrypoint.sh exports from the same B2 key
+# pgBackRest itself uses, so no rclone.conf or credential file is needed.
+export RCLONE_CONFIG_AGEDUMP_TYPE=s3
+export RCLONE_CONFIG_AGEDUMP_PROVIDER=Other
+export RCLONE_CONFIG_AGEDUMP_ENV_AUTH=true
+export RCLONE_CONFIG_AGEDUMP_ENDPOINT="$PGBACKREST_REPO1_S3_ENDPOINT"
+export RCLONE_CONFIG_AGEDUMP_REGION="${PGBACKREST_REPO1_S3_REGION:-us-east-1}"
+
 upload_backup() {
   src="$1" name="$2"
-  rclone copyto "$src" \
-    ":s3,provider=Other,env_auth=true,endpoint=${PGBACKREST_REPO1_S3_ENDPOINT},region=${PGBACKREST_REPO1_S3_REGION:-us-east-1}:${PGBACKREST_REPO1_S3_BUCKET}/${AGE_DUMP_S3_PREFIX}/${name}"
+  rclone copyto "$src" "AGEDUMP:${PGBACKREST_REPO1_S3_BUCKET}/${AGE_DUMP_S3_PREFIX}/${name}"
 }
 
 # Each step guards with `|| return 1` so a failure aborts the backup regardless
@@ -73,7 +86,12 @@ run_backup() {
   mv "$enc" "$final" || return 1                # atomic publish; only now does dump-*.age exist
   rm -f "$tmp"
   echo "{\"level\":\"info\",\"msg\":\"logical backup dumped\",\"file\":\"${name}\"}"
-  upload_backup "$final" "$name" || return 1
+  # On upload failure remove the locally-published artifact too: B2 is the
+  # real published location, so a failed upload must not leave the local
+  # dump-*.age accumulating (cleanup_temps only sweeps .tmp files, not the
+  # published name). Removing it here keeps the atomic-publish safety -- the
+  # local file only ever exists between mv and a successful upload.
+  upload_backup "$final" "$name" || { rm -f "$final"; return 1; }
   rm -f "$final"
   echo "{\"level\":\"info\",\"msg\":\"logical backup done\",\"file\":\"${name}\"}"
 }
