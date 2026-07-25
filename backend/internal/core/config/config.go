@@ -15,12 +15,13 @@ import (
 
 // Config is the fully-resolved runtime configuration for every command.
 type Config struct {
-	Env               string // local | staging | production
-	Port              int    // HTTP listen port for the api command
-	DatabaseURL       string // libpq/pgx connection string
-	LogLevel          string // debug | info | warn | error
-	ShutdownTimeout   int    // graceful-shutdown budget in seconds
-	FirebaseProjectID string // Firebase project ID for ID-token verification
+	Env                string // local | staging | production
+	Port               int    // HTTP listen port for the api command
+	DatabaseURL        string // libpq/pgx connection string
+	LogLevel           string // debug | info | warn | error
+	ShutdownTimeout    int    // graceful-shutdown budget in seconds
+	FirebaseProjectID  string // Firebase project ID for ID-token verification
+	HeartbeatURLWorker string // optional Better Stack heartbeat URL, POSTed after each successful worker RunDue cycle
 }
 
 // Load reads configuration from the environment and validates it.
@@ -30,13 +31,23 @@ func Load() (Config, error) {
 		return Config{}, fmt.Errorf("resolving DATABASE_URL: %w", err)
 	}
 
+	// HEARTBEAT_URL_WORKER is optional -- not every environment (e.g. local
+	// dev) monitors the worker this way -- but it carries a Better Stack
+	// auth token in the URL, so it still gets the same fail-closed *_FILE
+	// convention as every other config value that can hold a secret.
+	heartbeatURLWorker, _, err := lookupEnvOrFile("HEARTBEAT_URL_WORKER")
+	if err != nil {
+		return Config{}, fmt.Errorf("resolving HEARTBEAT_URL_WORKER: %w", err)
+	}
+
 	c := Config{
-		Env:               getenv("APP_ENV", "local"),
-		Port:              getenvInt("PORT", 8765),
-		DatabaseURL:       databaseURL,
-		LogLevel:          getenv("LOG_LEVEL", "info"),
-		ShutdownTimeout:   getenvInt("SHUTDOWN_TIMEOUT_SECONDS", 15),
-		FirebaseProjectID: os.Getenv("FIREBASE_PROJECT_ID"),
+		Env:                getenv("APP_ENV", "local"),
+		Port:               getenvInt("PORT", 8765),
+		DatabaseURL:        databaseURL,
+		LogLevel:           getenv("LOG_LEVEL", "info"),
+		ShutdownTimeout:    getenvInt("SHUTDOWN_TIMEOUT_SECONDS", 15),
+		FirebaseProjectID:  os.Getenv("FIREBASE_PROJECT_ID"),
+		HeartbeatURLWorker: heartbeatURLWorker,
 	}
 	if c.Port < 1 || c.Port > 65535 {
 		return Config{}, fmt.Errorf("invalid PORT: %d", c.Port)

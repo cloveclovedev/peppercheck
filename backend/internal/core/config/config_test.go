@@ -12,6 +12,8 @@ func TestLoadDefaults(t *testing.T) {
 	t.Setenv("LOG_LEVEL", "")
 	t.Setenv("APP_ENV", "")
 	t.Setenv("FIREBASE_PROJECT_ID", "")
+	t.Setenv("HEARTBEAT_URL_WORKER", "")
+	t.Setenv("HEARTBEAT_URL_WORKER_FILE", "")
 	c, err := Load()
 	if err != nil {
 		t.Fatalf("Load: %v", err)
@@ -30,6 +32,20 @@ func TestLoadDefaults(t *testing.T) {
 	}
 	if c.FirebaseProjectID != "" {
 		t.Errorf("FirebaseProjectID = %q, want empty by default", c.FirebaseProjectID)
+	}
+	if c.HeartbeatURLWorker != "" {
+		t.Errorf("HeartbeatURLWorker = %q, want empty by default (heartbeat is optional)", c.HeartbeatURLWorker)
+	}
+}
+
+func TestLoadReadsHeartbeatURLWorker(t *testing.T) {
+	t.Setenv("HEARTBEAT_URL_WORKER", "https://uptime.betterstack.com/api/v1/heartbeat/token")
+	c, err := Load()
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if c.HeartbeatURLWorker != "https://uptime.betterstack.com/api/v1/heartbeat/token" {
+		t.Fatalf("HeartbeatURLWorker = %q, want the configured heartbeat URL", c.HeartbeatURLWorker)
 	}
 }
 

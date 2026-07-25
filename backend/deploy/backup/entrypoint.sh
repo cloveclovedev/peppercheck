@@ -10,6 +10,6 @@ printf 'localhost:5432:*:peppercheck_backup:%s\n' "$(cat "$POSTGRES_BACKUP_PASSW
 chown postgres:postgres /var/lib/postgresql/.pgpass; export PGPASSFILE=/var/lib/postgresql/.pgpass
 # age-dump S3 upload auth: pass B2 creds explicitly (mc/rclone/aws do not inherit PGBACKREST_*)
 export AWS_ACCESS_KEY_ID="$PGBACKREST_REPO1_S3_KEY" AWS_SECRET_ACCESS_KEY="$PGBACKREST_REPO1_S3_KEY_SECRET"
-printenv | grep -E '^(PGBACKREST_|AWS_|PGPASSFILE|AGE_)' > /etc/environment   # cron jobs inherit
+printenv | grep -E '^(PGBACKREST_|AWS_|PGPASSFILE|AGE_|HEARTBEAT_)' > /etc/environment   # cron jobs inherit
 chmod 600 /etc/environment   # holds the cipher pass + S3/AWS secret keys; keep off 0644
 exec cron -f    # root cron daemon; runs the postgres crontab as user postgres

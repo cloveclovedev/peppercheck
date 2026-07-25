@@ -101,3 +101,15 @@ if ! run_backup; then
   cleanup_temps
   exit 1
 fi
+
+# Optional Better Stack heartbeat: guarded because not every environment
+# monitors this cycle (HEARTBEAT_URL_BACKUP may be unset), and non-fatal
+# (`|| ...`) because under `set -eu` a failed heartbeat POST must never mark
+# an otherwise-successful, already-uploaded backup as failed.
+if [ -n "${HEARTBEAT_URL_BACKUP:-}" ]; then
+  if curl -fsS "$HEARTBEAT_URL_BACKUP" -o /dev/null; then
+    echo "{\"level\":\"info\",\"msg\":\"backup heartbeat sent\"}"
+  else
+    echo "{\"level\":\"warn\",\"msg\":\"backup heartbeat POST failed\"}"
+  fi
+fi

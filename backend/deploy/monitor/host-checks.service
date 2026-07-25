@@ -1,0 +1,22 @@
+# PepperCheck host checks: inode usage + container restart counts
+# (Phase 7-A infra/ops foundation, Task 17) -- signals DigitalOcean
+# Monitoring does not provide (design doc §9).
+#
+# Install as /etc/systemd/system/peppercheck-host-checks.service (namespaced
+# with the `peppercheck-` prefix at install time) -- see
+# backend/deploy/provision/MONITORING.md for the full install/enable steps.
+#
+# Runs as root: host-checks.sh needs the Docker socket (`docker ps`/
+# `docker inspect` across the whole compose project) and reads
+# /etc/peppercheck/monitor.env, which holds Better Stack heartbeat URLs at
+# 0600 root:root.
+[Unit]
+Description=PepperCheck host checks (inode usage, container restarts)
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/peppercheck/monitor.env
+ExecStart=/opt/peppercheck/scripts/host-checks.sh
+TimeoutStartSec=60s

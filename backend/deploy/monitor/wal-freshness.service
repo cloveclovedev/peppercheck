@@ -1,0 +1,27 @@
+# PepperCheck WAL-freshness check (Phase 7-A infra/ops foundation, Task 17).
+#
+# Install as /etc/systemd/system/peppercheck-wal-freshness.service (namespaced
+# with the `peppercheck-` prefix at install time to avoid colliding with an
+# unrelated unit of the same bare name on a shared host) -- see
+# backend/deploy/provision/MONITORING.md for the full install/enable steps.
+#
+# Runs as root: wal-freshness.sh needs the Docker socket (to resolve the
+# postgres container and `docker exec` into it) and reads
+# /etc/peppercheck/monitor.env, which holds Better Stack heartbeat URLs
+# (auth tokens in the URL) at 0600 root:root -- narrowing this to a less
+# privileged user would mean widening that file's readability instead.
+[Unit]
+Description=PepperCheck WAL-archiving freshness check
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/peppercheck/monitor.env
+ExecStart=/opt/peppercheck/scripts/wal-freshness.sh
+
+# Best-effort: a single failed/timed-out run must not retry-storm the
+# Droplet. The next timer tick (2 minutes later) tries again; Better
+# Stack's own missed-heartbeat alerting (not systemd restart behavior) is
+# what actually pages on a sustained problem.
+TimeoutStartSec=90s
