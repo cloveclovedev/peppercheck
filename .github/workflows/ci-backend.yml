@@ -248,13 +248,21 @@ jobs:
           set -euo pipefail
           # oras reuses the docker credential store populated by the GHCR
           # login step above -- no separate `oras login` needed.
-          oras push "ghcr.io/cloveclovedev/peppercheck-release:${{ github.sha }}" \
+          #
+          # `--format go-template='{{.digest}}'` (oras >=1.2.0 formatted
+          # output) prints ONLY the pushed manifest digest to stdout as a
+          # single stable field -- deterministic, unlike grepping oras's
+          # human-readable "Digest:" summary (which is not contractually
+          # stdout-vs-stderr). Captured with `|| true` so a genuinely empty
+          # result trips the explicit fail-closed check below with a clear
+          # message instead of a bare `set -e` abort mid-pipe.
+          digest=$(oras push "ghcr.io/cloveclovedev/peppercheck-release:${{ github.sha }}" \
             --artifact-type application/vnd.peppercheck.release.v1+json \
-            manifest.json:application/json \
-            | tee push.log
-          digest=$(grep -m1 '^Digest:' push.log | awk '{print $2}')
+            --format go-template='{{.digest}}' \
+            manifest.json:application/json || true)
           if [ -z "$digest" ]; then
             echo "failed to capture manifest digest from oras push output" >&2
             exit 1
           fi
+          echo "manifest digest: $digest"
           echo "digest=$digest" >> "$GITHUB_OUTPUT"
