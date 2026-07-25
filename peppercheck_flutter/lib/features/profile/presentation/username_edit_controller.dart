@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:peppercheck_flutter/features/authentication/data/auth_state_provider.dart';
+import 'package:peppercheck_flutter/features/auth/application/auth_state.dart';
 import 'package:peppercheck_flutter/features/profile/data/profile_repository.dart';
 import 'package:peppercheck_flutter/features/profile/presentation/providers/current_profile_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -45,7 +45,7 @@ class UsernameEditController extends _$UsernameEditController {
       return;
     }
 
-    final user = ref.read(currentUserProvider);
+    final user = ref.read(currentAppUserProvider).value;
     if (user == null) {
       state = AsyncError('not_logged_in', StackTrace.current);
       return;
@@ -62,7 +62,7 @@ class UsernameEditController extends _$UsernameEditController {
     state = await AsyncValue.guard(() async {
       await ref
           .read(profileRepositoryProvider)
-          .updateUsername(user.id, trimmed);
+          .updateUsername(user.internalUserId, trimmed);
       ref.invalidate(currentProfileProvider);
       onSuccess();
     });

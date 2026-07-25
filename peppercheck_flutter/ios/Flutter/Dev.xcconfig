@@ -10,3 +10,6 @@ FIREBASE_PLIST_FLAVOR = Dev
 
 // Google Sign-In OAuth client (sourced from gitignored secrets file)
 #include? "Secrets/Dev.secrets.xcconfig"
+
+// Sign in with Apple capability (shared entitlements, all build configs)
+CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements

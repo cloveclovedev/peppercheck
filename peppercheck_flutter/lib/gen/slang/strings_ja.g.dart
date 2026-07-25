@@ -70,6 +70,8 @@ class TranslationsLoginJa {
 
 	/// ja: 'PepperCheckとは？'
 	String get aboutLink => 'PepperCheckとは？';
+
+	late final TranslationsLoginAppleLinkJa appleLink = TranslationsLoginAppleLinkJa.internal(_root);
 }
 
 // Path: home
@@ -665,6 +667,30 @@ class TranslationsAppExplanationJa {
 	String get learnMore => '詳しくは peppercheck.dev で';
 }
 
+// Path: login.appleLink
+class TranslationsLoginAppleLinkJa {
+	TranslationsLoginAppleLinkJa.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// ja: '既存アカウントとの連携'
+	String get title => '既存アカウントとの連携';
+
+	/// ja: 'このメールアドレスは別のログイン方法で登録済みです。 Appleでのログインを既存のアカウントに連携しますか？'
+	String get body => 'このメールアドレスは別のログイン方法で登録済みです。\nAppleでのログインを既存のアカウントに連携しますか？';
+
+	/// ja: '連携する'
+	String get confirm => '連携する';
+
+	/// ja: 'キャンセル'
+	String get cancel => 'キャンセル';
+
+	/// ja: '連携をキャンセルしました。 別の方法でログインしてください。'
+	String get cancelled => '連携をキャンセルしました。\n別の方法でログインしてください。';
+}
+
 // Path: billing.plans
 class TranslationsBillingPlansJa {
 	TranslationsBillingPlansJa.internal(this._root);
@@ -1238,6 +1264,9 @@ class TranslationsAccountActionsJa {
 	/// ja: 'アカウントを削除'
 	String get deleteAccount => 'アカウントを削除';
 
+	/// ja: 'ログアウト'
+	String get logout => 'ログアウト';
+
 	/// ja: '進行中のタスクまたはレフリーリクエストがあるため、アカウントを削除できません。'
 	String get deleteBlocked => '進行中のタスクまたはレフリーリクエストがあるため、アカウントを削除できません。';
 
@@ -1583,6 +1612,11 @@ extension on Translations {
 		return switch (path) {
 			'login.title' => 'PEPPERCHECK',
 			'login.aboutLink' => 'PepperCheckとは？',
+			'login.appleLink.title' => '既存アカウントとの連携',
+			'login.appleLink.body' => 'このメールアドレスは別のログイン方法で登録済みです。\nAppleでのログインを既存のアカウントに連携しますか？',
+			'login.appleLink.confirm' => '連携する',
+			'login.appleLink.cancel' => 'キャンセル',
+			'login.appleLink.cancelled' => '連携をキャンセルしました。\n別の方法でログインしてください。',
 			'home.title' => 'ホーム',
 			'home.myTasks' => 'タスク',
 			'home.refereeTasks' => '判定依頼',
@@ -1894,6 +1928,7 @@ extension on Translations {
 			'notification.fallback_body' => '新しい通知があります。',
 			'account.actions.title' => 'アカウント',
 			'account.actions.deleteAccount' => 'アカウントを削除',
+			'account.actions.logout' => 'ログアウト',
 			'account.actions.deleteBlocked' => '進行中のタスクまたはレフリーリクエストがあるため、アカウントを削除できません。',
 			'account.actions.deleteBlockedOpenTasks' => '進行中のタスクがあります',
 			'account.actions.deleteBlockedActiveReferee' => 'アクティブなレフリーリクエストがあります',

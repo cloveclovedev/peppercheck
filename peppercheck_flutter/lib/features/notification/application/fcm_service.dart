@@ -5,10 +5,10 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:peppercheck_flutter/app/app_logger.dart';
 import 'package:peppercheck_flutter/app/routing/app_router.dart';
+import 'package:peppercheck_flutter/features/auth/application/auth_state.dart';
 import 'package:peppercheck_flutter/features/notification/application/notification_text_resolver.dart';
 import 'package:peppercheck_flutter/features/notification/data/notification_repository.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 part 'fcm_service.g.dart';
 
@@ -22,7 +22,18 @@ const _androidChannel = AndroidNotificationChannel(
 
 @Riverpod(keepAlive: true)
 FcmService fcmService(Ref ref) {
-  return FcmService(ref);
+  final service = FcmService(ref);
+  // Retry the token upsert whenever Firebase auth state flips to signed-in.
+  // Registered here (during this provider's own build) because `ref.listen`
+  // is only safe within a provider's build scope, not from an async method
+  // called later. Token registration itself is gated off until Phase 3 (see
+  // `notification_repository.dart`), so this stays a guarded no-op for now.
+  ref.listen(authStateChangesProvider, (previous, next) {
+    if (next.value != null) {
+      service.onSignedIn();
+    }
+  });
+  return service;
 }
 
 class FcmService {
@@ -51,13 +62,8 @@ class FcmService {
       ref.read(notificationRepositoryProvider).upsertToken(newToken);
     });
 
-    // 5. Listen to Auth State Changes (Retry upsert on login)
-    Supabase.instance.client.auth.onAuthStateChange.listen((data) {
-      if (data.event == AuthChangeEvent.signedIn) {
-        debugPrint('[FCM] User signed in, retrying token upsert');
-        _upsertCurrentToken();
-      }
-    });
+    // 5. Auth-state-triggered retry is registered once, at provider-build
+    // time, in `fcmServiceProvider` above — see `onSignedIn`.
 
     // 6. Foreground Message Handling
     FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
@@ -165,6 +171,14 @@ class FcmService {
 
     final router = ref.read(routerProvider);
     router.push('/task_detail/$taskId');
+  }
+
+  /// Called when Firebase auth state flips to signed-in. Retries the token
+  /// upsert (idempotent). See `notification_repository.dart` for the
+  /// Phase-3 gating on the upsert itself.
+  Future<void> onSignedIn() async {
+    debugPrint('[FCM] User signed in, retrying token upsert');
+    await _upsertCurrentToken();
   }
 
   Future<void> _upsertCurrentToken() async {

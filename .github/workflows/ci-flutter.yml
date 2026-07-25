@@ -42,5 +42,9 @@ jobs:
       - name: Analyze
         run: flutter analyze --no-fatal-infos
 
+      - name: Check import boundaries
+        working-directory: .
+        run: ./scripts/check-flutter-imports.sh
+
       - name: Run tests
         run: flutter test

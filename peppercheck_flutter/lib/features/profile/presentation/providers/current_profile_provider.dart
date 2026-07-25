@@ -1,4 +1,4 @@
-import 'package:peppercheck_flutter/features/authentication/data/auth_state_provider.dart';
+import 'package:peppercheck_flutter/features/auth/application/auth_state.dart';
 import 'package:peppercheck_flutter/features/profile/data/profile_repository.dart';
 import 'package:peppercheck_flutter/features/profile/domain/profile.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -9,12 +9,14 @@ part 'current_profile_provider.g.dart';
 class CurrentProfile extends _$CurrentProfile {
   @override
   FutureOr<Profile?> build() async {
-    final user = ref.watch(currentUserProvider);
+    final user = ref.watch(currentAppUserProvider).value;
 
     if (user == null) {
       return null;
     }
 
-    return ref.watch(profileRepositoryProvider).fetchProfile(user.id);
+    return ref
+        .watch(profileRepositoryProvider)
+        .fetchProfile(user.internalUserId);
   }
 }

@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:peppercheck_flutter/app/theme/app_colors.dart';
 import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
-import 'package:peppercheck_flutter/features/authentication/data/auth_state_provider.dart';
+import 'package:peppercheck_flutter/features/auth/application/auth_state.dart';
 import 'package:peppercheck_flutter/features/profile/domain/profile.dart';
 import 'package:peppercheck_flutter/features/task/domain/task.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
@@ -21,7 +21,8 @@ class TaskCard extends ConsumerWidget {
         ? DateFormat('M/d H:mm').format(DateTime.parse(task.dueDate!).toLocal())
         : '';
 
-    final currentUserId = ref.watch(currentUserProvider)?.id ?? '';
+    final currentUserId =
+        ref.watch(currentAppUserProvider).value?.internalUserId ?? '';
     final statuses = task.getDetailedStatuses(currentUserId);
 
     return Material(

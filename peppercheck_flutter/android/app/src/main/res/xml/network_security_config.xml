@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Dev-only cleartext allowlist: the dev flavor talks to the Go API through
+  Caddy on the loopback host (10.0.2.2 for the Android emulator). All other
+  traffic remains HTTPS-only (cleartextTrafficPermitted defaults to false on
+  API 28+). Staging/production build against HTTPS endpoints and never hit
+  this allowlist.
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">10.0.2.2</domain>
+        <domain includeSubdomains="false">localhost</domain>
+        <domain includeSubdomains="false">127.0.0.1</domain>
+    </domain-config>
+</network-security-config>

@@ -45,6 +45,14 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<!-- Dev-only: the iOS simulator reaches the Go API via Caddy on
+		     127.0.0.1. NSAllowsLocalNetworking permits cleartext to
+		     loopback/.local hosts without opening arbitrary loads. -->
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
 	<key>GIDClientID</key>
 	<string>$(GID_CLIENT_ID)</string>
 	<key>CFBundleURLTypes</key>

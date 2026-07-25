@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -7,8 +9,11 @@ import 'package:peppercheck_flutter/app/theme/app_colors.dart';
 import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
 import 'package:peppercheck_flutter/common_widgets/app_background.dart';
 import 'package:peppercheck_flutter/features/about/presentation/app_explanation_bottom_sheet.dart';
-import 'package:peppercheck_flutter/features/authentication/presentation/authentication_controller.dart';
+import 'package:peppercheck_flutter/features/auth/application/auth_state.dart';
+import 'package:peppercheck_flutter/features/auth/data/auth_repository.dart';
+import 'package:peppercheck_flutter/features/auth/ui/sign_in_view_model.dart';
 import 'package:peppercheck_flutter/gen/assets.gen.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 
@@ -18,7 +23,7 @@ class LoginScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Better approach: use listen to navigate
-    ref.listen<AsyncValue<void>>(authenticationControllerProvider, (_, state) {
+    ref.listen<AsyncValue<void>>(signInViewModelProvider, (_, state) {
       if (state is AsyncData) {
         context.go('/home');
       } else if (state is AsyncError) {
@@ -28,7 +33,53 @@ class LoginScreen extends ConsumerWidget {
       }
     });
 
-    final state = ref.watch(authenticationControllerProvider);
+    final state = ref.watch(signInViewModelProvider);
+
+    // Firebase-authenticated but `/me` hasn't resolved yet: the router keeps
+    // the user on this route (see `app_router.dart`), so show a loading
+    // affordance while it's in flight, or a retry + sign-out affordance if it
+    // failed — never a silent limbo.
+    final isFirebaseAuthenticated = ref.watch(isFirebaseAuthenticatedProvider);
+    final me = ref.watch(currentAppUserProvider);
+    if (isFirebaseAuthenticated && !me.hasValue) {
+      return AppBackground(
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          body: SafeArea(
+            child: Center(
+              child: me.hasError
+                  ? Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSizes.loginScreenHorizontalPadding,
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text(
+                            'Could not load your account.',
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: AppSizes.spacingMedium),
+                          ElevatedButton(
+                            onPressed: () =>
+                                ref.invalidate(currentAppUserProvider),
+                            child: const Text('Retry'),
+                          ),
+                          const SizedBox(height: AppSizes.spacingSmall),
+                          TextButton(
+                            onPressed: () =>
+                                ref.read(authRepositoryProvider).signOut(),
+                            child: const Text('Sign out'),
+                          ),
+                        ],
+                      ),
+                    )
+                  : const CircularProgressIndicator(),
+            ),
+          ),
+        ),
+      );
+    }
 
     return AppBackground(
       child: Scaffold(
@@ -60,7 +111,7 @@ class LoginScreen extends ConsumerWidget {
                         ? null
                         : () {
                             ref
-                                .read(authenticationControllerProvider.notifier)
+                                .read(signInViewModelProvider.notifier)
                                 .signInWithGoogle();
                           },
                     child: state.isLoading
@@ -70,6 +121,21 @@ class LoginScreen extends ConsumerWidget {
                             height: 50,
                           ),
                   ),
+                  // Apple sign-in is offered on iOS only (native flow). On
+                  // Android it would need a Services ID + web OAuth flow; users
+                  // sign in with Google there instead.
+                  if (Platform.isIOS) ...[
+                    const SizedBox(height: AppSizes.spacingSmall),
+                    SignInWithAppleButton(
+                      onPressed: state.isLoading
+                          ? null
+                          : () {
+                              ref
+                                  .read(signInViewModelProvider.notifier)
+                                  .signInWithApple();
+                            },
+                    ),
+                  ],
                   const SizedBox(height: AppSizes.spacingMedium),
                   GestureDetector(
                     behavior: HitTestBehavior.opaque,

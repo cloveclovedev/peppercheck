@@ -7,3 +7,6 @@ APP_DISPLAY_NAME = PepperCheck
 FIREBASE_PLIST_FLAVOR = Production
 
 #include? "Secrets/Production.secrets.xcconfig"
+
+// Sign in with Apple capability (shared entitlements, all build configs)
+CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements

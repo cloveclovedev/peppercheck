@@ -1,7 +1,14 @@
 {
   "login": {
     "title": "PEPPERCHECK",
-    "aboutLink": "PepperCheckとは？"
+    "aboutLink": "PepperCheckとは？",
+    "appleLink": {
+      "title": "既存アカウントとの連携",
+      "body": "このメールアドレスは別のログイン方法で登録済みです。\nAppleでのログインを既存のアカウントに連携しますか？",
+      "confirm": "連携する",
+      "cancel": "キャンセル",
+      "cancelled": "連携をキャンセルしました。\n別の方法でログインしてください。"
+    }
   },
   "home": {
     "title": "ホーム",
@@ -398,6 +405,7 @@
     "actions": {
       "title": "アカウント",
       "deleteAccount": "アカウントを削除",
+      "logout": "ログアウト",
       "deleteBlocked": "進行中のタスクまたはレフリーリクエストがあるため、アカウントを削除できません。",
       "deleteBlockedOpenTasks": "進行中のタスクがあります",
       "deleteBlockedActiveReferee": "アクティブなレフリーリクエストがあります",

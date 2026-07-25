@@ -8,6 +8,8 @@ import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:peppercheck_flutter/app/app.dart';
 import 'package:peppercheck_flutter/app/config/app_environment.dart';
+import 'package:peppercheck_flutter/core/network/id_token_provider.dart';
+import 'package:peppercheck_flutter/features/auth/application/auth_state.dart';
 import 'package:peppercheck_flutter/features/notification/application/fcm_service.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -16,7 +18,10 @@ Future<void> appStartup(AppConfig config) async {
   await _initSdk(config);
 
   final container = ProviderContainer(
-    overrides: [appEnvironmentProvider.overrideWithValue(config.environment)],
+    overrides: [
+      appEnvironmentProvider.overrideWithValue(config.environment),
+      idTokenProviderProvider.overrideWith(firebaseIdTokenProvider),
+    ],
   );
 
   // Initialize FCM

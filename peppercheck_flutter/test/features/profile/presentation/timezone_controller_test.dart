@@ -4,13 +4,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:peppercheck_flutter/app/app_logger.dart';
-import 'package:peppercheck_flutter/features/authentication/data/auth_state_provider.dart';
+import 'package:peppercheck_flutter/features/auth/application/auth_state.dart';
+import 'package:peppercheck_flutter/features/auth/domain/app_user.dart';
 import 'package:peppercheck_flutter/features/profile/data/profile_repository.dart';
 import 'package:peppercheck_flutter/features/profile/domain/profile.dart';
 import 'package:peppercheck_flutter/features/profile/presentation/providers/current_profile_provider.dart';
 import 'package:peppercheck_flutter/features/profile/presentation/timezone_controller.dart';
 import 'package:logger/logger.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'timezone_controller_test.mocks.dart';
 
@@ -25,26 +25,28 @@ void main() {
     mockLogger = MockLogger();
   });
 
-  // Helper to create a basic validated User
-  User createMockUser(String id) {
-    return User(
-      id: id,
-      appMetadata: {},
-      userMetadata: {},
-      aud: 'authenticated',
-      createdAt: DateTime.now().toIso8601String(),
-    );
-  }
-
-  ProviderContainer makeContainer({required String userId}) {
+  // Async because `current_profile_provider.dart` reads `currentAppUserProvider`
+  // synchronously (`.value`), relying on the app router having already
+  // resolved it before any profile screen is reachable (see
+  // `app_router.dart`'s redirect gate). Awaiting the override's future here
+  // reproduces that precondition instead of racing against `/me` resolution.
+  Future<ProviderContainer> makeContainer({required String userId}) async {
     final container = ProviderContainer(
       overrides: [
         profileRepositoryProvider.overrideWithValue(mockProfileRepository),
         loggerProvider.overrideWithValue(mockLogger),
-        currentUserProvider.overrideWithValue(createMockUser(userId)),
+        currentAppUserProvider.overrideWith(
+          (ref) async => AppUser(
+            internalUserId: userId,
+            issuer: 'iss',
+            status: 'active',
+            createdAt: DateTime.utc(2026),
+          ),
+        ),
       ],
     );
     addTearDown(container.dispose);
+    await container.read(currentAppUserProvider.future);
     return container;
   }
 
@@ -73,7 +75,7 @@ void main() {
         mockProfileRepository.fetchProfile(userId),
       ).thenAnswer((_) async => profile);
 
-      final container = makeContainer(userId: userId);
+      final container = await makeContainer(userId: userId);
 
       // Act
       // Reading the controller triggers build -> fetch profile -> check timezone
@@ -110,7 +112,7 @@ void main() {
         mockProfileRepository.fetchProfile(userId),
       ).thenAnswer((_) async => profile);
 
-      final container = makeContainer(userId: userId);
+      final container = await makeContainer(userId: userId);
 
       // Act
       await container.read(currentProfileProvider.future);
@@ -127,10 +129,11 @@ void main() {
       overrides: [
         profileRepositoryProvider.overrideWithValue(mockProfileRepository),
         loggerProvider.overrideWithValue(mockLogger),
-        currentUserProvider.overrideWithValue(null),
+        currentAppUserProvider.overrideWith((ref) async => null),
       ],
     );
     addTearDown(container.dispose);
+    await container.read(currentAppUserProvider.future);
 
     // Act
     await container.read(timezoneControllerProvider.future);

@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:peppercheck_flutter/features/authentication/data/auth_state_provider.dart';
+import 'package:peppercheck_flutter/features/auth/application/auth_state.dart';
 import 'package:peppercheck_flutter/features/profile/data/profile_repository.dart';
 import 'package:peppercheck_flutter/features/profile/presentation/providers/current_profile_provider.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
@@ -53,7 +53,7 @@ class AvatarEditController extends _$AvatarEditController {
     );
     if (cropped == null) return; // user cancelled cropper
 
-    final user = ref.read(currentUserProvider);
+    final user = ref.read(currentAppUserProvider).value;
     if (user == null) {
       onError('generic');
       return;
@@ -61,7 +61,9 @@ class AvatarEditController extends _$AvatarEditController {
 
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
-      await ref.read(profileRepositoryProvider).updateAvatar(user.id, cropped);
+      await ref
+          .read(profileRepositoryProvider)
+          .updateAvatar(user.internalUserId, cropped);
       ref.invalidate(currentProfileProvider);
       onSuccess();
     });
