@@ -2,9 +2,21 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:logger/logger.dart';
 import 'package:peppercheck_flutter/app/app_logger.dart';
+import 'package:peppercheck_flutter/features/auth/data/apple_nonce.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 part 'auth_repository.g.dart';
+
+/// Raised when Apple's email matches an existing account under a different
+/// provider that Firebase will not auto-link. The UI must obtain explicit user
+/// consent before calling [AuthRepository.linkAppleToExisting]. Never merge on
+/// an email string alone.
+class AccountLinkRequiredException implements Exception {
+  const AccountLinkRequiredException(this.email, this.pendingCredential);
+  final String? email;
+  final AuthCredential pendingCredential;
+}
 
 /// Firebase authentication adapter. This is the ONLY place that imports
 /// `firebase_auth`. Google sign-in exchanges the Google ID token for a Firebase
@@ -18,6 +30,13 @@ class AuthRepository {
        _google = googleSignIn,
        _logger = logger;
 
+  /// Test-only constructor for Apple sign-in/link tests, which never touch
+  /// Google or the logger.
+  AuthRepository.forAppleTest(FirebaseAuth firebaseAuth)
+    : _auth = firebaseAuth,
+      _google = GoogleSignIn.instance,
+      _logger = Logger();
+
   final FirebaseAuth _auth;
   final GoogleSignIn _google;
   final Logger _logger;
@@ -30,6 +49,54 @@ class AuthRepository {
     }
     final credential = GoogleAuthProvider.credential(idToken: idToken);
     await _auth.signInWithCredential(credential);
+  }
+
+  Future<void> signInWithApple() async {
+    final nonce = generateAppleNonce();
+    final appleCredential = await SignInWithApple.getAppleIDCredential(
+      scopes: const [
+        AppleIDAuthorizationScopes.email,
+        AppleIDAuthorizationScopes.fullName,
+      ],
+      nonce: nonce.sha256Hex,
+    );
+    final idToken = appleCredential.identityToken;
+    if (idToken == null) {
+      throw StateError('Apple sign-in returned no identity token');
+    }
+    await completeAppleSignIn(idToken: idToken, rawNonce: nonce.raw);
+  }
+
+  /// Exchanges the Apple identity token for a Firebase sign-in. On
+  /// account-exists-with-different-credential, raises
+  /// [AccountLinkRequiredException] instead of silently creating a second user.
+  Future<void> completeAppleSignIn({
+    required String idToken,
+    required String rawNonce,
+  }) async {
+    final credential = OAuthProvider(
+      'apple',
+    ).credential(idToken: idToken, rawNonce: rawNonce);
+    try {
+      await _auth.signInWithCredential(credential);
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'account-exists-with-different-credential') {
+        throw AccountLinkRequiredException(e.email, credential);
+      }
+      rethrow;
+    }
+  }
+
+  /// Links the pending Apple credential onto the existing account. Call ONLY
+  /// after explicit user consent and after re-authenticating with [existing].
+  Future<void> linkAppleToExisting({
+    required AuthCredential pending,
+    required AuthCredential existing,
+  }) async {
+    await _auth.signInWithCredential(existing);
+    final user = _auth.currentUser;
+    if (user == null) throw StateError('re-auth failed before linking');
+    await user.linkWithCredential(pending);
   }
 
   /// Signs out of every provider. Each leg is attempted independently so one
