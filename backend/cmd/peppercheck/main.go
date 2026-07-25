@@ -12,9 +12,9 @@ import (
 	"time"
 
 	"github.com/cloveclovedev/peppercheck/backend/internal/api"
-	"github.com/cloveclovedev/peppercheck/backend/internal/platform/config"
-	"github.com/cloveclovedev/peppercheck/backend/internal/platform/database"
-	"github.com/cloveclovedev/peppercheck/backend/internal/platform/logging"
+	"github.com/cloveclovedev/peppercheck/backend/internal/core/config"
+	"github.com/cloveclovedev/peppercheck/backend/internal/core/database"
+	"github.com/cloveclovedev/peppercheck/backend/internal/core/logging"
 	"github.com/cloveclovedev/peppercheck/backend/internal/worker"
 )
 

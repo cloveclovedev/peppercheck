@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/cloveclovedev/peppercheck/backend/internal/platform/database"
+	"github.com/cloveclovedev/peppercheck/backend/internal/core/database"
 )
 
 // DB returns a connected *sql.DB for integration tests, or skips the test when

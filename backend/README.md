@@ -28,7 +28,7 @@ secrets (Phase 7).
 
 - `cmd/peppercheck/` — the single binary's entry point (command dispatch).
 - `internal/api`, `internal/worker` — the `api` and `worker` command assemblies.
-- `internal/platform/*` — shared infrastructure: `config`, `logging`,
+- `internal/core/*` — shared infrastructure: `config`, `logging`,
   `httpserver`, `database`, `jobs` (durable queue), `inbox` (webhook dedup).
 - `schema/<feature>/NN_*.sql` — Atlas **table-only** declarative schema;
   `migrations/` — generated versioned migrations; `atlas.hcl` — Atlas env.

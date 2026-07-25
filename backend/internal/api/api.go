@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/cloveclovedev/peppercheck/backend/internal/platform/config"
-	"github.com/cloveclovedev/peppercheck/backend/internal/platform/httpserver"
+	"github.com/cloveclovedev/peppercheck/backend/internal/core/config"
+	"github.com/cloveclovedev/peppercheck/backend/internal/core/httpserver"
 )
 
 // buildHandler wires routes and middleware. ready is the readiness probe; a nil
