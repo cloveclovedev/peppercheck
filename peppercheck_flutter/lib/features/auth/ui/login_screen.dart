@@ -18,7 +18,7 @@ class LoginScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Better approach: use listen to navigate
-    ref.listen<AsyncValue<void>>(authenticationControllerProvider, (_, state) {
+    ref.listen<AsyncValue<void>>(signInViewModelProvider, (_, state) {
       if (state is AsyncData) {
         context.go('/home');
       } else if (state is AsyncError) {
@@ -28,7 +28,7 @@ class LoginScreen extends ConsumerWidget {
       }
     });
 
-    final state = ref.watch(authenticationControllerProvider);
+    final state = ref.watch(signInViewModelProvider);
 
     return AppBackground(
       child: Scaffold(
@@ -60,7 +60,7 @@ class LoginScreen extends ConsumerWidget {
                         ? null
                         : () {
                             ref
-                                .read(authenticationControllerProvider.notifier)
+                                .read(signInViewModelProvider.notifier)
                                 .signInWithGoogle();
                           },
                     child: state.isLoading

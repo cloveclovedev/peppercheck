@@ -1,25 +1,19 @@
-import 'package:peppercheck_flutter/app/app_logger.dart';
-import 'package:peppercheck_flutter/features/auth/data/auth_repository.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+import '../data/auth_repository.dart';
 
 part 'sign_in_view_model.g.dart';
 
+/// Drives the login screen. Google in Phase 2 P2-5; Apple added in P2-6.
 @riverpod
-class AuthenticationController extends _$AuthenticationController {
+class SignInViewModel extends _$SignInViewModel {
   @override
-  FutureOr<void> build() {
-    // nothing to do
-  }
+  FutureOr<void> build() {}
 
   Future<void> signInWithGoogle() async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() async {
-      await ref.read(authenticationRepositoryProvider).signInWithGoogle();
-    });
-    if (state.hasError) {
-      ref
-          .read(loggerProvider)
-          .e('Sign-in error', error: state.error, stackTrace: state.stackTrace);
-    }
+    state = await AsyncValue.guard(
+      () => ref.read(authRepositoryProvider).signInWithGoogle(),
+    );
   }
 }

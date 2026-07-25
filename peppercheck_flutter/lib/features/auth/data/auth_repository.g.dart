@@ -9,50 +9,43 @@ part of 'auth_repository.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 
-@ProviderFor(authenticationRepository)
-const authenticationRepositoryProvider = AuthenticationRepositoryProvider._();
+@ProviderFor(authRepository)
+const authRepositoryProvider = AuthRepositoryProvider._();
 
-final class AuthenticationRepositoryProvider
-    extends
-        $FunctionalProvider<
-          AuthenticationRepository,
-          AuthenticationRepository,
-          AuthenticationRepository
-        >
-    with $Provider<AuthenticationRepository> {
-  const AuthenticationRepositoryProvider._()
+final class AuthRepositoryProvider
+    extends $FunctionalProvider<AuthRepository, AuthRepository, AuthRepository>
+    with $Provider<AuthRepository> {
+  const AuthRepositoryProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
-        name: r'authenticationRepositoryProvider',
+        name: r'authRepositoryProvider',
         isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
 
   @override
-  String debugGetCreateSourceHash() => _$authenticationRepositoryHash();
+  String debugGetCreateSourceHash() => _$authRepositoryHash();
 
   @$internal
   @override
-  $ProviderElement<AuthenticationRepository> $createElement(
-    $ProviderPointer pointer,
-  ) => $ProviderElement(pointer);
+  $ProviderElement<AuthRepository> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
 
   @override
-  AuthenticationRepository create(Ref ref) {
-    return authenticationRepository(ref);
+  AuthRepository create(Ref ref) {
+    return authRepository(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(AuthenticationRepository value) {
+  Override overrideWithValue(AuthRepository value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<AuthenticationRepository>(value),
+      providerOverride: $SyncValueProvider<AuthRepository>(value),
     );
   }
 }
 
-String _$authenticationRepositoryHash() =>
-    r'4ce85b63e6e5c24cc3cbca1af6fc9bda086248a7';
+String _$authRepositoryHash() => r'83461c78910ad1a9bdc0766b9d4f94bf18fe512e';

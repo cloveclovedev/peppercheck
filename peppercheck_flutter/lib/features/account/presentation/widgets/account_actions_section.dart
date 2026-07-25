@@ -74,7 +74,7 @@ class AccountActionsSection extends ConsumerWidget {
         .executeDelete(
           force: force,
           onSuccess: () async {
-            await ref.read(authenticationRepositoryProvider).signOut();
+            await ref.read(authRepositoryProvider).signOut();
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text(t.account.actions.deletedSnackbar)),
