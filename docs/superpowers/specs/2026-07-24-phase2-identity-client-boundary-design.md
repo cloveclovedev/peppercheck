@@ -258,12 +258,13 @@ type TokenVerifier interface {
   dummy so local `make up` still works, staging/production must set the real
   value, and CI passes an explicit dummy.
 - **HTTP port — single source of truth.** The port is defined **once** as
-  `API_PORT` in the Compose `.env`; the `api` service maps it to `PORT` and Caddy
-  reads the same `API_PORT` for its upstream (`reverse_proxy api:{$API_PORT}`).
-  The Go config default (`8765`, chosen over the collision-prone `8080`) matches
-  it and is only the fallback for standalone (non-Compose) runs. The api is never
-  published to the host — Caddy is the only ingress — so smoke tests go through
-  Caddy on `:80`.
+  `API_PORT` in the Compose `.env`; both the `api` service (as `PORT`) and Caddy
+  read it as a **required** variable (`${API_PORT:?…}` / `reverse_proxy
+  api:{$API_PORT}`), with no duplicated `8765` fallback in the compose files (CI
+  passes an explicit value). The Go config default (`8765`, chosen over the
+  collision-prone `8080`) matches it and is only the fallback for standalone
+  (non-Compose) runs. The api is never published to the host — Caddy is the only
+  ingress — so smoke tests go through Caddy on `:80`.
 
 ---
 
@@ -380,16 +381,25 @@ safe.
   `OAuthProvider('apple').credential(idToken:, rawNonce:)` →
   `signInWithCredential`.
 - Handle `account-exists-with-different-credential` (Workspace/custom domains
-  that Firebase does not auto-link): catch → re-authenticate with the existing
-  provider → `linkWithCredential`. Handle both the auto-link and explicit-link
-  paths. The app never merges users on an email-string match.
+  that Firebase does not auto-link): catch → **show an explicit consent prompt**
+  ("An account with this email already exists — link Apple to it?") → **only on
+  confirmation** re-authenticate with the existing provider and
+  `linkWithCredential`. **Cancel path:** if the user declines, abort the link,
+  leave the accounts separate (no silent merge), surface a clear message, and
+  return to sign-in. Never merge users on an email-string match alone. Firebase's
+  Apple guidance requires explicit user consent before linking. Both the confirm
+  and cancel paths are covered by tests.
 - **Apple Hide My Email:** relay addresses differ from the real email; such
   accounts stay separate unless explicitly linked, and revealing the real email
   later does not retroactively merge.
 
 **Operator / infrastructure runbook** (per environment — dev / staging /
-production Firebase projects; add a Pending entry to the release-checklist skill
-when P2-5 lands, and complete it before that environment's release):
+production Firebase projects). Add the release-checklist Pending entries **when
+the PR that introduces each need lands**, and complete them before that
+environment's release: the `FIREBASE_PROJECT_ID` injection (step 7) with
+**P2-2**; the Google provider + one-account-per-email + Android SHA keys
+(steps 1–3) with **P2-5**; the Apple provider / Apple Developer / Xcode setup
+(steps 4–6) with **P2-6**. Steps:
 1. **Firebase — Google provider:** enable Google sign-in in each project's
    Authentication → Sign-in method (Google currently flows through Supabase, so
    Firebase Auth Google enablement is net-new); confirm the OAuth consent screen.
