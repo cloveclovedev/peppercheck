@@ -27,7 +27,14 @@ class ProfileRepository {
           .single();
       return Profile.fromJson(data);
     } catch (e, st) {
-      _logger.e('Fetch profile failed', error: e, stackTrace: st);
+      // A missing profile row (PGRST116 = 0 rows) is expected before the user
+      // is provisioned and during the Supabase->Go narrowing; keep it out of
+      // the error log to avoid spam. Behavior is unchanged (still rethrows).
+      if (e is PostgrestException && e.code == 'PGRST116') {
+        _logger.d('No profile row for $userId yet');
+      } else {
+        _logger.e('Fetch profile failed', error: e, stackTrace: st);
+      }
       rethrow;
     }
   }
