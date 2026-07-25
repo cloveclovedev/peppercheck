@@ -24,3 +24,7 @@ peppercheck_flutter/assets/i18n/_*.json
 
 # Backend local environment file (secrets/local config)
 backend/.env
+
+# infra-foundation-setup orchestrator: per-environment filled-in config
+# (bootstrap tokens + manual-gate values); only *.env.example is tracked.
+backend/deploy/provision/config/*.env

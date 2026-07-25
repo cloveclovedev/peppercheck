@@ -127,6 +127,13 @@ jobs:
         # therefore the whole deploy chain, the same as a Go test failure.
         run: docker run --rm -v "$PWD/scripts":/code -w /code bats/bats:latest deployment.bats
 
+      - name: Bats tests for infra-foundation-setup framework (lib.sh reconcile contract)
+        # infra-setup.bats covers lib.sh's need_manual/require_tools/cfg/
+        # run_mutation contract (Task 1) that every later provisioning step
+        # depends on -- kept in this job for the same reason as the
+        # deployment.bats step above.
+        run: docker run --rm -v "$PWD/deploy/provision":/code -w /code bats/bats:latest infra-setup.bats
+
   image:
     needs: go
     runs-on: ubuntu-latest
