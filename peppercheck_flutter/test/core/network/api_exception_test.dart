@@ -18,5 +18,6 @@ void main() {
   test('network and timeout named constructors set their codes', () {
     expect(const ApiException.network().code, 'network');
     expect(const ApiException.timeout().code, 'timeout');
+    expect(const ApiException.tokenUnavailable().code, 'token_unavailable');
   });
 }

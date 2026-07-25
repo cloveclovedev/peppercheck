@@ -1,11 +1,12 @@
 # Phase 2 Auth Operator/Infra Checklist
 
 This is a per-environment operator runbook for the Phase 2 identity work
-(Firebase-authenticated `/api/v1/me`, Flutter Google/Apple sign-in). Complete
-the steps for an environment (dev / staging / production) **before** that
-environment's release ships the corresponding client or backend code. Steps
-are grouped by environment where the action is per-Firebase-project, and
-called out once where the action is shared or per-platform.
+(Firebase-authenticated `/api/v1/me`, Flutter Google sign-in on iOS/Android,
+and Apple sign-in on iOS). Complete the steps for an environment (dev /
+staging / production) **before** that environment's release ships the
+corresponding client or backend code. Steps are grouped by environment where
+the action is per-Firebase-project, and called out once where the action is
+shared or per-platform.
 
 This app uses only Google and Apple sign-in (no phone/SMS), which is free at
 PepperCheck's scale; there is no billing change required for Phase 2.
@@ -58,23 +59,26 @@ registered against the matching Firebase project. Each flavor (`dev`,
 
 *Ties to: Apple e2e (P2-6)*
 
-- [ ] Dev: enable Apple provider — Firebase Console → Authentication →
-      Sign-in method; register the Services ID and Sign in with Apple key
-      from step 5
-- [ ] Staging: enable Apple provider; register Services ID + key
-- [ ] Production: enable Apple provider; register Services ID + key
+Phase 2 uses Firebase's native iOS provider flow:
+`FirebaseAuth.signInWithProvider(AppleAuthProvider())`. A Services ID and
+OAuth code-flow key are not required for this native flow. They are needed
+only if Apple sign-in later expands to web/Android, or for Apple token
+revocation in Phase 6.
 
-## 5. Apple Developer — capability, Services ID, and key
+- [ ] Dev: enable Apple provider — Firebase Console → Authentication →
+      Sign-in method; verify the native iOS flow
+- [ ] Staging: enable Apple provider and verify the native iOS flow
+- [ ] Production: enable Apple provider and verify the native iOS flow
+
+## 5. Apple Developer — iOS capability
 
 *Ties to: Apple e2e (P2-6)*
 
-- [ ] Dev: add the "Sign in with Apple" capability to the dev App ID; create
-      (or reuse) the Services ID and the Sign in with Apple key used as input
-      to step 4
-- [ ] Staging: add the capability to the staging App ID; create the Services
-      ID and key
-- [ ] Production: add the capability to the production App ID; create the
-      Services ID and key
+- [ ] Dev: add the "Sign in with Apple" capability to the dev App ID
+- [ ] Staging: add the capability to the staging App ID
+- [ ] Production: add the capability to the production App ID
+- [ ] Create a Services ID and Sign in with Apple key only when implementing
+      web/Android Apple sign-in or Phase 6 token revocation
 
 ## 6. Xcode — Sign in with Apple capability per flavor scheme
 
@@ -100,21 +104,21 @@ Deployed environments must inject the real per-project ID.
 (Dev/local may keep the default unless testing against a real Firebase
 project locally.)
 
-## 8. End-to-end smoke test (per platform, real device)
+## 8. End-to-end smoke test (real devices)
 
 *Ties to: Flutter Google + Apple e2e (P2-5, P2-6); run once all prior steps
 for the environment are complete*
 
 - [ ] Android, real device: sign in with Google using a verified email;
       confirm a single internal user via `GET /api/v1/me`
-- [ ] Android, real device: sign in with Apple using the **same** verified
-      email; confirm `/api/v1/me` returns the **same** internal `user.id` as
-      the Google sign-in (one Firebase UID → one internal user)
-- [ ] iOS, real device: repeat the same Google → Apple, same-email
-      convergence check
-- [ ] Either platform: sign in with Apple using "Hide My Email" (a relay
+- [ ] iOS, real device: sign in with Google, then Apple using the **same**
+      verified email; confirm `/api/v1/me` returns the **same** internal
+      `user.id` (one Firebase UID → one internal user)
+- [ ] iOS, real device: sign in with Apple using "Hide My Email" (a relay
       address) and confirm it resolves to a **separate** internal user, not
       merged with the verified-email account above
+- [ ] Confirm the Apple button is not offered on Android; Android Apple
+      sign-in is outside the Phase 2 scope
 - [ ] Repeat this smoke test once per environment before that environment's
       release (dev now; staging and production before their respective
       releases)

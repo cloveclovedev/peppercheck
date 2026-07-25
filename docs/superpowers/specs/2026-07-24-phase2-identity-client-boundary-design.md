@@ -11,6 +11,12 @@
 > Each phase is its own `spec → plan → implementation` cycle; this document
 > covers **Phase 2 only**. The implementation plan is produced separately by the
 > writing-plans workflow and is not committed.
+>
+> **Implementation outcome (2026-07-25):** Google shipped on iOS and Android.
+> Apple shipped on iOS only, using Firebase's native
+> `signInWithProvider(AppleAuthProvider())` flow. The originally designed
+> manual nonce/credential/link flow was removed after real-device verification.
+> See `docs/operations/firebase-apple-signin-method.md`.
 
 ---
 
@@ -58,7 +64,7 @@ data features rely on (Supabase RLS `auth.uid()`):
 
 **After Phase 2 the integration-branch app:**
 - ✅ builds and launches (clean clone),
-- ✅ signs in with **Google and Apple** via Firebase,
+- ✅ signs in with **Google on iOS/Android** and **Apple on iOS** via Firebase,
 - ✅ resolves the internal user through `GET /api/v1/me`,
 - ✅ signs out,
 - ⏸ data-heavy features (task/profile/evidence/judgement/point/…) are **not**
@@ -376,22 +382,16 @@ safe.
 
 ## 7. Apple Sign-In & operator/infra checklist (PR P2-6)
 
-**Flutter code:**
-- Add `sign_in_with_apple`. Generate a secure nonce (random + SHA-256) →
-  `OAuthProvider('apple').credential(idToken:, rawNonce:)` →
-  `signInWithCredential`.
-- Handle `account-exists-with-different-credential` (Workspace/custom domains
-  that Firebase does not auto-link): catch → **show an explicit consent prompt**
-  ("An account with this email already exists — link Apple to it?") → **only on
-  confirmation** re-authenticate with the existing provider and
-  `linkWithCredential`. **Cancel path:** if the user declines, abort the link,
-  leave the accounts separate (no silent merge), surface a clear message, and
-  return to sign-in. Never merge users on an email-string match alone. Firebase's
-  Apple guidance requires explicit user consent before linking. Both the confirm
-  and cancel paths are covered by tests.
-- **Apple Hide My Email:** relay addresses differ from the real email; such
-  accounts stay separate unless explicitly linked, and revealing the real email
-  later does not retroactively merge.
+**Implemented Flutter code (supersedes the original manual credential/link
+design):**
+- Offer Apple sign-in on iOS only. Android uses Google; adding Apple there would
+  require a Services ID and web OAuth callback flow.
+- Call `FirebaseAuth.signInWithProvider(AppleAuthProvider())`; Firebase drives
+  the native Apple UI and nonce handling.
+- Same verified-email convergence relies on Firebase's one-account-per-email
+  setting. There is no manual email-string merge or consent/link flow.
+- **Apple Hide My Email:** relay addresses differ from the real email, so those
+  accounts remain separate.
 
 **Operator / infrastructure runbook** (per environment — dev / staging /
 production Firebase projects). Add the release-checklist Pending entries **when
@@ -410,17 +410,18 @@ environment's release: the `FIREBASE_PROJECT_ID` injection (step 7) with
 3. **Android SHA keys:** register the SHA-1 **and** SHA-256 of the signing key
    for **each flavor** (dev debug keystore, staging, production) in the matching
    Firebase project — Google sign-in fails without them.
-4. **Firebase — Apple provider:** enable Apple in each project and register the
-   Services ID + Sign in with Apple key.
+4. **Firebase — Apple provider:** enable Apple in each project. The Phase 2
+   native iOS flow does not require a Services ID or OAuth code-flow key.
 5. **Apple Developer:** add the "Sign in with Apple" capability to each App ID;
-   create the Services ID and the Sign in with Apple key used in step 4.
+   create a Services ID/key only for a future web/Android flow or Phase 6 token
+   revocation.
 6. **Xcode:** add the Sign in with Apple capability to the Runner target per
    flavor scheme.
 7. **`FIREBASE_PROJECT_ID` injection:** set the real per-env project ID for the
    deployed api (staging/production), replacing the dummy local default (§5.5).
-8. **E2E smoke (per platform, real device):** verify Google sign-in and Apple
-   sign-in for the **same verified email** resolve to the **same internal user**
-   (one Firebase UID → one `/api/v1/me` `user.id`), and that an Apple
+8. **E2E smoke (real devices):** verify Google on Android; verify Google and
+   Apple on iOS for the **same verified email** resolve to the **same internal
+   user** (one Firebase UID → one `/api/v1/me` `user.id`); verify an Apple
    Hide-My-Email relay stays a **separate** account.
 
 ---
@@ -463,11 +464,10 @@ Phase 1 CI.)
 
 **CI gates:** Go — gofmt, `go vet`, unit, Postgres integration, race, Atlas
 fmt/lint, apply-to-empty-DB, schema-drift, image build. Flutter — dart format,
-`flutter analyze`, tests, **architecture import checks** (`firebase_auth` only
-in `features/auth`; Dio construction only in `core/network`), flavored debug
-build (`lib/main_dev.dart`). Per project convention, each Flutter PR runs
-`flutter build` only; a single emulator pass runs at the end of Phase 2 on the
-integration branch.
+`flutter analyze`, tests, and **architecture import checks** (`firebase_auth`
+only in `features/auth`; Dio construction only in `core/network`). To keep PR
+feedback time bounded, the flavored debug build (`lib/main_dev.dart`) and
+real-device pass run once before the phase merge rather than in every PR CI run.
 
 ---
 
@@ -475,8 +475,9 @@ integration branch.
 
 Derived from the Phase 0 baseline §6(a) auth characterization:
 
-- **`account-exists-with-different-credential`** → re-auth + `linkWithCredential`
-  (§7), never a silent second account.
+- **Provider convergence** → Firebase's one-account-per-email setting links
+  trusted verified providers. A non-auto-link error is surfaced; the client
+  never merges accounts from an email string.
 - **Partial sign-out failure** → each leg independent and idempotent; do not
   inherit the current `Future.wait` ambiguity.
 - **Apple Hide My Email churn** → no retroactive merge.
@@ -506,7 +507,7 @@ each (§3). Go first (verifiable via curl + token), then Flutter, then Apple.
 | P2-3 | Go | `identity` feature (`domain`/`service`/`store`/`handler`); `GET /api/v1/me`; authz-isolation + API integration + db/tests assert-SQL constraint tests. |
 | P2-4 | Flutter | `core/network` `ApiClient` (base URL, token/request-id interceptors, timeouts, error mapping); add `firebase_auth`; base-URL config. |
 | P2-5 | Flutter | `features/auth` Firebase adapter (**Google**); app-level current-user contract exposing the internal UUID; remove Supabase from the auth path → **Google end-to-end**. |
-| P2-6 | Flutter + infra | Apple Sign-In (`sign_in_with_apple`, nonce, `linkWithCredential`); operator/infra checklist (§7) → **Apple end-to-end**. Single emulator verification pass. |
+| P2-6 | Flutter + infra | iOS Apple Sign-In via `signInWithProvider(AppleAuthProvider())`; operator/infra checklist (§7) → **Apple end-to-end on iOS**. Real-device verification pass. |
 
 ---
 
@@ -524,11 +525,11 @@ each (§3). Go first (verifiable via curl + token), then Flutter, then Apple.
 
 ## 12. Done criteria (Phase 2)
 
-- [ ] A clean clone builds and runs; sign-in (Google **and** Apple), `/api/v1/me`,
-      and sign-out work on the integration branch.
-- [ ] Both providers create/restore the **same internal user** (same verified
-      email → one account via Firebase linking; Apple Hide-My-Email stays
-      separate unless explicitly linked); no duplicate users.
+- [ ] A clean clone builds and runs; Google sign-in on iOS/Android, Apple
+      sign-in on iOS, `/api/v1/me`, and sign-out work on the integration branch.
+- [ ] Google and Apple create/restore the **same internal user** on iOS when
+      they use the same verified email and Firebase auto-links them; Apple
+      Hide-My-Email stays separate; no duplicate users.
 - [ ] The Go API verifies the Firebase ID token and resolves it to the internal
       UUID; domain/service packages import no Firebase types.
 - [ ] User-isolation authz test passes (a token for one user cannot read

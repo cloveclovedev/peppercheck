@@ -45,14 +45,14 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+#if PEPPERCHECK_DEV_BUILD
 	<key>NSAppTransportSecurity</key>
 	<dict>
-		<!-- Dev-only: the iOS simulator reaches the Go API via Caddy on
-		     127.0.0.1. NSAllowsLocalNetworking permits cleartext to
-		     loopback/.local hosts without opening arbitrary loads. -->
+		<!-- The iOS simulator reaches the dev Go API through local Caddy. -->
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+#endif
 	<key>GIDClientID</key>
 	<string>$(GID_CLIENT_ID)</string>
 	<key>CFBundleURLTypes</key>

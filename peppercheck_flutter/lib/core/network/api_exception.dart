@@ -23,8 +23,16 @@ class ApiException implements Exception {
       requestId = null,
       statusCode = null;
 
+  /// The authentication provider could not supply an ID token.
+  const ApiException.tokenUnavailable()
+    : code = 'token_unavailable',
+      message = 'authentication token unavailable',
+      requestId = null,
+      statusCode = null;
+
   /// Stable machine-readable code (server envelope `error.code`, or
-  /// `network`/`timeout`/`unknown` for client-side failures).
+  /// `network`/`timeout`/`token_unavailable`/`unknown` for client-side
+  /// failures).
   final String code;
 
   /// Human-readable detail. Not for control flow — branch on [code].

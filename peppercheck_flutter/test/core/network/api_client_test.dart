@@ -162,4 +162,24 @@ void main() {
       throwsA(isA<ApiException>().having((e) => e.code, 'code', 'timeout')),
     );
   });
+
+  test('maps ID-token provider failures to ApiException', () async {
+    final adapter = _FakeAdapter((o, _) => _json(200, {'ok': true}));
+    final client = _client(
+      adapter,
+      tokens: ({required bool forceRefresh}) async {
+        throw Exception('provider-specific failure');
+      },
+    );
+
+    await expectLater(
+      () => client.getJson('/api/v1/me'),
+      throwsA(
+        isA<ApiException>()
+            .having((e) => e.code, 'code', 'token_unavailable')
+            .having((e) => e.statusCode, 'statusCode', isNull),
+      ),
+    );
+    expect(adapter.requests, isEmpty);
+  });
 }
