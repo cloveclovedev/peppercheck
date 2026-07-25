@@ -266,3 +266,100 @@ jobs:
           fi
           echo "manifest digest: $digest"
           echo "digest=$digest" >> "$GITHUB_OUTPUT"
+
+  # Re-checks the branch head SHA immediately before deploy-staging, right
+  # after the (slow) image build. Two runs of this workflow can overlap when
+  # two pushes land close together; deploy-vps.yml's own concurrency group
+  # deliberately never cancels an in-flight deploy (a cancelled run could
+  # strand the Droplet mid-migrate/switch), so nothing upstream stops an
+  # older run's deploy-staging from starting after a newer run's has already
+  # shipped. This job is the guard: if `github.sha` is no longer the actual
+  # branch head by the time `image` finishes, it fails closed and
+  # deploy-staging (needs: [image, guard]) is skipped rather than deploying a
+  # stale commit over a newer one.
+  guard:
+    needs: image
+    if: github.ref == 'refs/heads/refactor/go-api-vps'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Confirm this SHA is still the branch head
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          API_URL: ${{ github.api_url }}
+          BRANCH_REF: heads/refactor/go-api-vps
+          RUN_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          head_sha=$(curl -sS -f \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "${API_URL}/repos/${REPO}/git/ref/${BRANCH_REF}" \
+            | jq -er '.object.sha')
+          if [ "$head_sha" != "$RUN_SHA" ]; then
+            echo "::error::$RUN_SHA is no longer the head of $BRANCH_REF (head is now $head_sha) -- a newer push superseded this run, refusing to deploy a stale commit"
+            exit 1
+          fi
+          echo "confirmed $RUN_SHA is still the head of $BRANCH_REF"
+
+  # "Build once -> promote" (design doc §5.4): only the integration-branch
+  # push reaches this job (image.outputs.* are empty on PR runs since PUBLISH
+  # is false there, and this job's own `if` also gates on the branch push).
+  # deploy-vps.yml is a workflow_call target, so this job may only set
+  # with/secrets/needs/if/permissions -- no steps/runs-on/env/concurrency of
+  # its own; the reusable workflow's `environment: staging` and its own
+  # `concurrency: deploy-staging` apply here. No `secrets:` block: the
+  # reusable workflow reads `staging` Environment secrets
+  # (BWS_TOKEN/SSH_DEPLOY_KEY/SSH_HOST_KEY) itself via its own
+  # `environment: ${{ inputs.env }}`, workflow_call cannot forward Environment
+  # secrets from the caller anyway. `pc-staging` is the tailnet MagicDNS name
+  # for the staging Droplet.
+  deploy-staging:
+    needs: [image, guard]
+    if: github.ref == 'refs/heads/refactor/go-api-vps'
+    permissions:
+      id-token: write # Tailscale OIDC -- id-token defaults to none and must be explicitly forwarded to the called workflow
+      contents: read
+      packages: read
+    uses: ./.github/workflows/deploy-vps.yml
+    with:
+      env: staging
+      host: staging.peppercheck.dev
+      ssh_host: pc-staging
+      sha: ${{ needs.image.outputs.sha }}
+      manifest_digest: ${{ needs.image.outputs.manifest_digest }}
+
+  # Stamps the promotion record: `staging-validated-<sha>` tag on the exact
+  # manifest digest that just passed staging's smoke test. This tag is
+  # created ONLY here -- deploy-vps-production.yml requires it to resolve to
+  # the requested digest before it will deploy anything to production, so a
+  # digest can only reach production after it has actually run (and smoke-
+  # passed) on staging first.
+  tag-validated:
+    needs: [image, deploy-staging]
+    if: github.ref == 'refs/heads/refactor/go-api-vps'
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+      - name: Install oras
+        uses: oras-project/setup-oras@v2
+        with:
+          version: "1.2.0"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Tag manifest as staging-validated-<sha>
+        env:
+          MANIFEST_DIGEST: ${{ needs.image.outputs.manifest_digest }}
+          DEPLOY_SHA: ${{ needs.image.outputs.sha }}
+        run: |
+          set -euo pipefail
+          oras tag "ghcr.io/cloveclovedev/peppercheck-release@${MANIFEST_DIGEST}" "staging-validated-${DEPLOY_SHA}"
