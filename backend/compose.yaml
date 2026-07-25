@@ -82,8 +82,9 @@ services:
     command: ["api"]
     environment:
       APP_ENV: local
-      PORT: "8080"
+      PORT: ${API_PORT:?API_PORT is required (set it in .env)}
       LOG_LEVEL: info
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:?FIREBASE_PROJECT_ID is required (set it in .env; a dummy like peppercheck-local is fine locally)}
       DATABASE_URL: postgres://peppercheck_app:${POSTGRES_APP_PASSWORD:?POSTGRES_APP_PASSWORD is required}@postgres:5432/peppercheck?sslmode=disable
     depends_on:
       migrate:
@@ -111,6 +112,7 @@ services:
     image: caddy:2
     environment:
       CADDY_SITE_ADDRESS: ${CADDY_SITE_ADDRESS:-:80}
+      API_PORT: ${API_PORT:?API_PORT is required (set it in .env)}
     depends_on: [api]
     ports:
       - "80:80"

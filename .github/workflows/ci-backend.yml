@@ -114,6 +114,8 @@ jobs:
       POSTGRES_MIGRATOR_PASSWORD: ci
       POSTGRES_BACKUP_PASSWORD: ci
       AGE_RECIPIENT: age1ci
+      API_PORT: "8765"
+      FIREBASE_PROJECT_ID: ci
     steps:
       - uses: actions/checkout@v4
       - name: Validate Compose syntax (incl. backup profile)
