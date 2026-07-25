@@ -23,6 +23,13 @@ while [ "$#" -gt 0 ]; do
 done
 export ENV_NAME DRY_RUN
 
+# Reject an unknown --only/--from before doing any work: otherwise --only foo
+# leaves the steps/[0-9]*-foo.sh glob literal (a confusing "No such file"
+# under set -e) and --from foo silently matches nothing and falsely reports
+# "all steps satisfied".
+[ -n "$ONLY" ] && require_known_step only "$ONLY" "${STEPS[@]}"
+[ -n "$FROM" ] && require_known_step from "$FROM" "${STEPS[@]}"
+
 # Load config (sourced, so keys become env vars). Missing file is OK — a step
 # that needs an absent key stops with need_manual.
 CONFIG_FILE="$HERE/config/${ENV_NAME}.env"

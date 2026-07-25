@@ -38,3 +38,25 @@ setup() {
   [ "$status" -eq 0 ]
   [ -e "$BATS_TEST_TMPDIR/sentinel" ]
 }
+
+@test "_json_escape emits tab/newline/CR as escape sequences, not raw control chars" {
+  run _json_escape "$(printf 'a\tb\nc\rd')"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *'\t'* ]]
+  [[ "$output" == *'\n'* ]]
+  [[ "$output" == *'\r'* ]]
+  # No raw control chars survived: printf %q renders a literal tab as $'\t'.
+  printf '%q' "$output" | grep -q "\$'" && false || true
+}
+
+@test "require_known_step rejects an unknown step and names it and the valid list" {
+  run require_known_step only bogus_step secrets bws tailscale
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"bogus_step"* ]]
+  [[ "$output" == *"secrets"* ]]
+}
+
+@test "require_known_step accepts a known step" {
+  run require_known_step from bws secrets bws tailscale
+  [ "$status" -eq 0 ]
+}

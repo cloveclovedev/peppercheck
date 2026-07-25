@@ -13,9 +13,11 @@ DRY_RUN="${DRY_RUN:-0}"
 # run, but the bats unit tests source lib.sh directly and must not need it.
 _json_escape() {
   local s=$1
-  s=${s//\\/\\\\}
+  s=${s//\\/\\\\}   # backslash first, so later escapes aren't double-escaped
   s=${s//\"/\\\"}
   s=${s//$'\n'/\\n}
+  s=${s//$'\r'/\\r}  # CR and TAB are the realistic ones in CLI/API error text
+  s=${s//$'\t'/\\t}
   printf '%s' "$s"
 }
 _log() { printf '{"level":"%s","msg":"%s"}\n' "$1" "$(_json_escape "$2")" >&2; }
@@ -48,6 +50,19 @@ cfg() { printf '%s' "${!1:-}"; }
 require_cfg() { local v; v="$(cfg "$1")"; [ -n "$v" ] || return 1; printf '%s' "$v"; }
 
 is_dry_run() { [ "$DRY_RUN" = "1" ]; }
+
+# require_known_step KIND VALUE step1 step2 …
+# Validates an operator-supplied --only/--from selector against the known step
+# list. Exits 2 (usage-style) naming the bad value and the valid steps if it is
+# not a member. Factored out of the orchestrator so it is unit-testable without
+# running the whole source-and-dispatch loop.
+require_known_step() {
+  local kind="$1" value="$2"; shift 2
+  local s
+  for s in "$@"; do [ "$s" = "$value" ] && return 0; done
+  echo "error: unknown --${kind} step '${value}'. valid steps: $*" >&2
+  exit 2
+}
 
 run_mutation() {
   local desc="$1"; shift
