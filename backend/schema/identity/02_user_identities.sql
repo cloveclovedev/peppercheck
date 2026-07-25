@@ -13,3 +13,6 @@ CREATE TABLE public.user_identities (
     updated_at timestamptz NOT NULL DEFAULT now(),
     CONSTRAINT user_identities_issuer_subject_key UNIQUE (issuer, subject)
 );
+
+CREATE INDEX user_identities_user_id_idx
+    ON public.user_identities (user_id);

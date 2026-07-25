@@ -45,6 +45,45 @@ func TestCreateWithIdentityThenFind(t *testing.T) {
 	}
 }
 
+func TestStoreWorksWithRuntimeRole(t *testing.T) {
+	db := testsupport.DBFromEnv(t, "APP_DATABASE_URL")
+	const issuer = "runtime-role-test"
+	const subject = "subject"
+	clean := func() error {
+		_, err := db.Exec(`
+			DELETE FROM public.users u
+			USING public.user_identities i
+			WHERE u.id = i.user_id
+			  AND i.issuer = $1
+			  AND i.subject = $2`,
+			issuer, subject,
+		)
+		return err
+	}
+	if err := clean(); err != nil {
+		t.Fatalf("clean runtime-role fixtures: %v", err)
+	}
+	t.Cleanup(func() {
+		if err := clean(); err != nil {
+			t.Errorf("clean runtime-role fixtures: %v", err)
+		}
+	})
+
+	s := NewStore(db)
+	ctx := context.Background()
+	created, err := s.CreateWithIdentity(ctx, issuer, subject)
+	if err != nil {
+		t.Fatalf("create with runtime role: %v", err)
+	}
+	found, err := s.FindByIdentity(ctx, issuer, subject)
+	if err != nil {
+		t.Fatalf("find with runtime role: %v", err)
+	}
+	if found.ID != created.ID {
+		t.Fatalf("find returned %s, want %s", found.ID, created.ID)
+	}
+}
+
 func TestCreateWithIdentityDuplicateSignalsNotFound(t *testing.T) {
 	s := newStore(t)
 	ctx := context.Background()

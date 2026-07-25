@@ -43,8 +43,9 @@ test: ## Run Go tests incl. DB integration on a throwaway Postgres (needs host a
 	done; \
 	[ "$$ready" = 1 ] || { echo "test DB not ready after 60s"; exit 1; }; \
 	dsn="postgres://peppercheck_migrator:m@127.0.0.1:$$port/peppercheck?sslmode=disable"; \
+	app_dsn="postgres://peppercheck_app:a@127.0.0.1:$$port/peppercheck?sslmode=disable"; \
 	atlas migrate apply --env local --url "$$dsn" --revisions-schema atlas >/dev/null; \
-	DATABASE_URL="$$dsn" go test -race -p 1 -count=1 ./...
+	DATABASE_URL="$$dsn" APP_DATABASE_URL="$$app_dsn" go test -race -p 1 -count=1 ./...
 
 fmt: ## Format Go code
 	gofmt -w .

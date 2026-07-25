@@ -52,6 +52,13 @@ Reference: `docs/operations/phase2-auth-operator-checklist.md`,
       `signInWithGoogle()` (it was extracted for the removed Apple-link flow).
 - [ ] `api_client.dart` stale "interceptor" comment (~line 44; design uses inline
       retry, no interceptor).
+- [ ] **Firebase session invalidation policy**: the Go API currently uses
+      `VerifyIDToken`, which validates signature and expiry but does not check
+      whether a token was revoked or its Firebase user was disabled. Before the
+      first privileged Go endpoint ships, decide whether accepting tokens until
+      their natural expiry is sufficient. If immediate lockout is required, use
+      a credentialed Admin client with `VerifyIDTokenAndCheckRevoked`, or enforce
+      `users.status` centrally for every authenticated request.
 - [ ] Pre-existing uncommitted `evidence_controller.g.dart` + untracked files
       (`.agents/`, other-phase plan/spec docs, `supabase/snippets/*.sql`) — decide
       what to keep / clean up.
