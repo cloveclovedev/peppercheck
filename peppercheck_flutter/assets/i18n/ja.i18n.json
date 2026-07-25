@@ -405,6 +405,7 @@
     "actions": {
       "title": "アカウント",
       "deleteAccount": "アカウントを削除",
+      "logout": "ログアウト",
       "deleteBlocked": "進行中のタスクまたはレフリーリクエストがあるため、アカウントを削除できません。",
       "deleteBlockedOpenTasks": "進行中のタスクがあります",
       "deleteBlockedActiveReferee": "アクティブなレフリーリクエストがあります",

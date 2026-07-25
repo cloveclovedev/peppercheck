@@ -20,13 +20,35 @@ class AccountActionsSection extends ConsumerWidget {
 
     return BaseSection(
       title: t.account.actions.title,
-      child: deletableAsync.when(
-        data: (status) =>
-            _buildDeleteButton(context, ref, status.deletable, status.reasons),
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, _) => _buildDeleteButton(context, ref, false, []),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          OutlinedButton.icon(
+            onPressed: () => _logout(context, ref),
+            icon: const Icon(Icons.logout),
+            label: Text(t.account.actions.logout),
+          ),
+          const SizedBox(height: AppSizes.spacingMedium),
+          deletableAsync.when(
+            data: (status) => _buildDeleteButton(
+              context,
+              ref,
+              status.deletable,
+              status.reasons,
+            ),
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (_, _) => _buildDeleteButton(context, ref, false, []),
+          ),
+        ],
       ),
     );
+  }
+
+  Future<void> _logout(BuildContext context, WidgetRef ref) async {
+    await ref.read(authRepositoryProvider).signOut();
+    // signOut flips the Firebase auth state; the router redirect sends us back
+    // to '/', but navigate explicitly so it is immediate.
+    if (context.mounted) context.go('/');
   }
 
   Widget _buildDeleteButton(

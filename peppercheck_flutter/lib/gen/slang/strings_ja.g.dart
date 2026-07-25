@@ -1264,6 +1264,9 @@ class TranslationsAccountActionsJa {
 	/// ja: 'アカウントを削除'
 	String get deleteAccount => 'アカウントを削除';
 
+	/// ja: 'ログアウト'
+	String get logout => 'ログアウト';
+
 	/// ja: '進行中のタスクまたはレフリーリクエストがあるため、アカウントを削除できません。'
 	String get deleteBlocked => '進行中のタスクまたはレフリーリクエストがあるため、アカウントを削除できません。';
 
@@ -1925,6 +1928,7 @@ extension on Translations {
 			'notification.fallback_body' => '新しい通知があります。',
 			'account.actions.title' => 'アカウント',
 			'account.actions.deleteAccount' => 'アカウントを削除',
+			'account.actions.logout' => 'ログアウト',
 			'account.actions.deleteBlocked' => '進行中のタスクまたはレフリーリクエストがあるため、アカウントを削除できません。',
 			'account.actions.deleteBlockedOpenTasks' => '進行中のタスクがあります',
 			'account.actions.deleteBlockedActiveReferee' => 'アクティブなレフリーリクエストがあります',
