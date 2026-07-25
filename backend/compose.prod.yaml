@@ -17,6 +17,19 @@
 # `environment:` values. See each service for the exact paths its running
 # code reads (deploy/postgres/entrypoint.sh, deploy/postgres/init/00-roles.sh,
 # deploy/backup/entrypoint.sh, internal/core/config's *_FILE convention).
+#
+# Despite the filename, this file is NOT production-only: it is the single
+# standalone Compose file deploy-vps.yml (Task 9) runs unchanged for BOTH
+# `staging` and `production` (staging exists to be a real rehearsal of the
+# same production topology). Every per-environment value -- `PC_ENV`, the
+# Compose project `name:`, `APP_ENV`, `CADDY_SITE_ADDRESS`, all `IMAGE_*`
+# digests, and the pgBackRest/B2 vars -- is a required `${VAR:?}` with no
+# environment-specific literal baked in here; only the deploy workflow's
+# per-environment inputs/vars (GitHub Environment `staging`/`production`)
+# supply the actual values. Task 23 (Phase 7-A Group F) re-confirmed this
+# env-neutrality -- including a `PC_ENV=production` /
+# `CADDY_SITE_ADDRESS=peppercheck.dev` `docker compose config` resolution --
+# ahead of the production Droplet's provisioning in Phase 7-B.
 
 name: peppercheck-${PC_ENV:?PC_ENV is required (e.g. staging or production)}
 
