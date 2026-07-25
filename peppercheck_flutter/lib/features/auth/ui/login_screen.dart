@@ -27,14 +27,9 @@ class LoginScreen extends ConsumerWidget {
       if (state is AsyncData) {
         context.go('/home');
       } else if (state is AsyncError) {
-        final error = state.error;
-        if (error is AccountLinkRequiredException) {
-          _showAppleLinkDialog(context, ref, error);
-        } else {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(error.toString())));
-        }
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(state.error.toString())));
       }
     });
 
@@ -168,43 +163,4 @@ class LoginScreen extends ConsumerWidget {
       ),
     );
   }
-}
-
-/// Shows the Apple↔existing-account link-consent dialog. Confirm links after
-/// re-authenticating with the existing provider; cancel dismisses without
-/// ever linking (see [SignInViewModel.cancelAppleLink]).
-void _showAppleLinkDialog(
-  BuildContext context,
-  WidgetRef ref,
-  AccountLinkRequiredException error,
-) {
-  showDialog<void>(
-    context: context,
-    barrierDismissible: false,
-    builder: (dialogContext) => AlertDialog(
-      title: Text(t.login.appleLink.title),
-      content: Text(t.login.appleLink.body),
-      actions: [
-        TextButton(
-          onPressed: () {
-            Navigator.of(dialogContext).pop();
-            ref.read(signInViewModelProvider.notifier).cancelAppleLink();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(t.login.appleLink.cancelled)),
-            );
-          },
-          child: Text(t.login.appleLink.cancel),
-        ),
-        TextButton(
-          onPressed: () {
-            Navigator.of(dialogContext).pop();
-            ref
-                .read(signInViewModelProvider.notifier)
-                .confirmAppleLink(error.pendingCredential);
-          },
-          child: Text(t.login.appleLink.confirm),
-        ),
-      ],
-    ),
-  );
 }

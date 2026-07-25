@@ -126,19 +126,23 @@ would degrade the native account-picker UX, so it stays on the credential flow.
    the now-unused `sign_in_with_apple` / `apple_nonce.dart` / `crypto`
    (Apple-only usage), and update the Apple tests.
 
-## Account linking — what changes
+## Account linking — implemented behavior
 
-- The desired "same verified email via Google and Apple → one internal user"
-  convergence is handled by Firebase's **one-account-per-email** setting
-  (auto-linking trusted, verified providers). This works with **either** sign-in
-  method; confirm the setting is enabled.
-- The manual consent + `linkAppleToExisting` flow (P2-6.3) only applies to the
-  rarer case where Firebase does NOT auto-link. With `signInWithProvider`,
-  firebase_auth performs the Apple sign-in internally, so we no longer hold the
-  Apple credential to link manually; the account-exists case surfaces as a
-  `FirebaseAuthException` instead. That flow will be redesigned in step 3 (and
-  the "never merge on an email match alone" rule preserved) — not before the
-  primary flow is confirmed.
+Confirmed working on iOS (dev, 2026-07-25): Apple sign-in succeeds and the
+Google + Apple sign-ins for the same verified email resolve to a **single**
+internal user (`users` / `user_identities` each have one row).
+
+- "Same verified email via Google and Apple → one internal user" convergence is
+  handled by Firebase's **one-account-per-email** setting (auto-linking trusted,
+  verified providers). This is the mechanism; confirm the setting is enabled.
+- The manual consent dialog + `completeAppleSignIn` / `linkAppleToExisting`
+  (P2-6.3) were **removed** — `signInWithProvider` performs the Apple sign-in
+  internally, so we no longer hold an Apple credential to link manually. The
+  rare non-auto-link case surfaces as a `FirebaseAuthException` and is shown as
+  a plain error (no silent merge on an email match alone). The now-unused
+  `apple_nonce.dart` and `crypto` dependency were also removed; the
+  `SignInWithAppleButton` widget (and thus the `sign_in_with_apple` package) is
+  kept for Apple's HIG-compliant button.
 
 ## Process note
 
