@@ -36,9 +36,15 @@ if [ ${#PROJECTS[@]} -eq 0 ]; then
   exit 0
 fi
 
-# curl a GET endpoint; echo body; the HTTP status goes to fd3 for the caller.
+# curl a GET endpoint; append the HTTP status as a trailing line.
+# User credentials need a quota project for these APIs (X-Goog-User-Project);
+# QUOTA_PROJECT is set to the project under inspection in the loop below.
+QUOTA_PROJECT=""
 api_get() {
-  curl -sS -w '\n%{http_code}' -H "Authorization: Bearer $TOKEN" "$1"
+  curl -sS -w '\n%{http_code}' \
+    -H "Authorization: Bearer $TOKEN" \
+    -H "X-Goog-User-Project: $QUOTA_PROJECT" \
+    "$1"
 }
 
 parse() { python3 "$(dirname "$0")/.phase2_preflight_parse.py" "$@"; }
@@ -47,6 +53,7 @@ for P in "${PROJECTS[@]}"; do
   echo "============================================================"
   echo "PROJECT: $P"
   echo "============================================================"
+  QUOTA_PROJECT="$P"
 
   idp="$(api_get "https://identitytoolkit.googleapis.com/admin/v2/projects/$P/defaultSupportedIdpConfigs")"
   echo "$idp" | parse idp

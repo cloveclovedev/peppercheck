@@ -93,7 +93,8 @@ def main():
         if fail:
             print(f"       [??] SHA for {appid} ({fail})")
             return
-        certs = data.get("shaCertificates", []) or []
+        # The API returns the list under "certificates" (not "shaCertificates").
+        certs = data.get("certificates", data.get("shaCertificates", [])) or []
         n1 = sum(1 for c in certs if c.get("certType") == "SHA_1")
         n256 = sum(1 for c in certs if c.get("certType") == "SHA_256")
         mark = "OK" if (n1 and n256) else ("--" if not certs else "OK")
