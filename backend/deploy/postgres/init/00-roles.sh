@@ -13,15 +13,31 @@ read_password() {
   local file_var="${1}_FILE"
   local file_path="${!file_var:-}"
   if [ -n "$file_path" ]; then
+    # A set-but-unreadable _FILE hard-fails here under `set -e` (the redirect
+    # fails), which is the desired fail-closed behavior.
     tr -d '\n' < "$file_path"
   else
     printf '%s' "${!1:-}"
   fi
 }
 
+# Fail closed: refuse to create a LOGIN role with an empty password. Without
+# this, a fully-unset POSTGRES_<ROLE>_PASSWORD[_FILE] would silently produce a
+# passwordless role.
+require_password() {
+  local value="$1" name="$2"
+  if [ -z "$value" ]; then
+    echo "00-roles.sh: ${name} is empty (set ${name} or ${name}_FILE)" >&2
+    exit 1
+  fi
+}
+
 MIGRATOR_PW="$(read_password POSTGRES_MIGRATOR_PASSWORD)"
+require_password "$MIGRATOR_PW" POSTGRES_MIGRATOR_PASSWORD
 APP_PW="$(read_password POSTGRES_APP_PASSWORD)"
+require_password "$APP_PW" POSTGRES_APP_PASSWORD
 BACKUP_PW="$(read_password POSTGRES_BACKUP_PASSWORD)"
+require_password "$BACKUP_PW" POSTGRES_BACKUP_PASSWORD
 
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" \
   -v migrator_pw="$MIGRATOR_PW" \
