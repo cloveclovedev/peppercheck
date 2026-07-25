@@ -111,9 +111,12 @@ void main() {
   testWidgets('confirm re-authenticates with Google then links exactly once', (
     tester,
   ) async {
+    // A fixed instance (not a fresh credential per call) so the captured
+    // "existing" argument below can be matched by identity.
+    final existingCredential = GoogleAuthProvider.credential(idToken: 'g');
     when(
       authRepository.googleCredential(),
-    ).thenAnswer((_) async => GoogleAuthProvider.credential(idToken: 'g'));
+    ).thenAnswer((_) async => existingCredential);
     // Never resolves: the test only needs to observe the call, not the
     // post-link navigation (which would require a GoRouter in the tree).
     when(
@@ -132,11 +135,29 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    verify(
+    // The confirm path must re-authenticate with Google to obtain the
+    // "existing" credential before it can link.
+    verify(authRepository.googleCredential()).called(1);
+
+    // Capture the actual arguments passed to linkAppleToExisting to catch a
+    // pending/existing slot swap, which `anyNamed` on both sides would miss.
+    final verification = verify(
       authRepository.linkAppleToExisting(
-        pending: anyNamed('pending'),
-        existing: anyNamed('existing'),
+        pending: captureAnyNamed('pending'),
+        existing: captureAnyNamed('existing'),
       ),
-    ).called(1);
+    )..called(1);
+    final captured = verification.captured;
+    expect(captured, hasLength(2));
+    expect(
+      captured[0],
+      same(error.pendingCredential),
+      reason: 'pending slot must receive the Apple pendingCredential',
+    );
+    expect(
+      captured[1],
+      same(existingCredential),
+      reason: 'existing slot must receive the Google credential',
+    );
   });
 }

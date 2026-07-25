@@ -24,8 +24,8 @@ class ApiClient {
                connectTimeout: const Duration(seconds: 10),
                sendTimeout: const Duration(seconds: 20),
                receiveTimeout: const Duration(seconds: 20),
-               // We handle status validation ourselves so the interceptor can
-               // observe 401s; never throw on non-2xx here.
+               // We validate status ourselves so getJson can observe 401s and
+               // drive the single inline retry; never throw on non-2xx here.
                validateStatus: (_) => true,
              ),
            ) {

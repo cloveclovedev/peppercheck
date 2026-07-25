@@ -7,9 +7,8 @@ environment's release ships the corresponding client or backend code. Steps
 are grouped by environment where the action is per-Firebase-project, and
 called out once where the action is shared or per-platform.
 
-Firebase Authentication's Google and Apple social sign-in are used at no
-incremental cost within the free tier (up to 50k MAU); no billing change is
-required to complete this checklist.
+This app uses only Google and Apple sign-in (no phone/SMS), which is free at
+PepperCheck's scale; there is no billing change required for Phase 2.
 
 Environments map to separate Firebase projects (dev / staging / production),
 each with its own OAuth clients, SHA fingerprints, and provider configuration.

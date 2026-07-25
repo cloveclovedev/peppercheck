@@ -24,7 +24,7 @@ void main() {
         ),
       );
 
-      expect(
+      await expectLater(
         () => repo.completeAppleSignIn(
           idToken: 'apple-id-token',
           rawNonce: 'nonce',
