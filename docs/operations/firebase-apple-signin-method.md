@@ -74,15 +74,37 @@ Evidence gathered (2026-07-25, dev / `peppercheck-dev`):
    the firebase_auth plugin, `OAuthCredential.prepare`) and all pass the raw
    nonce unmodified — i.e. the app sends the same request that succeeds over REST.
 
-This matches a known, still-open firebase_auth issue:
+The **root cause of the client-side failure is not definitively established.**
+The credential is valid server-side (evidence 2), so the failure is in how the
+firebase_auth iOS SDK submits the manually-built Apple credential through
+`signInWithCredential`. Similar-symptom GitHub issues exist but do **not** prove
+the same root cause and must not be cited as confirmation:
 
-- flutterfire **#17466** — iOS `signInWithCredential` with an Apple credential
-  throws `invalid-credential`; the maintainer-accepted workaround is
-  `signInWithProvider`. <https://github.com/firebase/flutterfire/issues/17466>
-- Related: **#10441** (iOS Simulator Apple sign-in), **#12944**, **#11877**.
+- **#17466** is about **reusing** a credential obtained from a
+  `FirebaseAuthException` and passing it back to
+  `signInWithCredential`/`linkWithCredential` — a different flow and a different
+  error than our freshly-generated credential.
+  <https://github.com/firebase/flutterfire/issues/17466>
+- **#10441** turned out to be a duplicate `GoogleService-Info.plist` config
+  issue (`resolution: user`), not a Simulator/SDK bug.
+- **#12944** / **#11877** are limited to reusing credentials obtained from
+  exceptions.
 
-`signInWithProvider(AppleAuthProvider())` is therefore both the **officially
-recommended** method and the one that avoids the bug.
+What **is** established:
+
+- `signInWithProvider(AppleAuthProvider())` is Firebase's officially
+  **recommended** method (Approach A).
+- Our manual path also does not use the current official credential form:
+  the latest docs use `AppleAuthProvider.credentialWithIDToken(idToken, rawNonce,
+  fullName)`, whereas our code uses `OAuthProvider('apple.com').credential(...)`
+  (which firebase_auth routes to the same native call, but is not the documented
+  form).
+
+We adopt `signInWithProvider` because it is the recommended path and lets
+firebase_auth handle the Apple UI + nonce internally, avoiding the
+manual-credential submission that fails here. **This is a plausible fix, not a
+guaranteed one** — it must be verified empirically (clean rebuild, and ideally a
+real device) before being treated as resolved.
 
 ## Google is correct as-is (do not change)
 
@@ -92,17 +114,31 @@ works on iOS and Android. The #17466 bug is specific to the `apple.com`
 provider, so Google is unaffected. Switching Google to `signInWithProvider`
 would degrade the native account-picker UX, so it stays on the credential flow.
 
-## Consequences for the Phase 2 code
+## Rollout (incremental — do not rewrite everything up front)
 
-- `signInWithApple()` becomes `signInWithProvider(AppleAuthProvider()..addScope('email')..addScope('name'))`.
-- The manual nonce (`apple_nonce.dart`) and the `sign_in_with_apple` package are
-  no longer needed for the sign-in path (firebase_auth handles the Apple UI and
-  nonce internally). Remove them if nothing else uses them.
-- Account linking (P2-6.3): with `signInWithProvider`, an existing email under a
-  different provider surfaces via a `FirebaseAuthException` (with a `credential`
-  to link) rather than the manually-built pending credential. The consent-gated
-  linking flow is adjusted accordingly; the "never merge on email alone" rule is
-  preserved.
+1. Swap only `signInWithApple()` to
+   `signInWithProvider(AppleAuthProvider()..addScope('email')..addScope('name'))`.
+   Leave the existing linking code in place for now.
+2. **Clean rebuild** (stop the app, `flutter run --flavor dev`, not just hot
+   restart) and verify the primary Apple sign-in succeeds — ideally on a real
+   device, since the failure has only been reproduced on the Simulator.
+3. Only after it is confirmed working: redesign account linking (below), remove
+   the now-unused `sign_in_with_apple` / `apple_nonce.dart` / `crypto`
+   (Apple-only usage), and update the Apple tests.
+
+## Account linking — what changes
+
+- The desired "same verified email via Google and Apple → one internal user"
+  convergence is handled by Firebase's **one-account-per-email** setting
+  (auto-linking trusted, verified providers). This works with **either** sign-in
+  method; confirm the setting is enabled.
+- The manual consent + `linkAppleToExisting` flow (P2-6.3) only applies to the
+  rarer case where Firebase does NOT auto-link. With `signInWithProvider`,
+  firebase_auth performs the Apple sign-in internally, so we no longer hold the
+  Apple credential to link manually; the account-exists case surfaces as a
+  `FirebaseAuthException` instead. That flow will be redesigned in step 3 (and
+  the "never merge on an email match alone" rule preserved) — not before the
+  primary flow is confirmed.
 
 ## Process note
 
