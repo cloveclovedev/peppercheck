@@ -66,19 +66,50 @@ PG_DATABASE="${PG_DATABASE:-peppercheck}"
 ARCHIVE_TIMEOUT_SECONDS="${ARCHIVE_TIMEOUT_SECONDS:-120}"
 WAL_FRESHNESS_HEADROOM_SECONDS="${WAL_FRESHNESS_HEADROOM_SECONDS:-180}"
 
-# Matches pgbackrest.conf's archive-push-queue-max=1GiB. Alert BEFORE the
-# queue actually overflows and starts dropping WAL (a "pre-alert", per the
-# design doc's WAL-drop mitigation), at WAL_BACKLOG_ALERT_RATIO of the max.
+# Matches pgbackrest.conf's archive-push-queue-max=1GiB. This `.ready`-backlog
+# pre-alert is the PRIMARY defense against the WAL-drop hazard: it is the ONE
+# signal that fires BEFORE any WAL is dropped (see the header's WAL-drop
+# section and the B2-continuity note below for why the post-drop signals
+# cannot reliably catch a mid-stream drop). It must therefore fire with
+# generous headroom -- well before the 1GiB queue-max is reached -- so the
+# operator can react while the queue is merely growing, not once it has
+# already overflowed and silently discarded a segment. Default 0.5 (=512MiB)
+# deliberately conservative for that reason; raise only with a concrete
+# reason.
 ARCHIVE_PUSH_QUEUE_MAX_BYTES="${ARCHIVE_PUSH_QUEUE_MAX_BYTES:-1073741824}"
-WAL_BACKLOG_ALERT_RATIO="${WAL_BACKLOG_ALERT_RATIO:-0.8}"
+WAL_BACKLOG_ALERT_RATIO="${WAL_BACKLOG_ALERT_RATIO:-0.5}"
 
 # Schedule is weekly full + daily differential (pgbackrest.conf / crontab) --
 # 33h gives a full day plus buffer before a missed differential pages.
 MAX_BACKUP_AGE_SECONDS="${MAX_BACKUP_AGE_SECONDS:-118800}"
 
-# A B2-confirmed archive max that lags behind last_archived_wal for a SINGLE
-# observation is normal async-transfer lag, not a drop. Only alert once the
-# lag has persisted for this many consecutive runs (default 3 * 2min = 6min).
+# B2-confirmed-archive-max lag detects a STALLED/BEHIND async transfer: with
+# archive-async=y, Postgres's last_archived_wal advances as soon as pgBackRest
+# accepts a segment into the local async queue, whereas b2_archive_max (read
+# from the real repo via `pgbackrest info`) only advances once the segment
+# actually lands in B2 -- so a sustained last_archived_wal > b2_archive_max
+# means the local->B2 transfer has fallen behind (network, credential, or
+# repo problem). A single observation of lag is normal async catch-up; only
+# alert once it persists for this many consecutive runs (default 3 * 2min =
+# 6min).
+#
+# *** What this does NOT catch (documented honestly) ***
+# This is a MAX-lag signal, not a CONTINUITY signal. When archive-push-queue-
+# max overflows, pgBackRest drops the OLDEST queued segment and keeps pushing
+# newer ones, so b2_archive_max advances in lockstep with last_archived_wal
+# and this check stays quiet while a GAP sits undetected in the middle of the
+# archived range. A true per-segment continuity/gap scan would need to
+# enumerate the repo archive (`pgbackrest repo-ls` over the repo's archive
+# path) -- `info --output=json` exposes only the range's min/max, never a
+# per-segment list or count -- which is fragile to do correctly in shell
+# (repo path layout, compression suffixes, WAL-name arithmetic across the
+# 256-segments-per-logfile boundary, thousands of segments every 2 minutes)
+# and cannot be verified against real pgBackRest output in this environment.
+# The mid-stream-drop case is therefore covered by (a) the `.ready`-backlog
+# PRE-drop pre-alert above (the primary line -- fires before any drop) and
+# (b) the sticky queue-exceeded log-pattern detection below (post-drop
+# backstop). See MONITORING.md's "B2 continuity residual" note and the
+# hard Task-21 drill requirement.
 B2_LAG_ALERT_STREAK="${B2_LAG_ALERT_STREAK:-3}"
 
 # `pgbackrest check` performs a real archive-push/archive-get round trip
@@ -307,7 +338,7 @@ else
 fi
 echo "$b2_lag_streak" > "$B2_LAG_STREAK_FILE"
 if [ "$b2_lagging" -eq 1 ] && [ "$b2_lag_streak" -ge "$B2_LAG_ALERT_STREAK" ]; then
-  add_reason "B2-confirmed archive max (${b2_archive_max:-<none>}) lags last_archived_wal (${last_archived_wal}) for ${b2_lag_streak} consecutive checks -- possible silent WAL drop"
+  add_reason "B2-confirmed archive max (${b2_archive_max:-<none>}) lags last_archived_wal (${last_archived_wal}) for ${b2_lag_streak} consecutive checks -- async local->B2 transfer stalled/behind (NOTE: this is a max-lag signal and does not catch a mid-stream drop; see the .ready pre-alert + sticky queue-exceeded backstop)"
 fi
 [ -z "$info_json" ] && add_reason "pgbackrest info --output=json unavailable"
 

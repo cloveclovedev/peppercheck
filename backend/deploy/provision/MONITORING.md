@@ -174,23 +174,61 @@ it, because the gap is a segment that no longer exists anywhere (not on the
 Droplet, not in the repo). The only fix is a **new full backup**, which
 establishes a fresh, gap-free starting point for PITR.
 
-**Detection.** `wal-freshness.sh` detects this via multiple signals, any of
-which sets its **sticky** alert (a Better Stack heartbeat that simply stops
-being pinged, which pages after the configured grace period):
+**Detection — and its honest limits (B2 continuity residual).**
+`wal-freshness.sh` layers several signals. Understand precisely which one
+catches this hazard **before** the drop versus only **after**, because the
+"after" signals have a real blind spot:
 
-- the B2-confirmed archive max (from `pgbackrest info`) persistently lagging
-  behind `pg_stat_archiver.last_archived_wal` (`B2_LAG_ALERT_STREAK`
-  consecutive checks, default 3 = ~6 minutes) — the direct symptom of a
-  drop: Postgres believes a segment archived that B2 never actually
-  received;
-- a match against pgBackRest's own queue-exceeded log line
-  (best-effort pattern; **not independently confirmed against a live
-  overflow in this environment** — see the task report). This one is
-  **sticky on disk** at `$STATE_DIR/wal-freshness.queue-exceeded` (default
-  `/var/lib/peppercheck-monitor/wal-freshness.queue-exceeded`) and does
-  **not** self-clear — see step 4 below;
+- **PRIMARY, pre-drop:** the `.ready` backlog **byte** pre-alert
+  (`WAL_BACKLOG_ALERT_RATIO`, default **0.5 = 512 MiB** of the 1 GiB
+  `archive-push-queue-max`). This is the one signal that fires **while the
+  queue is merely growing, before any WAL is dropped**, giving the operator
+  a window to react (see "Address the root cause" below) before the chain
+  can break. It is deliberately conservative for exactly that reason — do
+  not raise the ratio without a concrete justification.
+- **POST-drop backstop:** a match against pgBackRest's own queue-exceeded
+  log line (best-effort regex `WAL_FRESHNESS_QUEUE_LOG_PATTERN`; **not
+  independently confirmed against a live overflow in this environment** —
+  see the hard Task-21 requirement below). Sticky on disk at
+  `$STATE_DIR/wal-freshness.queue-exceeded` (default
+  `/var/lib/peppercheck-monitor/wal-freshness.queue-exceeded`); does **not**
+  self-clear — see step 4 below.
 - the latest-backup age exceeding `MAX_BACKUP_AGE_SECONDS` (a full/diff that
   should have run didn't, for whatever reason, including this one).
+- the B2-confirmed archive **max** (from `pgbackrest info`) persistently
+  lagging behind `pg_stat_archiver.last_archived_wal` (`B2_LAG_ALERT_STREAK`,
+  default 3 ≈ 6 minutes). **This is a max-lag signal, NOT a continuity
+  signal**, and it has a documented blind spot for THIS hazard: a queue-max
+  overflow drops the OLDEST queued segment and keeps pushing newer ones, so
+  `b2_archive_max` keeps advancing in lockstep with `last_archived_wal` and
+  this check stays quiet even though a **gap sits undetected in the middle**
+  of the archived range. It reliably catches a *stalled/behind* transfer
+  (B2 unreachable, credentials wrong), not a mid-stream drop.
+
+**Why no per-segment gap scan.** The ideal signal would enumerate the repo
+archive and detect a missing segment directly. `pgbackrest info
+--output=json` exposes only the archive range's `min`/`max` per archive-id
+— never a per-segment list or count — so a real gap scan would require
+`pgbackrest repo-ls` over the repo's archive path plus WAL-name arithmetic
+across the 256-segments-per-logfile boundary, correct handling of the repo
+path layout and compression suffixes, and paging thousands of segments every
+2 minutes. That is fragile to get correct in shell and could not be verified
+against real pgBackRest output in the Task 17 sandbox, so it was
+deliberately **not** implemented; the pre-drop pre-alert + sticky
+log-pattern backstop are the accepted mitigation instead. If a future task
+can enumerate the repo cleanly, adding a genuine continuity check is the
+right upgrade.
+
+> **HARD REQUIREMENT for Task 21 (WAL-drop drill).** Because the mid-stream-
+> drop case rests on the sticky **log-pattern** backstop, and that pattern is
+> currently **unverified against real pgBackRest output**, Task 21's WAL-drop
+> drill MUST: (1) force a *real* `archive-push-queue-max` overflow against
+> the test bucket (not a simulated log line), (2) capture pgBackRest's actual
+> queue-exceeded log wording, and (3) confirm `wal-freshness.sh`'s
+> `WAL_FRESHNESS_QUEUE_LOG_PATTERN` actually matches it and the sticky alert
+> fires. If the real wording does not match, tighten the pattern to the
+> observed string before staging monitoring is considered wired. Do not sign
+> off Task 21 with this left unverified.
 
 **Recovery steps**, once alerted:
 
@@ -246,11 +284,18 @@ being pinged, which pages after the configured grace period):
 
 ## 7. Known gaps / follow-ups (see the Task 17 report for full detail)
 
+- **B2 continuity residual (see §6).** There is no per-segment gap scan; the
+  mid-stream-drop case rests on the `.ready` pre-drop pre-alert (primary) +
+  the sticky queue-exceeded log-pattern backstop. Task 21's WAL-drop drill
+  MUST verify that backstop against a *real* overflow (hard requirement,
+  §6). A genuine `repo-ls`-based continuity check is the right future
+  upgrade if the repo can be enumerated cleanly.
 - The exact pgBackRest log wording for a queue-max-exceeded event has not
   been confirmed against a live overflow in this environment (no real B2
   bucket in this sandbox) — `WAL_FRESHNESS_QUEUE_LOG_PATTERN` is a
   deliberately broad best-effort regex. Confirm/tighten it during Task 21's
-  simulated WAL-drop drill.
+  **real** (not simulated) WAL-drop drill — this is the hard requirement in
+  §6, not merely a nice-to-have.
 - The `pgbackrest info --output=json` field names used (`archive[].max`,
   `backup[].timestamp.stop`) match pgBackRest's documented JSON schema but
   were only validated against a hand-built sample in this task, not a live

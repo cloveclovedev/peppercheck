@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/cloveclovedev/peppercheck/backend/internal/core/jobs"
 	"github.com/cloveclovedev/peppercheck/backend/internal/core/logging"
@@ -127,6 +128,39 @@ func TestHeartbeatPostedAfterSuccessfulCycle(t *testing.T) {
 	}
 	if got := atomic.LoadInt32(&received); got != 1 {
 		t.Fatalf("heartbeat POSTs received = %d, want 1", got)
+	}
+}
+
+func TestHeartbeatThrottledWithinInterval(t *testing.T) {
+	db := testsupport.DB(t)
+	if _, err := db.Exec("TRUNCATE public.jobs"); err != nil {
+		t.Fatalf("truncate: %v", err)
+	}
+	ctx := context.Background()
+
+	var received int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		atomic.AddInt32(&received, 1)
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+
+	w := New(db, logging.New("error"))
+	w.SetHeartbeatURL(srv.URL)
+	// A long throttle window means the second (and any subsequent) clean
+	// drain inside the window must NOT ping again.
+	w.heartbeatInterval = time.Hour
+
+	// Two back-to-back clean drains (empty queue drains immediately and
+	// still pings on the first, throttled on the second).
+	if err := w.RunDue(ctx); err != nil {
+		t.Fatalf("RunDue #1: %v", err)
+	}
+	if err := w.RunDue(ctx); err != nil {
+		t.Fatalf("RunDue #2: %v", err)
+	}
+	if got := atomic.LoadInt32(&received); got != 1 {
+		t.Fatalf("heartbeat POSTs received = %d, want 1 (second drain must be throttled)", got)
 	}
 }
 

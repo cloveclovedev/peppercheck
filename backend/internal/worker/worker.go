@@ -24,22 +24,33 @@ type Handler func(ctx context.Context, j *jobs.Job) error
 
 // Worker claims and dispatches durable jobs.
 type Worker struct {
-	store        *jobs.Store
-	logger       *slog.Logger
-	handlers     map[string]Handler
-	interval     time.Duration
+	store    *jobs.Store
+	logger   *slog.Logger
+	handlers map[string]Handler
+	interval time.Duration
+
 	heartbeatURL string
 	httpClient   *http.Client
+	// heartbeatInterval throttles heartbeat POSTs: RunDue drains on every
+	// tick (interval ~1s), and an idle worker drains cleanly every tick, so
+	// pinging on each drain would send tens of thousands of heartbeats per
+	// day and risk being rate-limited by Better Stack. At most one ping per
+	// heartbeatInterval is sent instead. Kept comfortably below any sane
+	// monitor grace period so a genuinely stopped worker is still detected
+	// promptly.
+	heartbeatInterval time.Duration
+	lastHeartbeat     time.Time
 }
 
 // New builds a Worker over an open database handle.
 func New(db *sql.DB, logger *slog.Logger) *Worker {
 	return &Worker{
-		store:      jobs.NewStore(db),
-		logger:     logger,
-		handlers:   map[string]Handler{},
-		interval:   time.Second,
-		httpClient: &http.Client{Timeout: 5 * time.Second},
+		store:             jobs.NewStore(db),
+		logger:            logger,
+		handlers:          map[string]Handler{},
+		interval:          time.Second,
+		httpClient:        &http.Client{Timeout: 5 * time.Second},
+		heartbeatInterval: 60 * time.Second,
 	}
 }
 
@@ -78,9 +89,17 @@ func (w *Worker) RunDue(ctx context.Context) error {
 // It is deliberately best-effort: a heartbeat is a liveness signal for an
 // external monitor, not part of job-processing correctness, so a failure
 // here is logged at warn level and never propagated -- it must never break,
-// delay, or retry job processing.
+// delay, or retry job processing. It is also throttled to at most one
+// successful ping per heartbeatInterval (see the field comment) so an idle
+// worker draining every ~1s tick does not flood the heartbeat endpoint.
 func (w *Worker) sendHeartbeat(ctx context.Context) {
 	if w.heartbeatURL == "" {
+		return
+	}
+	// Throttle against the last SUCCESSFUL ping: a failed POST does not
+	// advance lastHeartbeat, so a transient failure is retried on the next
+	// drain rather than being suppressed for a whole interval.
+	if !w.lastHeartbeat.IsZero() && time.Since(w.lastHeartbeat) < w.heartbeatInterval {
 		return
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, w.heartbeatURL, nil)
@@ -98,7 +117,9 @@ func (w *Worker) sendHeartbeat(ctx context.Context) {
 	defer resp.Body.Close()
 	if resp.StatusCode >= 300 {
 		w.logger.Warn("heartbeat POST returned non-2xx", "status", resp.StatusCode)
+		return
 	}
+	w.lastHeartbeat = time.Now()
 }
 
 func (w *Worker) process(ctx context.Context, j *jobs.Job) {
