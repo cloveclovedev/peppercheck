@@ -279,7 +279,7 @@ jobs:
   # stale commit over a newer one.
   guard:
     needs: image
-    if: github.ref == 'refs/heads/refactor/go-api-vps'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/refactor/go-api-vps'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -318,7 +318,7 @@ jobs:
   # for the staging Droplet.
   deploy-staging:
     needs: [image, guard]
-    if: github.ref == 'refs/heads/refactor/go-api-vps'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/refactor/go-api-vps'
     permissions:
       id-token: write # Tailscale OIDC -- id-token defaults to none and must be explicitly forwarded to the called workflow
       contents: read
@@ -339,7 +339,7 @@ jobs:
   # passed) on staging first.
   tag-validated:
     needs: [image, deploy-staging]
-    if: github.ref == 'refs/heads/refactor/go-api-vps'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/refactor/go-api-vps'
     runs-on: ubuntu-latest
     permissions:
       packages: write
