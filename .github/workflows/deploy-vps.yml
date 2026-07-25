@@ -92,6 +92,21 @@ jobs:
           SSH_HOST: ${{ inputs.ssh_host }}
           DEPLOY_SHA: ${{ inputs.sha }}
           RUN_ID: ${{ github.run_id }}
+          # Non-secret compose.prod.yaml `${VAR:?}` config that ship-deployment.sh
+          # (Task 10) renders into images.env alongside the digest-pinned
+          # IMAGE_* refs -- without these, remote-deploy.sh's first
+          # `compose pull` on the Droplet would fail closed. All sourced from
+          # this job's `environment: ${{ inputs.env }}` (staging/production
+          # GitHub Environment vars), never from secrets -- CADDY_SITE_ADDRESS
+          # comes from the workflow's own `host` input instead, since it is
+          # simply the public domain already passed in for the smoke test.
+          CADDY_SITE_ADDRESS: ${{ inputs.host }}
+          API_PORT: ${{ vars.API_PORT }}
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+          PGBACKREST_REPO1_S3_ENDPOINT: ${{ vars.PGBACKREST_REPO1_S3_ENDPOINT }}
+          PGBACKREST_REPO1_S3_BUCKET: ${{ vars.PGBACKREST_REPO1_S3_BUCKET }}
+          PGBACKREST_REPO1_S3_REGION: ${{ vars.PGBACKREST_REPO1_S3_REGION }}
+          AGE_RECIPIENT: ${{ vars.AGE_RECIPIENT }}
         run: bws run -- ./backend/scripts/ship-deployment.sh "$DEPLOY_ENV" "$SSH_HOST" "$DEPLOY_SHA" "$RUN_ID" m/manifest.json
 
       - name: Deploy (migrate, switch, up)
