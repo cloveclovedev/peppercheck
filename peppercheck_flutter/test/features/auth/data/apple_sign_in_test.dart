@@ -30,11 +30,15 @@ void main() {
           rawNonce: 'nonce',
         ),
         throwsA(
-          isA<AccountLinkRequiredException>().having(
-            (e) => e.email,
-            'email',
-            'a@example.com',
-          ),
+          isA<AccountLinkRequiredException>()
+              .having((e) => e.email, 'email', 'a@example.com')
+              // Guards the provider id: Firebase's Apple provider is
+              // 'apple.com'; 'apple' is rejected as internal-error.
+              .having(
+                (e) => e.pendingCredential.providerId,
+                'providerId',
+                'apple.com',
+              ),
         ),
       );
     },
@@ -53,7 +57,7 @@ void main() {
     final repo = AuthRepository.forAppleTest(auth);
 
     final apple = OAuthProvider(
-      'apple',
+      'apple.com',
     ).credential(idToken: 'apple-id-token', rawNonce: 'nonce');
     final existing = GoogleAuthProvider.credential(idToken: 'g');
 

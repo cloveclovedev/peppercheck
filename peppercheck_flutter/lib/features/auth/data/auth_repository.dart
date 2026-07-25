@@ -82,8 +82,10 @@ class AuthRepository {
     required String idToken,
     required String rawNonce,
   }) async {
+    // Firebase's Apple provider id is 'apple.com'; 'apple' is rejected with
+    // INVALID_CREDENTIAL_OR_PROVIDER_ID (surfaced as internal-error).
     final credential = OAuthProvider(
-      'apple',
+      'apple.com',
     ).credential(idToken: idToken, rawNonce: rawNonce);
     try {
       await _auth.signInWithCredential(credential);
