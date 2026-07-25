@@ -30,6 +30,11 @@ func RequestIDFrom(ctx context.Context) string {
 	return ""
 }
 
+// withRequestID stores id in ctx under the private requestIDKey.
+func withRequestID(ctx context.Context, id string) context.Context {
+	return context.WithValue(ctx, requestIDKey, id)
+}
+
 // RequestID assigns (or preserves) a request ID and echoes it in the response.
 func RequestID(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -38,7 +43,7 @@ func RequestID(next http.Handler) http.Handler {
 			id = newRequestID()
 		}
 		w.Header().Set(RequestIDHeader, id)
-		ctx := context.WithValue(r.Context(), requestIDKey, id)
+		ctx := withRequestID(r.Context(), id)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
@@ -81,7 +86,7 @@ func Recover(logger *slog.Logger) func(http.Handler) http.Handler {
 						slog.Any("error", rec),
 						slog.String("request_id", RequestIDFrom(r.Context())),
 					)
-					w.WriteHeader(http.StatusInternalServerError)
+					WriteError(w, r, http.StatusInternalServerError, CodeInternal, "internal error")
 				}
 			}()
 			next.ServeHTTP(w, r)
