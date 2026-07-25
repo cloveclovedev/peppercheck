@@ -1,14 +1,32 @@
 #!/bin/bash
 # Creates the migration, runtime, and backup roles on first database
-# initialization. Passwords come from environment variables and are passed to
-# psql as variables so :'name' quotes them safely even if they contain quotes.
-# This runs only when the data directory is empty (docker-entrypoint-initdb.d).
+# initialization. Passwords come from POSTGRES_<ROLE>_PASSWORD, or from
+# POSTGRES_<ROLE>_PASSWORD_FILE (a Docker file-based secret mounted at
+# /run/secrets/*) when set -- mirroring the stock docker-entrypoint.sh's
+# file_env() convention, file wins over the plain env var. Either way the
+# password is passed to psql as a variable so :'name' quotes it safely even
+# if it contains quotes. This runs only when the data directory is empty
+# (docker-entrypoint-initdb.d).
 set -euo pipefail
 
+read_password() {
+  local file_var="${1}_FILE"
+  local file_path="${!file_var:-}"
+  if [ -n "$file_path" ]; then
+    tr -d '\n' < "$file_path"
+  else
+    printf '%s' "${!1:-}"
+  fi
+}
+
+MIGRATOR_PW="$(read_password POSTGRES_MIGRATOR_PASSWORD)"
+APP_PW="$(read_password POSTGRES_APP_PASSWORD)"
+BACKUP_PW="$(read_password POSTGRES_BACKUP_PASSWORD)"
+
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" \
-  -v migrator_pw="$POSTGRES_MIGRATOR_PASSWORD" \
-  -v app_pw="$POSTGRES_APP_PASSWORD" \
-  -v backup_pw="$POSTGRES_BACKUP_PASSWORD" <<-'EOSQL'
+  -v migrator_pw="$MIGRATOR_PW" \
+  -v app_pw="$APP_PW" \
+  -v backup_pw="$BACKUP_PW" <<-'EOSQL'
   -- Migration role: owns schema objects and may run DDL.
   CREATE ROLE peppercheck_migrator LOGIN PASSWORD :'migrator_pw';
   GRANT CREATE, USAGE ON SCHEMA public TO peppercheck_migrator;
