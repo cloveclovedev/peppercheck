@@ -9,7 +9,7 @@ import (
 )
 
 func TestBuildHandlerLivez(t *testing.T) {
-	h := buildHandler(nil)
+	h := buildHandler(Deps{})
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, httptest.NewRequest("GET", "/livez", nil))
 	if rec.Code != http.StatusOK {
@@ -18,7 +18,7 @@ func TestBuildHandlerLivez(t *testing.T) {
 }
 
 func TestBuildHandlerReadyzUsesProbe(t *testing.T) {
-	h := buildHandler(func(context.Context) error { return errors.New("down") })
+	h := buildHandler(Deps{Ready: func(context.Context) error { return errors.New("down") }})
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, httptest.NewRequest("GET", "/readyz", nil))
 	if rec.Code != http.StatusServiceUnavailable {
@@ -27,7 +27,7 @@ func TestBuildHandlerReadyzUsesProbe(t *testing.T) {
 }
 
 func TestBuildHandlerReadyzOKWhenNilProbe(t *testing.T) {
-	h := buildHandler(nil)
+	h := buildHandler(Deps{})
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, httptest.NewRequest("GET", "/readyz", nil))
 	if rec.Code != http.StatusOK {
