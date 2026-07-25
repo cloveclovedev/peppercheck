@@ -91,7 +91,15 @@ class ApiClient {
   }) async {
     final headers = <String, dynamic>{_requestIdHeader: _newRequestId()};
     if (authenticated) {
-      final token = await _idTokenProvider(forceRefresh: forceRefresh);
+      final String? token;
+      try {
+        token = await _idTokenProvider(forceRefresh: forceRefresh);
+      } catch (_, stackTrace) {
+        Error.throwWithStackTrace(
+          const ApiException.tokenUnavailable(),
+          stackTrace,
+        );
+      }
       if (token != null) headers['Authorization'] = 'Bearer $token';
     }
     return _dio.get<dynamic>(path, options: Options(headers: headers));
