@@ -41,9 +41,18 @@ AppEnvironment appEnvironment(Ref ref) => throw UnimplementedError(
 /// Android uses 10.0.2.2, the iOS simulator uses 127.0.0.1. Cleartext HTTP is
 /// permitted for dev only (see the Android network-security config and iOS ATS
 /// exception). Staging/production are HTTPS with no exception.
-String resolveApiBaseUrl(AppEnvironment env, {required bool isAndroid}) {
+String resolveApiBaseUrl(
+  AppEnvironment env, {
+  required bool isAndroid,
+  int devPort = 80,
+}) {
+  // Dev goes through Caddy; its host port is configurable so it can dodge
+  // clashes with other local projects (see backend CADDY_HTTP_PORT). Only
+  // append the port when it is not the default 80, keeping URLs clean.
+  final suffix = devPort == 80 ? '' : ':$devPort';
   return switch (env) {
-    AppEnvironment.dev => isAndroid ? 'http://10.0.2.2' : 'http://127.0.0.1',
+    AppEnvironment.dev =>
+      isAndroid ? 'http://10.0.2.2$suffix' : 'http://127.0.0.1$suffix',
     AppEnvironment.staging => 'https://staging.peppercheck.dev',
     AppEnvironment.production => 'https://peppercheck.dev',
   };

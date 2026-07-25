@@ -1,11 +1,12 @@
 # Dev-only overrides, auto-merged by `docker compose` in local development.
-# Binds Postgres to localhost so host tools (Atlas) can reach it. The base
+# Binds Postgres to localhost so host tools (Atlas, psql) can reach it. The base
 # compose.yaml never publishes :5432, matching the production topology.
 #
-# If host port 5432 is already taken on your machine (e.g. another project's
-# Postgres), do NOT change this committed value — override it locally instead,
-# e.g. `COMPOSE_FILE=compose.yaml:compose.override.yaml:compose.local.yaml`
-# with a gitignored compose.local.yaml that remaps the port.
+# The host port is configurable via POSTGRES_HOST_PORT (default 5432) so it can
+# be moved when another local project already holds 5432 — set it in .env, e.g.
+# `POSTGRES_HOST_PORT=5433`. The container always listens on 5432 internally, and
+# the api/worker reach it over the Compose network, so this only affects host
+# tools. See docs/operations/local-ports.md for the full port map.
 #
 # NOTE (prod): because this override auto-merges, a bare `docker compose up`
 # publishes Postgres to host loopback. Production deploys must invoke Compose
@@ -13,4 +14,4 @@
 services:
   postgres:
     ports:
-      - "127.0.0.1:5432:5432"
+      - "127.0.0.1:${POSTGRES_HOST_PORT:-5432}:5432"

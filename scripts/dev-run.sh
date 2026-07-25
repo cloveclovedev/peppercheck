@@ -14,18 +14,25 @@
 #   scripts/dev-run.sh --android             # Android only
 #   scripts/dev-run.sh --no-backend          # skip starting the backend
 #   scripts/dev-run.sh --avd NAME            # Android AVD (default below; see: flutter emulators)
+#   scripts/dev-run.sh --caddy-port N        # host ingress port (default 80) when 80 is taken
+#   scripts/dev-run.sh --postgres-port N     # host Postgres port (default 5432) when 5432 is taken
 #   scripts/dev-run.sh --firebase-project ID # api token audience (default peppercheck-dev)
+#
+# --caddy-port is the single source of truth for the ingress: it publishes the
+# backend Caddy on that host port AND tells the app (via --dart-define) to use
+# it, so both always agree. See docs/operations/local-ports.md for the port map.
 set -euo pipefail
 
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
 FLUTTER_DIR="$REPO/peppercheck_flutter"
 BACKEND_DIR="$REPO/backend"
-API_HEALTH_URL="http://127.0.0.1/api/v1/me"
-FLUTTER_RUN="flutter run --flavor dev -t lib/main_dev.dart"
+FLUTTER_RUN_BASE="flutter run --flavor dev -t lib/main_dev.dart"
 
 RUN_IOS=0 RUN_ANDROID=0 EXPLICIT=0 START_BACKEND=1
 AVD="Medium_Phone_API_36.1"
 FIREBASE_PROJECT="peppercheck-dev"
+CADDY_PORT=80       # host ingress port (backend CADDY_HTTP_PORT + app DEV_API_PORT)
+PG_PORT=5432        # host Postgres port (backend POSTGRES_HOST_PORT), host tools only
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -33,19 +40,28 @@ while [ $# -gt 0 ]; do
     --android)  RUN_ANDROID=1; EXPLICIT=1 ;;
     --no-backend) START_BACKEND=0 ;;
     --avd)      AVD="${2:?}"; shift ;;
+    --caddy-port)    CADDY_PORT="${2:?}"; shift ;;
+    --postgres-port) PG_PORT="${2:?}"; shift ;;
     --firebase-project) FIREBASE_PROJECT="${2:?}"; shift ;;
-    -h|--help)  sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h|--help)  sed -n '2,23p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "unknown arg: $1" >&2; exit 2 ;;
   esac
   shift
 done
 [ "$EXPLICIT" -eq 1 ] || { RUN_IOS=1; RUN_ANDROID=1; }
 
+# The ingress port is the single source of truth: the backend publishes Caddy
+# on it and the app is told the same value, so they always agree.
+API_HEALTH_URL="http://127.0.0.1:${CADDY_PORT}/api/v1/me"
+FLUTTER_RUN="$FLUTTER_RUN_BASE --dart-define=DEV_API_PORT=$CADDY_PORT"
+
 IOS_DEVICE="" ANDROID_DEVICE=""
 
 start_backend() {
-  echo "==> Starting backend (FIREBASE_PROJECT_ID=$FIREBASE_PROJECT)"
-  if ! ( cd "$BACKEND_DIR" && FIREBASE_PROJECT_ID="$FIREBASE_PROJECT" make up ); then
+  echo "==> Starting backend (FIREBASE_PROJECT_ID=$FIREBASE_PROJECT, Caddy :$CADDY_PORT, Postgres :$PG_PORT)"
+  if ! ( cd "$BACKEND_DIR" \
+      && FIREBASE_PROJECT_ID="$FIREBASE_PROJECT" \
+         CADDY_HTTP_PORT="$CADDY_PORT" POSTGRES_HOST_PORT="$PG_PORT" make up ); then
     echo
     echo "backend failed to start. If compose reported a missing variable"
     echo "(e.g. API_PORT), your backend/.env predates a template change and"
