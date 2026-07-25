@@ -11,6 +11,7 @@ import 'package:peppercheck_flutter/features/auth/application/auth_state.dart';
 import 'package:peppercheck_flutter/features/auth/data/auth_repository.dart';
 import 'package:peppercheck_flutter/features/auth/ui/sign_in_view_model.dart';
 import 'package:peppercheck_flutter/gen/assets.gen.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 
@@ -24,9 +25,14 @@ class LoginScreen extends ConsumerWidget {
       if (state is AsyncData) {
         context.go('/home');
       } else if (state is AsyncError) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(state.error.toString())));
+        final error = state.error;
+        if (error is AccountLinkRequiredException) {
+          _showAppleLinkDialog(context, ref, error);
+        } else {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(error.toString())));
+        }
       }
     });
 
@@ -118,6 +124,16 @@ class LoginScreen extends ConsumerWidget {
                             height: 50,
                           ),
                   ),
+                  const SizedBox(height: AppSizes.spacingSmall),
+                  SignInWithAppleButton(
+                    onPressed: state.isLoading
+                        ? null
+                        : () {
+                            ref
+                                .read(signInViewModelProvider.notifier)
+                                .signInWithApple();
+                          },
+                  ),
                   const SizedBox(height: AppSizes.spacingMedium),
                   GestureDetector(
                     behavior: HitTestBehavior.opaque,
@@ -145,4 +161,43 @@ class LoginScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// Shows the Apple↔existing-account link-consent dialog. Confirm links after
+/// re-authenticating with the existing provider; cancel dismisses without
+/// ever linking (see [SignInViewModel.cancelAppleLink]).
+void _showAppleLinkDialog(
+  BuildContext context,
+  WidgetRef ref,
+  AccountLinkRequiredException error,
+) {
+  showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (dialogContext) => AlertDialog(
+      title: Text(t.login.appleLink.title),
+      content: Text(t.login.appleLink.body),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.of(dialogContext).pop();
+            ref.read(signInViewModelProvider.notifier).cancelAppleLink();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(t.login.appleLink.cancelled)),
+            );
+          },
+          child: Text(t.login.appleLink.cancel),
+        ),
+        TextButton(
+          onPressed: () {
+            Navigator.of(dialogContext).pop();
+            ref
+                .read(signInViewModelProvider.notifier)
+                .confirmAppleLink(error.pendingCredential);
+          },
+          child: Text(t.login.appleLink.confirm),
+        ),
+      ],
+    ),
+  );
 }

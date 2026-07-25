@@ -42,13 +42,21 @@ class AuthRepository {
   final Logger _logger;
 
   Future<void> signInWithGoogle() async {
+    final credential = await googleCredential();
+    await _auth.signInWithCredential(credential);
+  }
+
+  /// Runs the Google sign-in flow and returns the resulting Firebase
+  /// [AuthCredential] without signing in. Used to obtain a fresh "existing
+  /// provider" credential when the UI links Apple onto a Google account (see
+  /// [linkAppleToExisting]).
+  Future<AuthCredential> googleCredential() async {
     final account = await _google.authenticate();
     final idToken = account.authentication.idToken;
     if (idToken == null) {
       throw StateError('Google sign-in returned no ID token');
     }
-    final credential = GoogleAuthProvider.credential(idToken: idToken);
-    await _auth.signInWithCredential(credential);
+    return GoogleAuthProvider.credential(idToken: idToken);
   }
 
   Future<void> signInWithApple() async {

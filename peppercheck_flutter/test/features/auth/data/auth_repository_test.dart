@@ -53,6 +53,22 @@ void main() {
     },
   );
 
+  test(
+    'googleCredential returns a Google credential without signing in',
+    () async {
+      final account = MockGoogleSignInAccount();
+      final gAuth = MockGoogleSignInAuthentication();
+      when(gAuth.idToken).thenReturn('google-id-token');
+      when(account.authentication).thenReturn(gAuth);
+      when(google.authenticate()).thenAnswer((_) async => account);
+
+      final credential = await repo.googleCredential();
+
+      expect(credential.providerId, 'google.com');
+      verifyNever(auth.signInWithCredential(any));
+    },
+  );
+
   test('signOut runs each leg independently even if one throws', () async {
     when(google.signOut()).thenThrow(Exception('google boom'));
     when(auth.signOut()).thenAnswer((_) async {});

@@ -36,7 +36,7 @@ final class SignInViewModelProvider
   SignInViewModel create() => SignInViewModel();
 }
 
-String _$signInViewModelHash() => r'736ff24719fe348dd4c5446066392fd5566f742e';
+String _$signInViewModelHash() => r'f48949cd6abef5b287bc0ee5657ca9d654deff9e';
 
 /// Drives the login screen. Google in Phase 2 P2-5; Apple added in P2-6.
 
