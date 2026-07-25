@@ -93,12 +93,9 @@ class AuthRepository {
       if (e.code == 'account-exists-with-different-credential') {
         throw AccountLinkRequiredException(e.email, credential);
       }
-      // Surface the server reason (Firebase often hides it behind
-      // internal-error); useful while wiring up the Apple provider config.
-      _logger.e(
-        'Apple sign-in failed: code=${e.code} message=${e.message}',
-        error: e,
-      );
+      // Log only the code — e.message/e can embed the id_token (a credential),
+      // which must never be written to logs.
+      _logger.e('Apple sign-in failed: ${e.code}');
       rethrow;
     }
   }
