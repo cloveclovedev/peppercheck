@@ -27,7 +27,7 @@ For production, repeat the environment-scoped items (BWS, GHCR token,
 GitHub Environment, Droplet, DNS) against the `production` Environment,
 `tag:pc-prod`, and `peppercheck.dev`.
 
-### 1.1 Tailscale — tags, ACL, GitHub OIDC client
+### 1.1 Tailscale — tags, ACL, OIDC client, Droplet auth key
 
 The deploy runner joins the tailnet as an ephemeral, tagged node (no
 long-lived Tailscale secret) via `tailscale/github-action` in
@@ -41,22 +41,39 @@ long-lived Tailscale secret) via `tailscale/github-action` in
     tags: tag:ci-deploy
 ```
 
+There are **two distinct Tailscale credentials** in play, and they must not
+be confused:
+
+- an **OIDC federated-identity client** (`TS_CLIENT_ID` / `TS_AUDIENCE`),
+  used by the CI runner to join the tailnet with no long-lived secret — set
+  up in steps 3-4 below; and
+- a tag-scoped, **ephemeral Tailscale auth key** (`TAILSCALE_AUTH_KEY`),
+  used once by the Droplet's `bootstrap.sh` to bring the Droplet onto the
+  tailnet — set up in step 5 below, needed in hand before you reach §1.6.
+
 1. In the Tailscale admin console, define tags `tag:ci-deploy`,
    `tag:pc-staging`, `tag:pc-prod` in the tailnet ACL.
 2. Grant an ACL rule: `tag:ci-deploy` → SSH (port 22) → `tag:pc-staging` and
    `tag:pc-prod`. Do not grant `tag:ci-deploy` broader reach than SSH:22 to
    those two tags.
 3. Create a GitHub OIDC federated identity / workload-identity client in
-   Tailscale (Settings → OAuth clients / OIDC). Scope it so it can only mint
-   tokens for a token that requests `tag:ci-deploy`, and restrict the
-   federated-identity claims to this repository and the `deploy-vps.yml`
-   workflow (repo + workflow claim limits) — do not leave it open to any
+   Tailscale (Settings → OAuth clients / OIDC) that issues nodes tagged
+   `tag:ci-deploy`. Restrict the federated-identity claims so only this
+   repository and the `deploy-vps.yml` workflow can authenticate against it
+   (repo + workflow claim limits) — do not leave it open to any
    repo/workflow in the GitHub org.
 4. Record the resulting client ID and audience. They become the
    **non-secret** GitHub Actions Environment variables `TS_CLIENT_ID` and
    `TS_AUDIENCE` (§1.5) — `deploy-vps.yml` reads them as `vars.TS_CLIENT_ID`
    / `vars.TS_AUDIENCE`, scoped per-Environment (staging vs production can use
    different values if desired).
+5. Generate a tag-scoped, **ephemeral** Tailscale auth key for the Droplet
+   (Settings → Keys → Generate auth key; mark it ephemeral and scope it to
+   the target tag — `tag:pc-staging` for staging, `tag:pc-prod` for
+   production). This is `bootstrap.sh`'s `TAILSCALE_AUTH_KEY` env var (§1.6);
+   have it ready before you provision the Droplet. It is a bootstrap secret —
+   never commit it, and prefer a short expiry since `bootstrap.sh` only needs
+   it for the one-time `tailscale up`.
 
 ### 1.2 Bitwarden Secrets Manager (BWS) — projects, tokens, secret inventory
 
@@ -208,7 +225,9 @@ GitHub Environment variable — the workflow already supplies both.
    ```
 
    Use `TAILSCALE_TAG=tag:pc-prod` for the production Droplet.
-   `TAILSCALE_AUTH_KEY` is a Tailscale auth key scoped to that tag.
+   `TAILSCALE_AUTH_KEY` is the ephemeral, tag-scoped Tailscale auth key you
+   generated in §1.1 step 5 (distinct from the OIDC client the CI runner
+   uses).
    `DEPLOY_SSH_PUBLIC_KEY` is the public half of `SSH_DEPLOY_KEY` (§1.5); if
    omitted, `bootstrap.sh` skips installing it and you must append it to
    `/home/deploy/.ssh/authorized_keys` by hand before SSH hardening is safe
@@ -290,9 +309,12 @@ After `deploy-staging` finishes green, verify manually:
   `staging.peppercheck.dev` (Caddy's automatic ACME TLS), not a self-signed
   fallback.
 - On the Droplet, `/opt/peppercheck/deployments/<sha>-<run_id>/secrets/*`
-  files exist, are `0400`, and are owned by the expected consumer UIDs
-  (`65532` for `database_url`, `999` for the postgres/pgBackRest secrets,
-  `0` for `migrator_database_url`).
+  files exist and are all `0400`. `remote-deploy.sh` chowns each one to its
+  consumer UID — `65532` for `database_url`, `999` for the
+  postgres/pgBackRest secrets, `0` for `migrator_database_url` — with the one
+  exception of `ghcr_token`, which stays owned by the `deploy` user (it is
+  consumed by the runner's scoped `docker login ghcr.io`, not mounted into
+  any container).
 
 ## 3. Post-deploy actions
 
