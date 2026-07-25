@@ -7,6 +7,8 @@ import 'package:peppercheck_flutter/app/theme/app_colors.dart';
 import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
 import 'package:peppercheck_flutter/common_widgets/app_background.dart';
 import 'package:peppercheck_flutter/features/about/presentation/app_explanation_bottom_sheet.dart';
+import 'package:peppercheck_flutter/features/auth/application/auth_state.dart';
+import 'package:peppercheck_flutter/features/auth/data/auth_repository.dart';
 import 'package:peppercheck_flutter/features/auth/ui/sign_in_view_model.dart';
 import 'package:peppercheck_flutter/gen/assets.gen.dart';
 
@@ -29,6 +31,52 @@ class LoginScreen extends ConsumerWidget {
     });
 
     final state = ref.watch(signInViewModelProvider);
+
+    // Firebase-authenticated but `/me` hasn't resolved yet: the router keeps
+    // the user on this route (see `app_router.dart`), so show a loading
+    // affordance while it's in flight, or a retry + sign-out affordance if it
+    // failed — never a silent limbo.
+    final isFirebaseAuthenticated = ref.watch(isFirebaseAuthenticatedProvider);
+    final me = ref.watch(currentAppUserProvider);
+    if (isFirebaseAuthenticated && !me.hasValue) {
+      return AppBackground(
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          body: SafeArea(
+            child: Center(
+              child: me.hasError
+                  ? Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSizes.loginScreenHorizontalPadding,
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text(
+                            'Could not load your account.',
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: AppSizes.spacingMedium),
+                          ElevatedButton(
+                            onPressed: () =>
+                                ref.invalidate(currentAppUserProvider),
+                            child: const Text('Retry'),
+                          ),
+                          const SizedBox(height: AppSizes.spacingSmall),
+                          TextButton(
+                            onPressed: () =>
+                                ref.read(authRepositoryProvider).signOut(),
+                            child: const Text('Sign out'),
+                          ),
+                        ],
+                      ),
+                    )
+                  : const CircularProgressIndicator(),
+            ),
+          ),
+        ),
+      );
+    }
 
     return AppBackground(
       child: Scaffold(

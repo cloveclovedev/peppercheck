@@ -9,7 +9,7 @@ part 'referee_availability_controller.g.dart';
 class RefereeAvailabilityController extends _$RefereeAvailabilityController {
   @override
   FutureOr<List<RefereeAvailableTimeSlot>> build() async {
-    final userId = ref.watch(authStateChangesProvider).value?.session?.user.id;
+    final userId = ref.watch(currentAppUserProvider).value?.internalUserId;
     if (userId == null) {
       return [];
     }
@@ -27,7 +27,7 @@ class RefereeAvailabilityController extends _$RefereeAvailabilityController {
         startMin: startMin,
         endMin: endMin,
       );
-      final userId = ref.read(authStateChangesProvider).value?.session?.user.id;
+      final userId = ref.read(currentAppUserProvider).value?.internalUserId;
       if (userId == null) return [];
       return repository.getRefereeAvailableTimeSlots(userId);
     });
@@ -48,7 +48,7 @@ class RefereeAvailabilityController extends _$RefereeAvailabilityController {
         startMin: startMin,
         endMin: endMin,
       );
-      final userId = ref.read(authStateChangesProvider).value?.session?.user.id;
+      final userId = ref.read(currentAppUserProvider).value?.internalUserId;
       if (userId == null) return [];
       return repository.getRefereeAvailableTimeSlots(userId);
     });
@@ -60,7 +60,7 @@ class RefereeAvailabilityController extends _$RefereeAvailabilityController {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       await repository.deleteRefereeAvailableTimeSlot(id);
-      final userId = ref.read(authStateChangesProvider).value?.session?.user.id;
+      final userId = ref.read(currentAppUserProvider).value?.internalUserId;
       if (userId == null) return [];
       return repository.getRefereeAvailableTimeSlots(userId);
     });

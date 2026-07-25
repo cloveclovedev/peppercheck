@@ -13,7 +13,8 @@ part 'app_router.g.dart';
 
 @riverpod
 GoRouter router(Ref ref) {
-  final authState = ref.watch(authStateChangesProvider);
+  final isLoggedIn = ref.watch(isFirebaseAuthenticatedProvider);
+  final me = ref.watch(currentAppUserProvider);
 
   return GoRouter(
     initialLocation: '/',
@@ -42,15 +43,22 @@ GoRouter router(Ref ref) {
       ),
     ],
     redirect: (context, state) {
-      final isLoggedIn = authState.value?.session != null;
       final isLoggingIn = state.uri.path == '/';
 
-      if (isLoggedIn && isLoggingIn) {
-        return '/home';
+      if (!isLoggedIn) {
+        return isLoggingIn ? null : '/';
       }
 
-      if (!isLoggedIn && !isLoggingIn) {
-        return '/';
+      // Firebase-authenticated: gate further navigation on `/me` resolving.
+      // While loading, or if it errored, stay on '/' — the login screen shows
+      // a loading indicator or a retry + sign-out affordance, never a
+      // '/home' limbo.
+      if (!me.hasValue) {
+        return isLoggingIn ? null : '/';
+      }
+
+      if (isLoggingIn) {
+        return '/home';
       }
 
       return null;

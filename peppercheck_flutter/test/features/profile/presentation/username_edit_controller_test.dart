@@ -5,10 +5,10 @@ import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:peppercheck_flutter/app/app_logger.dart';
 import 'package:peppercheck_flutter/features/auth/application/auth_state.dart';
+import 'package:peppercheck_flutter/features/auth/domain/app_user.dart';
 import 'package:peppercheck_flutter/features/profile/data/profile_errors.dart';
 import 'package:peppercheck_flutter/features/profile/data/profile_repository.dart';
 import 'package:peppercheck_flutter/features/profile/presentation/username_edit_controller.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'username_edit_controller_test.mocks.dart';
 
@@ -23,29 +23,34 @@ void main() {
     mockLogger = MockLogger();
   });
 
-  User createMockUser(String id) => User(
-    id: id,
-    appMetadata: {},
-    userMetadata: {},
-    aud: 'authenticated',
-    createdAt: DateTime.now().toIso8601String(),
-  );
-
-  ProviderContainer makeContainer() {
+  // Async because the controller reads `currentAppUserProvider` synchronously
+  // (`.value`), relying on the app router having already resolved it before
+  // any of these screens are reachable (see `app_router.dart`'s redirect
+  // gate). Awaiting the override's future here reproduces that same
+  // precondition instead of racing the controller against `/me` resolution.
+  Future<ProviderContainer> makeContainer() async {
     final container = ProviderContainer(
       overrides: [
         profileRepositoryProvider.overrideWithValue(mockProfileRepository),
         loggerProvider.overrideWithValue(mockLogger),
-        currentUserProvider.overrideWithValue(createMockUser('user-123')),
+        currentAppUserProvider.overrideWith(
+          (ref) async => AppUser(
+            internalUserId: 'user-123',
+            issuer: 'iss',
+            status: 'active',
+            createdAt: DateTime.utc(2026),
+          ),
+        ),
       ],
     );
     addTearDown(container.dispose);
+    await container.read(currentAppUserProvider.future);
     return container;
   }
 
   group('updateUsername', () {
     test('rejects values shorter than 2 characters', () async {
-      final container = makeContainer();
+      final container = await makeContainer();
       var successCalled = false;
 
       await container
@@ -60,7 +65,7 @@ void main() {
     });
 
     test('rejects values longer than 20 characters', () async {
-      final container = makeContainer();
+      final container = await makeContainer();
       await container
           .read(usernameEditControllerProvider.notifier)
           .updateUsername(username: 'a' * 21, onSuccess: () {});
@@ -72,7 +77,7 @@ void main() {
     });
 
     test('rejects values containing emoji', () async {
-      final container = makeContainer();
+      final container = await makeContainer();
       await container
           .read(usernameEditControllerProvider.notifier)
           .updateUsername(username: 'hello🍀', onSuccess: () {});
@@ -84,7 +89,7 @@ void main() {
     });
 
     test('rejects values containing punctuation/symbols', () async {
-      final container = makeContainer();
+      final container = await makeContainer();
       await container
           .read(usernameEditControllerProvider.notifier)
           .updateUsername(username: 'tanaka@home', onSuccess: () {});
@@ -95,7 +100,7 @@ void main() {
     });
 
     test('accepts Japanese characters', () async {
-      final container = makeContainer();
+      final container = await makeContainer();
       when(
         mockProfileRepository.updateUsername('user-123', 'たなか花子'),
       ).thenAnswer((_) async {});
@@ -111,7 +116,7 @@ void main() {
     });
 
     test('trims whitespace before validation and submission', () async {
-      final container = makeContainer();
+      final container = await makeContainer();
       when(
         mockProfileRepository.updateUsername('user-123', 'tanaka'),
       ).thenAnswer((_) async {});
@@ -126,7 +131,7 @@ void main() {
     });
 
     test('calls repository and onSuccess on valid input', () async {
-      final container = makeContainer();
+      final container = await makeContainer();
       when(
         mockProfileRepository.updateUsername('user-123', 'tanaka'),
       ).thenAnswer((_) async {});
@@ -147,7 +152,7 @@ void main() {
     });
 
     test('surfaces UsernameAlreadyTakenException as error state', () async {
-      final container = makeContainer();
+      final container = await makeContainer();
       when(
         mockProfileRepository.updateUsername('user-123', 'existing'),
       ).thenThrow(const UsernameAlreadyTakenException());

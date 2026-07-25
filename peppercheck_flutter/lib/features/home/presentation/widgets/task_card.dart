@@ -21,7 +21,8 @@ class TaskCard extends ConsumerWidget {
         ? DateFormat('M/d H:mm').format(DateTime.parse(task.dueDate!).toLocal())
         : '';
 
-    final currentUserId = ref.watch(currentUserProvider)?.id ?? '';
+    final currentUserId =
+        ref.watch(currentAppUserProvider).value?.internalUserId ?? '';
     final statuses = task.getDetailedStatuses(currentUserId);
 
     return Material(

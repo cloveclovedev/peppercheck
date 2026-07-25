@@ -33,7 +33,7 @@ final class CurrentProfileProvider
   CurrentProfile create() => CurrentProfile();
 }
 
-String _$currentProfileHash() => r'f8bdb8451b1a886a52e462c4626c69b4e56f7efc';
+String _$currentProfileHash() => r'd74183f10854c4842120e8fcb318964fae4f04ac';
 
 abstract class _$CurrentProfile extends $AsyncNotifier<Profile?> {
   FutureOr<Profile?> build();

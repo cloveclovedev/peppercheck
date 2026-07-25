@@ -53,7 +53,7 @@ class AvatarEditController extends _$AvatarEditController {
     );
     if (cropped == null) return; // user cancelled cropper
 
-    final user = ref.read(currentUserProvider);
+    final user = ref.read(currentAppUserProvider).value;
     if (user == null) {
       onError('generic');
       return;
@@ -61,7 +61,9 @@ class AvatarEditController extends _$AvatarEditController {
 
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
-      await ref.read(profileRepositoryProvider).updateAvatar(user.id, cropped);
+      await ref
+          .read(profileRepositoryProvider)
+          .updateAvatar(user.internalUserId, cropped);
       ref.invalidate(currentProfileProvider);
       onSuccess();
     });

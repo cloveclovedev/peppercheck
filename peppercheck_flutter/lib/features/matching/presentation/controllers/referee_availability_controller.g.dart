@@ -39,7 +39,7 @@ final class RefereeAvailabilityControllerProvider
 }
 
 String _$refereeAvailabilityControllerHash() =>
-    r'63c927fd337a4f854890538694f657e2f35f0c93';
+    r'8b696d0f62c19e85f87516d87f8e03501448c1aa';
 
 abstract class _$RefereeAvailabilityController
     extends $AsyncNotifier<List<RefereeAvailableTimeSlot>> {
