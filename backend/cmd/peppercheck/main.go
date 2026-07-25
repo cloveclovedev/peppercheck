@@ -12,9 +12,11 @@ import (
 	"time"
 
 	"github.com/cloveclovedev/peppercheck/backend/internal/api"
-	"github.com/cloveclovedev/peppercheck/backend/internal/platform/config"
-	"github.com/cloveclovedev/peppercheck/backend/internal/platform/database"
-	"github.com/cloveclovedev/peppercheck/backend/internal/platform/logging"
+	"github.com/cloveclovedev/peppercheck/backend/internal/core/config"
+	"github.com/cloveclovedev/peppercheck/backend/internal/core/database"
+	"github.com/cloveclovedev/peppercheck/backend/internal/core/logging"
+	"github.com/cloveclovedev/peppercheck/backend/internal/identity"
+	"github.com/cloveclovedev/peppercheck/backend/internal/platform/auth"
 	"github.com/cloveclovedev/peppercheck/backend/internal/worker"
 )
 
@@ -45,7 +47,19 @@ func main() {
 			os.Exit(1)
 		}
 		defer db.Close()
-		if err := api.Run(ctx, cfg, logger, db.PingContext); err != nil {
+
+		verifier, err := auth.NewFirebaseVerifier(ctx, cfg.FirebaseProjectID)
+		if err != nil {
+			logger.Error("firebase verifier init failed", "error", err)
+			os.Exit(1)
+		}
+		idHandler := identity.NewHandler(identity.NewService(identity.NewStore(db)), logger)
+
+		if err := api.Run(ctx, cfg, logger, api.Deps{
+			Ready:    db.PingContext,
+			Verifier: verifier,
+			Identity: idHandler,
+		}); err != nil {
 			logger.Error("api exited with error", "error", err)
 			os.Exit(1)
 		}

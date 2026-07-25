@@ -11,8 +11,8 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/cloveclovedev/peppercheck/backend/internal/platform/config"
-	"github.com/cloveclovedev/peppercheck/backend/internal/platform/jobs"
+	"github.com/cloveclovedev/peppercheck/backend/internal/core/config"
+	"github.com/cloveclovedev/peppercheck/backend/internal/core/jobs"
 )
 
 // Handler processes one job. Returning an error reschedules (or fails) the job.

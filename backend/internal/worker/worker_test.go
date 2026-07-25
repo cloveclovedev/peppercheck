@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/cloveclovedev/peppercheck/backend/internal/platform/jobs"
-	"github.com/cloveclovedev/peppercheck/backend/internal/platform/logging"
+	"github.com/cloveclovedev/peppercheck/backend/internal/core/jobs"
+	"github.com/cloveclovedev/peppercheck/backend/internal/core/logging"
 	"github.com/cloveclovedev/peppercheck/backend/internal/testsupport"
 )
 
