@@ -35,7 +35,7 @@ test: ## Run Go tests incl. DB integration on a throwaway Postgres (needs host a
 	@set -e; name=pc-maketest; port=55432; \
 	docker rm -f $$name >/dev/null 2>&1 || true; \
 	trap 'docker rm -f $$name >/dev/null 2>&1 || true' EXIT; \
-	docker run --rm -d --name $$name -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=peppercheck -e POSTGRES_MIGRATOR_PASSWORD=m -e POSTGRES_APP_PASSWORD=a -e POSTGRES_BACKUP_PASSWORD=b -v "$$PWD/deploy/postgres/init:/docker-entrypoint-initdb.d:ro" -p 127.0.0.1:$$port:5432 postgres:17 >/dev/null; \
+	docker run --rm -d --name $$name -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=peppercheck -e POSTGRES_MIGRATOR_PASSWORD=m -e POSTGRES_APP_PASSWORD=a -e POSTGRES_BACKUP_PASSWORD=b -v "$$PWD/deploy/postgres/init:/docker-entrypoint-initdb.d:ro" -p 127.0.0.1:$$port:5432 postgres:17 -c archive_mode=off >/dev/null; \
 	ready=; i=0; while [ $$i -lt 60 ]; do \
 	  if docker exec $$name pg_isready -h 127.0.0.1 -U postgres -d peppercheck >/dev/null 2>&1; then ready=1; break; fi; \
 	  docker ps -q -f name=$$name | grep -q . || { echo "test DB container exited during init:"; docker logs $$name 2>&1 | tail -20; exit 1; }; \

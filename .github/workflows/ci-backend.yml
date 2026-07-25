@@ -119,6 +119,14 @@ jobs:
         # skip re-execution when DATABASE_URL is unchanged).
         run: go test -race -p 1 -count=1 ./...
 
+      - name: Bats tests for deployment scripts (switch-deployment.sh, write-secret.sh)
+        # deployment.bats covers switch-deployment.sh's atomicity and
+        # write-secret.sh's allowlist/path-traversal hardening (Task 6) --
+        # runs against a throwaway temp workspace, never the real host. Kept
+        # in this job so a failure here also blocks `image` (needs: go) and
+        # therefore the whole deploy chain, the same as a Go test failure.
+        run: docker run --rm -v "$PWD/scripts":/code -w /code bats/bats:latest deployment.bats
+
   image:
     needs: go
     runs-on: ubuntu-latest
@@ -161,6 +169,14 @@ jobs:
 
       - name: Validate Compose syntax (incl. backup profile)
         run: docker compose --profile backup config >/dev/null
+
+      - name: Assert prod compose config invariants
+        # assert-prod-config.sh fills in its own placeholder env/secrets for
+        # everything compose.prod.yaml requires (PC_ENV, IMAGE_*,
+        # CADDY_SITE_ADDRESS, PGBACKREST_REPO1_S3_*, ./secrets/* files, ...) so
+        # it needs no extra env here -- it only needs jq, which is preinstalled
+        # on the ubuntu-latest runner.
+        run: ./scripts/assert-prod-config.sh
 
       - uses: docker/setup-buildx-action@v4
 

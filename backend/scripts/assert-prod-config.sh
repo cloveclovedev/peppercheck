@@ -5,7 +5,9 @@
 # compose.prod.yaml and design doc §7):
 #
 #   1. No service defines `build:` -- production must only ever run
-#      pre-built, digest-pinned images, never build on the VPS.
+#      pre-built, digest-pinned images, never build on the VPS. Checked both
+#      against the default resolution and against `--profile deploy`, since
+#      the profiled `migrate` service is otherwise invisible to `config`.
 #   2. `api`'s `depends_on` does not include `migrate` -- migrations are an
 #      explicit `--profile deploy` step driven by the deploy workflow, never
 #      a runtime dependency of `up -d`.
@@ -16,7 +18,8 @@
 # against the standalone prod file and checks the JSON output with jq. Real
 # deploys supply real IMAGE_*/secrets (Tasks 6/8/10) -- this script fills in
 # placeholder values only so `config` can resolve at all, and is safe to run
-# repeatedly in CI or locally.
+# repeatedly in CI or locally. Wired into CI as a step in the `image` job
+# (.github/workflows/ci-backend.yml).
 set -euo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
@@ -77,5 +80,15 @@ echo "$config_json" | jq -e '(.services.api.depends_on // {}) | has("migrate") |
 
 echo "==> asserting postgres publishes no host ports"
 echo "$config_json" | jq -e '(.services.postgres.ports // []) | length == 0' >/dev/null
+
+# `migrate` is `profiles: ["deploy"]`-only, so the default `config` resolution
+# above never includes it -- a `build:` added to that service later would
+# slip past the check above unnoticed. Re-resolve with the profile active
+# (which merges the profiled service into the default set, it does not
+# replace it) and re-run the build: check over the full resulting set.
+echo "==> asserting no service (including profile=deploy's migrate) defines build:"
+profiled_config_json="$(docker compose -f compose.prod.yaml -p "$PROJECT" --profile deploy config --format json)"
+echo "$profiled_config_json" | jq -e 'has("services") and (.services | has("migrate"))' >/dev/null
+echo "$profiled_config_json" | jq -e '[.services[] | select(has("build"))] | length == 0' >/dev/null
 
 echo "assert-prod-config: OK"

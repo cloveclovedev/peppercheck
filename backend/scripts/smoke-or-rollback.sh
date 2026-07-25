@@ -24,7 +24,7 @@ host="${1:?usage: smoke-or-rollback.sh <host> <ssh_host> <env>}"
 ssh_host="${2:?usage: smoke-or-rollback.sh <host> <ssh_host> <env>}"
 env="${3:?usage: smoke-or-rollback.sh <host> <ssh_host> <env>}"
 
-if curl -fsS "https://$host/readyz"; then
+if curl -fsS --max-time 10 --retry 3 --retry-delay 2 "https://$host/readyz"; then
   echo "smoke: https://$host/readyz is healthy"
   exit 0
 fi
