@@ -80,8 +80,13 @@ jobs:
             exit 1
           fi
 
-      - name: Role-model SQL test (synthetic, fast)
-        run: psql "postgres://postgres:postgres@localhost:5432/peppercheck?sslmode=disable" -v ON_ERROR_STOP=1 -f db/tests/test_role_separation.sql
+      - name: Run db/tests assert-SQL
+        run: |
+          set -euo pipefail
+          for f in db/tests/*.sql; do
+            echo "== $f =="
+            psql "postgres://postgres:postgres@localhost:5432/peppercheck?sslmode=disable" -v ON_ERROR_STOP=1 -f "$f"
+          done
 
       - name: Real role separation on real tables
         run: |
