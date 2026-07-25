@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -124,16 +126,21 @@ class LoginScreen extends ConsumerWidget {
                             height: 50,
                           ),
                   ),
-                  const SizedBox(height: AppSizes.spacingSmall),
-                  SignInWithAppleButton(
-                    onPressed: state.isLoading
-                        ? null
-                        : () {
-                            ref
-                                .read(signInViewModelProvider.notifier)
-                                .signInWithApple();
-                          },
-                  ),
+                  // Apple sign-in is offered on iOS only (native flow). On
+                  // Android it would need a Services ID + web OAuth flow; users
+                  // sign in with Google there instead.
+                  if (Platform.isIOS) ...[
+                    const SizedBox(height: AppSizes.spacingSmall),
+                    SignInWithAppleButton(
+                      onPressed: state.isLoading
+                          ? null
+                          : () {
+                              ref
+                                  .read(signInViewModelProvider.notifier)
+                                  .signInWithApple();
+                            },
+                    ),
+                  ],
                   const SizedBox(height: AppSizes.spacingMedium),
                   GestureDetector(
                     behavior: HitTestBehavior.opaque,
