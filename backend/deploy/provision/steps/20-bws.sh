@@ -12,14 +12,19 @@ set -euo pipefail
 
 # ensure_bws_secret NAME VALUE PROJECT_ID
 # Idempotent: put only if absent, so a re-run never clobbers a value an
-# operator may have rotated directly in the vault after the fact.
+# operator may have rotated directly in the vault after the fact. Its own
+# write is guarded with `|| return 1` (and every call site below is guarded
+# the same way): the orchestrator runs each step under `set +e`
+# (infra-foundation-setup.sh), so a bare failed write would otherwise be
+# silently swallowed and reconcile_bws would report SATISFIED despite the
+# secret never having landed in BWS.
 ensure_bws_secret() {
   local name="$1" value="$2" project_id="$3"
   if bws_secret_exists "$name" "$project_id"; then
     log_info "secret already present, skipping: ${name}"
     return 0
   fi
-  run_mutation "put ${name}" bws_put_secret "$name" "$value" "$project_id"
+  run_mutation "put ${name}" bws_put_secret "$name" "$value" "$project_id" || return 1
 }
 
 reconcile_bws() {
@@ -49,7 +54,7 @@ reconcile_bws() {
       "Create a read-only GitHub PAT with 'read:packages' scoped to cloveclovedev/peppercheck-* (browser only — no API); do NOT grant write:packages or repo scope"
     return $?
   fi
-  ensure_bws_secret ghcr_token "$ghcr_token" "$project_id"
+  ensure_bws_secret ghcr_token "$ghcr_token" "$project_id" || return 1
 
   local bws_runtime_token=""
   if ! bws_runtime_token="$(require_cfg BWS_RUNTIME_TOKEN)"; then
@@ -58,7 +63,7 @@ reconcile_bws() {
     return $?
   fi
 
-  run_mutation "set GH secret BWS_TOKEN" gh_secret_set BWS_TOKEN "$bws_runtime_token"
+  run_mutation "set GH secret BWS_TOKEN" gh_secret_set BWS_TOKEN "$bws_runtime_token" || return 1
 
   local fb_missing=() fb_key="" fb_email="" fb_password=""
   fb_key="$(require_cfg FIREBASE_TEST_API_KEY)" || fb_missing+=(FIREBASE_TEST_API_KEY)
@@ -70,7 +75,7 @@ reconcile_bws() {
       || return $?
   fi
 
-  ensure_bws_secret firebase_test_api_key "$fb_key" "$restore_project_id"
-  ensure_bws_secret firebase_test_email "$fb_email" "$restore_project_id"
-  ensure_bws_secret firebase_test_password "$fb_password" "$restore_project_id"
+  ensure_bws_secret firebase_test_api_key "$fb_key" "$restore_project_id" || return 1
+  ensure_bws_secret firebase_test_email "$fb_email" "$restore_project_id" || return 1
+  ensure_bws_secret firebase_test_password "$fb_password" "$restore_project_id" || return 1
 }

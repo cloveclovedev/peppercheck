@@ -74,13 +74,13 @@ ensure_b2_bucket() {
     log_warn "pre-existing bucket ${bucket}: Object Lock CANNOT be enabled retroactively — confirm it was created with --file-lock-enabled, or recreate it"
   else
     run_mutation "create B2 bucket ${bucket} (allPrivate, file-lock-enabled)" \
-      b2_cli bucket create "$bucket" allPrivate --file-lock-enabled
+      b2_cli bucket create "$bucket" allPrivate --file-lock-enabled || return 1
   fi
   run_mutation "set governance retention + lifecycle rule on ${bucket}" \
     b2_cli bucket update "$bucket" \
       --default-retention-mode governance \
       --default-retention-period "7 days" \
-      --lifecycle-rule '{"daysFromHidingToDeleting":1,"fileNamePrefix":""}'
+      --lifecycle-rule '{"daysFromHidingToDeleting":1,"fileNamePrefix":""}' || return 1
 }
 
 # ensure_b2_key KEY_NAME CAPABILITIES BUCKET PROJECT_ID
@@ -95,7 +95,7 @@ ensure_b2_key() {
 
   local output=""
   output="$(run_mutation "create B2 key ${key_name} (${capabilities})" \
-    b2_cli key create --bucket "$bucket" "$key_name" "$capabilities")"
+    b2_cli key create --bucket "$bucket" "$key_name" "$capabilities")" || return 1
   is_dry_run && return 0
 
   local key_id="" key_secret=""
@@ -105,8 +105,18 @@ ensure_b2_key() {
     return 1
   fi
 
-  bws_put_secret b2_key_id "$key_id" "$project_id"
-  bws_put_secret b2_key_secret "$key_secret" "$project_id"
+  # Write b2_key_secret FIRST, b2_key_id LAST (reversed from the pair's
+  # natural order). This function's own idempotency probe, above, keys only
+  # on b2_key_id. A B2 key's secret can never be re-read after creation, so
+  # if the SECOND write here failed we'd otherwise be left with b2_key_id
+  # stored (probe says "done") and b2_key_secret permanently missing — an
+  # unrecoverable half-written key with no way to re-mint it. Writing
+  # b2_key_secret first and guarding both means: if either write fails, the
+  # function returns 1 (propagated by the `|| return 1` callers below) BEFORE
+  # b2_key_id is ever stored, so the probe stays negative and a re-run mints
+  # a fresh key cleanly instead of silently skipping creation.
+  bws_put_secret b2_key_secret "$key_secret" "$project_id" || return 1
+  bws_put_secret b2_key_id "$key_id" "$project_id" || return 1
   log_ok "minted B2 key ${key_name}; stored b2_key_id/b2_key_secret in BWS project ${project_id} (values not logged)"
 }
 
@@ -129,10 +139,15 @@ reconcile_b2() {
   # Authorize directly (not via run_mutation): this is a local CLI login, not
   # a mutation against B2/BWS state, so it must happen even under --dry-run
   # (a dry run still needs to query `bucket get` to report what it WOULD do).
-  # Never echo the key material.
-  b2_cli account authorize "$app_key_id" "$app_key" >/dev/null
+  # Never echo the key material. Guarded: under the orchestrator's `set +e`
+  # a bad account key would otherwise surface later as a confusing "key
+  # create returned unexpected output" instead of a clear authorize failure.
+  b2_cli account authorize "$app_key_id" "$app_key" >/dev/null || {
+    log_err "B2 account authorize failed (check B2_APPLICATION_KEY_ID/B2_APPLICATION_KEY)"
+    return 1
+  }
 
-  ensure_b2_bucket "$bucket"
+  ensure_b2_bucket "$bucket" || return 1
 
   # Fail closed rather than fall back: env is part of a REAL resource name
   # (pc-<env>-backup/-restore), so an empty ENV_NAME would mint a mis-named
@@ -146,9 +161,9 @@ reconcile_b2() {
   # Runtime key: read/write, no bypassGovernance — the running app/backup
   # container should never be able to delete a governance-locked version.
   ensure_b2_key "pc-${env}-backup" "listBuckets,listFiles,readFiles,writeFiles,deleteFiles" \
-    "$bucket" "$project_id"
+    "$bucket" "$project_id" || return 1
   # Restore key: read-only — restore-drill.sh only ever needs to fetch
   # existing backups/WAL, never write or delete.
   ensure_b2_key "pc-${env}-restore" "listBuckets,listFiles,readFiles" \
-    "$bucket" "$restore_project_id"
+    "$bucket" "$restore_project_id" || return 1
 }

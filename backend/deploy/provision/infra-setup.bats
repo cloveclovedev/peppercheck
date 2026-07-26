@@ -187,6 +187,34 @@ setup() {
   [ "$env_val" = "$restore_val" ]
 }
 
+# --- write-failure paths (fail-closed under the orchestrator's `set +e`) ---
+# infra-foundation-setup.sh runs every reconcile_* under `set +e`, so a bare
+# failed bws_put_secret would otherwise be silently swallowed. These tests
+# stub bws_put_secret to fail and assert the failure actually propagates,
+# instead of the step reporting 0 (SATISFIED) or 75 (NEEDS_MANUAL) over a
+# partial write.
+@test "ensure_password emits no password when the BWS write fails" {
+  source "$ROOT/steps/10-secrets.sh"
+  bws_secret_exists() { return 1; }  # not present yet
+  bws_put_secret() { return 1; }     # write fails
+  run ensure_password some_pw p
+  [ "$status" -ne 0 ]
+  [ -z "$output" ]  # no password emitted onward on a failed write
+}
+
+@test "reconcile_secrets returns non-zero (not 0, not 75) when a BWS write fails" {
+  source "$ROOT/steps/10-secrets.sh"
+  bws_secret_exists() { return 1; }  # nothing exists yet
+  bws_put_secret() { return 1; }     # every write fails
+  age_keygen() {
+    if [ "${1:-}" = "-y" ]; then echo "age1stubpublickey"; else echo "AGE-SECRET-KEY-STUB"; fi
+  }
+  export BWS_WRITE_TOKEN=x BWS_PROJECT_ID=p BWS_RESTORE_PROJECT_ID=r
+  run reconcile_secrets
+  [ "$status" -ne 0 ]
+  [ "$status" -ne 75 ]
+}
+
 # --- step 20: reconcile_bws -------------------------------------------------
 # Common env for the "past the first gate" tests below: a write token +
 # project ids, the project-reachability wrapper stubbed ok, and GHCR_TOKEN
@@ -317,6 +345,50 @@ _bws_setup_reachable_project() {
   run reconcile_bws
   [ "$status" -eq 0 ]
   [ ! -s "$puts_log" ]
+}
+
+@test "reconcile_bws returns non-zero (not 0, not 75) when the ghcr_token write fails" {
+  source "$ROOT/steps/20-bws.sh"
+  _bws_setup_reachable_project
+  export GHCR_TOKEN=ghcr-pat-xyz
+  bws_secret_exists() { return 1; }  # not present yet
+  bws_put_secret() { return 1; }     # write fails
+  run reconcile_bws
+  [ "$status" -ne 0 ]
+  [ "$status" -ne 75 ]
+}
+
+@test "reconcile_bws returns non-zero (not 0, not 75) when setting GH secret BWS_TOKEN fails" {
+  source "$ROOT/steps/20-bws.sh"
+  _bws_setup_reachable_project
+  export BWS_RUNTIME_TOKEN=ro-token-123
+  bws_secret_exists() { return 1; }
+  bws_put_secret() { :; }        # ghcr_token write succeeds
+  gh_secret_set() { return 1; }  # GH secret set fails
+  run reconcile_bws
+  [ "$status" -ne 0 ]
+  [ "$status" -ne 75 ]
+}
+
+@test "reconcile_bws returns non-zero (not 0, not 75) when a Firebase test credential write fails" {
+  source "$ROOT/steps/20-bws.sh"
+  _bws_setup_reachable_project
+  export BWS_RUNTIME_TOKEN=ro-token-123
+  export FIREBASE_TEST_API_KEY=k FIREBASE_TEST_EMAIL=e@example.com FIREBASE_TEST_PASSWORD=pw
+  gh_secret_set() { :; }
+  bws_secret_exists() { return 1; }
+  # ghcr_token/BWS_TOKEN succeed; only the Firebase writes fail, so the
+  # failure is attributable to reconcile_bws's own Firebase ensure_* guards,
+  # not an earlier gate.
+  bws_put_secret() {
+    case "$1" in
+      firebase_test_*) return 1 ;;
+      *) return 0 ;;
+    esac
+  }
+  run reconcile_bws
+  [ "$status" -ne 0 ]
+  [ "$status" -ne 75 ]
 }
 
 # --- step 30: reconcile_tailscale -------------------------------------------
@@ -580,6 +652,69 @@ _assert_bucket_update_safety() {
   run reconcile_b2
   [ "$status" -eq 0 ]
   ! grep -q "^key create" "$calls_log"
+}
+
+@test "reconcile_b2 never persists b2_key_id when the b2_key_secret write fails (no unrecoverable half-written key)" {
+  source "$ROOT/steps/40-b2.sh"
+  _b2_setup_gated
+  bws_secret_exists() { return 1; }  # neither project has a key yet
+  puts_log="$BATS_TEST_TMPDIR/puts.log"
+  : > "$puts_log"
+  b2_cli() {
+    case "$1 $2" in
+      "bucket get") return 0 ;;
+      "key create")
+        shift 2
+        case "$3" in
+          *-backup) echo "backupKeyId123"; echo "backupKeySecretXYZ" ;;
+          *-restore) echo "restoreKeyId456"; echo "restoreKeySecretABC" ;;
+        esac
+        ;;
+    esac
+    return 0
+  }
+  bws_put_secret() {
+    printf '%s\t%s\t%s\n' "$1" "$2" "$3" >> "$puts_log"
+    [ "$1" = "b2_key_secret" ] && return 1  # the secret write always fails
+    return 0
+  }
+  run reconcile_b2
+  [ "$status" -ne 0 ]
+  [ "$status" -ne 75 ]
+  # The secret write was attempted (and failed) ...
+  grep -q "^b2_key_secret" "$puts_log"
+  # ... but b2_key_id — the field this function's own idempotency probe keys
+  # on — was NEVER written. Had the write order not been reversed, a failed
+  # SECOND write (b2_key_secret, in the old id-then-secret order) would leave
+  # b2_key_id stored, making a re-run's probe report "already present" and
+  # permanently skip minting the missing secret.
+  ! grep -q "^b2_key_id" "$puts_log"
+}
+
+@test "reconcile_b2 propagates failure when the b2_key_id write fails after the secret write succeeded" {
+  source "$ROOT/steps/40-b2.sh"
+  _b2_setup_gated
+  bws_secret_exists() { return 1; }
+  b2_cli() {
+    case "$1 $2" in
+      "bucket get") return 0 ;;
+      "key create")
+        shift 2
+        case "$3" in
+          *-backup) echo "backupKeyId123"; echo "backupKeySecretXYZ" ;;
+          *-restore) echo "restoreKeyId456"; echo "restoreKeySecretABC" ;;
+        esac
+        ;;
+    esac
+    return 0
+  }
+  bws_put_secret() {
+    [ "$1" = "b2_key_id" ] && return 1  # the id write fails
+    return 0
+  }
+  run reconcile_b2
+  [ "$status" -ne 0 ]
+  [ "$status" -ne 75 ]
 }
 
 # --- step 50: reconcile_github_env -------------------------------------------

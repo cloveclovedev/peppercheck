@@ -46,7 +46,16 @@ ensure_password() {
   # Redirect run_mutation's own stdout (its "[dry-run] ..." notice) to
   # stderr: this function's stdout is captured via command substitution by
   # its caller to obtain $value, and must carry nothing else.
-  run_mutation "put ${name}" bws_put_secret "$name" "$value" "$project_id" 1>&2
+  #
+  # Guarded with `|| return 1` BEFORE the printf below: the orchestrator runs
+  # every reconcile_* step under `set +e` (infra-foundation-setup.sh), so a
+  # failed put here would otherwise still fall through to `printf` and hand
+  # the caller a password that was never persisted. database_url/
+  # migrator_database_url would then get composed from — and BWS would store
+  # — a value whose plaintext exists nowhere durable, and a re-run would
+  # regenerate the (absent) password while skipping the (present) composed
+  # URL that embeds the old one, permanently desyncing the two.
+  run_mutation "put ${name}" bws_put_secret "$name" "$value" "$project_id" 1>&2 || return 1
   printf '%s' "$value"
 }
 
@@ -66,13 +75,13 @@ ensure_cipher_mirrored() {
     value="$(bws_get_secret_value pgbackrest_cipher "$env_project_id")"
   else
     value="$(gen_password)"
-    run_mutation "put pgbackrest_cipher" bws_put_secret pgbackrest_cipher "$value" "$env_project_id"
+    run_mutation "put pgbackrest_cipher" bws_put_secret pgbackrest_cipher "$value" "$env_project_id" || return 1
   fi
   if bws_secret_exists pgbackrest_cipher "$restore_project_id"; then
     log_info "secret already present in restore project, skipping: pgbackrest_cipher"
   else
     run_mutation "put pgbackrest_cipher (restore project)" \
-      bws_put_secret pgbackrest_cipher "$value" "$restore_project_id"
+      bws_put_secret pgbackrest_cipher "$value" "$restore_project_id" || return 1
   fi
 }
 
@@ -90,7 +99,7 @@ ensure_composed_url() {
     log_err "cannot compose ${name}: ${source_name} already exists in BWS but was not (re)generated this run, so its plaintext is unavailable to compose ${name} — resolve manually"
     return 1
   fi
-  run_mutation "put ${name}" bws_put_secret "$name" "$value" "$project_id"
+  run_mutation "put ${name}" bws_put_secret "$name" "$value" "$project_id" || return 1
 }
 
 # ensure_age_keypair RESTORE_PROJECT_ID
@@ -107,7 +116,7 @@ ensure_age_keypair() {
     private_key="$(bws_get_secret_value age_private_key "$restore_project_id")"
   else
     private_key="$(age_keygen)"
-    run_mutation "put age_private_key" bws_put_secret age_private_key "$private_key" "$restore_project_id" 1>&2
+    run_mutation "put age_private_key" bws_put_secret age_private_key "$private_key" "$restore_project_id" 1>&2 || return 1
   fi
   AGE_RECIPIENT="$(printf '%s\n' "$private_key" | age_keygen -y)"
   export AGE_RECIPIENT
@@ -126,22 +135,27 @@ reconcile_secrets() {
 
   export BWS_ACCESS_TOKEN="$bws_write_token"
 
+  # Every ensure_* call below is explicitly guarded with `|| return 1`: under
+  # the orchestrator's `set +e`, a bare call's failure would otherwise be
+  # swallowed and reconcile_secrets would fall through to the next
+  # ensure_composed_url/ensure_age_keypair call (or return 0 "satisfied")
+  # despite a partial write upstream.
   local postgres_app_pw postgres_migrator_pw pw_name
-  postgres_app_pw="$(ensure_password postgres_app_pw "$project_id")"
-  postgres_migrator_pw="$(ensure_password postgres_migrator_pw "$project_id")"
+  postgres_app_pw="$(ensure_password postgres_app_pw "$project_id")" || return 1
+  postgres_migrator_pw="$(ensure_password postgres_migrator_pw "$project_id")" || return 1
   for pw_name in postgres_superuser_pw postgres_backup_pw; do
-    ensure_password "$pw_name" "$project_id" >/dev/null
+    ensure_password "$pw_name" "$project_id" >/dev/null || return 1
   done
 
-  ensure_cipher_mirrored "$project_id" "$restore_project_id"
+  ensure_cipher_mirrored "$project_id" "$restore_project_id" || return 1
 
   ensure_composed_url database_url "$project_id" \
     "postgres://peppercheck_app:${postgres_app_pw}@postgres:5432/peppercheck?sslmode=disable" \
-    "$postgres_app_pw" postgres_app_pw
+    "$postgres_app_pw" postgres_app_pw || return 1
 
   ensure_composed_url migrator_database_url "$project_id" \
     "postgres://peppercheck_migrator:${postgres_migrator_pw}@postgres:5432/peppercheck?sslmode=disable" \
-    "$postgres_migrator_pw" postgres_migrator_pw
+    "$postgres_migrator_pw" postgres_migrator_pw || return 1
 
-  ensure_age_keypair "$restore_project_id"
+  ensure_age_keypair "$restore_project_id" || return 1
 }

@@ -36,7 +36,7 @@ CONFIG_FILE="$HERE/config/${ENV_NAME}.env"
 # shellcheck disable=SC1090
 [ -f "$CONFIG_FILE" ] && source "$CONFIG_FILE"
 
-require_tools gh doctl bws b2 jq age openssl ssh-keygen ssh-keyscan curl
+require_tools gh doctl bws b2 jq age-keygen openssl ssh-keygen ssh-keyscan curl
 
 started=0
 for step in "${STEPS[@]}"; do
