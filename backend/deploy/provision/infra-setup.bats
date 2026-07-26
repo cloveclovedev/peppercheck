@@ -1186,3 +1186,251 @@ _dns_setup_gated() {
   [ "$status" -ne 75 ]
   ! grep -q "^POST" "$calls_log"
 }
+
+# --- step 80: reconcile_verify (non-mutating assertions) --------------------
+
+_verify_setup_gated() {
+  export ENV_NAME=staging DO_TOKEN=do-token-x PUBLIC_DOMAIN=staging.peppercheck.dev SSH_HOST=pc-staging
+}
+
+@test "80-verify.sh never mutates: no run_mutation, no *_set, no create/POST/PUT/allow calls" {
+  ! grep -qE 'run_mutation|gh_secret_set|gh_var_set|bws_put_secret|droplet create|ufw (allow|delete)|-X[[:space:]]*(POST|PUT|DELETE)' \
+    "$ROOT/steps/80-verify.sh"
+}
+
+@test "reconcile_verify returns 0 and logs PASS for every check when all 4 checks pass" {
+  source "$ROOT/steps/80-verify.sh"
+  check_ssh_off_tailnet_refused() { return 0; }
+  check_ufw_tailnet_only() { return 0; }
+  check_tls_le() { return 0; }
+  check_secret_perms() { return 0; }
+  run reconcile_verify
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"PASS: check_ssh_off_tailnet_refused"* ]]
+  [[ "$output" == *"PASS: check_ufw_tailnet_only"* ]]
+  [[ "$output" == *"PASS: check_tls_le"* ]]
+  [[ "$output" == *"PASS: check_secret_perms"* ]]
+}
+
+@test "reconcile_verify returns non-zero (not 75) naming the failing check when the SSH-off-tailnet check unexpectedly succeeds" {
+  source "$ROOT/steps/80-verify.sh"
+  check_ssh_off_tailnet_refused() { return 1; }  # simulates ssh unexpectedly connecting
+  check_ufw_tailnet_only() { return 0; }
+  check_tls_le() { return 0; }
+  check_secret_perms() { return 0; }
+  run reconcile_verify
+  [ "$status" -ne 0 ]
+  [ "$status" -ne 75 ]
+  [[ "$output" == *"check_ssh_off_tailnet_refused"* ]]
+  [[ "$output" == *"FAIL: check_ssh_off_tailnet_refused"* ]]
+}
+
+@test "reconcile_verify runs and reports all 4 checks even when the first one fails (no short-circuit)" {
+  source "$ROOT/steps/80-verify.sh"
+  calls_log="$BATS_TEST_TMPDIR/checks.log"
+  : > "$calls_log"
+  check_ssh_off_tailnet_refused() { echo ssh >> "$calls_log"; return 1; }
+  check_ufw_tailnet_only() { echo ufw >> "$calls_log"; return 0; }
+  check_tls_le() { echo tls >> "$calls_log"; return 0; }
+  check_secret_perms() { echo perms >> "$calls_log"; return 1; }
+  run reconcile_verify
+  [ "$status" -ne 0 ]
+  [ "$status" -ne 75 ]
+  grep -q "^ssh$" "$calls_log"
+  grep -q "^ufw$" "$calls_log"
+  grep -q "^tls$" "$calls_log"
+  grep -q "^perms$" "$calls_log"
+  [[ "$output" == *"check_ssh_off_tailnet_refused"* ]]
+  [[ "$output" == *"check_secret_perms"* ]]
+}
+
+@test "check_ssh_off_tailnet_refused fails when DO_TOKEN is absent" {
+  source "$ROOT/steps/80-verify.sh"
+  _verify_setup_gated
+  unset DO_TOKEN
+  run check_ssh_off_tailnet_refused
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"DO_TOKEN"* ]]
+}
+
+@test "check_ssh_off_tailnet_refused fails closed when the doctl public-IP query itself fails" {
+  source "$ROOT/steps/80-verify.sh"
+  _verify_setup_gated
+  doctl_cli() { return 1; }
+  run check_ssh_off_tailnet_refused
+  [ "$status" -ne 0 ]
+}
+
+@test "check_ssh_off_tailnet_refused fails closed when the Droplet has no public IP yet" {
+  source "$ROOT/steps/80-verify.sh"
+  _verify_setup_gated
+  doctl_cli() { printf ''; }
+  run check_ssh_off_tailnet_refused
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"step 60"* ]]
+}
+
+@test "check_ssh_off_tailnet_refused FAILS (returns non-zero) when ssh unexpectedly logs in" {
+  source "$ROOT/steps/80-verify.sh"
+  _verify_setup_gated
+  doctl_cli() { printf '203.0.113.10'; }
+  ssh_cli() { return 0; }  # login succeeded — the bad case
+  run check_ssh_off_tailnet_refused
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"SUCCEEDED"* ]]
+}
+
+@test "check_ssh_off_tailnet_refused FAILS when ssh reaches the authentication stage (Permission denied)" {
+  source "$ROOT/steps/80-verify.sh"
+  _verify_setup_gated
+  doctl_cli() { printf '203.0.113.10'; }
+  ssh_cli() { echo "deploy@203.0.113.10: Permission denied (publickey)."; return 255; }
+  run check_ssh_off_tailnet_refused
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"reached the authentication stage"* ]]
+}
+
+@test "check_ssh_off_tailnet_refused PASSES when ssh times out at the network level" {
+  source "$ROOT/steps/80-verify.sh"
+  _verify_setup_gated
+  doctl_cli() { printf '203.0.113.10'; }
+  ssh_cli() { echo "ssh: connect to host 203.0.113.10 port 22: Operation timed out"; return 255; }
+  run check_ssh_off_tailnet_refused
+  [ "$status" -eq 0 ]
+}
+
+@test "check_ufw_tailnet_only fails when SSH_HOST is absent" {
+  source "$ROOT/steps/80-verify.sh"
+  _verify_setup_gated
+  unset SSH_HOST
+  run check_ufw_tailnet_only
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"SSH_HOST"* ]]
+}
+
+@test "check_ufw_tailnet_only fails closed when the tailnet host is unreachable" {
+  source "$ROOT/steps/80-verify.sh"
+  _verify_setup_gated
+  ssh_cli() { return 255; }
+  run check_ufw_tailnet_only
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"pc-staging"* ]]
+}
+
+@test "check_ufw_tailnet_only PASSES on the expected ufw shape (:22 on tailscale0 only, :80/:443 open)" {
+  source "$ROOT/steps/80-verify.sh"
+  _verify_setup_gated
+  ssh_cli() {
+    cat <<'UFW'
+Status: active
+
+To                         Action      From
+--                         ------      ----
+22 on tailscale0           ALLOW       Anywhere
+80                         ALLOW       Anywhere
+443                        ALLOW       Anywhere
+22 (v6) on tailscale0      ALLOW       Anywhere (v6)
+80 (v6)                    ALLOW       Anywhere (v6)
+443 (v6)                   ALLOW       Anywhere (v6)
+UFW
+  }
+  run check_ufw_tailnet_only
+  [ "$status" -eq 0 ]
+}
+
+@test "check_ufw_tailnet_only FAILS when :22 is allowed unrestricted (not just on tailscale0)" {
+  source "$ROOT/steps/80-verify.sh"
+  _verify_setup_gated
+  ssh_cli() {
+    cat <<'UFW'
+Status: active
+
+To                         Action      From
+--                         ------      ----
+22                         ALLOW       Anywhere
+80                         ALLOW       Anywhere
+443                        ALLOW       Anywhere
+UFW
+  }
+  run check_ufw_tailnet_only
+  [ "$status" -ne 0 ]
+}
+
+@test "check_tls_le fails when PUBLIC_DOMAIN is absent" {
+  source "$ROOT/steps/80-verify.sh"
+  _verify_setup_gated
+  unset PUBLIC_DOMAIN
+  run check_tls_le
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"PUBLIC_DOMAIN"* ]]
+}
+
+@test "check_tls_le fails when /readyz does not respond healthy" {
+  source "$ROOT/steps/80-verify.sh"
+  _verify_setup_gated
+  curl_cli() { return 22; }  # curl -f's non-2xx exit code
+  run check_tls_le
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"first deploy"* ]]
+}
+
+@test "check_tls_le fails when the served cert is not a Let's Encrypt cert" {
+  source "$ROOT/steps/80-verify.sh"
+  _verify_setup_gated
+  curl_cli() { return 0; }
+  _tls_cert_issuer() { printf 'issuer=O = peppercheck-caddy-internal-ca'; }
+  run check_tls_le
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"NOT serving a Let's Encrypt certificate"* ]]
+}
+
+@test "check_tls_le PASSES when /readyz is healthy and the cert issuer is Let's Encrypt" {
+  source "$ROOT/steps/80-verify.sh"
+  _verify_setup_gated
+  curl_cli() { return 0; }
+  _tls_cert_issuer() { printf "issuer=C = US, O = Let's Encrypt, CN = R3"; }
+  run check_tls_le
+  [ "$status" -eq 0 ]
+}
+
+@test "check_secret_perms fails when SSH_HOST is absent" {
+  source "$ROOT/steps/80-verify.sh"
+  _verify_setup_gated
+  unset SSH_HOST
+  run check_secret_perms
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"SSH_HOST"* ]]
+}
+
+@test "check_secret_perms fails closed when the tailnet host is unreachable" {
+  source "$ROOT/steps/80-verify.sh"
+  _verify_setup_gated
+  ssh_cli() { return 255; }
+  run check_secret_perms
+  [ "$status" -ne 0 ]
+}
+
+@test "check_secret_perms fails when stat returns no output" {
+  source "$ROOT/steps/80-verify.sh"
+  _verify_setup_gated
+  ssh_cli() { printf ''; }
+  run check_secret_perms
+  [ "$status" -ne 0 ]
+}
+
+@test "check_secret_perms PASSES when every secret file is mode 0400" {
+  source "$ROOT/steps/80-verify.sh"
+  _verify_setup_gated
+  ssh_cli() { printf '400\n400\n400\n'; }
+  run check_secret_perms
+  [ "$status" -eq 0 ]
+}
+
+@test "check_secret_perms FAILS when one secret file is not mode 0400" {
+  source "$ROOT/steps/80-verify.sh"
+  _verify_setup_gated
+  ssh_cli() { printf '400\n644\n400\n'; }
+  run check_secret_perms
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"644"* ]]
+}
