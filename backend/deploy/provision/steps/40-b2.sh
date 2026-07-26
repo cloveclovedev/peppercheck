@@ -64,6 +64,14 @@ ensure_b2_bucket() {
   local bucket="$1"
   if b2_bucket_exists "$bucket"; then
     log_info "B2 bucket already exists, skipping create: ${bucket}"
+    # A bucket created WITHOUT --file-lock-enabled can never be governance-
+    # locked afterward (B2 cannot enable file lock post-creation), so the
+    # bucket update below would set retention flags onto an unlockable bucket
+    # and report success — a false sense of backup immutability. We can't
+    # cheaply read the file-lock state back here, so surface the risk and
+    # keep going (don't hard-stop): the operator must confirm this bucket was
+    # created with file lock, or recreate it.
+    log_warn "pre-existing bucket ${bucket}: Object Lock CANNOT be enabled retroactively — confirm it was created with --file-lock-enabled, or recreate it"
   else
     run_mutation "create B2 bucket ${bucket} (allPrivate, file-lock-enabled)" \
       b2_cli bucket create "$bucket" allPrivate --file-lock-enabled
@@ -126,7 +134,15 @@ reconcile_b2() {
 
   ensure_b2_bucket "$bucket"
 
-  local env="${ENV_NAME:-unknown}"
+  # Fail closed rather than fall back: env is part of a REAL resource name
+  # (pc-<env>-backup/-restore), so an empty ENV_NAME would mint a mis-named
+  # B2 key. The orchestrator always exports ENV_NAME, so this only catches a
+  # direct-invocation misuse.
+  local env="${ENV_NAME:-}"
+  if [ -z "$env" ]; then
+    log_err "ENV_NAME is empty — refusing to mint B2 keys with an unnamed environment"
+    return 1
+  fi
   # Runtime key: read/write, no bypassGovernance — the running app/backup
   # container should never be able to delete a governance-locked version.
   ensure_b2_key "pc-${env}-backup" "listBuckets,listFiles,readFiles,writeFiles,deleteFiles" \

@@ -399,6 +399,21 @@ _b2_setup_gated() {
   [[ "$output" == *"BWS_RESTORE_PROJECT_ID"* ]]
 }
 
+# The bucket-update assertions below lock the backup-immutability config: the
+# `bucket update` call MUST keep governance retention and MUST NOT gain an
+# age-based `daysFromUploadingToHiding` (which would delete LIVE backups
+# pgBackRest still needs). A regression that weakens either would otherwise
+# pass a bare `grep "^bucket update"`.
+_assert_bucket_update_safety() {
+  local log="$1"
+  grep -q "^bucket update ${B2_BUCKET} " "$log"
+  grep -q -- "--default-retention-mode governance" "$log"
+  grep -q -- "--default-retention-period 7 days" "$log"
+  grep -q -- 'daysFromHidingToDeleting' "$log"
+  # Never an age-based delete of live versions.
+  ! grep -q -- 'daysFromUploadingToHiding' "$log"
+}
+
 @test "reconcile_b2 does not create the bucket when it already exists" {
   source "$ROOT/steps/40-b2.sh"
   _b2_setup_gated
@@ -414,7 +429,7 @@ _b2_setup_gated() {
   run reconcile_b2
   [ "$status" -eq 0 ]
   ! grep -q "^bucket create" "$calls_log"
-  grep -q "^bucket update ${B2_BUCKET}" "$calls_log"
+  _assert_bucket_update_safety "$calls_log"
 }
 
 @test "reconcile_b2 creates the bucket with --file-lock-enabled when absent" {
@@ -432,7 +447,7 @@ _b2_setup_gated() {
   run reconcile_b2
   [ "$status" -eq 0 ]
   grep -q "^bucket create ${B2_BUCKET} allPrivate --file-lock-enabled$" "$calls_log"
-  grep -q "^bucket update ${B2_BUCKET}" "$calls_log"
+  _assert_bucket_update_safety "$calls_log"
 }
 
 @test "reconcile_b2 mints both keys with distinct, non-bypassGovernance capability lists, into the correct BWS projects" {
@@ -473,6 +488,43 @@ _b2_setup_gated() {
   grep -q "^b2_key_secret	backupKeySecretXYZ	envproj$" "$puts_log"
   grep -q "^b2_key_id	restoreKeyId456	restoreproj$" "$puts_log"
   grep -q "^b2_key_secret	restoreKeySecretABC	restoreproj$" "$puts_log"
+}
+
+@test "reconcile_b2 warns that Object Lock cannot be enabled retroactively on a pre-existing bucket" {
+  source "$ROOT/steps/40-b2.sh"
+  _b2_setup_gated
+  b2_cli() { case "$1 $2" in "bucket get") return 0 ;; esac; return 0; }  # exists
+  run reconcile_b2
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"CANNOT be enabled retroactively"* ]]
+}
+
+@test "reconcile_b2 does not warn about retroactive Object Lock when it creates the bucket" {
+  source "$ROOT/steps/40-b2.sh"
+  _b2_setup_gated
+  b2_cli() { case "$1 $2" in "bucket get") return 1 ;; esac; return 0; }  # absent
+  run reconcile_b2
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"CANNOT be enabled retroactively"* ]]
+}
+
+@test "reconcile_b2 hard-fails (does not mint a pc-unknown key) when ENV_NAME is empty" {
+  source "$ROOT/steps/40-b2.sh"
+  _b2_setup_gated
+  unset ENV_NAME || true
+  key_calls_log="$BATS_TEST_TMPDIR/key_create.log"
+  : > "$key_calls_log"
+  b2_cli() {
+    case "$1 $2" in
+      "bucket get") return 0 ;;
+      "key create") shift 2; printf '%s\n' "$*" >> "$key_calls_log" ;;
+    esac
+    return 0
+  }
+  bws_secret_exists() { return 1; }
+  run reconcile_b2
+  [ "$status" -eq 1 ]
+  [ ! -s "$key_calls_log" ]  # never reached key creation
 }
 
 @test "reconcile_b2 is a no-op for key creation when both BWS projects already have b2_key_id" {
