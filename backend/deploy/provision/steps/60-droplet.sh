@@ -4,12 +4,15 @@
 # Droplet's SSH host key.
 #
 # --- Idempotency -------------------------------------------------------------
-# Droplet EXISTENCE is the source of truth: `doctl compute droplet get
-# "pc-${ENV_NAME}"` absent/present, nothing else. If the Droplet already
-# exists, the deploy keypair and host key were already provisioned by
+# Droplet EXISTENCE is the source of truth: a `pc-${ENV_NAME}` line in
+# `doctl compute droplet list` present/absent, nothing else. If the Droplet
+# already exists, the deploy keypair and host key were already provisioned by
 # whichever run created it (see below for why both are tied to the Droplet's
 # own lifecycle), so this step is a pure no-op past that check — it never
-# re-mints a keypair or re-scans a host key for an existing Droplet.
+# re-mints a keypair or re-scans a host key for an existing Droplet. Crucially,
+# this check is FAIL-CLOSED: a failed list query (expired token, network blip)
+# is treated as UNKNOWN and aborts, never as "absent" — else a transient
+# failure would create a duplicate same-named Droplet (see droplet_status).
 #
 # --- Why bootstrap.sh is delivered via cloud-init write_files, not git clone -
 # The Droplet has no way to `git clone` this private repo (no deploy
@@ -72,17 +75,31 @@ PROVISION_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BOOTSTRAP_SRC="${PROVISION_DIR}/bootstrap.sh"
 : "${BACKEND_SCRIPTS_DIR:=${PROVISION_DIR}/../../scripts}"
 
-# droplet_exists NAME — existence probe only. The public doctl reference
-# (https://docs.digitalocean.com/reference/doctl/reference/compute/droplet/get/)
-# documents `droplet get` as an ID lookup, but doctl's own source resolves a
-# non-numeric argument as a Droplet NAME too (`RunDropletGet` →
-# `matchDroplets`: tries `allInt` first, falls back to a name-indexed lookup
-# built from `droplet list`) —
-# https://github.com/digitalocean/doctl/blob/main/commands/droplets.go
-# Confirmed here rather than assumed since the public docs alone would leave
-# this ambiguous.
-droplet_exists() {
-  doctl_cli compute droplet get "$1" >/dev/null 2>&1
+# droplet_status NAME — echoes "present"/"absent" and returns 0 when the
+# answer is UNAMBIGUOUS; returns non-zero (nothing echoed) when the query
+# itself failed so the answer is UNKNOWN. This distinction is load-bearing
+# for the idempotency invariant: `doctl compute droplet get "$1"` returning
+# non-zero conflates "no such Droplet" with "the API call failed" (expired/
+# rate-limited token, network blip), and treating a transient failure as
+# "absent" would proceed to `droplet create` and spin up a SECOND Droplet
+# with the same name (DO Droplet names are NOT unique) plus a fresh
+# keypair/host-key overwrite. So instead we list all Droplet names and
+# check the list command's OWN exit status separately: a failed `list`
+# aborts (UNKNOWN), never silently reads as "absent".
+#
+# `doctl compute droplet list --format Name --no-header` prints one Droplet
+# name per line —
+# https://docs.digitalocean.com/reference/doctl/reference/compute/droplet/list/
+# (this also removes any dependency on `droplet get`'s undocumented
+# name-vs-ID resolution).
+droplet_status() {
+  local name="$1" names
+  names="$(doctl_cli compute droplet list --format Name --no-header)" || return 1
+  if grep -qx "$name" <<<"$names"; then
+    printf 'present'
+  else
+    printf 'absent'
+  fi
 }
 
 # _yaml_dq STRING — double-quote a string for embedding as a YAML flow
@@ -146,12 +163,20 @@ render_cloud_init() {
 # to the Droplet's own lifecycle is correct and simplest here), stores the
 # PRIVATE half as the SSH_DEPLOY_KEY GitHub Environment secret, and echoes
 # the PUBLIC half on stdout for the caller to embed in cloud-init. The temp
-# key directory is removed before returning either way; nothing is logged.
+# key directory is removed as soon as the material is read AND on the
+# ssh-keygen failure path (an explicit `if ! …; then rm; return` guard,
+# rather than a `trap … RETURN` — under bats' functrace a RETURN trap fires
+# on every nested function return, which is both wrong-scoped and premature)
+# so the private key can never be left on the operator's disk. Nothing logged.
 ensure_deploy_keypair() {
   local key_dir key_path priv_key pub_key
   key_dir="$(mktemp -d)"
   key_path="${key_dir}/deploy_key"
-  ssh_keygen -t ed25519 -N "" -C "deploy@peppercheck-ci" -f "$key_path" >/dev/null
+  if ! ssh_keygen -t ed25519 -N "" -C "deploy@peppercheck-ci" -f "$key_path" >/dev/null; then
+    rm -rf "$key_dir"
+    log_err "ssh-keygen failed to generate the deploy keypair"
+    return 1
+  fi
   priv_key="$(cat "$key_path")"
   pub_key="$(cat "${key_path}.pub")"
   rm -rf "$key_dir"
@@ -201,8 +226,12 @@ reconcile_droplet() {
   # https://github.com/digitalocean/doctl#readme
   export DIGITALOCEAN_ACCESS_TOKEN="$do_token"
 
-  local droplet_name="pc-${ENV_NAME:-}"
-  if droplet_exists "$droplet_name"; then
+  local droplet_name="pc-${ENV_NAME:-}" status=""
+  status="$(droplet_status "$droplet_name")" || {
+    log_err "could not list Droplets to determine whether ${droplet_name} exists (expired/rate-limited DO token or network error) — aborting rather than risk creating a duplicate Droplet"
+    return 1
+  }
+  if [ "$status" = "present" ]; then
     log_ok "Droplet ${droplet_name} already exists — Droplet, deploy keypair, and host key are already provisioned, skipping"
     return 0
   fi
@@ -229,15 +258,32 @@ reconcile_droplet() {
   local deploy_pub_key=""
   deploy_pub_key="$(ensure_deploy_keypair)"
 
+  # The rendered cloud-init file contains the plaintext ephemeral
+  # TAILSCALE_AUTH_KEY, so it must never survive an abnormal exit. Explicit
+  # `if ! …; then rm; return` guards clean it up on the render- and
+  # create-failure paths, plus the explicit removal right after a successful
+  # create — chosen over a `trap … RETURN` because bats runs with functrace,
+  # under which a RETURN trap fires on every nested-function return (deleting
+  # the dir before `doctl create` reads it, and firing before the local is
+  # even in scope). These guards are correct regardless of functrace or the
+  # orchestrator's `set +e` wrapping around the reconcile call.
   local cloud_init_dir cloud_init_file
   cloud_init_dir="$(mktemp -d)"
   cloud_init_file="${cloud_init_dir}/user-data.yaml"
-  render_cloud_init "$cloud_init_file" "$deploy_pub_key" "$ts_tag" "$ts_auth_key"
+  if ! render_cloud_init "$cloud_init_file" "$deploy_pub_key" "$ts_tag" "$ts_auth_key"; then
+    rm -rf "$cloud_init_dir"
+    log_err "failed to render the cloud-init user-data document"
+    return 1
+  fi
 
-  run_mutation "create Droplet ${droplet_name} (${do_region}, ${do_size}, ${DROPLET_IMAGE})" \
+  if ! run_mutation "create Droplet ${droplet_name} (${do_region}, ${do_size}, ${DROPLET_IMAGE})" \
     doctl_cli compute droplet create "$droplet_name" \
       --region "$do_region" --size "$do_size" --image "$DROPLET_IMAGE" \
-      --user-data-file "$cloud_init_file" --wait
+      --user-data-file "$cloud_init_file" --wait; then
+    rm -rf "$cloud_init_dir"
+    log_err "doctl compute droplet create failed for ${droplet_name}"
+    return 1
+  fi
 
   rm -rf "$cloud_init_dir"
 

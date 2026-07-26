@@ -798,7 +798,7 @@ _droplet_setup_absent_gated() {
   doctl_cli() {
     printf '%s\n' "$*" >>"$BATS_TEST_TMPDIR/doctl.log"
     case "$1 $2 $3" in
-      "compute droplet get") return 1 ;; # absent
+      "compute droplet list") return 0 ;; # empty list -> unambiguously absent
       "compute droplet create")
         # Capture the --user-data-file content while it still exists — the
         # real step deletes its tmp file right after this call returns.
@@ -857,7 +857,10 @@ _droplet_setup_absent_gated() {
   doctl_cli() {
     printf '%s\n' "$*" >>"$calls_log"
     case "$1 $2 $3" in
-      "compute droplet get") return 0 ;; # already exists
+      "compute droplet list")
+        printf 'some-other-droplet\npc-staging\nyet-another\n' # name present
+        return 0
+        ;;
     esac
     return 1
   }
@@ -869,17 +872,42 @@ _droplet_setup_absent_gated() {
   gh_secret_set() { printf '%s\n' "$1" >>"$secret_calls_log"; }
   run reconcile_droplet
   [ "$status" -eq 0 ]
-  grep -q "^compute droplet get pc-staging$" "$calls_log"
+  grep -q "^compute droplet list --format Name --no-header$" "$calls_log"
   ! grep -q "^compute droplet create" "$calls_log"
   [ ! -s "$keygen_calls_log" ]
   [ ! -s "$secret_calls_log" ]
+}
+
+@test "reconcile_droplet fails closed (aborts, no create) when the Droplet list query itself fails, rather than risking a duplicate" {
+  source "$ROOT/steps/60-droplet.sh"
+  export ENV_NAME=staging DO_TOKEN=do-token-x TS_AUTH_KEY=tskey-ephemeral \
+    DO_REGION=sgp1 DO_SIZE=s-1vcpu-1gb SSH_HOST=pc-staging TS_TAG=tag:pc-staging
+  calls_log="$BATS_TEST_TMPDIR/doctl.log"
+  : >"$calls_log"
+  doctl_cli() {
+    printf '%s\n' "$*" >>"$calls_log"
+    case "$1 $2 $3" in
+      "compute droplet list") return 1 ;; # transient failure (token/network)
+    esac
+    return 0
+  }
+  keygen_calls_log="$BATS_TEST_TMPDIR/keygen.log"
+  : >"$keygen_calls_log"
+  ssh_keygen() { echo "called" >>"$keygen_calls_log"; }
+  run reconcile_droplet
+  # A hard error, NOT a NEEDS_MANUAL gate and NOT a silent success.
+  [ "$status" -ne 0 ]
+  [ "$status" -ne 75 ]
+  # Never proceeded to create a (duplicate) Droplet, never minted a keypair.
+  ! grep -q "^compute droplet create" "$calls_log"
+  [ ! -s "$keygen_calls_log" ]
 }
 
 @test "reconcile_droplet stops with NEEDS_MANUAL naming TS_AUTH_KEY when the Droplet is absent and no auth key was minted this run" {
   source "$ROOT/steps/60-droplet.sh"
   export ENV_NAME=staging DO_TOKEN=do-token-x
   unset TS_AUTH_KEY || true
-  doctl_cli() { case "$1 $2 $3" in "compute droplet get") return 1 ;; esac; return 1; }
+  doctl_cli() { case "$1 $2 $3" in "compute droplet list") return 0 ;; esac; return 1; }
   run reconcile_droplet
   [ "$status" -eq 75 ]
   [[ "$output" == *"TS_AUTH_KEY"* ]]
@@ -889,7 +917,7 @@ _droplet_setup_absent_gated() {
   source "$ROOT/steps/60-droplet.sh"
   export ENV_NAME=staging DO_TOKEN=do-token-x TS_AUTH_KEY=tskey-ephemeral
   unset DO_REGION DO_SIZE SSH_HOST TS_TAG || true
-  doctl_cli() { case "$1 $2 $3" in "compute droplet get") return 1 ;; esac; return 1; }
+  doctl_cli() { case "$1 $2 $3" in "compute droplet list") return 0 ;; esac; return 1; }
   run reconcile_droplet
   [ "$status" -eq 75 ]
   [[ "$output" == *"DO_REGION"* ]]
@@ -952,4 +980,30 @@ _droplet_setup_absent_gated() {
   ! grep -q "^compute droplet create" "$BATS_TEST_TMPDIR/doctl.log"
   [ ! -e "$BATS_TEST_TMPDIR/keyscan-called.log" ]
   [ ! -s "$BATS_TEST_TMPDIR/gh_secret_set.log" ]
+}
+
+@test "reconcile_droplet leaves no plaintext-auth-key cloud-init file (or private key) on disk when the create fails mid-flight" {
+  source "$ROOT/steps/60-droplet.sh"
+  _droplet_setup_absent_gated
+  # Point mktemp at a controlled root so the RETURN-trap cleanup is checkable;
+  # both the deploy-key dir and the cloud-init dir are created under here.
+  export TMPDIR="$BATS_TEST_TMPDIR/tmproot"
+  mkdir -p "$TMPDIR"
+  # Make the Droplet create fail AFTER render_cloud_init has already written
+  # the user-data file (which embeds the plaintext ephemeral auth key).
+  doctl_cli() {
+    printf '%s\n' "$*" >>"$BATS_TEST_TMPDIR/doctl.log"
+    case "$1 $2 $3" in
+      "compute droplet list") return 0 ;;   # absent
+      "compute droplet create") return 1 ;; # fails mid-flight
+    esac
+    return 0
+  }
+  run reconcile_droplet
+  [ "$status" -ne 0 ]
+  # The trap cleaned both temp dirs: no cloud-init user-data file and no
+  # private key material survive anywhere under the controlled TMPDIR.
+  ! grep -rq "tskey-ephemeral" "$TMPDIR" 2>/dev/null
+  ! grep -rq "FAKE-PRIVATE-KEY" "$TMPDIR" 2>/dev/null
+  [ -z "$(find "$TMPDIR" -type f 2>/dev/null)" ]
 }
