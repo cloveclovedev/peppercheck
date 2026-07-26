@@ -672,6 +672,39 @@ _github_env_setup_satisfied() {
   grep -q '"id":123456' "$put_calls_log"
 }
 
+@test "reconcile_github_env (production, all 8 vars ABSENT) re-asserts the reviewer on EVERY env PUT so the last PUT never leaves it wiped" {
+  source "$ROOT/steps/50-github-env.sh"
+  _github_env_setup_satisfied
+  export ENV_NAME=production GH_PRODUCTION_REVIEWER_ID=123456
+  # All 8 vars absent → each ensure_gh_var fires a post-reviewer gh_var_set,
+  # and the REAL lib.sh wiring has gh_var_set call ensure_gh_environment
+  # again. This test proves those later PUTs still carry the reviewer (the
+  # security hazard: a no-body PUT after the reviewer was set could wipe it).
+  gh_env_var_exists() { return 1; }  # every var absent → every var gets set
+  put_calls_log="$BATS_TEST_TMPDIR/gh_api_put.log"
+  : > "$put_calls_log"
+  # Log each gh_api call's args + (if a body was piped) the body, one line
+  # per PUT, so we can assert every production PUT line carries "reviewers".
+  gh_api() {
+    local body=""
+    [[ "$*" == *"--input -"* ]] && body="$(cat)"
+    printf '%s %s\n' "$*" "$body" >> "$put_calls_log"
+  }
+  # Mirror the real lib.sh gh_var_set wiring (ensure_gh_environment first),
+  # minus the real `command gh variable set` (no gh binary in the bats image).
+  gh_var_set() { ensure_gh_environment; :; }
+  run reconcile_github_env
+  [ "$status" -eq 0 ]
+  # More than one production env PUT happened (top-of-fn ensure + the
+  # post-reviewer var-set PUTs) ...
+  [ "$(grep -c 'environments/production' "$put_calls_log")" -ge 2 ]
+  # ... and NOT ONE of them omitted the reviewer (no production PUT line
+  # without "reviewers" — this is the assertion that would fail if a later
+  # no-body PUT wiped the gate).
+  ! grep 'environments/production' "$put_calls_log" | grep -qv 'reviewers'
+  grep -q '"id":123456' "$put_calls_log"
+}
+
 @test "reconcile_github_env derives AGE_RECIPIENT from the restore project's age_private_key when the env var is unset" {
   source "$ROOT/steps/50-github-env.sh"
   _github_env_setup_satisfied
@@ -697,6 +730,31 @@ _github_env_setup_satisfied() {
   run reconcile_github_env
   [ "$status" -eq 0 ]
   grep -q "^AGE_RECIPIENT	age1derivedrecipient$" "$var_calls_log"
+}
+
+@test "reconcile_github_env fails (does not set an empty var) when age-keygen -y yields no recipient" {
+  source "$ROOT/steps/50-github-env.sh"
+  _github_env_setup_satisfied
+  unset AGE_RECIPIENT || true
+  export BWS_RESTORE_PROJECT_ID=restoreproj BWS_WRITE_TOKEN=wt
+  gh_env_var_exists() {
+    case "$1" in
+      AGE_RECIPIENT) return 1 ;;
+      *) return 0 ;;
+    esac
+  }
+  bws_get_secret_value() { echo "AGE-SECRET-KEY-STUB"; }  # private key present
+  age_keygen() { :; }  # -y derivation produces nothing (failure path)
+  var_calls_log="$BATS_TEST_TMPDIR/gh_var_set.log"
+  : > "$var_calls_log"
+  gh_var_set() { printf '%s\t%s\n' "$1" "$2" >> "$var_calls_log"; }
+  run reconcile_github_env
+  [ "$status" -ne 0 ]
+  [ "$status" -ne 75 ]  # a hard error, not a manual gate
+  [[ "$output" == *"AGE_RECIPIENT"* ]]
+  [[ "$output" == *"invalid"* ]]
+  # Never set AGE_RECIPIENT (or any var) to an empty/invalid value.
+  ! grep -q "^AGE_RECIPIENT" "$var_calls_log"
 }
 
 @test "reconcile_github_env stops with NEEDS_MANUAL naming BWS_RESTORE_PROJECT_ID when AGE_RECIPIENT must be derived but the restore project id is absent" {

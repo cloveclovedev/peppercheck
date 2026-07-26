@@ -25,8 +25,8 @@
 #     exist before setting only the absent ones):
 #     https://docs.github.com/en/rest/actions/variables?apiVersion=2022-11-28#list-environment-variables
 #   - gh CLI manual (`gh api`) — `{owner}`/`{repo}` placeholder substitution,
-#     and `--input -` to read a JSON request body from stdin (used for the
-#     `reviewers` body, which is too structured for plain `-f`/`-F` fields):
+#     and `--input -` to read a JSON request body from stdin (used by lib.sh's
+#     ensure_gh_environment for the `reviewers` body):
 #     https://cli.github.com/manual/gh_api
 set -euo pipefail
 
@@ -34,16 +34,6 @@ set -euo pipefail
 # Own copy of step 10's age-keygen wrapper: steps are sourced independently
 # under --only/--from, so step 50 cannot assume step 10 was sourced this run.
 age_keygen() { command age-keygen "$@"; }
-
-# gh_env_put_with_body ENV_NAME BODY_JSON — PUT the environment with a JSON
-# request body via gh_api's `--input -` (reads the body from stdin; see the
-# gh CLI manual citation above). Used only for the production reviewer rule;
-# the environment-creation PUT itself (`ensure_gh_environment`) sends no body.
-gh_env_put_with_body() {
-  local target_environment="$1" body="$2"
-  printf '%s' "$body" |
-    gh_api --method PUT "repos/{owner}/{repo}/environments/${target_environment}" --input - >/dev/null
-}
 
 # gh_env_var_exists NAME — true iff NAME is already registered as a GitHub
 # Environment variable on $ENV_NAME. Parsed with external jq, matching
@@ -70,23 +60,21 @@ ensure_gh_var() {
 }
 
 reconcile_github_env() {
-  run_mutation "ensure GitHub Environment ${ENV_NAME:-}" ensure_gh_environment
-
-  # production-only required-reviewer protection rule. This is the actual
-  # manual-approval gate on deploy-vps.yml's `environment: production` job
-  # (RUNBOOK.md §1.5) — staging gets no reviewer.
-  if [ "${ENV_NAME:-}" = "production" ]; then
-    local reviewer_id=""
-    if ! reviewer_id="$(require_cfg GH_PRODUCTION_REVIEWER_ID)"; then
-      need_manual GH_PRODUCTION_REVIEWER_ID \
-        "Set the GitHub user id (numeric) to require as a production deploy reviewer (Settings → People, or GET /users/{username} for the id)"
-      return $?
-    fi
-    local body
-    body="$(printf '{"reviewers":[{"type":"User","id":%s}]}' "$reviewer_id")"
-    run_mutation "set production required reviewer (GitHub user id ${reviewer_id})" \
-      gh_env_put_with_body production "$body"
+  # production-only required-reviewer gate. The reviewer rule itself is
+  # applied by lib.sh's ensure_gh_environment (which re-asserts it on EVERY
+  # environment PUT so no later step can wipe the manual-approval gate — see
+  # its PRODUCTION REVIEWER SAFETY note); this step's job is only the
+  # friendly upfront gate that stops with a clear instruction when the
+  # operator has not yet supplied the reviewer id. Checked BEFORE the first
+  # ensure_gh_environment so a production run without the id stops here
+  # rather than creating a reviewer-less Environment and pressing on.
+  if [ "${ENV_NAME:-}" = "production" ] && ! require_cfg GH_PRODUCTION_REVIEWER_ID >/dev/null; then
+    need_manual GH_PRODUCTION_REVIEWER_ID \
+      "Set the GitHub user id (numeric) to require as a production deploy reviewer (Settings → People, or GET /users/{username} for the id)"
+    return $?
   fi
+
+  run_mutation "ensure GitHub Environment ${ENV_NAME:-}" ensure_gh_environment
 
   # The 7 plain config-driven vars + the gate for AGE_RECIPIENT's derivation
   # input (BWS_RESTORE_PROJECT_ID), collected into one missing[] so a single
@@ -131,6 +119,14 @@ reconcile_github_env() {
       return 1
     fi
     age_recipient="$(printf '%s\n' "$private_key" | age_keygen -y)"
+    # Guard the derivation OUTPUT too (not just the private-key-empty case
+    # above): a failed/empty `age-keygen -y` must not silently set an empty
+    # GitHub var. A valid age recipient is a bech32 public key prefixed
+    # `age1`. Never log the private key itself.
+    if [[ "$age_recipient" != age1* ]]; then
+      log_err "derived AGE_RECIPIENT is empty/invalid (age-keygen -y produced no age1 recipient)"
+      return 1
+    fi
   fi
 
   ensure_gh_var API_PORT "$api_port"

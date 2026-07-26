@@ -82,8 +82,8 @@ gh_api() { command gh api "$@"; }
 # ensure_gh_environment — idempotent create-or-update of the GitHub
 # Environment named $ENV_NAME. A plain `PUT .../environments/{name}` with no
 # request body creates the Environment if it is absent, and is a no-op
-# update if it already exists (every body field, including `reviewers`, is
-# optional) — GitHub REST docs, "Create or update an environment":
+# update if it already exists (every body field is optional) — GitHub REST
+# docs, "Create or update an environment":
 # https://docs.github.com/en/rest/deployments/environments?apiVersion=2022-11-28#create-or-update-an-environment
 #
 # `{owner}`/`{repo}` are gh CLI's own literal placeholders, substituted from
@@ -99,8 +99,27 @@ gh_api() { command gh api "$@"; }
 # (SSH_DEPLOY_KEY/SSH_HOST_KEY), both of which can run before step 50
 # (github-env) creates the Environment, or alone via `--only`. Safe to call
 # many times per run — every call after the first is a no-op update.
+#
+# PRODUCTION REVIEWER SAFETY: GitHub's env PUT is NOT documented to preserve
+# omitted protection-rule fields, so a no-body PUT that omits `reviewers`
+# MAY reset the production manual-approval gate. Because this function fires
+# on EVERY gh_var_set/gh_secret_set (step 50's var loop, step 60's SSH-key
+# secrets, ...), any such no-body PUT after step 50 set the reviewer could
+# silently wipe it. Guard: when $ENV_NAME=production AND a
+# GH_PRODUCTION_REVIEWER_ID is configured, EVERY PUT carries the reviewer
+# body, so the reviewer is re-asserted (never left wiped) no matter which
+# step issues the last PUT. This makes ensure_gh_environment the single
+# source of truth for the production reviewer. Staging (no reviewer) and
+# production-before-the-id-is-set (caught by step 50's friendly need_manual
+# gate) both take the plain no-body PUT.
 ensure_gh_environment() {
-  gh_api --method PUT "repos/{owner}/{repo}/environments/${ENV_NAME}" >/dev/null
+  local reviewer_id
+  if [ "${ENV_NAME:-}" = "production" ] && reviewer_id="$(require_cfg GH_PRODUCTION_REVIEWER_ID)"; then
+    printf '{"reviewers":[{"type":"User","id":%s}]}' "$reviewer_id" |
+      gh_api --method PUT "repos/{owner}/{repo}/environments/${ENV_NAME}" --input - >/dev/null
+  else
+    gh_api --method PUT "repos/{owner}/{repo}/environments/${ENV_NAME}" >/dev/null
+  fi
 }
 
 gh_secret_set() {
