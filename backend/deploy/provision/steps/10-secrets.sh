@@ -18,29 +18,9 @@
 set -euo pipefail
 
 # --- Provider wrappers — overridden by bats tests, never called directly. ---
-bws_cli() { command bws "$@"; }
+# bws_cli/bws_secret_exists/bws_put_secret/bws_get_secret_value now live in
+# lib.sh (shared across steps; see its "Shared provider wrappers" section).
 age_keygen() { command age-keygen "$@"; }
-
-# bws_secret_exists NAME PROJECT_ID
-bws_secret_exists() {
-  local name="$1" project_id="$2"
-  bws_cli secret list "$project_id" | jq -e --arg n "$name" 'any(.[]; .key == $n)' >/dev/null
-}
-
-# bws_put_secret NAME VALUE PROJECT_ID
-bws_put_secret() {
-  local name="$1" value="$2" project_id="$3"
-  bws_cli secret create "$name" "$value" "$project_id" >/dev/null
-}
-
-# bws_get_secret_value NAME PROJECT_ID
-# Only needed on the age-key re-run path (AGE_RECIPIENT re-derivation);
-# every other secret here is write-once so its plaintext never needs
-# reading back (see ensure_password).
-bws_get_secret_value() {
-  local name="$1" project_id="$2"
-  bws_cli secret list "$project_id" | jq -r --arg n "$name" '.[] | select(.key == $n) | .value'
-}
 
 # gen_password — 32-char, URL-safe, no shell-unsafe characters. Reads
 # /dev/urandom directly through coreutils base64 rather than `openssl rand`

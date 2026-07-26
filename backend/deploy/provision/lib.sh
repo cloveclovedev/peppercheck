@@ -69,3 +69,43 @@ run_mutation() {
   if is_dry_run; then echo "[dry-run] ${desc}"; return 0; fi
   "$@"
 }
+
+# --- Shared provider wrappers ------------------------------------------------
+# Live here (not in whichever step first needed them) because the
+# orchestrator's --only/--from can run a single step without any earlier
+# step's file being sourced, but lib.sh is always sourced. Kept thin so bats
+# tests can redefine them after `source lib.sh`; no step calls these
+# providers' CLIs directly.
+bws_cli() { command bws "$@"; }
+gh_api() { command gh api "$@"; }
+gh_secret_set() { command gh secret set "$1" --env "$ENV_NAME" --body "$2"; }
+gh_var_set() { command gh variable set "$1" --env "$ENV_NAME" --body "$2"; }
+
+# bws_secret_exists NAME PROJECT_ID
+bws_secret_exists() {
+  local name="$1" project_id="$2"
+  bws_cli secret list "$project_id" | jq -e --arg n "$name" 'any(.[]; .key == $n)' >/dev/null
+}
+
+# bws_put_secret NAME VALUE PROJECT_ID
+bws_put_secret() {
+  local name="$1" value="$2" project_id="$3"
+  bws_cli secret create "$name" "$value" "$project_id" >/dev/null
+}
+
+# bws_get_secret_value NAME PROJECT_ID
+# Only needed on re-run paths that must recover an already-stored plaintext
+# (e.g. step 10's age-key/cipher mirroring); most secrets are write-once so
+# their plaintext never needs reading back.
+bws_get_secret_value() {
+  local name="$1" project_id="$2"
+  bws_cli secret list "$project_id" | jq -r --arg n "$name" '.[] | select(.key == $n) | .value'
+}
+
+# bws_project_exists PROJECT_ID
+# Confirms a BWS project id is visible/reachable with the currently exported
+# BWS_ACCESS_TOKEN (used by step 20's write-token gate).
+bws_project_exists() {
+  local project_id="$1"
+  bws_cli project list | jq -e --arg id "$project_id" 'any(.[]; .id == $id)' >/dev/null
+}
