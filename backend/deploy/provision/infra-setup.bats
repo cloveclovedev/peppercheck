@@ -64,6 +64,43 @@ setup() {
   [ "$status" -eq 0 ]
 }
 
+# --- shared wrappers: order-independent GitHub Environment creation --------
+# ensure_gh_environment lives in lib.sh so it can fire from gh_secret_set/
+# gh_var_set regardless of which step runs first under --only/--from (env
+# secrets are set by steps 20/60, vars by step 50). Only gh_api is stubbed
+# below; `command gh secret/variable set` itself is NOT stubbed (there is no
+# way to intercept a `command`-invoked external binary from a bash
+# function), so it runs for real and fails in this jq/gh-less bats image --
+# harmless here since the assertion only needs ensure_gh_environment's PUT to
+# have already landed in the log before that failure.
+@test "gh_secret_set ensures the GitHub Environment before setting the secret" {
+  export ENV_NAME=staging
+  calls_log="$BATS_TEST_TMPDIR/gh_api.log"
+  : > "$calls_log"
+  gh_api() { printf '%s\n' "$*" >> "$calls_log"; }
+  run gh_secret_set SOME_SECRET some-value
+  grep -q -- "--method PUT repos/{owner}/{repo}/environments/staging" "$calls_log"
+}
+
+@test "gh_var_set ensures the GitHub Environment before setting the variable" {
+  export ENV_NAME=staging
+  calls_log="$BATS_TEST_TMPDIR/gh_api.log"
+  : > "$calls_log"
+  gh_api() { printf '%s\n' "$*" >> "$calls_log"; }
+  run gh_var_set SOME_VAR some-value
+  grep -q -- "--method PUT repos/{owner}/{repo}/environments/staging" "$calls_log"
+}
+
+@test "ensure_gh_environment sends a plain (no-body) PUT" {
+  export ENV_NAME=production
+  calls_log="$BATS_TEST_TMPDIR/gh_api.log"
+  : > "$calls_log"
+  gh_api() { printf '%s\n' "$*" >> "$calls_log"; }
+  run ensure_gh_environment
+  [ "$status" -eq 0 ]
+  grep -q -- "--method PUT repos/{owner}/{repo}/environments/production" "$calls_log"
+}
+
 @test "gen_password yields a 32+ char token with no shell-unsafe chars" {
   source "$ROOT/steps/10-secrets.sh"
   run gen_password
@@ -543,4 +580,141 @@ _assert_bucket_update_safety() {
   run reconcile_b2
   [ "$status" -eq 0 ]
   ! grep -q "^key create" "$calls_log"
+}
+
+# --- step 50: reconcile_github_env -------------------------------------------
+# gh_api/gh_env_var_exists/gh_var_set are stubbed directly in every test
+# below (no real gh CLI or jq call inside a bats test), the same convention
+# steps 10/20/40 use for bws_secret_exists/bws_project_exists.
+_github_env_setup_satisfied() {
+  export ENV_NAME=staging API_PORT=8765 FIREBASE_PROJECT_ID=fb-proj \
+    PGBACKREST_REPO1_S3_ENDPOINT=https://s3.us-west-002.backblazeb2.com \
+    B2_BUCKET=pc-staging-backups B2_REGION=us-west-002 \
+    TS_CLIENT_ID=ts-client-id TS_AUDIENCE=ts-audience \
+    AGE_RECIPIENT=age1existingrecipient
+  unset GH_PRODUCTION_REVIEWER_ID || true
+  gh_api() { :; }
+  gh_env_var_exists() { return 0; }  # default: everything already present
+  gh_var_set() { :; }
+}
+
+@test "reconcile_github_env (staging, all 8 vars present) sets no vars and never PUTs a reviewer" {
+  source "$ROOT/steps/50-github-env.sh"
+  _github_env_setup_satisfied
+  put_calls_log="$BATS_TEST_TMPDIR/gh_api_put.log"
+  : > "$put_calls_log"
+  gh_api() { printf '%s\n' "$*" >> "$put_calls_log"; }
+  var_calls_log="$BATS_TEST_TMPDIR/gh_var_set.log"
+  : > "$var_calls_log"
+  gh_var_set() { printf '%s\t%s\n' "$1" "$2" >> "$var_calls_log"; }
+  run reconcile_github_env
+  [ "$status" -eq 0 ]
+  [ ! -s "$var_calls_log" ]
+  ! grep -q "reviewers" "$put_calls_log"
+  ! grep -q "environments/production" "$put_calls_log"
+}
+
+@test "reconcile_github_env (staging) sets exactly the absent vars, skipping present ones" {
+  source "$ROOT/steps/50-github-env.sh"
+  _github_env_setup_satisfied
+  # Only API_PORT and AGE_RECIPIENT are absent; the rest already exist.
+  gh_env_var_exists() {
+    case "$1" in
+      API_PORT | AGE_RECIPIENT) return 1 ;;
+      *) return 0 ;;
+    esac
+  }
+  var_calls_log="$BATS_TEST_TMPDIR/gh_var_set.log"
+  : > "$var_calls_log"
+  gh_var_set() { printf '%s\t%s\n' "$1" "$2" >> "$var_calls_log"; }
+  run reconcile_github_env
+  [ "$status" -eq 0 ]
+  [ "$(wc -l < "$var_calls_log")" -eq 2 ]
+  grep -q "^API_PORT	8765$" "$var_calls_log"
+  grep -q "^AGE_RECIPIENT	age1existingrecipient$" "$var_calls_log"
+}
+
+@test "reconcile_github_env stops with NEEDS_MANUAL naming a missing non-secret config value" {
+  source "$ROOT/steps/50-github-env.sh"
+  _github_env_setup_satisfied
+  unset FIREBASE_PROJECT_ID || true
+  run reconcile_github_env
+  [ "$status" -eq 75 ]
+  [[ "$output" == *"FIREBASE_PROJECT_ID"* ]]
+}
+
+@test "reconcile_github_env (production) stops with NEEDS_MANUAL naming GH_PRODUCTION_REVIEWER_ID when absent" {
+  source "$ROOT/steps/50-github-env.sh"
+  _github_env_setup_satisfied
+  export ENV_NAME=production
+  run reconcile_github_env
+  [ "$status" -eq 75 ]
+  [[ "$output" == *"GH_PRODUCTION_REVIEWER_ID"* ]]
+}
+
+@test "reconcile_github_env (production) PUTs the required-reviewer body with the configured user id" {
+  source "$ROOT/steps/50-github-env.sh"
+  _github_env_setup_satisfied
+  export ENV_NAME=production GH_PRODUCTION_REVIEWER_ID=123456
+  put_calls_log="$BATS_TEST_TMPDIR/gh_api_put.log"
+  : > "$put_calls_log"
+  gh_api() {
+    printf '%s\n' "$*" >> "$put_calls_log"
+    if [[ "$*" == *"--input -"* ]]; then
+      cat >> "$put_calls_log"
+      printf '\n' >> "$put_calls_log"
+    fi
+  }
+  run reconcile_github_env
+  [ "$status" -eq 0 ]
+  grep -q "environments/production" "$put_calls_log"
+  grep -q '"reviewers"' "$put_calls_log"
+  grep -q '"id":123456' "$put_calls_log"
+}
+
+@test "reconcile_github_env derives AGE_RECIPIENT from the restore project's age_private_key when the env var is unset" {
+  source "$ROOT/steps/50-github-env.sh"
+  _github_env_setup_satisfied
+  unset AGE_RECIPIENT || true
+  export BWS_RESTORE_PROJECT_ID=restoreproj BWS_WRITE_TOKEN=wt
+  gh_env_var_exists() {
+    case "$1" in
+      AGE_RECIPIENT) return 1 ;;
+      *) return 0 ;;
+    esac
+  }
+  bws_get_secret_value() {
+    if [ "$1" = "age_private_key" ] && [ "$2" = "restoreproj" ]; then
+      echo "AGE-SECRET-KEY-STUB"
+    fi
+  }
+  age_keygen() {
+    [ "${1:-}" = "-y" ] && echo "age1derivedrecipient"
+  }
+  var_calls_log="$BATS_TEST_TMPDIR/gh_var_set.log"
+  : > "$var_calls_log"
+  gh_var_set() { printf '%s\t%s\n' "$1" "$2" >> "$var_calls_log"; }
+  run reconcile_github_env
+  [ "$status" -eq 0 ]
+  grep -q "^AGE_RECIPIENT	age1derivedrecipient$" "$var_calls_log"
+}
+
+@test "reconcile_github_env stops with NEEDS_MANUAL naming BWS_RESTORE_PROJECT_ID when AGE_RECIPIENT must be derived but the restore project id is absent" {
+  source "$ROOT/steps/50-github-env.sh"
+  _github_env_setup_satisfied
+  unset AGE_RECIPIENT BWS_RESTORE_PROJECT_ID || true
+  export BWS_WRITE_TOKEN=wt
+  run reconcile_github_env
+  [ "$status" -eq 75 ]
+  [[ "$output" == *"BWS_RESTORE_PROJECT_ID"* ]]
+}
+
+@test "reconcile_github_env stops with NEEDS_MANUAL naming BWS_WRITE_TOKEN when AGE_RECIPIENT must be derived but no write token is available (--only github-env, no earlier step this session)" {
+  source "$ROOT/steps/50-github-env.sh"
+  _github_env_setup_satisfied
+  unset AGE_RECIPIENT BWS_WRITE_TOKEN || true
+  export BWS_RESTORE_PROJECT_ID=restoreproj
+  run reconcile_github_env
+  [ "$status" -eq 75 ]
+  [[ "$output" == *"BWS_WRITE_TOKEN"* ]]
 }

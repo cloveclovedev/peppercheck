@@ -78,8 +78,39 @@ run_mutation() {
 # providers' CLIs directly.
 bws_cli() { command bws "$@"; }
 gh_api() { command gh api "$@"; }
-gh_secret_set() { command gh secret set "$1" --env "$ENV_NAME" --body "$2"; }
-gh_var_set() { command gh variable set "$1" --env "$ENV_NAME" --body "$2"; }
+
+# ensure_gh_environment — idempotent create-or-update of the GitHub
+# Environment named $ENV_NAME. A plain `PUT .../environments/{name}` with no
+# request body creates the Environment if it is absent, and is a no-op
+# update if it already exists (every body field, including `reviewers`, is
+# optional) — GitHub REST docs, "Create or update an environment":
+# https://docs.github.com/en/rest/deployments/environments?apiVersion=2022-11-28#create-or-update-an-environment
+#
+# `{owner}`/`{repo}` are gh CLI's own literal placeholders, substituted from
+# the repository of the current working directory (or `GH_REPO` if set) —
+# gh CLI manual: "Placeholder values `{owner}`, `{repo}`... will get
+# replaced with values from the repository of the current directory."
+# (https://cli.github.com/manual/gh_api). No separate `gh repo view` lookup
+# is needed; this script always runs from inside the repo checkout.
+#
+# Called from gh_secret_set/gh_var_set below (not only from step 50) so that
+# ANY env-scoped secret/var set works regardless of --only/--from step
+# order: env secrets are set by step 20 (BWS_TOKEN) and step 60
+# (SSH_DEPLOY_KEY/SSH_HOST_KEY), both of which can run before step 50
+# (github-env) creates the Environment, or alone via `--only`. Safe to call
+# many times per run — every call after the first is a no-op update.
+ensure_gh_environment() {
+  gh_api --method PUT "repos/{owner}/{repo}/environments/${ENV_NAME}" >/dev/null
+}
+
+gh_secret_set() {
+  ensure_gh_environment
+  command gh secret set "$1" --env "$ENV_NAME" --body "$2"
+}
+gh_var_set() {
+  ensure_gh_environment
+  command gh variable set "$1" --env "$ENV_NAME" --body "$2"
+}
 
 # bws_secret_exists NAME PROJECT_ID
 bws_secret_exists() {
