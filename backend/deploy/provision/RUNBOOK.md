@@ -20,6 +20,14 @@ path below is cross-referenced against the real files:
 If a step here does not match one of those files, the file is the source of
 truth, not this runbook.
 
+> **Two ways to stand up an environment.** §1 (prerequisites) and §3's
+> monitoring setup can be driven **automatically** by the idempotent
+> `infra-foundation-setup.sh` orchestrator — see **§4**. The orchestrator does
+> only what is missing and **stops with instructions at each browser-only
+> manual gate**, so §1–§3 below double as the detailed reference behind each
+> gate. §2 (first deploy) is the same either way. Complete §1 (by hand) or §4
+> (automated) before the first push.
+
 ## 1. Prerequisites (before any deploy)
 
 Complete all of these before the first push that triggers `deploy-staging`.
@@ -351,3 +359,99 @@ pointer — do not attempt to hand-rebuild it from this runbook:
   staging carries no production RPO/retention obligation (design doc
   §8.6) — reduce staging's pgBackRest schedule to low-frequency or
   on-demand.
+
+## 4. Automated stand-up with `infra-foundation-setup.sh`
+
+Instead of performing §1 (and §3's monitoring setup) by hand, run the
+idempotent, state-reconciling `infra-foundation-setup.sh` orchestrator. It does
+only what is missing on each run, **stops with precise instructions at every
+browser-only manual gate**, and resumes from that gate when you re-run the same
+command. It never deploys (§2 is unchanged) and never runs pgBackRest
+backups/the restore drill (those §3 items stay manual — see §4.5).
+
+Design: `docs/superpowers/specs/2026-07-26-infra-foundation-setup-design.md`.
+The `config/<env>.env.example` template and the script's runtime messages are
+the authoritative detail; if this section disagrees with them, they win.
+
+### 4.1 Prerequisites for running the orchestrator
+
+- The toolkit lives in `backend/deploy/provision/`:
+  `infra-foundation-setup.sh`, `lib.sh`, `steps/*.sh`, `config/<env>.env.example`.
+- CLIs on the machine you run it from: `gh`, `doctl`, `bws`, `b2`, `jq`,
+  `age-keygen`, `openssl`, `ssh-keygen`, `ssh-keyscan`, `curl`. The script
+  checks these at start and names any that are missing (it does **not** install
+  them — install via Homebrew/your package manager).
+- The machine must be **on the tailnet** (Tailscale up, MagicDNS working) —
+  steps 60/80 capture the Droplet host key and verify SSH over the tailnet name
+  (`pc-staging` / `pc-prod`).
+
+### 4.2 Fill the config (never committed)
+
+```bash
+cd backend/deploy/provision
+cp config/staging.env.example config/staging.env   # (or production.env)
+chmod 600 config/staging.env
+$EDITOR config/staging.env
+```
+
+It holds **only**: the bootstrap provider API tokens (DigitalOcean, Cloudflare
++ zone id, Backblaze B2 account key, Better Stack, a Tailscale API access
+token), the three browser-gate values (§4.4), and non-secret inputs (public
+domain, region, Firebase project id, the production reviewer id, etc.).
+**Generated application secrets are NOT here** — the orchestrator creates them
+and writes them straight to Bitwarden Secrets Manager. `config/*.env` is
+gitignored; do not commit it. Every key is documented in the `.example`.
+
+### 4.3 Run it
+
+```bash
+cd backend/deploy/provision
+./infra-foundation-setup.sh staging              # or: production
+./infra-foundation-setup.sh staging --dry-run    # preview intended actions, no changes
+./infra-foundation-setup.sh staging --from b2    # resume from a step
+./infra-foundation-setup.sh staging --only dns   # run a single step
+```
+
+Each step queries real cloud state and does only what is missing. At the first
+action that needs a browser (or a not-yet-provided token) it prints an
+`=== ACTION REQUIRED ===` block: what to do in which dashboard, and which
+`config/<env>.env` key to paste the result into, then exits. **Do the action,
+save the value, then re-run the same command** — completed steps are skipped
+and execution resumes at the gate. There is no progress file; the real cloud
+state is the checkpoint. Run `--dry-run` first to preview.
+
+### 4.4 The manual gates it stops at (cross-referenced to §1)
+
+The orchestrator automates everything scriptable, but these have no API and
+stay manual — see the linked section for the exact dashboard steps:
+
+- **Provider API bootstrap tokens** (one-time, each in that provider's
+  dashboard): DigitalOcean, Cloudflare (+ zone id), Backblaze B2 account key
+  (§1.3), Better Stack, and a Tailscale API access token (§1.1).
+- **GitHub PAT `ghcr_token`** — read-only `read:packages` on
+  `cloveclovedev/peppercheck-*` (§1.4). Browser-only; no API mints a PAT.
+- **Bitwarden Secrets Manager** projects + machine-account tokens — a
+  read-write token for the script and a read-only runtime token (§1.2).
+  Web-vault-only.
+- **Tailscale OAuth client** → `TS_CLIENT_ID` / `TS_AUDIENCE` (§1.1).
+  Admin-console-only.
+- **Operator-provided values**: the Firebase test-account credentials for the
+  restore drill (§1.2, restore-scoped project), the production required-reviewer
+  GitHub user id (§1.5), and the non-secret inputs (Firebase project id, domain,
+  region).
+
+### 4.5 What the orchestrator does NOT do
+
+- **Deploy.** §2 is unchanged — the first deploy is still triggered by pushing
+  to `refactor/go-api-vps` after §1 (or §4) is complete. The orchestrator only
+  provisions prerequisites.
+- **The §3 backup + restore drill.** Its monitoring step only *creates* the
+  Better Stack monitors + DO host alerts; run the first `pgBackRest` backup, the
+  restore drill, the RTO measurement, and the backup-chain verification by hand
+  per §3.
+- **The three browser gates in §4.4.** No API exists for them.
+
+The API-hitting steps mutate real cloud accounts and are first exercised on the
+real stand-up (they cannot be run against the real providers in CI); `--dry-run`
+previews the commands, and the reconcile model makes a bad create safe to fix
+and re-run.
