@@ -59,3 +59,7 @@ docs/
 - 図表やコード例を積極的に使用
 - 更新日時を明記
 - 関連ドキュメントへのリンクを適切に設置 
+
+# Development tooling
+
+- [Parallel local development with Git worktrees](development/git-worktrees.md)

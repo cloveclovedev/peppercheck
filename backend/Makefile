@@ -7,6 +7,11 @@
 
 .PHONY: help up down down-v reset logs ps backup test fmt vet
 
+# Override these when running backend tests from more than one worktree.
+# scripts/worktree/dev.sh supplies isolated values automatically.
+TEST_CONTAINER_NAME ?= pc-maketest
+TEST_POSTGRES_PORT ?= 55432
+
 help: ## Show available targets
 	grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  %-9s %s\n", $$1, $$2}'
 
@@ -32,7 +37,7 @@ backup: ## Start the opt-in backup profile (needs AGE_RECIPIENT in .env)
 	docker compose --profile backup up -d --build backup
 
 test: ## Run Go tests incl. DB integration on a throwaway Postgres (needs host atlas v1.2.0)
-	@set -e; name=pc-maketest; port=55432; \
+	@set -e; name="$(TEST_CONTAINER_NAME)"; port="$(TEST_POSTGRES_PORT)"; \
 	docker rm -f $$name >/dev/null 2>&1 || true; \
 	trap 'docker rm -f $$name >/dev/null 2>&1 || true' EXIT; \
 	docker run --rm -d --name $$name -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=peppercheck -e POSTGRES_MIGRATOR_PASSWORD=m -e POSTGRES_APP_PASSWORD=a -e POSTGRES_BACKUP_PASSWORD=b -v "$$PWD/deploy/postgres/init:/docker-entrypoint-initdb.d:ro" -p 127.0.0.1:$$port:5432 postgres:17 -c archive_mode=off >/dev/null; \
