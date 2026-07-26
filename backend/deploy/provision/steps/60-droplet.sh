@@ -255,8 +255,19 @@ reconcile_droplet() {
       || return $?
   fi
 
+  # Explicit `|| return 1`: the orchestrator runs each step under `set +e`
+  # (infra-foundation-setup.sh: `set +e; "$fn"; rc=$?; set -e`), so `set -e`
+  # is OFF inside reconcile_droplet and a bare `return 1` from
+  # ensure_deploy_keypair (its ssh-keygen-failure path) would be silently
+  # swallowed here — leaving deploy_pub_key="" and going on to create a real
+  # Droplet with an empty DEPLOY_SSH_PUBLIC_KEY. (ensure_deploy_keypair
+  # already cleans its own key dir on failure, and the cloud-init dir isn't
+  # created yet, so no cleanup is needed at this point.)
   local deploy_pub_key=""
-  deploy_pub_key="$(ensure_deploy_keypair)"
+  deploy_pub_key="$(ensure_deploy_keypair)" || {
+    log_err "deploy keypair generation failed; aborting before creating a Droplet"
+    return 1
+  }
 
   # The rendered cloud-init file contains the plaintext ephemeral
   # TAILSCALE_AUTH_KEY, so it must never survive an abnormal exit. Explicit

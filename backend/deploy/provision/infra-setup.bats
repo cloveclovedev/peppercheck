@@ -925,6 +925,21 @@ _droplet_setup_absent_gated() {
   [[ "$output" == *"TS_TAG"* ]]
 }
 
+@test "reconcile_droplet aborts (no create, no SSH_DEPLOY_KEY) when ssh-keygen fails" {
+  source "$ROOT/steps/60-droplet.sh"
+  _droplet_setup_absent_gated
+  # ssh-keygen fails: since the orchestrator runs steps under set +e,
+  # ensure_deploy_keypair's `return 1` only aborts the step because the call
+  # site guards it with `|| return 1`. Without that guard the step would go on
+  # to create a real Droplet with an empty DEPLOY_SSH_PUBLIC_KEY.
+  ssh_keygen() { return 1; }
+  run reconcile_droplet
+  [ "$status" -ne 0 ]
+  [ "$status" -ne 75 ]
+  ! grep -q "^compute droplet create" "$BATS_TEST_TMPDIR/doctl.log"
+  ! grep -q "^SSH_DEPLOY_KEY" "$BATS_TEST_TMPDIR/gh_secret_set.log"
+}
+
 @test "reconcile_droplet creates the Droplet with --user-data-file, generates+stores the deploy keypair, and captures+stores the host key" {
   source "$ROOT/steps/60-droplet.sh"
   _droplet_setup_absent_gated
