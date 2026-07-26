@@ -281,3 +281,96 @@ _bws_setup_reachable_project() {
   [ "$status" -eq 0 ]
   [ ! -s "$puts_log" ]
 }
+
+# --- step 30: reconcile_tailscale -------------------------------------------
+# acl_satisfied itself calls real jq (verified separately against fixtures
+# with a local jq — the bats/bats:latest image has no jq binary, matching
+# steps 10/20's convention of never invoking real jq inside a bats test; see
+# bws_secret_exists/bws_project_exists, always stubbed rather than exercised
+# for real). So reconcile_tailscale tests below stub acl_satisfied directly,
+# the same way reconcile_bws tests stub bws_project_exists rather than
+# feeding bws_cli real listing output through real jq.
+
+@test "reconcile_tailscale stops with NEEDS_MANUAL when TS_API_KEY is absent" {
+  source "$ROOT/steps/30-tailscale.sh"
+  unset TS_API_KEY TS_CLIENT_ID TS_AUDIENCE TS_TAG || true
+  run reconcile_tailscale
+  [ "$status" -eq 75 ]
+  [[ "$output" == *"TS_API_KEY"* ]]
+}
+
+@test "reconcile_tailscale stops with NEEDS_MANUAL naming TS_CLIENT_ID and TS_AUDIENCE when absent" {
+  source "$ROOT/steps/30-tailscale.sh"
+  export TS_API_KEY=ts-api-key-x
+  unset TS_CLIENT_ID TS_AUDIENCE || true
+  run reconcile_tailscale
+  [ "$status" -eq 75 ]
+  [[ "$output" == *"TS_CLIENT_ID"* ]]
+  [[ "$output" == *"TS_AUDIENCE"* ]]
+}
+
+@test "reconcile_tailscale proceeds past a satisfied ACL and mints an auth key" {
+  source "$ROOT/steps/30-tailscale.sh"
+  export TS_API_KEY=ts-api-key-x TS_CLIENT_ID=c TS_AUDIENCE=a TS_TAG=tag:pc-staging
+  calls_log="$BATS_TEST_TMPDIR/ts_api.log"
+  : > "$calls_log"
+  ts_api() {
+    printf '%s %s\n' "$1" "$2" >> "$calls_log"
+    case "$1 $2" in
+      "GET /tailnet/-/acl") echo '{"tagOwners":{"tag:ci-deploy":["autogroup:admin"]}}' ;;
+      "POST /tailnet/-/keys") echo '{"key":"tskey-xyz"}' ;;
+    esac
+  }
+  acl_satisfied() { return 0; }  # stub: ACL already has the required tags+grant
+  run reconcile_tailscale
+  [ "$status" -eq 0 ]
+  grep -q "^GET /tailnet/-/acl$" "$calls_log"
+  grep -q "^POST /tailnet/-/keys$" "$calls_log"
+}
+
+@test "reconcile_tailscale stops with NEEDS_MANUAL naming TAILSCALE_ACL when the grant is missing, without minting a key" {
+  source "$ROOT/steps/30-tailscale.sh"
+  export TS_API_KEY=ts-api-key-x TS_CLIENT_ID=c TS_AUDIENCE=a TS_TAG=tag:pc-staging
+  calls_log="$BATS_TEST_TMPDIR/ts_api.log"
+  : > "$calls_log"
+  ts_api() {
+    printf '%s %s\n' "$1" "$2" >> "$calls_log"
+    case "$1 $2" in
+      "GET /tailnet/-/acl") echo '{"tagOwners":{}}' ;;
+      "POST /tailnet/-/keys") echo '{"key":"tskey-xyz"}' ;;
+    esac
+  }
+  acl_satisfied() { return 1; }  # stub: ACL is missing required tags/grant
+  run reconcile_tailscale
+  [ "$status" -eq 75 ]
+  [[ "$output" == *"TAILSCALE_ACL"* ]]
+  ! grep -q "^POST /tailnet/-/keys$" "$calls_log"
+}
+
+@test "mint_tailscale_auth_key exports TS_AUTH_KEY (not the request body) after a successful mint" {
+  source "$ROOT/steps/30-tailscale.sh"
+  DRY_RUN=0
+  ts_api() { echo '{"key":"tskey-abc123"}'; }
+  mint_tailscale_auth_key tag:pc-staging
+  [ -n "${TS_AUTH_KEY:-}" ]
+  [ "$TS_AUTH_KEY" = "tskey-abc123" ]
+}
+
+@test "mint_tailscale_auth_key fails closed when the API response has no key" {
+  source "$ROOT/steps/30-tailscale.sh"
+  DRY_RUN=0
+  ts_api() { echo '{}'; }
+  run mint_tailscale_auth_key tag:pc-staging
+  [ "$status" -ne 0 ]
+}
+
+@test "mint_tailscale_auth_key does not call ts_api in dry-run" {
+  source "$ROOT/steps/30-tailscale.sh"
+  DRY_RUN=1
+  calls_log="$BATS_TEST_TMPDIR/ts_api.log"
+  : > "$calls_log"
+  ts_api() { echo "called" >> "$calls_log"; echo '{"key":"tskey-abc123"}'; }
+  run mint_tailscale_auth_key tag:pc-staging
+  [ "$status" -eq 0 ]
+  [ ! -s "$calls_log" ]
+}
