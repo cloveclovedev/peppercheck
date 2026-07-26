@@ -78,6 +78,14 @@ run_mutation() {
 # providers' CLIs directly.
 bws_cli() { command bws "$@"; }
 gh_api() { command gh api "$@"; }
+# doctl_cli lives here rather than in the step (60-droplet.sh) that first
+# needed it: step 70 (dns) also needs it, to query the Droplet's public IP as
+# the source of truth for the DNS A record, and the orchestrator's
+# --only/--from can run either step alone without the other step's file ever
+# being sourced. lib.sh is always sourced, so this is the one place both can
+# rely on it existing (and bats tests still override it after sourcing
+# lib.sh, exactly like bws_cli/gh_api above).
+doctl_cli() { command doctl "$@"; }
 
 # ensure_gh_environment — idempotent create-or-update of the GitHub
 # Environment named $ENV_NAME. A plain `PUT .../environments/{name}` with no

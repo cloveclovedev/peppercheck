@@ -985,6 +985,13 @@ _droplet_setup_absent_gated() {
   ! grep -q "^SSH_HOST_KEY" "$BATS_TEST_TMPDIR/gh_secret_set.log"
 }
 
+@test "reconcile_droplet no longer defines its own doctl_cli (moved to lib.sh, shared with step 70/dns)" {
+  # lib.sh (sourced by bats setup()) already defines the real doctl_cli, so
+  # this only guards against a regression that re-adds a duplicate/shadowing
+  # definition inside 60-droplet.sh itself.
+  ! grep -q '^doctl_cli()' "$ROOT/steps/60-droplet.sh"
+}
+
 @test "reconcile_droplet in dry-run does not create the Droplet, store secrets, or attempt host-key capture" {
   source "$ROOT/steps/60-droplet.sh"
   _droplet_setup_absent_gated
@@ -1021,4 +1028,161 @@ _droplet_setup_absent_gated() {
   ! grep -rq "tskey-ephemeral" "$TMPDIR" 2>/dev/null
   ! grep -rq "FAKE-PRIVATE-KEY" "$TMPDIR" 2>/dev/null
   [ -z "$(find "$TMPDIR" -type f 2>/dev/null)" ]
+}
+
+# --- step 70: reconcile_dns --------------------------------------------------
+# cf_api and doctl_cli are stubbed directly (same convention as every other
+# step's provider wrapper). _dns_a_record_fields (the jq-based list-response
+# parser) is ALSO stubbed directly in every test below, the same way step
+# 30's reconcile_tailscale tests stub acl_satisfied rather than feeding real
+# Tailscale JSON through a real jq binary — the bats/bats:latest image has no
+# jq, so the real script's jq usage is exercised only outside these tests.
+_dns_setup_gated() {
+  export ENV_NAME=staging CLOUDFLARE_API_TOKEN=cf-token-x CLOUDFLARE_ZONE_ID=zone-abc \
+    DO_TOKEN=do-token-x PUBLIC_DOMAIN=staging.peppercheck.dev
+}
+
+@test "reconcile_dns stops with NEEDS_MANUAL naming CLOUDFLARE_API_TOKEN/CLOUDFLARE_ZONE_ID when absent" {
+  source "$ROOT/steps/70-dns.sh"
+  _dns_setup_gated
+  unset CLOUDFLARE_API_TOKEN CLOUDFLARE_ZONE_ID || true
+  run reconcile_dns
+  [ "$status" -eq 75 ]
+  [[ "$output" == *"CLOUDFLARE_API_TOKEN"* ]]
+  [[ "$output" == *"CLOUDFLARE_ZONE_ID"* ]]
+}
+
+@test "reconcile_dns stops with NEEDS_MANUAL naming DO_TOKEN/PUBLIC_DOMAIN when absent" {
+  source "$ROOT/steps/70-dns.sh"
+  _dns_setup_gated
+  unset DO_TOKEN PUBLIC_DOMAIN || true
+  run reconcile_dns
+  [ "$status" -eq 75 ]
+  [[ "$output" == *"DO_TOKEN"* ]]
+  [[ "$output" == *"PUBLIC_DOMAIN"* ]]
+}
+
+@test "reconcile_dns fails closed, without calling cf_api, when the Droplet has no public IP yet" {
+  source "$ROOT/steps/70-dns.sh"
+  _dns_setup_gated
+  doctl_cli() { printf ''; }  # query succeeded but returned an empty IP
+  calls_log="$BATS_TEST_TMPDIR/cf_api.log"
+  : > "$calls_log"
+  cf_api() { printf '%s\n' "$*" >> "$calls_log"; }
+  run reconcile_dns
+  [ "$status" -ne 0 ]
+  [ "$status" -ne 75 ]  # a hard error, not a manual gate
+  [[ "$output" == *"step 60"* ]]
+  [ ! -s "$calls_log" ]
+}
+
+@test "reconcile_dns fails closed, without calling cf_api, when the doctl droplet-get query itself fails" {
+  source "$ROOT/steps/70-dns.sh"
+  _dns_setup_gated
+  doctl_cli() { return 1; }  # transient failure (expired token, network blip)
+  calls_log="$BATS_TEST_TMPDIR/cf_api.log"
+  : > "$calls_log"
+  cf_api() { printf '%s\n' "$*" >> "$calls_log"; }
+  run reconcile_dns
+  [ "$status" -ne 0 ]
+  [ "$status" -ne 75 ]
+  [ ! -s "$calls_log" ]
+}
+
+@test "reconcile_dns creates the A record with the queried IP and proxied:false when none exists" {
+  source "$ROOT/steps/70-dns.sh"
+  _dns_setup_gated
+  doctl_cli() { printf '203.0.113.10'; }
+  _dns_a_record_fields() { :; }  # empty output == no existing A record
+  calls_log="$BATS_TEST_TMPDIR/cf_api.log"
+  : > "$calls_log"
+  cf_api() {
+    printf '%s\t%s\t%s\n' "$1" "$2" "${3:-}" >> "$calls_log"
+    [ "$1" = GET ] && echo '{"result":[]}'
+    return 0
+  }
+  run reconcile_dns
+  [ "$status" -eq 0 ]
+  grep -q "^GET	/zones/zone-abc/dns_records?type=A&name=staging.peppercheck.dev	$" "$calls_log"
+  post_line="$(grep '^POST	/zones/zone-abc/dns_records	' "$calls_log")"
+  [ -n "$post_line" ]
+  [[ "$post_line" == *'"type":"A"'* ]]
+  [[ "$post_line" == *'"name":"staging.peppercheck.dev"'* ]]
+  [[ "$post_line" == *'"content":"203.0.113.10"'* ]]
+  [[ "$post_line" == *'"proxied":false'* ]]
+  ! grep -q "^PATCH" "$calls_log"
+}
+
+@test "reconcile_dns is a no-op when the existing A record already has the correct IP and proxied:false" {
+  source "$ROOT/steps/70-dns.sh"
+  _dns_setup_gated
+  doctl_cli() { printf '203.0.113.10'; }
+  _dns_a_record_fields() { printf 'rec1\t203.0.113.10\tfalse'; }
+  calls_log="$BATS_TEST_TMPDIR/cf_api.log"
+  : > "$calls_log"
+  cf_api() {
+    printf '%s\t%s\t%s\n' "$1" "$2" "${3:-}" >> "$calls_log"
+    [ "$1" = GET ] && echo '{"result":[{"id":"rec1","content":"203.0.113.10","proxied":false}]}'
+  }
+  run reconcile_dns
+  [ "$status" -eq 0 ]
+  ! grep -q "^POST" "$calls_log"
+  ! grep -q "^PATCH" "$calls_log"
+}
+
+@test "reconcile_dns PATCHes fixing content when the existing A record has the wrong IP" {
+  source "$ROOT/steps/70-dns.sh"
+  _dns_setup_gated
+  doctl_cli() { printf '203.0.113.10'; }  # current, correct IP
+  _dns_a_record_fields() { printf 'rec1\t198.51.100.5\tfalse'; }  # stale IP
+  calls_log="$BATS_TEST_TMPDIR/cf_api.log"
+  : > "$calls_log"
+  cf_api() {
+    printf '%s\t%s\t%s\n' "$1" "$2" "${3:-}" >> "$calls_log"
+    [ "$1" = GET ] && echo '{"result":[{"id":"rec1","content":"198.51.100.5","proxied":false}]}'
+    return 0
+  }
+  run reconcile_dns
+  [ "$status" -eq 0 ]
+  patch_line="$(grep '^PATCH	/zones/zone-abc/dns_records/rec1	' "$calls_log")"
+  [ -n "$patch_line" ]
+  [[ "$patch_line" == *'"content":"203.0.113.10"'* ]]
+  [[ "$patch_line" == *'"proxied":false'* ]]
+  ! grep -q "^POST" "$calls_log"
+}
+
+@test "reconcile_dns PATCHes fixing proxied:true back to false even when the IP is already correct" {
+  source "$ROOT/steps/70-dns.sh"
+  _dns_setup_gated
+  doctl_cli() { printf '203.0.113.10'; }
+  _dns_a_record_fields() { printf 'rec1\t203.0.113.10\ttrue'; }  # orange-cloud
+  calls_log="$BATS_TEST_TMPDIR/cf_api.log"
+  : > "$calls_log"
+  cf_api() {
+    printf '%s\t%s\t%s\n' "$1" "$2" "${3:-}" >> "$calls_log"
+    [ "$1" = GET ] && echo '{"result":[{"id":"rec1","content":"203.0.113.10","proxied":true}]}'
+    return 0
+  }
+  run reconcile_dns
+  [ "$status" -eq 0 ]
+  patch_line="$(grep '^PATCH	/zones/zone-abc/dns_records/rec1	' "$calls_log")"
+  [ -n "$patch_line" ]
+  [[ "$patch_line" == *'"proxied":false'* ]]
+  ! grep -q "^POST" "$calls_log"
+}
+
+@test "reconcile_dns propagates a Cloudflare GET lookup failure as a hard error, without POSTing" {
+  source "$ROOT/steps/70-dns.sh"
+  _dns_setup_gated
+  doctl_cli() { printf '203.0.113.10'; }
+  calls_log="$BATS_TEST_TMPDIR/cf_api.log"
+  : > "$calls_log"
+  cf_api() {
+    printf '%s\n' "$*" >> "$calls_log"
+    [ "$1" = GET ] && return 1  # curl -fsS failure (e.g. bad token)
+  }
+  run reconcile_dns
+  [ "$status" -ne 0 ]
+  [ "$status" -ne 75 ]
+  ! grep -q "^POST" "$calls_log"
 }

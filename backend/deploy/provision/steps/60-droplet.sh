@@ -51,7 +51,8 @@
 set -euo pipefail
 
 # --- Provider wrappers — overridden by bats tests, never called directly. ---
-doctl_cli() { command doctl "$@"; }
+# doctl_cli now lives in lib.sh (shared with step 70/dns — see lib.sh's own
+# comment on doctl_cli for why).
 ssh_keygen() { command ssh-keygen "$@"; }
 ssh_keyscan() { command ssh-keyscan "$@"; }
 
