@@ -63,3 +63,62 @@ setup() {
   run require_known_step from bws secrets bws tailscale
   [ "$status" -eq 0 ]
 }
+
+@test "gen_password yields a 32+ char token with no shell-unsafe chars" {
+  source "$ROOT/steps/10-secrets.sh"
+  run gen_password
+  [ "$status" -eq 0 ]
+  [ "${#output}" -ge 32 ]
+  [[ ! "$output" =~ [\'\"\`\$\\] ]]
+}
+
+@test "reconcile_secrets is a no-op when all secrets already exist in BWS" {
+  source "$ROOT/steps/10-secrets.sh"
+  bws_cli() { echo '[{"key":"database_url"},{"key":"postgres_app_pw"}]'; }  # list returns everything
+  bws_secret_exists() { return 0; }  # stub: all present
+  # Present even though generation is skipped: the age-key re-run-safety
+  # path always derives AGE_RECIPIENT from the (here: stubbed) stored
+  # private key, regardless of whether anything else was regenerated.
+  bws_get_secret_value() { echo "AGE-SECRET-KEY-STUB"; }
+  age_keygen() { echo "age1stubpublickey"; }
+  created=0; bws_put_secret() { created=1; }
+  export BWS_WRITE_TOKEN=x BWS_PROJECT_ID=p BWS_RESTORE_PROJECT_ID=r
+  run reconcile_secrets
+  [ "$status" -eq 0 ]
+  [ "$created" -eq 0 ]  # nothing regenerated
+}
+
+@test "reconcile_secrets stops with NEEDS_MANUAL when the BWS write token is absent" {
+  source "$ROOT/steps/10-secrets.sh"
+  unset BWS_WRITE_TOKEN || true
+  run reconcile_secrets
+  [ "$status" -eq 75 ]
+  [[ "$output" == *"BWS_WRITE_TOKEN"* ]]
+}
+
+@test "reconcile_secrets stops with NEEDS_MANUAL when the BWS project IDs are absent" {
+  source "$ROOT/steps/10-secrets.sh"
+  export BWS_WRITE_TOKEN=x
+  unset BWS_PROJECT_ID BWS_RESTORE_PROJECT_ID || true
+  run reconcile_secrets
+  [ "$status" -eq 75 ]
+  [[ "$output" == *"BWS_PROJECT_ID"* ]]
+  [[ "$output" == *"BWS_RESTORE_PROJECT_ID"* ]]
+}
+
+@test "reconcile_secrets composes database_url with the exact freshly-generated postgres_app_pw" {
+  source "$ROOT/steps/10-secrets.sh"
+  bws_secret_exists() { return 1; }  # nothing exists yet
+  puts_log="$BATS_TEST_TMPDIR/puts.log"
+  : > "$puts_log"
+  bws_put_secret() { printf '%s=%s\n' "$1" "$2" >> "$puts_log"; }
+  age_keygen() {
+    if [ "${1:-}" = "-y" ]; then echo "age1stubpublickey"; else echo "AGE-SECRET-KEY-STUB"; fi
+  }
+  export BWS_WRITE_TOKEN=x BWS_PROJECT_ID=p BWS_RESTORE_PROJECT_ID=r
+  run reconcile_secrets
+  [ "$status" -eq 0 ]
+  app_pw="$(grep '^postgres_app_pw=' "$puts_log" | cut -d= -f2)"
+  [ -n "$app_pw" ]
+  grep -q "^database_url=postgres://peppercheck_app:${app_pw}@postgres:5432/peppercheck?sslmode=disable$" "$puts_log"
+}

@@ -1,0 +1,139 @@
+#!/usr/bin/env bash
+# Step 10: generate the 7 generatable application secrets — the 4 Postgres
+# role passwords, the pgBackRest cipher passphrase, and the two composed
+# connection strings that must carry the matching Postgres password — plus
+# the restore-drill age keypair, and push them into Bitwarden Secrets
+# Manager (BWS). The remaining 3 names in the 10-secret env-project
+# allowlist (`b2_key_id`/`b2_key_secret` from step 40-b2, `ghcr_token` a
+# manual PAT gated in steps 20/50) are NOT this step's job — see
+# RUNBOOK.md §1.2 for the full inventory.
+#
+# Idempotent: every secret is checked via bws_secret_exists before writing,
+# so a re-run never regenerates an already-stored password — regenerating
+# postgres_app_pw/postgres_migrator_pw after the fact would desync them from
+# the already-stored database_url/migrator_database_url. AGE_RECIPIENT (the
+# age public key, not itself a secret) is always exported so step 50 can set
+# it as a GitHub Environment variable, even on a re-run where the private
+# key already exists in the restore-scoped project.
+set -euo pipefail
+
+# --- Provider wrappers — overridden by bats tests, never called directly. ---
+bws_cli() { command bws "$@"; }
+age_keygen() { command age-keygen "$@"; }
+
+# bws_secret_exists NAME PROJECT_ID
+bws_secret_exists() {
+  local name="$1" project_id="$2"
+  bws_cli secret list "$project_id" | jq -e --arg n "$name" 'any(.[]; .key == $n)' >/dev/null
+}
+
+# bws_put_secret NAME VALUE PROJECT_ID
+bws_put_secret() {
+  local name="$1" value="$2" project_id="$3"
+  bws_cli secret create "$name" "$value" "$project_id" >/dev/null
+}
+
+# bws_get_secret_value NAME PROJECT_ID
+# Only needed on the age-key re-run path (AGE_RECIPIENT re-derivation);
+# every other secret here is write-once so its plaintext never needs
+# reading back (see ensure_password).
+bws_get_secret_value() {
+  local name="$1" project_id="$2"
+  bws_cli secret list "$project_id" | jq -r --arg n "$name" '.[] | select(.key == $n) | .value'
+}
+
+# gen_password — 32-char, URL-safe, no shell-unsafe characters. Reads
+# /dev/urandom directly through coreutils base64 rather than `openssl rand`
+# so this one helper carries no dependency on openssl being installed.
+gen_password() {
+  head -c 24 /dev/urandom | base64 | tr '+/' '-_' | tr -d '=\n'
+}
+
+# ensure_password NAME PROJECT_ID
+# Generates + stores NAME if absent, echoing the fresh value on stdout so a
+# caller can compose a dependent secret from it. If NAME already exists this
+# is a no-op and nothing is echoed: database_url/migrator_database_url are
+# always (re)created in the same reconcile_secrets run as the password they
+# embed, so when the password already exists its dependent is expected to
+# already exist too (see ensure_composed_url's own existence check).
+ensure_password() {
+  local name="$1" project_id="$2" value
+  if bws_secret_exists "$name" "$project_id"; then
+    log_info "secret already present, skipping: ${name}"
+    return 0
+  fi
+  value="$(gen_password)"
+  # Redirect run_mutation's own stdout (its "[dry-run] ..." notice) to
+  # stderr: this function's stdout is captured via command substitution by
+  # its caller to obtain $value, and must carry nothing else.
+  run_mutation "put ${name}" bws_put_secret "$name" "$value" "$project_id" 1>&2
+  printf '%s' "$value"
+}
+
+# ensure_composed_url NAME PROJECT_ID VALUE SOURCE_PW SOURCE_NAME
+# Stores the composed connection-string secret NAME=VALUE if absent. VALUE
+# must already embed SOURCE_PW (the matching Postgres password generated
+# earlier in this same run) so the two secrets can never desync.
+ensure_composed_url() {
+  local name="$1" project_id="$2" value="$3" source_pw="$4" source_name="$5"
+  if bws_secret_exists "$name" "$project_id"; then
+    log_info "secret already present, skipping: ${name}"
+    return 0
+  fi
+  if [ -z "$source_pw" ]; then
+    log_err "cannot compose ${name}: ${source_name} already exists in BWS but was not (re)generated this run, so its plaintext is unavailable to compose ${name} — resolve manually"
+    return 1
+  fi
+  run_mutation "put ${name}" bws_put_secret "$name" "$value" "$project_id"
+}
+
+# ensure_age_keypair RESTORE_PROJECT_ID
+# The age private key lives only in the restore-scoped project, never the
+# env project (RUNBOOK.md §1.2). AGE_RECIPIENT (its public key) is exported
+# unconditionally — even when the private key already existed and
+# generation was skipped — by deriving it fresh via `age-keygen -y` from the
+# stored (or just-generated) private key, so step 50 can read it from the
+# environment within the same orchestrator run.
+ensure_age_keypair() {
+  local restore_project_id="$1" private_key
+  if bws_secret_exists age_private_key "$restore_project_id"; then
+    log_info "secret already present, skipping: age_private_key"
+    private_key="$(bws_get_secret_value age_private_key "$restore_project_id")"
+  else
+    private_key="$(age_keygen)"
+    run_mutation "put age_private_key" bws_put_secret age_private_key "$private_key" "$restore_project_id" 1>&2
+  fi
+  AGE_RECIPIENT="$(printf '%s\n' "$private_key" | age_keygen -y)"
+  export AGE_RECIPIENT
+}
+
+reconcile_secrets() {
+  local missing=() bws_write_token="" project_id="" restore_project_id=""
+  bws_write_token="$(require_cfg BWS_WRITE_TOKEN)" || missing+=(BWS_WRITE_TOKEN)
+  project_id="$(require_cfg BWS_PROJECT_ID)" || missing+=(BWS_PROJECT_ID)
+  restore_project_id="$(require_cfg BWS_RESTORE_PROJECT_ID)" || missing+=(BWS_RESTORE_PROJECT_ID)
+  if [ "${#missing[@]}" -gt 0 ]; then
+    need_manual "${missing[*]}" \
+      "Create the ${ENV_NAME:-target} + restore-scoped Bitwarden Secrets Manager projects and a read-write machine-account token (web-vault action), then set: ${missing[*]}" \
+      || return $?
+  fi
+
+  export BWS_ACCESS_TOKEN="$bws_write_token"
+
+  local postgres_app_pw postgres_migrator_pw pw_name
+  postgres_app_pw="$(ensure_password postgres_app_pw "$project_id")"
+  postgres_migrator_pw="$(ensure_password postgres_migrator_pw "$project_id")"
+  for pw_name in postgres_superuser_pw postgres_backup_pw pgbackrest_cipher; do
+    ensure_password "$pw_name" "$project_id" >/dev/null
+  done
+
+  ensure_composed_url database_url "$project_id" \
+    "postgres://peppercheck_app:${postgres_app_pw}@postgres:5432/peppercheck?sslmode=disable" \
+    "$postgres_app_pw" postgres_app_pw
+
+  ensure_composed_url migrator_database_url "$project_id" \
+    "postgres://peppercheck_migrator:${postgres_migrator_pw}@postgres:5432/peppercheck?sslmode=disable" \
+    "$postgres_migrator_pw" postgres_migrator_pw
+
+  ensure_age_keypair "$restore_project_id"
+}
