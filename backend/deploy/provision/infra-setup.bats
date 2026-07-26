@@ -374,3 +374,121 @@ _bws_setup_reachable_project() {
   [ "$status" -eq 0 ]
   [ ! -s "$calls_log" ]
 }
+
+# --- step 40: reconcile_b2 ---------------------------------------------------
+# Common env for the "past the gate" tests below: all 6 gate vars present,
+# `b2 account authorize` stubbed ok, and both BWS projects reporting the key
+# as already present (real key-create/put-secret path opted into per-test).
+_b2_setup_gated() {
+  export B2_APPLICATION_KEY_ID=master-key-id B2_APPLICATION_KEY=master-key \
+    B2_BUCKET=pc-staging-backups BWS_WRITE_TOKEN=wt BWS_PROJECT_ID=envproj \
+    BWS_RESTORE_PROJECT_ID=restoreproj ENV_NAME=staging
+  b2_cli() { :; }
+  bws_secret_exists() { return 0; }  # default: nothing left to create
+  bws_put_secret() { :; }
+}
+
+@test "reconcile_b2 stops with NEEDS_MANUAL when a gate var is absent" {
+  source "$ROOT/steps/40-b2.sh"
+  unset B2_APPLICATION_KEY_ID B2_APPLICATION_KEY B2_BUCKET BWS_WRITE_TOKEN \
+    BWS_PROJECT_ID BWS_RESTORE_PROJECT_ID || true
+  run reconcile_b2
+  [ "$status" -eq 75 ]
+  [[ "$output" == *"B2_APPLICATION_KEY_ID"* ]]
+  [[ "$output" == *"B2_BUCKET"* ]]
+  [[ "$output" == *"BWS_RESTORE_PROJECT_ID"* ]]
+}
+
+@test "reconcile_b2 does not create the bucket when it already exists" {
+  source "$ROOT/steps/40-b2.sh"
+  _b2_setup_gated
+  calls_log="$BATS_TEST_TMPDIR/b2_cli.log"
+  : > "$calls_log"
+  b2_cli() {
+    printf '%s\n' "$*" >> "$calls_log"
+    case "$1 $2" in
+      "bucket get") return 0 ;;      # bucket already exists
+    esac
+    return 0
+  }
+  run reconcile_b2
+  [ "$status" -eq 0 ]
+  ! grep -q "^bucket create" "$calls_log"
+  grep -q "^bucket update ${B2_BUCKET}" "$calls_log"
+}
+
+@test "reconcile_b2 creates the bucket with --file-lock-enabled when absent" {
+  source "$ROOT/steps/40-b2.sh"
+  _b2_setup_gated
+  calls_log="$BATS_TEST_TMPDIR/b2_cli.log"
+  : > "$calls_log"
+  b2_cli() {
+    printf '%s\n' "$*" >> "$calls_log"
+    case "$1 $2" in
+      "bucket get") return 1 ;;      # bucket absent
+    esac
+    return 0
+  }
+  run reconcile_b2
+  [ "$status" -eq 0 ]
+  grep -q "^bucket create ${B2_BUCKET} allPrivate --file-lock-enabled$" "$calls_log"
+  grep -q "^bucket update ${B2_BUCKET}" "$calls_log"
+}
+
+@test "reconcile_b2 mints both keys with distinct, non-bypassGovernance capability lists, into the correct BWS projects" {
+  source "$ROOT/steps/40-b2.sh"
+  _b2_setup_gated
+  bws_secret_exists() { return 1; }  # neither project has a key yet
+  key_calls_log="$BATS_TEST_TMPDIR/key_create.log"
+  : > "$key_calls_log"
+  puts_log="$BATS_TEST_TMPDIR/puts.log"
+  : > "$puts_log"
+  b2_cli() {
+    case "$1 $2" in
+      "bucket get") return 0 ;;
+      "key create")
+        shift 2
+        printf '%s\n' "$*" >> "$key_calls_log"
+        # args: --bucket BUCKET keyName capabilities
+        case "$3" in
+          *-backup) echo "backupKeyId123"; echo "backupKeySecretXYZ" ;;
+          *-restore) echo "restoreKeyId456"; echo "restoreKeySecretABC" ;;
+        esac
+        ;;
+    esac
+    return 0
+  }
+  bws_put_secret() { printf '%s\t%s\t%s\n' "$1" "$2" "$3" >> "$puts_log"; }
+  run reconcile_b2
+  [ "$status" -eq 0 ]
+
+  # Capability lists never include bypassGovernance.
+  ! grep -q "bypassGovernance" "$key_calls_log"
+  # Runtime key: read/write, into the env project.
+  grep -q "pc-staging-backup listBuckets,listFiles,readFiles,writeFiles,deleteFiles$" "$key_calls_log"
+  # Restore key: read-only, into the restore project.
+  grep -q "pc-staging-restore listBuckets,listFiles,readFiles$" "$key_calls_log"
+
+  grep -q "^b2_key_id	backupKeyId123	envproj$" "$puts_log"
+  grep -q "^b2_key_secret	backupKeySecretXYZ	envproj$" "$puts_log"
+  grep -q "^b2_key_id	restoreKeyId456	restoreproj$" "$puts_log"
+  grep -q "^b2_key_secret	restoreKeySecretABC	restoreproj$" "$puts_log"
+}
+
+@test "reconcile_b2 is a no-op for key creation when both BWS projects already have b2_key_id" {
+  source "$ROOT/steps/40-b2.sh"
+  _b2_setup_gated
+  bws_secret_exists() { return 0; }  # both projects already have a key
+  calls_log="$BATS_TEST_TMPDIR/b2_cli.log"
+  : > "$calls_log"
+  b2_cli() {
+    printf '%s\n' "$*" >> "$calls_log"
+    case "$1 $2" in
+      "bucket get") return 0 ;;
+    esac
+    return 0
+  }
+  run reconcile_b2
+  [ "$status" -eq 0 ]
+  ! grep -q "^key create" "$calls_log"
+}
