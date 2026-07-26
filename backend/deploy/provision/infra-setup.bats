@@ -1434,3 +1434,297 @@ UFW
   [ "$status" -ne 0 ]
   [[ "$output" == *"644"* ]]
 }
+
+# --- step 90: reconcile_monitoring -------------------------------------------
+# bs_api and doctl_cli are stubbed directly (same convention as every other
+# step's provider wrapper). _bs_monitor_url_exists / _bs_heartbeat_name_exists
+# / _do_alert_exists (the jq-based list-response parsers) are ALSO stubbed
+# directly in most tests below, the same way step 70's reconcile_dns tests
+# stub _dns_a_record_fields rather than feeding real JSON through a real jq
+# binary — the bats/bats:latest image this suite runs in has no jq.
+_monitoring_setup_gated() {
+  export ENV_NAME=staging BETTERSTACK_API_TOKEN=bs-token-x DO_TOKEN=do-token-x \
+    PUBLIC_DOMAIN=staging.peppercheck.dev ALERT_EMAIL=ops-staging@example.com
+}
+
+@test "90-monitoring.sh never edits/installs/copies the already-merged monitoring scripts" {
+  # The file header legitimately DOCUMENTS these filenames (what it must not
+  # touch) — this asserts no command that would actually mutate one of them
+  # (install/cp/mv/sed -i/tee/> redirect targeting the script) is present.
+  ! grep -qE '(install |cp |mv |sed -i|tee |> ?)[^\n]*(wal-freshness\.sh|host-checks\.sh|backup\.sh|worker\.go)' \
+    "$ROOT/steps/90-monitoring.sh"
+}
+
+@test "reconcile_monitoring stops with NEEDS_MANUAL naming all missing gate vars" {
+  source "$ROOT/steps/90-monitoring.sh"
+  _monitoring_setup_gated
+  unset BETTERSTACK_API_TOKEN DO_TOKEN PUBLIC_DOMAIN ALERT_EMAIL
+  run reconcile_monitoring
+  [ "$status" -eq 75 ]
+  [[ "$output" == *"BETTERSTACK_API_TOKEN"* ]]
+  [[ "$output" == *"DO_TOKEN"* ]]
+  [[ "$output" == *"PUBLIC_DOMAIN"* ]]
+  [[ "$output" == *"ALERT_EMAIL"* ]]
+}
+
+@test "reconcile_monitoring hard-fails (does not call bs_api) when ENV_NAME is empty" {
+  source "$ROOT/steps/90-monitoring.sh"
+  _monitoring_setup_gated
+  export ENV_NAME=""
+  calls_log="$BATS_TEST_TMPDIR/bs_api.log"
+  : > "$calls_log"
+  bs_api() { printf '%s\n' "$*" >> "$calls_log"; }
+  run reconcile_monitoring
+  [ "$status" -ne 0 ]
+  [ "$status" -ne 75 ]
+  [ ! -s "$calls_log" ]
+}
+
+@test "reconcile_monitoring is a no-op when both uptime monitors, all 4 heartbeats, and all 3 DO alerts already exist" {
+  source "$ROOT/steps/90-monitoring.sh"
+  _monitoring_setup_gated
+  post_calls_log="$BATS_TEST_TMPDIR/bs_post.log"
+  : > "$post_calls_log"
+  create_calls_log="$BATS_TEST_TMPDIR/do_create.log"
+  : > "$create_calls_log"
+  bs_api() {
+    if [ "$1" = GET ]; then echo '{"data":[]}'; return 0; fi
+    printf '%s\n' "$*" >> "$post_calls_log"
+  }
+  doctl_cli() {
+    [ "$1" = compute ] && { printf '12345'; return 0; }
+    if [ "$3" = list ]; then printf '[]'; else printf '%s\n' "$*" >> "$create_calls_log"; fi
+  }
+  _bs_monitor_url_exists() { return 0; }
+  _bs_heartbeat_name_exists() { return 0; }
+  _do_alert_exists() { return 0; }
+  run reconcile_monitoring
+  [ "$status" -eq 0 ]
+  [ ! -s "$post_calls_log" ]
+  [ ! -s "$create_calls_log" ]
+}
+
+@test "reconcile_monitoring creates the /livez and /readyz uptime monitors when absent" {
+  source "$ROOT/steps/90-monitoring.sh"
+  _monitoring_setup_gated
+  doctl_cli() {
+    [ "$1" = compute ] && { printf '12345'; return 0; }
+    [ "$3" = list ] && { printf '[]'; return 0; }
+    return 0
+  }
+  _do_alert_exists() { return 0; }
+  _bs_heartbeat_name_exists() { return 0; }
+  post_calls_log="$BATS_TEST_TMPDIR/bs_post.log"
+  : > "$post_calls_log"
+  bs_api() {
+    if [ "$1" = GET ]; then echo '{"data":[]}'; return 0; fi
+    printf '%s\t%s\t%s\n' "$1" "$2" "$3" >> "$post_calls_log"
+  }
+  run reconcile_monitoring
+  [ "$status" -eq 0 ]
+  livez_line="$(grep '^POST	/monitors	' "$post_calls_log" | grep livez)"
+  readyz_line="$(grep '^POST	/monitors	' "$post_calls_log" | grep readyz)"
+  [ -n "$livez_line" ]
+  [ -n "$readyz_line" ]
+  [[ "$livez_line" == *'"monitor_type":"status"'* ]]
+  [[ "$livez_line" == *'"url":"https://staging.peppercheck.dev/livez"'* ]]
+  [[ "$livez_line" == *'"ssl_expiration":14'* ]]
+  [[ "$readyz_line" == *'"url":"https://staging.peppercheck.dev/readyz"'* ]]
+}
+
+@test "reconcile_monitoring (staging) creates monitors with every notification channel disabled" {
+  source "$ROOT/steps/90-monitoring.sh"
+  _monitoring_setup_gated
+  doctl_cli() {
+    [ "$1" = compute ] && { printf '12345'; return 0; }
+    [ "$3" = list ] && { printf '[]'; return 0; }
+    return 0
+  }
+  _do_alert_exists() { return 0; }
+  _bs_heartbeat_name_exists() { return 0; }
+  post_calls_log="$BATS_TEST_TMPDIR/bs_post.log"
+  : > "$post_calls_log"
+  bs_api() {
+    if [ "$1" = GET ]; then echo '{"data":[]}'; return 0; fi
+    printf '%s\t%s\t%s\n' "$1" "$2" "$3" >> "$post_calls_log"
+  }
+  run reconcile_monitoring
+  [ "$status" -eq 0 ]
+  livez_line="$(grep '^POST	/monitors	' "$post_calls_log" | grep livez)"
+  [[ "$livez_line" == *'"call":false'* ]]
+  [[ "$livez_line" == *'"sms":false'* ]]
+  [[ "$livez_line" == *'"email":false'* ]]
+  [[ "$livez_line" == *'"push":false'* ]]
+  [[ "$livez_line" == *'"critical_alert":false'* ]]
+}
+
+@test "reconcile_monitoring (production) creates monitors with no notification-channel fields at all" {
+  source "$ROOT/steps/90-monitoring.sh"
+  _monitoring_setup_gated
+  export ENV_NAME=production
+  doctl_cli() {
+    [ "$1" = compute ] && { printf '12345'; return 0; }
+    [ "$3" = list ] && { printf '[]'; return 0; }
+    return 0
+  }
+  _do_alert_exists() { return 0; }
+  _bs_heartbeat_name_exists() { return 0; }
+  post_calls_log="$BATS_TEST_TMPDIR/bs_post.log"
+  : > "$post_calls_log"
+  bs_api() {
+    if [ "$1" = GET ]; then echo '{"data":[]}'; return 0; fi
+    printf '%s\t%s\t%s\n' "$1" "$2" "$3" >> "$post_calls_log"
+  }
+  run reconcile_monitoring
+  [ "$status" -eq 0 ]
+  livez_line="$(grep '^POST	/monitors	' "$post_calls_log" | grep livez)"
+  [[ "$livez_line" != *'"call"'* ]]
+  [[ "$livez_line" != *'"email"'* ]]
+}
+
+@test "reconcile_monitoring does not create a monitor whose url already exists" {
+  source "$ROOT/steps/90-monitoring.sh"
+  _monitoring_setup_gated
+  doctl_cli() {
+    [ "$1" = compute ] && { printf '12345'; return 0; }
+    [ "$3" = list ] && { printf '[]'; return 0; }
+    return 0
+  }
+  _do_alert_exists() { return 0; }
+  _bs_heartbeat_name_exists() { return 0; }
+  _bs_monitor_url_exists() { return 0; }
+  post_calls_log="$BATS_TEST_TMPDIR/bs_post.log"
+  : > "$post_calls_log"
+  bs_api() {
+    if [ "$1" = GET ]; then echo '{"data":[]}'; return 0; fi
+    printf '%s\n' "$*" >> "$post_calls_log"
+  }
+  run reconcile_monitoring
+  [ "$status" -eq 0 ]
+  ! grep -q "/monitors" "$post_calls_log"
+}
+
+@test "reconcile_monitoring creates all 4 heartbeats when absent, with the documented period/grace" {
+  source "$ROOT/steps/90-monitoring.sh"
+  _monitoring_setup_gated
+  doctl_cli() {
+    [ "$1" = compute ] && { printf '12345'; return 0; }
+    [ "$3" = list ] && { printf '[]'; return 0; }
+    return 0
+  }
+  _do_alert_exists() { return 0; }
+  _bs_monitor_url_exists() { return 0; }
+  post_calls_log="$BATS_TEST_TMPDIR/bs_post.log"
+  : > "$post_calls_log"
+  bs_api() {
+    if [ "$1" = GET ]; then echo '{"data":[]}'; return 0; fi
+    printf '%s\t%s\t%s\n' "$1" "$2" "$3" >> "$post_calls_log"
+  }
+  run reconcile_monitoring
+  [ "$status" -eq 0 ]
+  [ "$(grep -c '^POST	/heartbeats	' "$post_calls_log")" -eq 4 ]
+  worker_line="$(grep '^POST	/heartbeats	' "$post_calls_log" | grep 'worker')"
+  backup_line="$(grep '^POST	/heartbeats	' "$post_calls_log" | grep 'backup')"
+  wal_line="$(grep '^POST	/heartbeats	' "$post_calls_log" | grep 'wal-freshness')"
+  host_line="$(grep '^POST	/heartbeats	' "$post_calls_log" | grep 'host-checks')"
+  [[ "$worker_line" == *'"name":"pc-staging worker"'* ]]
+  [[ "$worker_line" == *'"period":300'* ]]
+  [[ "$worker_line" == *'"grace":120'* ]]
+  [[ "$backup_line" == *'"period":86400'* ]]
+  [[ "$backup_line" == *'"grace":43200'* ]]
+  [[ "$wal_line" == *'"period":120'* ]]
+  [[ "$wal_line" == *'"grace":240'* ]]
+  [[ "$host_line" == *'"period":300'* ]]
+  [[ "$host_line" == *'"grace":600'* ]]
+  # staging: every heartbeat body also carries the disabled-channel fields
+  [[ "$worker_line" == *'"call":false'* ]]
+}
+
+@test "reconcile_monitoring does not create a heartbeat whose name already exists" {
+  source "$ROOT/steps/90-monitoring.sh"
+  _monitoring_setup_gated
+  doctl_cli() {
+    [ "$1" = compute ] && { printf '12345'; return 0; }
+    [ "$3" = list ] && { printf '[]'; return 0; }
+    return 0
+  }
+  _do_alert_exists() { return 0; }
+  _bs_monitor_url_exists() { return 0; }
+  _bs_heartbeat_name_exists() { return 0; }
+  post_calls_log="$BATS_TEST_TMPDIR/bs_post.log"
+  : > "$post_calls_log"
+  bs_api() {
+    if [ "$1" = GET ]; then echo '{"data":[]}'; return 0; fi
+    printf '%s\n' "$*" >> "$post_calls_log"
+  }
+  run reconcile_monitoring
+  [ "$status" -eq 0 ]
+  ! grep -q "/heartbeats" "$post_calls_log"
+}
+
+@test "reconcile_monitoring propagates a Better Stack monitor-list failure as a hard error, without POSTing" {
+  source "$ROOT/steps/90-monitoring.sh"
+  _monitoring_setup_gated
+  bs_api() { [ "$1" = GET ] && return 1; printf '%s\n' "$*"; }
+  run reconcile_monitoring
+  [ "$status" -ne 0 ]
+  [ "$status" -ne 75 ]
+}
+
+@test "reconcile_monitoring fails closed, without creating a DO alert, when the doctl droplet-id query fails" {
+  source "$ROOT/steps/90-monitoring.sh"
+  _monitoring_setup_gated
+  bs_api() { echo '{"data":[]}'; }
+  _bs_monitor_url_exists() { return 0; }
+  _bs_heartbeat_name_exists() { return 0; }
+  create_calls_log="$BATS_TEST_TMPDIR/do_create.log"
+  : > "$create_calls_log"
+  doctl_cli() {
+    [ "$1" = compute ] && return 1
+    printf '%s\n' "$*" >> "$create_calls_log"
+  }
+  run reconcile_monitoring
+  [ "$status" -ne 0 ]
+  [ "$status" -ne 75 ]
+  [ ! -s "$create_calls_log" ]
+}
+
+@test "reconcile_monitoring does not create a DO alert policy that already exists" {
+  source "$ROOT/steps/90-monitoring.sh"
+  _monitoring_setup_gated
+  bs_api() { echo '{"data":[]}'; }
+  _bs_monitor_url_exists() { return 0; }
+  _bs_heartbeat_name_exists() { return 0; }
+  create_calls_log="$BATS_TEST_TMPDIR/do_create.log"
+  : > "$create_calls_log"
+  doctl_cli() {
+    [ "$1" = compute ] && { printf '12345'; return 0; }
+    if [ "$3" = list ]; then printf '[]'; else printf '%s\n' "$*" >> "$create_calls_log"; fi
+  }
+  _do_alert_exists() { return 0; }
+  run reconcile_monitoring
+  [ "$status" -eq 0 ]
+  [ ! -s "$create_calls_log" ]
+}
+
+@test "reconcile_monitoring creates all 3 DO host alert policies (cpu/memory/disk) when absent" {
+  source "$ROOT/steps/90-monitoring.sh"
+  _monitoring_setup_gated
+  bs_api() { echo '{"data":[]}'; }
+  _bs_monitor_url_exists() { return 0; }
+  _bs_heartbeat_name_exists() { return 0; }
+  create_calls_log="$BATS_TEST_TMPDIR/do_create.log"
+  : > "$create_calls_log"
+  doctl_cli() {
+    [ "$1" = compute ] && { printf '12345'; return 0; }
+    if [ "$3" = list ]; then printf '[]'; else printf '%s\n' "$*" >> "$create_calls_log"; fi
+  }
+  run reconcile_monitoring
+  [ "$status" -eq 0 ]
+  [ "$(wc -l < "$create_calls_log")" -eq 3 ]
+  grep -q "v1/insights/droplet/cpu" "$create_calls_log"
+  grep -q "v1/insights/droplet/memory_utilization_percent" "$create_calls_log"
+  grep -q "v1/insights/droplet/disk_utilization_percent" "$create_calls_log"
+  grep -q -- "--entities 12345" "$create_calls_log"
+  grep -q -- "--emails ops-staging@example.com" "$create_calls_log"
+}
