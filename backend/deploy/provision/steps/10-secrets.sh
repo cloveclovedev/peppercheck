@@ -70,6 +70,32 @@ ensure_password() {
   printf '%s' "$value"
 }
 
+# ensure_cipher_mirrored ENV_PROJECT_ID RESTORE_PROJECT_ID
+# pgbackrest_cipher must exist byte-identically in BOTH the env project (read
+# by the compose backup/postgres services) AND the restore-scoped project:
+# restore-drill.sh renders it via `bws run --project-id <restore-scoped>` with
+# a restore-scoped token that, by design, cannot read the env project, yet it
+# decrypts the same pgBackRest repo so the value must match exactly. This
+# obtains the single canonical value — generating it in the env project when
+# absent, else reading the stored one back — then ensures the restore-project
+# copy matches (put only if absent; never regenerate).
+ensure_cipher_mirrored() {
+  local env_project_id="$1" restore_project_id="$2" value
+  if bws_secret_exists pgbackrest_cipher "$env_project_id"; then
+    log_info "secret already present, skipping: pgbackrest_cipher"
+    value="$(bws_get_secret_value pgbackrest_cipher "$env_project_id")"
+  else
+    value="$(gen_password)"
+    run_mutation "put pgbackrest_cipher" bws_put_secret pgbackrest_cipher "$value" "$env_project_id"
+  fi
+  if bws_secret_exists pgbackrest_cipher "$restore_project_id"; then
+    log_info "secret already present in restore project, skipping: pgbackrest_cipher"
+  else
+    run_mutation "put pgbackrest_cipher (restore project)" \
+      bws_put_secret pgbackrest_cipher "$value" "$restore_project_id"
+  fi
+}
+
 # ensure_composed_url NAME PROJECT_ID VALUE SOURCE_PW SOURCE_NAME
 # Stores the composed connection-string secret NAME=VALUE if absent. VALUE
 # must already embed SOURCE_PW (the matching Postgres password generated
@@ -123,9 +149,11 @@ reconcile_secrets() {
   local postgres_app_pw postgres_migrator_pw pw_name
   postgres_app_pw="$(ensure_password postgres_app_pw "$project_id")"
   postgres_migrator_pw="$(ensure_password postgres_migrator_pw "$project_id")"
-  for pw_name in postgres_superuser_pw postgres_backup_pw pgbackrest_cipher; do
+  for pw_name in postgres_superuser_pw postgres_backup_pw; do
     ensure_password "$pw_name" "$project_id" >/dev/null
   done
+
+  ensure_cipher_mirrored "$project_id" "$restore_project_id"
 
   ensure_composed_url database_url "$project_id" \
     "postgres://peppercheck_app:${postgres_app_pw}@postgres:5432/peppercheck?sslmode=disable" \

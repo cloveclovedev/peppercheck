@@ -122,3 +122,25 @@ setup() {
   [ -n "$app_pw" ]
   grep -q "^database_url=postgres://peppercheck_app:${app_pw}@postgres:5432/peppercheck?sslmode=disable$" "$puts_log"
 }
+
+@test "reconcile_secrets writes pgbackrest_cipher into both the env and restore projects with the same value" {
+  source "$ROOT/steps/10-secrets.sh"
+  bws_secret_exists() { return 1; }  # nothing exists yet
+  puts_log="$BATS_TEST_TMPDIR/puts.log"
+  : > "$puts_log"
+  # Log which project id each put targeted alongside the name and value.
+  bws_put_secret() { printf '%s\t%s\t%s\n' "$1" "$2" "$3" >> "$puts_log"; }
+  age_keygen() {
+    if [ "${1:-}" = "-y" ]; then echo "age1stubpublickey"; else echo "AGE-SECRET-KEY-STUB"; fi
+  }
+  export BWS_WRITE_TOKEN=x BWS_PROJECT_ID=envproj BWS_RESTORE_PROJECT_ID=restoreproj
+  run reconcile_secrets
+  [ "$status" -eq 0 ]
+  # Fields are name<TAB>value<TAB>project; select cipher rows by name (f1) and
+  # project (f3), read the value (f2).
+  env_val="$(awk -F'\t' '$1=="pgbackrest_cipher" && $3=="envproj" {print $2}' "$puts_log")"
+  restore_val="$(awk -F'\t' '$1=="pgbackrest_cipher" && $3=="restoreproj" {print $2}' "$puts_log")"
+  [ -n "$env_val" ]
+  [ -n "$restore_val" ]
+  [ "$env_val" = "$restore_val" ]
+}
