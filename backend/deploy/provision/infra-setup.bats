@@ -776,3 +776,180 @@ _github_env_setup_satisfied() {
   [ "$status" -eq 75 ]
   [[ "$output" == *"BWS_WRITE_TOKEN"* ]]
 }
+
+# --- step 60: reconcile_droplet ---------------------------------------------
+# doctl_cli/ssh_keygen/ssh_keyscan/gh_secret_set are stubbed directly (same
+# convention as every other step's provider wrapper). The bats Docker image
+# mounts ONLY backend/deploy/provision/, not the wider repo, so the real
+# backend/scripts/ helper scripts bootstrap.sh installs do not exist inside
+# it — BACKEND_SCRIPTS_DIR (read at 60-droplet.sh source time) is pointed at
+# fixture scripts under $BATS_TEST_TMPDIR instead. bootstrap.sh itself IS
+# reachable for real (it lives directly under the mounted provision/ dir).
+_droplet_setup_absent_gated() {
+  export ENV_NAME=staging DO_TOKEN=do-token-x TS_AUTH_KEY=tskey-ephemeral \
+    DO_REGION=sgp1 DO_SIZE=s-1vcpu-1gb SSH_HOST=pc-staging TS_TAG=tag:pc-staging
+  export BACKEND_SCRIPTS_DIR="$BATS_TEST_TMPDIR/backend-scripts"
+  mkdir -p "$BACKEND_SCRIPTS_DIR"
+  for f in switch-deployment.sh write-secret.sh rollback.sh; do
+    printf '#!/usr/bin/env bash\necho fixture-%s\n' "$f" >"$BACKEND_SCRIPTS_DIR/$f"
+  done
+  : >"$BATS_TEST_TMPDIR/doctl.log"
+  : >"$BATS_TEST_TMPDIR/gh_secret_set.log"
+  doctl_cli() {
+    printf '%s\n' "$*" >>"$BATS_TEST_TMPDIR/doctl.log"
+    case "$1 $2 $3" in
+      "compute droplet get") return 1 ;; # absent
+      "compute droplet create")
+        # Capture the --user-data-file content while it still exists — the
+        # real step deletes its tmp file right after this call returns.
+        shift 3
+        local f=""
+        while [ "$#" -gt 0 ]; do
+          case "$1" in
+            --user-data-file)
+              f="$2"
+              shift 2
+              ;;
+            *) shift ;;
+          esac
+        done
+        [ -n "$f" ] && cp "$f" "$BATS_TEST_TMPDIR/captured-user-data.yaml"
+        return 0
+        ;;
+    esac
+    return 0
+  }
+  ssh_keygen() {
+    local out=""
+    while [ "$#" -gt 0 ]; do
+      case "$1" in
+        -f)
+          out="$2"
+          shift 2
+          ;;
+        -t | -N | -C)
+          shift 2
+          ;;
+        *) shift ;;
+      esac
+    done
+    printf 'FAKE-PRIVATE-KEY\n' >"$out"
+    printf 'ssh-ed25519 AAAAFAKEKEY deploy@peppercheck-ci\n' >"${out}.pub"
+  }
+  gh_secret_set() { printf '%s\t%s\n' "$1" "$2" >>"$BATS_TEST_TMPDIR/gh_secret_set.log"; }
+  ssh_keyscan() { printf 'pc-staging ssh-ed25519 AAAAHOSTKEY\n'; }
+}
+
+@test "reconcile_droplet stops with NEEDS_MANUAL naming DO_TOKEN when absent" {
+  source "$ROOT/steps/60-droplet.sh"
+  export ENV_NAME=staging
+  unset DO_TOKEN || true
+  run reconcile_droplet
+  [ "$status" -eq 75 ]
+  [[ "$output" == *"DO_TOKEN"* ]]
+}
+
+@test "reconcile_droplet is SATISFIED (no create, no keypair, no secret writes) when the Droplet already exists" {
+  source "$ROOT/steps/60-droplet.sh"
+  export ENV_NAME=staging DO_TOKEN=do-token-x
+  calls_log="$BATS_TEST_TMPDIR/doctl.log"
+  : >"$calls_log"
+  doctl_cli() {
+    printf '%s\n' "$*" >>"$calls_log"
+    case "$1 $2 $3" in
+      "compute droplet get") return 0 ;; # already exists
+    esac
+    return 1
+  }
+  keygen_calls_log="$BATS_TEST_TMPDIR/keygen.log"
+  : >"$keygen_calls_log"
+  ssh_keygen() { echo "called" >>"$keygen_calls_log"; }
+  secret_calls_log="$BATS_TEST_TMPDIR/gh_secret_set.log"
+  : >"$secret_calls_log"
+  gh_secret_set() { printf '%s\n' "$1" >>"$secret_calls_log"; }
+  run reconcile_droplet
+  [ "$status" -eq 0 ]
+  grep -q "^compute droplet get pc-staging$" "$calls_log"
+  ! grep -q "^compute droplet create" "$calls_log"
+  [ ! -s "$keygen_calls_log" ]
+  [ ! -s "$secret_calls_log" ]
+}
+
+@test "reconcile_droplet stops with NEEDS_MANUAL naming TS_AUTH_KEY when the Droplet is absent and no auth key was minted this run" {
+  source "$ROOT/steps/60-droplet.sh"
+  export ENV_NAME=staging DO_TOKEN=do-token-x
+  unset TS_AUTH_KEY || true
+  doctl_cli() { case "$1 $2 $3" in "compute droplet get") return 1 ;; esac; return 1; }
+  run reconcile_droplet
+  [ "$status" -eq 75 ]
+  [[ "$output" == *"TS_AUTH_KEY"* ]]
+}
+
+@test "reconcile_droplet stops with NEEDS_MANUAL naming missing non-secret config (DO_REGION/DO_SIZE/SSH_HOST/TS_TAG)" {
+  source "$ROOT/steps/60-droplet.sh"
+  export ENV_NAME=staging DO_TOKEN=do-token-x TS_AUTH_KEY=tskey-ephemeral
+  unset DO_REGION DO_SIZE SSH_HOST TS_TAG || true
+  doctl_cli() { case "$1 $2 $3" in "compute droplet get") return 1 ;; esac; return 1; }
+  run reconcile_droplet
+  [ "$status" -eq 75 ]
+  [[ "$output" == *"DO_REGION"* ]]
+  [[ "$output" == *"SSH_HOST"* ]]
+  [[ "$output" == *"TS_TAG"* ]]
+}
+
+@test "reconcile_droplet creates the Droplet with --user-data-file, generates+stores the deploy keypair, and captures+stores the host key" {
+  source "$ROOT/steps/60-droplet.sh"
+  _droplet_setup_absent_gated
+  run reconcile_droplet
+  [ "$status" -eq 0 ]
+
+  # Deploy keypair generated; ONLY the private half is stored, under the
+  # exact secret name deploy-vps.yml reads.
+  grep -q "^SSH_DEPLOY_KEY	FAKE-PRIVATE-KEY$" "$BATS_TEST_TMPDIR/gh_secret_set.log"
+  ! grep -q "AAAAFAKEKEY" "$BATS_TEST_TMPDIR/gh_secret_set.log"
+
+  # Droplet created with region/size/image/--user-data-file/--wait.
+  grep -q "^compute droplet create pc-staging --region sgp1 --size s-1vcpu-1gb --image ubuntu-24-04-x64" "$BATS_TEST_TMPDIR/doctl.log"
+  grep -q -- "--user-data-file" "$BATS_TEST_TMPDIR/doctl.log"
+  grep -q -- "--wait" "$BATS_TEST_TMPDIR/doctl.log"
+
+  # The rendered cloud-init user-data (captured by the doctl_cli stub before
+  # the real step deletes its tmp file) references bootstrap.sh and carries
+  # the 3 bootstrap env vars.
+  ud="$BATS_TEST_TMPDIR/captured-user-data.yaml"
+  [ -s "$ud" ]
+  grep -q "bootstrap.sh" "$ud"
+  grep -q "TAILSCALE_TAG=tag:pc-staging" "$ud"
+  grep -q "TAILSCALE_AUTH_KEY=tskey-ephemeral" "$ud"
+  grep -q "DEPLOY_SSH_PUBLIC_KEY=ssh-ed25519 AAAAFAKEKEY deploy@peppercheck-ci" "$ud"
+
+  # Host key captured (stubbed ssh-keyscan) and stored under the exact
+  # secret name deploy-vps.yml reads.
+  grep -q "^SSH_HOST_KEY	pc-staging ssh-ed25519 AAAAHOSTKEY$" "$BATS_TEST_TMPDIR/gh_secret_set.log"
+}
+
+@test "reconcile_droplet fails clearly (not hanging) when ssh-keyscan cannot reach the tailnet host within the poll window" {
+  source "$ROOT/steps/60-droplet.sh"
+  _droplet_setup_absent_gated
+  export SSH_HOST_KEY_POLL_TIMEOUT=2 SSH_HOST_KEY_POLL_INTERVAL=1
+  ssh_keyscan() { return 1; } # never resolves
+  run reconcile_droplet
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"tailnet"* ]]
+  # The Droplet + deploy keypair were still created/stored before the poll
+  # gave up; only the host-key secret is missing.
+  grep -q "^SSH_DEPLOY_KEY" "$BATS_TEST_TMPDIR/gh_secret_set.log"
+  ! grep -q "^SSH_HOST_KEY" "$BATS_TEST_TMPDIR/gh_secret_set.log"
+}
+
+@test "reconcile_droplet in dry-run does not create the Droplet, store secrets, or attempt host-key capture" {
+  source "$ROOT/steps/60-droplet.sh"
+  _droplet_setup_absent_gated
+  DRY_RUN=1
+  ssh_keyscan() { echo "should not be called" >>"$BATS_TEST_TMPDIR/keyscan-called.log"; }
+  run reconcile_droplet
+  [ "$status" -eq 0 ]
+  ! grep -q "^compute droplet create" "$BATS_TEST_TMPDIR/doctl.log"
+  [ ! -e "$BATS_TEST_TMPDIR/keyscan-called.log" ]
+  [ ! -s "$BATS_TEST_TMPDIR/gh_secret_set.log" ]
+}
