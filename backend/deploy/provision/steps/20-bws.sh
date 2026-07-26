@@ -3,16 +3,17 @@
 # here for consistency since --only/--from may skip step 10 entirely),
 # install the runtime read-only BWS token as the GitHub Environment secret
 # `BWS_TOKEN` (the exact name deploy-vps.yml reads via `secrets.BWS_TOKEN`
-# -- do not rename), and populate the restore-scoped project's
-# operator-provided Firebase test credentials that
+# -- do not rename), put the browser-created `ghcr_token` PAT into the env
+# BWS project (the 10th secret ship-deployment.sh renders), and populate the
+# restore-scoped project's operator-provided Firebase test credentials that
 # backend/scripts/restore-drill.sh reads (restore-drill.sh:108-110). B2 read
 # credentials for the restore project are handled by step 40 (B2), not here.
 set -euo pipefail
 
-# ensure_restore_secret NAME VALUE PROJECT_ID
+# ensure_bws_secret NAME VALUE PROJECT_ID
 # Idempotent: put only if absent, so a re-run never clobbers a value an
 # operator may have rotated directly in the vault after the fact.
-ensure_restore_secret() {
+ensure_bws_secret() {
   local name="$1" value="$2" project_id="$3"
   if bws_secret_exists "$name" "$project_id"; then
     log_info "secret already present, skipping: ${name}"
@@ -38,6 +39,18 @@ reconcile_bws() {
     return 1
   }
 
+  # ghcr_token is the 10th env-project secret ship-deployment.sh renders (step
+  # 10 makes 7, step 40 adds b2_key_id/b2_key_secret). It is a browser-created
+  # read-only GitHub PAT (a hard manual gate) — it goes into the env project
+  # only, NEVER the restore-scoped project.
+  local ghcr_token=""
+  if ! ghcr_token="$(require_cfg GHCR_TOKEN)"; then
+    need_manual GHCR_TOKEN \
+      "Create a read-only GitHub PAT with 'read:packages' scoped to cloveclovedev/peppercheck-* (browser only — no API); do NOT grant write:packages or repo scope"
+    return $?
+  fi
+  ensure_bws_secret ghcr_token "$ghcr_token" "$project_id"
+
   local bws_runtime_token=""
   if ! bws_runtime_token="$(require_cfg BWS_RUNTIME_TOKEN)"; then
     need_manual BWS_RUNTIME_TOKEN \
@@ -57,7 +70,7 @@ reconcile_bws() {
       || return $?
   fi
 
-  ensure_restore_secret firebase_test_api_key "$fb_key" "$restore_project_id"
-  ensure_restore_secret firebase_test_email "$fb_email" "$restore_project_id"
-  ensure_restore_secret firebase_test_password "$fb_password" "$restore_project_id"
+  ensure_bws_secret firebase_test_api_key "$fb_key" "$restore_project_id"
+  ensure_bws_secret firebase_test_email "$fb_email" "$restore_project_id"
+  ensure_bws_secret firebase_test_password "$fb_password" "$restore_project_id"
 }

@@ -81,11 +81,16 @@ setup() {
   # private key, regardless of whether anything else was regenerated.
   bws_get_secret_value() { echo "AGE-SECRET-KEY-STUB"; }
   age_keygen() { echo "age1stubpublickey"; }
-  created=0; bws_put_secret() { created=1; }
+  # `run` executes reconcile_secrets in a subshell, so a plain variable set
+  # inside this stub would not survive back here — log any put to a file and
+  # assert the file stays empty (real no-op verification).
+  puts_log="$BATS_TEST_TMPDIR/puts.log"
+  : > "$puts_log"
+  bws_put_secret() { printf '%s\n' "$1" >> "$puts_log"; }
   export BWS_WRITE_TOKEN=x BWS_PROJECT_ID=p BWS_RESTORE_PROJECT_ID=r
   run reconcile_secrets
   [ "$status" -eq 0 ]
-  [ "$created" -eq 0 ]  # nothing regenerated
+  [ ! -s "$puts_log" ]  # nothing regenerated
 }
 
 @test "reconcile_secrets stops with NEEDS_MANUAL when the BWS write token is absent" {
@@ -147,10 +152,18 @@ setup() {
 
 # --- step 20: reconcile_bws -------------------------------------------------
 # Common env for the "past the first gate" tests below: a write token +
-# project ids, with the project-reachability wrapper stubbed to report ok.
+# project ids, the project-reachability wrapper stubbed ok, and GHCR_TOKEN
+# present (its gate sits between reachability and the runtime-token gate, so
+# every test that must reach a later gate has to clear it first).
 _bws_setup_reachable_project() {
-  export BWS_WRITE_TOKEN=wt BWS_PROJECT_ID=p BWS_RESTORE_PROJECT_ID=r
+  export BWS_WRITE_TOKEN=wt BWS_PROJECT_ID=p BWS_RESTORE_PROJECT_ID=r GHCR_TOKEN=ghcr-pat
   bws_project_exists() { return 0; }
+  # Benign defaults so a test that only cares about a later gate still clears
+  # the ghcr_token put (real bws_secret_exists/bws_put_secret call bws+jq,
+  # absent from the bats image). Tests that assert on puts override these.
+  bws_secret_exists() { return 1; }
+  bws_put_secret() { :; }
+  gh_secret_set() { :; }
 }
 
 @test "reconcile_bws stops with NEEDS_MANUAL when BWS_WRITE_TOKEN is absent" {
@@ -167,6 +180,33 @@ _bws_setup_reachable_project() {
   bws_project_exists() { return 1; }
   run reconcile_bws
   [ "$status" -eq 1 ]
+}
+
+@test "reconcile_bws stops with NEEDS_MANUAL naming GHCR_TOKEN when it is absent" {
+  source "$ROOT/steps/20-bws.sh"
+  _bws_setup_reachable_project
+  unset GHCR_TOKEN || true
+  run reconcile_bws
+  [ "$status" -eq 75 ]
+  [[ "$output" == *"GHCR_TOKEN"* ]]
+}
+
+@test "reconcile_bws puts ghcr_token into the env project, not the restore project" {
+  source "$ROOT/steps/20-bws.sh"
+  _bws_setup_reachable_project
+  export GHCR_TOKEN=ghcr-pat-xyz
+  export BWS_RUNTIME_TOKEN=ro-token-123
+  export FIREBASE_TEST_API_KEY=k FIREBASE_TEST_EMAIL=e@example.com FIREBASE_TEST_PASSWORD=pw
+  bws_secret_exists() { return 1; }  # nothing exists yet
+  puts_log="$BATS_TEST_TMPDIR/puts.log"
+  : > "$puts_log"
+  bws_put_secret() { printf '%s\t%s\t%s\n' "$1" "$2" "$3" >> "$puts_log"; }
+  run reconcile_bws
+  [ "$status" -eq 0 ]
+  # ghcr_token landed in the env project (p) with the exact value, never in
+  # the restore project (r).
+  grep -q "^ghcr_token	ghcr-pat-xyz	p$" "$puts_log"
+  ! grep -q "^ghcr_token	.*	r$" "$puts_log"
 }
 
 @test "reconcile_bws stops with NEEDS_MANUAL naming BWS_RUNTIME_TOKEN when it is absent" {
