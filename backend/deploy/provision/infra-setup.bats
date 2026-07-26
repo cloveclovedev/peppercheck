@@ -1640,6 +1640,45 @@ _monitoring_setup_gated() {
   [[ "$worker_line" == *'"call":false'* ]]
 }
 
+@test "bs_api prints the body for GET but DISCARDS it for POST (no secret ping URL to stdout)" {
+  source "$ROOT/steps/90-monitoring.sh"
+  export BETTERSTACK_API_TOKEN=bs-token-x
+  # Stub the real curl bs_api shells out to; it echoes a body containing a
+  # secret-looking ping URL regardless of method.
+  curl() { printf '{"data":{"attributes":{"url":"https://uptime.betterstack.com/api/v1/heartbeat/SECRET-PING-abc123"}}}'; }
+  get_out="$(bs_api GET /heartbeats)"
+  [[ "$get_out" == *"SECRET-PING-abc123"* ]]  # GET must expose the body (list parsing needs it)
+  post_out="$(bs_api POST /heartbeats '{"name":"x"}')"
+  [ -z "$post_out" ]                          # POST must emit nothing
+  [[ "$post_out" != *"SECRET-PING"* ]]
+}
+
+@test "reconcile_monitoring never leaks a heartbeat create-response ping URL to stdout" {
+  source "$ROOT/steps/90-monitoring.sh"
+  _monitoring_setup_gated
+  doctl_cli() {
+    [ "$1" = compute ] && { printf '12345'; return 0; }
+    [ "$3" = list ] && { printf '[]'; return 0; }
+    return 0
+  }
+  _do_alert_exists() { return 0; }
+  _bs_monitor_url_exists() { return 0; }
+  # A realistic stub: GET returns an empty list (so all 4 heartbeats are
+  # created); every POST "succeeds" and, like the real API, its response body
+  # embeds a secret ping URL — which bs_api must swallow, not print.
+  bs_api() {
+    if [ "$1" = GET ]; then echo '{"data":[]}'; return 0; fi
+    # mimic the fixed wrapper: validate + DISCARD the body for non-GET
+    local _body='{"data":{"attributes":{"url":"https://uptime.betterstack.com/api/v1/heartbeat/SECRET-PING-xyz789"}}}'
+    : "$_body"
+    return 0
+  }
+  run reconcile_monitoring
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"SECRET-PING-xyz789"* ]]
+  [[ "$output" != *"api/v1/heartbeat/"* ]]
+}
+
 @test "reconcile_monitoring does not create a heartbeat whose name already exists" {
   source "$ROOT/steps/90-monitoring.sh"
   _monitoring_setup_gated

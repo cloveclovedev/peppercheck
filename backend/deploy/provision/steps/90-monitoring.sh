@@ -78,7 +78,10 @@
 # returned in the CREATE response and is a secret in its own right — see
 # MONITORING.md §4. This step deliberately does NOT parse that response and
 # push it into BWS (out of this task's scope: "creates monitors only"); it
-# logs a reminder instead. Copying the 4 heartbeat URLs from the Better
+# logs a reminder instead. Because that response is a secret, `bs_api`
+# discards the body of every non-GET call — it is never printed to stdout
+# (see bs_api's own SECRET-SAFE OUTPUT note), so the create response cannot
+# leak into the console or CI logs. Copying the 4 heartbeat URLs from the Better
 # Stack dashboard into the env's BWS project (`heartbeat_url_worker`/
 # `heartbeat_url_backup`/`heartbeat_url_wal_freshness`/
 # `heartbeat_url_host_checks`) and wiring them into `compose.prod.yaml`/
@@ -101,6 +104,18 @@ set -euo pipefail
 # aborts with a clear message (curl -fsS's own exit status), so a caller
 # composing `x="$(bs_api ...)"` never silently proceeds on a stale/empty
 # response. The token itself is never logged.
+#
+# SECRET-SAFE OUTPUT: the response body is printed to stdout ONLY for GET
+# (the list calls that must parse it via command substitution). For a
+# mutating method (POST/PATCH/DELETE) the success/failure is still validated
+# — a non-2xx aborts, unchanged — but the body is DISCARDED and never
+# printed, because a `POST /heartbeats` response embeds the heartbeat's ping
+# URL, which is a secret (MONITORING.md §4). The mutating callers here run as
+# `run_mutation "..." bs_api POST ...`, whose stdout flows straight to the
+# console (and, under the CI-over-Tailscale deploy, into CI logs) — so a
+# printed body would leak that ping URL. No current caller consumes a
+# non-GET body (wiring the ping URL into BWS is a deferred follow-up), so
+# suppressing it is safe. Do not change this without also fixing that leak.
 bs_api() {
   local method="$1" path="$2" body="${3:-}"
   local -a args=(
@@ -114,7 +129,10 @@ bs_api() {
     log_err "Better Stack API call failed: ${method} ${path} (non-2xx response or network error)"
     return 1
   fi
-  printf '%s' "$response"
+  # Emit the body only for GET; a mutating response may embed a secret ping
+  # URL (see the header note) and must never reach stdout.
+  [ "$method" = GET ] && printf '%s' "$response"
+  return 0
 }
 
 # --- jq-based list-response parsers, each behind its own stubbable helper --
