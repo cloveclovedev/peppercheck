@@ -45,8 +45,11 @@ setup() {
   [[ "$output" == *'\t'* ]]
   [[ "$output" == *'\n'* ]]
   [[ "$output" == *'\r'* ]]
-  # No raw control chars survived: printf %q renders a literal tab as $'\t'.
-  printf '%q' "$output" | grep -q "\$'" && false || true
+  # No raw control chars survived: printf %q renders any literal control char
+  # as a $'…' sequence, so its %q rendering must contain no $' at all. This
+  # assertion FAILS (glob !=) if a raw control char leaked through.
+  q="$(printf '%q' "$output")"
+  [[ "$q" != *"\$'"* ]]
 }
 
 @test "require_known_step rejects an unknown step and names it and the valid list" {
