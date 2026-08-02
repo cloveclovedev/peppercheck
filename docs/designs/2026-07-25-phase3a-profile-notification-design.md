@@ -17,6 +17,22 @@
 
 ---
 
+## Amendments after approval
+
+Naming refinements made during implementation (PR #479, 2026-08-02). Apply these
+substitutions when reading the contract below; the rest of the design is
+unchanged. See `docs/overview/naming-conventions.md`.
+
+- **Table `user_fcm_tokens` → `device_push_tokens`** (provider-neutral: the value
+  is still an FCM registration token, but the table models device push tokens;
+  the provider name stays at the code boundary). Constraint/index names follow
+  (`device_push_tokens_token_key`, `idx_device_push_tokens_*`).
+- **Endpoints `PUT|DELETE /api/v1/me/fcm-tokens` → `PUT|DELETE /api/v1/me/device-push-tokens`**
+  (the resource path matches the table). Request/response bodies (`{ token,
+  deviceType }`, 204) are unchanged.
+
+---
+
 ## 0. Phase 3 split — 3a vs 3b
 
 Strategy §22 lists Phase 3 ("Low-risk slices + Go web") as one phase covering

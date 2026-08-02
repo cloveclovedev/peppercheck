@@ -20,11 +20,15 @@ func meHandler(t *testing.T, v auth.TokenVerifier) http.Handler {
 	if _, err := db.Exec("TRUNCATE public.users CASCADE"); err != nil {
 		t.Fatalf("truncate: %v", err)
 	}
-	svc := identity.NewService(identity.NewStore(db))
+	svc := identity.NewService(identity.NewStore(db), nil)
 	// Use the SAME chain builder as Run() so the tests exercise the real
 	// middleware stack; RequestID seeds the id the error envelope carries.
 	return rootHandler(
-		Deps{Verifier: v, Identity: identity.NewHandler(svc, nil)},
+		Deps{
+			Verifier:    v,
+			Identity:    identity.NewHandler(svc, nil),
+			ResolveUser: identity.NewMiddleware(svc, nil),
+		},
 		slog.New(slog.NewTextHandler(io.Discard, nil)),
 	)
 }
@@ -112,12 +116,13 @@ func TestMeIsolatesUsers(t *testing.T) {
 	if _, err := db.Exec("TRUNCATE public.users CASCADE"); err != nil {
 		t.Fatalf("truncate: %v", err)
 	}
-	svc := identity.NewService(identity.NewStore(db))
+	svc := identity.NewService(identity.NewStore(db), nil)
 
 	me := func(subject string) string {
 		h := buildHandler(Deps{
-			Verifier: &auth.FakeVerifier{Identity: auth.Identity{Issuer: "iss", Subject: subject}},
-			Identity: identity.NewHandler(svc, nil),
+			Verifier:    &auth.FakeVerifier{Identity: auth.Identity{Issuer: "iss", Subject: subject}},
+			Identity:    identity.NewHandler(svc, nil),
+			ResolveUser: identity.NewMiddleware(svc, nil),
 		})
 		rec := httptest.NewRecorder()
 		req := httptest.NewRequest("GET", "/api/v1/me", nil)

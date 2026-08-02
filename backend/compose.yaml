@@ -86,6 +86,15 @@ services:
       LOG_LEVEL: info
       FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:?FIREBASE_PROJECT_ID is required (set it in .env; a dummy like peppercheck-local is fine locally)}
       DATABASE_URL: postgres://peppercheck_app:${POSTGRES_APP_PASSWORD:?POSTGRES_APP_PASSWORD is required}@postgres:5432/peppercheck?sslmode=disable
+      # R2 (avatar uploads). Local dummies let the api construct the client and
+      # exercise the avatar flow shape; they don't reach a real bucket. Real
+      # per-env credentials are operator-provisioned at deploy (design §12), not
+      # here. When these are absent the api still boots with avatars disabled (503).
+      R2_ACCOUNT_ID: ${R2_ACCOUNT_ID:-r2-local-account}
+      R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID:-r2-local-key}
+      R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY:-r2-local-secret}
+      R2_BUCKET: ${R2_BUCKET:-peppercheck-avatars-local}
+      R2_PUBLIC_DOMAIN: ${R2_PUBLIC_DOMAIN:-cdn.local.example.com}
     depends_on:
       migrate:
         condition: service_completed_successfully

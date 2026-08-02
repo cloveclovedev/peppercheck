@@ -42,9 +42,13 @@ func (s *Store) FindByIdentity(ctx context.Context, issuer, subject string) (Use
 }
 
 // CreateWithIdentity inserts a users row and its user_identities row in one
-// transaction. A (issuer, subject) unique violation (a concurrent first sighting
-// won) returns ErrNotFound so the caller re-resolves.
-func (s *Store) CreateWithIdentity(ctx context.Context, issuer, subject string) (User, error) {
+// transaction, then runs the provision callback (the profile/notification
+// fan-out) inside the same transaction before committing, so first-sighting
+// setup is atomic. A (issuer, subject) unique violation (a concurrent first
+// sighting won) returns ErrNotFound so the caller re-resolves. A nil provision
+// callback creates the user and identity only.
+func (s *Store) CreateWithIdentity(ctx context.Context, issuer, subject string,
+	provision func(ctx context.Context, tx *sql.Tx, userID string) error) (User, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return User{}, fmt.Errorf("begin: %w", err)
@@ -69,6 +73,12 @@ func (s *Store) CreateWithIdentity(ctx context.Context, issuer, subject string) 
 			return User{}, ErrNotFound
 		}
 		return User{}, fmt.Errorf("insert identity: %w", err)
+	}
+
+	if provision != nil {
+		if err := provision(ctx, tx, u.ID); err != nil {
+			return User{}, fmt.Errorf("provision: %w", err)
+		}
 	}
 
 	if err := tx.Commit(); err != nil {

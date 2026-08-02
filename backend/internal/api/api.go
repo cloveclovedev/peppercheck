@@ -11,15 +11,20 @@ import (
 	"github.com/cloveclovedev/peppercheck/backend/internal/core/config"
 	"github.com/cloveclovedev/peppercheck/backend/internal/core/httpserver"
 	"github.com/cloveclovedev/peppercheck/backend/internal/identity"
+	"github.com/cloveclovedev/peppercheck/backend/internal/notification"
 	"github.com/cloveclovedev/peppercheck/backend/internal/platform/auth"
+	"github.com/cloveclovedev/peppercheck/backend/internal/profile"
 )
 
 // Deps are the runtime dependencies the api handler wires into routes.
 type Deps struct {
-	Ready    func(context.Context) error
-	Verifier auth.TokenVerifier
-	Identity *identity.Handler
-	Logger   *slog.Logger // used by the auth middleware; Run injects the run logger when nil
+	Ready        func(context.Context) error
+	Verifier     auth.TokenVerifier
+	Identity     *identity.Handler
+	Profile      *profile.Handler
+	Notification *notification.Handler
+	ResolveUser  func(http.Handler) http.Handler // identity.NewMiddleware: verified Identity -> internal User in ctx
+	Logger       *slog.Logger                    // used by the auth middleware; Run injects the run logger when nil
 }
 
 // buildHandler wires routes and middleware. deps.Ready is the readiness probe;
@@ -45,9 +50,22 @@ func buildHandler(deps Deps) http.Handler {
 		_, _ = w.Write([]byte("ready"))
 	})
 
-	if deps.Identity != nil && deps.Verifier != nil {
+	if deps.Identity != nil && deps.Verifier != nil && deps.ResolveUser != nil {
 		authed := auth.Middleware(deps.Verifier, deps.Logger)
-		mux.Handle("GET /api/v1/me", authed(http.HandlerFunc(deps.Identity.Me)))
+		// authed verifies the token (Identity in ctx); ResolveUser turns it into
+		// the internal User (CurrentUser in ctx) before the handler runs.
+		chain := func(h http.HandlerFunc) http.Handler { return authed(deps.ResolveUser(h)) }
+		mux.Handle("GET /api/v1/me", chain(deps.Identity.Me))
+
+		if deps.Profile != nil {
+			mux.Handle("GET /api/v1/me/profile", chain(deps.Profile.GetMe))
+			mux.Handle("PATCH /api/v1/me/profile", chain(deps.Profile.PatchMe))
+			mux.Handle("POST /api/v1/me/avatar/request-upload-url", chain(deps.Profile.PostAvatarUploadURL))
+		}
+		if deps.Notification != nil {
+			mux.Handle("PUT /api/v1/me/device-push-tokens", chain(deps.Notification.PutToken))
+			mux.Handle("DELETE /api/v1/me/device-push-tokens", chain(deps.Notification.DeleteToken))
+		}
 	}
 	return mux
 }

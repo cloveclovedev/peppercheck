@@ -22,6 +22,15 @@ type Config struct {
 	ShutdownTimeout    int    // graceful-shutdown budget in seconds
 	FirebaseProjectID  string // Firebase project ID for ID-token verification
 	HeartbeatURLWorker string // optional Better Stack heartbeat URL, POSTed after each successful worker RunDue cycle
+
+	// R2 (Cloudflare) object storage for avatar uploads (platform/r2). Account
+	// ID / bucket / public domain are non-secret; the access key id and secret
+	// are credentials and follow the fail-closed *_FILE convention.
+	R2AccountID       string
+	R2AccessKeyID     string
+	R2SecretAccessKey string
+	R2Bucket          string
+	R2PublicDomain    string // e.g. "cdn.peppercheck.dev" — the host avatar URLs are served from
 }
 
 // Load reads configuration from the environment and validates it.
@@ -40,6 +49,15 @@ func Load() (Config, error) {
 		return Config{}, fmt.Errorf("resolving HEARTBEAT_URL_WORKER: %w", err)
 	}
 
+	r2AccessKeyID, _, err := lookupEnvOrFile("R2_ACCESS_KEY_ID")
+	if err != nil {
+		return Config{}, fmt.Errorf("resolving R2_ACCESS_KEY_ID: %w", err)
+	}
+	r2SecretAccessKey, _, err := lookupEnvOrFile("R2_SECRET_ACCESS_KEY")
+	if err != nil {
+		return Config{}, fmt.Errorf("resolving R2_SECRET_ACCESS_KEY: %w", err)
+	}
+
 	c := Config{
 		Env:                getenv("APP_ENV", "local"),
 		Port:               getenvInt("PORT", 8765),
@@ -48,6 +66,11 @@ func Load() (Config, error) {
 		ShutdownTimeout:    getenvInt("SHUTDOWN_TIMEOUT_SECONDS", 15),
 		FirebaseProjectID:  os.Getenv("FIREBASE_PROJECT_ID"),
 		HeartbeatURLWorker: heartbeatURLWorker,
+		R2AccountID:        os.Getenv("R2_ACCOUNT_ID"),
+		R2AccessKeyID:      r2AccessKeyID,
+		R2SecretAccessKey:  r2SecretAccessKey,
+		R2Bucket:           os.Getenv("R2_BUCKET"),
+		R2PublicDomain:     os.Getenv("R2_PUBLIC_DOMAIN"),
 	}
 	if c.Port < 1 || c.Port > 65535 {
 		return Config{}, fmt.Errorf("invalid PORT: %d", c.Port)

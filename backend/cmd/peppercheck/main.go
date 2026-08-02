@@ -11,12 +11,18 @@ import (
 	"syscall"
 	"time"
 
+	_ "time/tzdata" // embed the IANA tz database so time.LoadLocation works in the container
+
 	"github.com/cloveclovedev/peppercheck/backend/internal/api"
 	"github.com/cloveclovedev/peppercheck/backend/internal/core/config"
 	"github.com/cloveclovedev/peppercheck/backend/internal/core/database"
 	"github.com/cloveclovedev/peppercheck/backend/internal/core/logging"
+	"github.com/cloveclovedev/peppercheck/backend/internal/core/ratelimit"
 	"github.com/cloveclovedev/peppercheck/backend/internal/identity"
+	"github.com/cloveclovedev/peppercheck/backend/internal/notification"
 	"github.com/cloveclovedev/peppercheck/backend/internal/platform/auth"
+	"github.com/cloveclovedev/peppercheck/backend/internal/platform/r2"
+	"github.com/cloveclovedev/peppercheck/backend/internal/profile"
 	"github.com/cloveclovedev/peppercheck/backend/internal/worker"
 )
 
@@ -53,12 +59,43 @@ func main() {
 			logger.Error("firebase verifier init failed", "error", err)
 			os.Exit(1)
 		}
-		idHandler := identity.NewHandler(identity.NewService(identity.NewStore(db)), logger)
+		profileStore := profile.NewStore(db)
+		notifStore := notification.NewStore(db)
+
+		// First-sighting provisioning fans out to profile + notification within
+		// the identity transaction.
+		idSvc := identity.NewService(identity.NewStore(db), api.NewProvisioner(profileStore, notifStore))
+		idHandler := identity.NewHandler(idSvc, logger)
+
+		// R2 backs avatar upload/finalize only. When it is not configured (per-env
+		// credentials are operator-provisioned at deploy), the api still runs with
+		// avatars failing closed at the feature (503) rather than crashing the
+		// whole process — profile/notification/identity do not need R2.
+		var avatarUploader r2.Uploader
+		if r2Client, err := r2.New(r2.Config{
+			AccountID:       cfg.R2AccountID,
+			AccessKeyID:     cfg.R2AccessKeyID,
+			SecretAccessKey: cfg.R2SecretAccessKey,
+			Bucket:          cfg.R2Bucket,
+			PublicDomain:    cfg.R2PublicDomain,
+		}); err != nil {
+			logger.Warn("R2 not configured; avatar upload/finalize disabled (503)", "error", err)
+		} else {
+			avatarUploader = r2Client
+		}
+
+		// Per-user avatar-upload rate limit: burst 10, ~10/hour, evict idle after 1h.
+		avatarLimiter := ratelimit.NewTokenBucket(10, 10, time.Hour, nil)
+		profileSvc := profile.NewService(profileStore, avatarUploader, cfg.R2PublicDomain, avatarLimiter, logger)
+		notifSvc := notification.NewService(notifStore)
 
 		if err := api.Run(ctx, cfg, logger, api.Deps{
-			Ready:    db.PingContext,
-			Verifier: verifier,
-			Identity: idHandler,
+			Ready:        db.PingContext,
+			Verifier:     verifier,
+			Identity:     idHandler,
+			Profile:      profile.NewHandler(profileSvc),
+			Notification: notification.NewHandler(notifSvc),
+			ResolveUser:  identity.NewMiddleware(idSvc, logger),
 		}); err != nil {
 			logger.Error("api exited with error", "error", err)
 			os.Exit(1)

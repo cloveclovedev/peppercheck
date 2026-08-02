@@ -6,6 +6,8 @@ variable "url" {
 env "local" {
   src = [
     "file://schema/identity",
+    "file://schema/profile",
+    "file://schema/notification",
     "file://schema/jobs",
     "file://schema/ops",
   ]

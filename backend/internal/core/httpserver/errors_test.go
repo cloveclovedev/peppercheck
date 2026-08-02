@@ -37,6 +37,20 @@ func TestWriteErrorEnvelope(t *testing.T) {
 	}
 }
 
+func TestNewErrorCodesAreStable(t *testing.T) {
+	cases := map[string]string{
+		CodeInvalidArgument: "invalid_argument",
+		CodeUsernameTaken:   "username_taken",
+		CodeInvalidTimezone: "invalid_timezone",
+		CodeRateLimited:     "rate_limited",
+	}
+	for got, want := range cases {
+		if got != want {
+			t.Fatalf("code = %q, want %q", got, want)
+		}
+	}
+}
+
 func TestRecoverWritesEnvelope(t *testing.T) {
 	panicky := http.HandlerFunc(func(http.ResponseWriter, *http.Request) { panic("boom") })
 	h := Chain(panicky, RequestID, Recover(slog.New(slog.NewTextHandler(io.Discard, nil))))
