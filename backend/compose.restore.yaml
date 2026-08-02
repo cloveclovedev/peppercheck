@@ -1,5 +1,4 @@
-# Isolated restore-drill Compose project (Task 16, Phase 7-A infra/ops
-# foundation -- design doc §8.4). Driven exclusively by
+# Isolated restore-drill Compose project. Driven exclusively by
 # scripts/restore-drill.sh, never run by hand against a real environment.
 # Modeled on compose.prod.yaml but stripped to exactly the two services a
 # drill needs, plus the restore-only volume:

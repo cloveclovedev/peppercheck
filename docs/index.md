@@ -14,6 +14,8 @@ legacy component documents.
   — approved target direction and program-level decisions
 - [Go/VPS implementation-plan inventory](development/go-vps-plans/README.md) —
   retained execution guidance and lifecycle policy
+- [Go/VPS remaining-work parent issue](https://github.com/cloveclovedev/peppercheck/issues/477)
+  — work discovery and progress tracking
 
 ## Documentation by purpose
 
@@ -41,3 +43,8 @@ plan is optional when the design and Issues already provide enough guidance.
 The `developer-docs/` tree is legacy content outside this documentation model.
 It is not a contribution-rule source and should be inspected only as part of an
 explicit migration or audit.
+
+Current Flutter UI implementation guidance is split into
+[component design](development/flutter/component-design.md) and
+[UI guidelines](development/flutter/ui-guidelines.md). The applicable
+`AGENTS.md` remains authoritative for agent rules.

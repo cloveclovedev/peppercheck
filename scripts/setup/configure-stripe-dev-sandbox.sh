@@ -14,8 +14,6 @@
 #   - Edit any .env file. The operator pastes secrets themselves.
 #   - Create or modify anything in the Stripe sandbox itself.
 #
-# Spec: docs/designs/2026-05-31-stripe-debug-sandbox-design.md
-
 set -euo pipefail
 
 if ! command -v stripe >/dev/null 2>&1; then

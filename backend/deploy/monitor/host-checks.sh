@@ -1,6 +1,6 @@
 #!/bin/sh
 # host-checks.sh -- host-level checks that DigitalOcean Monitoring does NOT
-# cover (Phase 7-A infra/ops foundation, Task 17, design doc §9): inode
+# cover: inode
 # exhaustion and Docker container crash-loop detection. Runs on the HOST
 # (Droplet) via a systemd timer every 5 minutes (host-checks.timer).
 #
@@ -38,7 +38,7 @@ INODE_ALERT_THRESHOLD_PERCENT="${INODE_ALERT_THRESHOLD_PERCENT:-85}"
 RESTART_COUNT_ALERT_THRESHOLD="${RESTART_COUNT_ALERT_THRESHOLD:-3}"
 
 # Better Stack heartbeat: pinged ONLY when every signal below is healthy
-# (same ping-on-success pattern as the other Phase 7-A monitors). Optional,
+# (same ping-on-success pattern as the other monitors). Optional,
 # and never logged verbatim (it carries an auth token in the URL).
 HOST_CHECKS_HEARTBEAT_URL="${HOST_CHECKS_HEARTBEAT_URL:-}"
 

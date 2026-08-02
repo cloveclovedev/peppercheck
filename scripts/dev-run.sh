@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# One-shot local dev stack for hands-on Phase 2 auth testing (macOS).
+# One-shot local dev stack for hands-on Firebase auth testing (macOS).
 #   1. starts the backend (Go api + Postgres + Caddy) via docker compose,
 #      pinning FIREBASE_PROJECT_ID so real Firebase tokens verify, and waits
 #      until GET /api/v1/me responds

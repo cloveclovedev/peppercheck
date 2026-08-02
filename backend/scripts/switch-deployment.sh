@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
-# Atomically switches the active deployment (Task 6, Phase 7-A infra/ops
-# foundation -- design doc §5.3/§5.4/§6.5).
+# Atomically switches the active deployment.
 #
 # Run from the deployment base directory (e.g. /opt/peppercheck) that
 # contains `deployments/<id>/` (one dir per shipped release, staged by the
-# deploy workflow, Task 10) plus the `current`/`previous` symlink/file pair
+# deploy workflow) plus the `current`/`previous` symlink/file pair
 # maintained by this script:
 #
 #   deployments/
@@ -29,7 +28,7 @@ id="$1"
 
 # The id ends up as a path component (`deployments/<id>`) and is recorded
 # verbatim in `previous`, so keep it to a safe, unambiguous charset -- no
-# `/`, no `..`, no empty string. Real ids are `<sha>-<run_id>` (Task 10).
+# `/`, no `..`, no empty string. Real ids are `<sha>-<run_id>`.
 case "$id" in
   '' | *[!A-Za-z0-9._-]* | .* | *..*)
     echo "switch-deployment: invalid id '$id'" >&2

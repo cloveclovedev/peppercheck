@@ -4,7 +4,7 @@
 >
 > - Program strategy: `docs/designs/2026-07-22-supabase-to-go-vps-refactor-design.md`
 > - Phase 0 baseline (accepted operational decisions): `docs/designs/2026-07-22-phase0-baseline.md` (§12)
-> - Phase 1 foundation (local skeleton this phase productionizes): `docs/development/go-vps-plans/2026-07-23-phase1-foundation.md`
+> - Implemented Phase 1 local foundation: [`backend/README.md`](../../backend/README.md)
 >
 > This spec covers **Phase 7-A only** — the infrastructure/operations foundation
 > that is largely independent of the feature phases (3–6) and can be built ahead

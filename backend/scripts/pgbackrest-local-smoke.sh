@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Local pgBackRest smoke test (Task 4, Phase 7-A infra/ops foundation).
+# Local pgBackRest smoke test.
 #
 # Brings up MinIO + the custom peppercheck-postgres image (compose.test.yaml,
 # isolated under the "peppercheck-test" Compose project) and proves

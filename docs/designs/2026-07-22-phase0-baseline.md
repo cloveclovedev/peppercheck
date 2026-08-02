@@ -17,8 +17,7 @@
 >   `docs/designs/2026-07-22-phase0-freeze-baseline-design.md`
 >
 > Merged: 2026-07-23. Sources: `2026-07-22-phase0-baseline.md` (~2,531
-> lines, assembled from nine investigation part files in
-> `docs/development/go-vps-plans/phase0-parts/`) and
+> lines, assembled from nine temporary investigation notes) and
 > `2026-07-22-go-api-vps-phase-0-baseline-design.md` (~570 lines).
 >
 > **Historical-decision note (2026-08-02):** this baseline records the Phase 0
@@ -140,8 +139,8 @@ the full reconciliation.
 
 ## 3. Dependency Inventory
 
-> Source: canonical §1 (`docs/development/go-vps-plans/phase0-parts/01a-dependency-inventory.md`
-> + `01b-edge-functions.md`), enriched at §3.6 with the supplement's
+> Source: the Phase 0 dependency inventory investigation, enriched at §3.6
+> with the supplement's
 > per-feature Flutter/webapp call view (supplement §4). Synthesizes program
 > design doc §16 (dependency inventory skeleton), §11 (billing vs. payouts),
 > §17 (Edge Function → Go mapping), §13 (logic classification), §12
@@ -2813,7 +2812,7 @@ explicitly re-run the cascade these triggers used to fire automatically).
 
 ## Appendix C — Full Flutter API-surface map
 
-> Source: canonical §4 (`docs/development/go-vps-plans/phase0-parts/04-flutter-api-surface.md`).
+> Source: the Phase 0 Flutter API-surface investigation.
 > Every place `peppercheck_flutter/lib/` talks to Supabase directly:
 > PostgREST table calls (`.from(`), Postgres RPC calls (`.rpc(`), and Edge
 > Function invocations (`.functions.invoke`), plus the small set of Supabase

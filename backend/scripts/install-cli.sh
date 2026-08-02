@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Installs the two CLIs the deploy-vps.yml reusable workflow (Phase 7-A,
-# Task 8) needs on the GitHub Actions runner before it can render secrets
+# Installs the two CLIs the deploy-vps.yml reusable workflow needs on the
+# GitHub Actions runner before it can render secrets
 # (`bws run`) or pull/verify the release manifest (`oras pull`):
 #
 #   bws  -- Bitwarden Secrets Manager CLI, https://bitwarden.com/help/secrets-manager-cli/

@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # Set the BETA_* / PROD_* GitHub Secrets needed by deploy-beta.yml and
-# deploy-production.yml after the Phase 1 multi-environment setup
-# (issue #423 / spec 2026-06-05-android-flavor-split-design.md).
+# deploy-production.yml after the multi-environment setup.
 #
 # Usage: scripts/setup/setup-deploy-secrets.sh <path-to-peppercheck-staging-sa.json>
 #

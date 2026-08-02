@@ -13,6 +13,9 @@
 > Last updated: 2026-07-23 — formalized as a design doc; incorporates multi-round
 > review integration and re-measured codebase facts.
 >
+> Remaining work is tracked in
+> [#477](https://github.com/cloveclovedev/peppercheck/issues/477).
+>
 > Phase 0 is complete. Its decisions are recorded in
 > `docs/designs/2026-07-22-phase0-baseline.md`; this strategy is
 > synced to that baseline.

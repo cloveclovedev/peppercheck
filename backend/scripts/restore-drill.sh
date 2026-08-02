@@ -1,21 +1,18 @@
 #!/usr/bin/env bash
 # restore-drill.sh <env>
 #
-# Isolated, DB-clock, sentinel-verified PITR restore drill (Task 16, Phase
-# 7-A infra/ops foundation -- design doc §8.4). Proves the pgBackRest backup
-# chain can actually be restored to a point in time, brings an authenticated
-# API up on the restored data, and measures RTO against the 4-hour target.
-# Task 21 runs this for real against staging/B2; this task only authors it
-# (verified here by shellcheck/bash -n + a careful manual read -- it cannot
-# be executed end-to-end without a real B2 bucket and a real staging
-# Firebase project).
+# Isolated, DB-clock, sentinel-verified PITR restore drill. Proves the
+# pgBackRest backup chain can actually be restored to a point in time, brings
+# an authenticated API up on the restored data, and measures RTO against the
+# 4-hour target. Run this for real against staging/B2; static checks cannot
+# execute it end-to-end without a real B2 bucket and staging Firebase project.
 #
 # ---- where this runs ------------------------------------------------------
 # Installed on the Droplet at /opt/peppercheck/current/scripts/restore-drill.sh
 # by the normal deploy pipeline (ship-deployment.sh rsyncs the whole
 # `backend/` tree; switch-deployment.sh points `current` at it) -- no extra
 # shipping step is needed. Run it FROM the deployment root it ships with, as
-# the `deploy` user, the same way rollback.sh (Task 6) is invoked:
+# the `deploy` user, the same way rollback.sh is invoked:
 #
 #   cd /opt/peppercheck/current
 #   bws run --project-id <restore-scoped-project-id> -- ./scripts/restore-drill.sh staging
@@ -90,7 +87,7 @@ log() { echo "==> $*"; }
 # resolves regardless of the caller's own working directory.
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
-# images.env is written by ship-deployment.sh at deploy time (Task 10) and
+# images.env is written by ship-deployment.sh at deploy time and
 # holds IMAGE_POSTGRES/IMAGE_BACKEND/IMAGE_BACKUP plus the non-secret
 # PGBACKREST_REPO1_S3_*/FIREBASE_PROJECT_ID/API_PORT values -- the exact same
 # ones the live `peppercheck-<env>` project is running with right now, so

@@ -9,6 +9,8 @@ current architecture or project status.
 
 - Approved design documents own durable decisions and rationale.
 - GitHub Issues own status, priority, dependencies, and acceptance criteria.
+  The current program parent is
+  [#477](https://github.com/cloveclovedev/peppercheck/issues/477).
 - Pull requests and the current code own implementation outcomes.
 - Plans provide execution guidance and must be revalidated before use.
 
@@ -44,9 +46,6 @@ to create matching plan files solely for process consistency.
 
 | Plan | Status | Note |
 | --- | --- | --- |
-| `2026-03-30-google-play-iap-plan.md` | Historical | Predates the Go/VPS program; retain for integration context. |
-| `2026-04-06-ugc-reporting-plan.md` | Historical | Predates the Go/VPS program; retain for feature context. |
-| `2026-05-09-ios-iap-plan.md` | Needs revalidation | Uses the legacy Supabase architecture. |
 | `2026-07-23-phase1-foundation.md` | Implemented | The current Go foundation supersedes plan snippets where they differ. |
 | `2026-07-24-phase2-backend-identity.md` | Implemented | Backend identity landed in the integration branch. |
 | `2026-07-25-phase2-flutter-identity-client.md` | Implemented | Flutter identity and client boundary landed in the integration branch. |

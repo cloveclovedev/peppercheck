@@ -55,7 +55,8 @@ We provide two distinct constructors to enforcing robust layouts:
    - **Use when**: Building standard internal screens with lists or scrollable content.
    - **Features**:
      - Accepts `slivers` (standard Flutter slivers).
-     - **Automatic Padding**: Applies standard screen padding (`horizontal: 16, vertical: 8`) automatically.
+     - **Automatic Padding**: Applies `AppSizes.screenHorizontalPadding` and
+       `AppSizes.screenVerticalPadding` automatically.
      - **Bottom Padding**: Automatically adds padding for the floating navigation bar.
      - **Refresh**: Supports pull-to-refresh via standard `onRefresh` parameter.
    - **Example**:
