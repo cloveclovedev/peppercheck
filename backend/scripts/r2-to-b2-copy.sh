@@ -2,7 +2,7 @@
 # r2-to-b2-copy.sh
 #
 # Disabled skeleton for the Phase 4 daily R2 -> B2 off-site copy of delivery
-# objects (docs/superpowers/specs/2026-07-25-phase7a-infra-ops-foundation-design.md).
+# objects (docs/designs/2026-07-25-phase7a-infra-ops-foundation-design.md).
 # Phase 7-A ships only the guard: R2 doesn't hold any delivery objects yet
 # (that lands in Phase 4), so there's nothing to copy today. A cron/systemd
 # timer can already be wired to invoke this script in 7-A without effect --

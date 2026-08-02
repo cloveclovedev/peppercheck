@@ -24,7 +24,7 @@
 Implementation plans for the Supabase-to-Go/VPS refactoring program are a
 temporary exception to the general rule that working plans are not committed.
 
-- Commit existing program plans under `docs/superpowers/plans/` so later phases
+- Commit existing program plans under `docs/development/go-vps-plans/` so later phases
   can reuse their implementation details, constraints, and verification steps.
 - GitHub Issues remain the source of truth for work status, priority,
   dependencies, and acceptance. Plan checkboxes are implementation guidance,

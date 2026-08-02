@@ -1,7 +1,7 @@
 # PepperCheck Monitoring
 
 Operator reference for Phase 7-A monitoring & alerting (design doc
-`docs/superpowers/specs/2026-07-25-phase7a-infra-ops-foundation-design.md`
+`docs/designs/2026-07-25-phase7a-infra-ops-foundation-design.md`
 §9, Task 17). This document is the install/enable + runbook reference for
 what Task 17 built; **Task 22 ("Wire staging monitoring")** is the separate
 step that actually creates the real Better Stack monitors/heartbeats for a

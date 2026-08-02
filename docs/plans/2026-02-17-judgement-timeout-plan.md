@@ -8,7 +8,7 @@
 
 **Tech Stack:** PostgreSQL (pg_cron, triggers, RPC), Supabase Edge Functions (notifications via FCM), Flutter/Riverpod
 
-**Design doc:** `docs/plans/2026-02-15-judgement-timeout-design.md`
+**Design doc:** `docs/designs/2026-02-15-judgement-timeout-design.md`
 
 ---
 
@@ -733,7 +733,7 @@ The `is_evidence_timeout_confirmed` flag on `judgements` was introduced to trigg
 ## Related
 
 - Review timeout implementation uses direct close pattern (no intermediate flag)
-- Design doc: `docs/plans/2026-02-15-judgement-timeout-design.md` (Future Considerations section)
+- Design doc: `docs/designs/2026-02-15-judgement-timeout-design.md` (Future Considerations section)
 EOF
 )" \
   --label "refactor"
@@ -767,7 +767,7 @@ Affects:
 
 ## Related
 
-- Design doc: `docs/plans/2026-02-15-judgement-timeout-design.md` (Future Considerations section)
+- Design doc: `docs/designs/2026-02-15-judgement-timeout-design.md` (Future Considerations section)
 EOF
 )" \
   --label "refactor"

@@ -8,7 +8,7 @@
 
 **Tech Stack:** Flutter, firebase_messaging, flutter_local_notifications, go_router, slang (i18n), Riverpod
 
-**Design doc:** `docs/plans/2026-02-15-evidence-timeout-notification-design.md`
+**Design doc:** `docs/designs/2026-02-15-evidence-timeout-notification-design.md`
 
 ---
 

@@ -8,7 +8,7 @@
 
 **Tech Stack:** PostgreSQL (pg_cron, plpgsql), Supabase Edge Functions (Deno/TypeScript), Flutter (slang i18n), Android (strings.xml), iOS (Localizable.strings)
 
-**Design Doc:** `docs/plans/2026-02-22-auto-confirm-design.md`
+**Design Doc:** `docs/designs/2026-02-22-auto-confirm-design.md`
 
 ---
 

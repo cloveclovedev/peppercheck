@@ -1,5 +1,5 @@
 # Standalone PRODUCTION Compose file (Task 5, Phase 7-A infra/ops foundation
-# -- docs/superpowers/specs/2026-07-25-phase7a-infra-ops-foundation-design.md
+# -- docs/designs/2026-07-25-phase7a-infra-ops-foundation-design.md
 # §7). This is deliberately NOT an overlay of compose.yaml: Compose merge only
 # appends/merges services, so an overlay could never DROP the local `build:`,
 # the api/worker -> migrate runtime dependency, or the backup `profiles:` --
@@ -35,7 +35,7 @@ name: peppercheck-${PC_ENV:?PC_ENV is required (e.g. staging or production)}
 
 x-logging: &default-logging
   # Docker's default json-file driver has no size cap by default, which on a
-  # 1 GiB VPS (docs/superpowers/specs/2026-07-25-phase7a-infra-ops-foundation-design.md
+  # 1 GiB VPS (docs/designs/2026-07-25-phase7a-infra-ops-foundation-design.md
   # §7 "1 GiB pressure -> size-limited logs") can eventually fill the disk.
   # Cap total per-container log storage at 30 MiB (10 MiB x 3 rotated files).
   driver: json-file

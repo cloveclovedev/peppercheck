@@ -8,7 +8,7 @@
 
 **Tech Stack:** PostgreSQL (Supabase), PL/pgSQL
 
-**Design Doc:** `docs/plans/2026-02-14-confirm-judgement-design.md`
+**Design Doc:** `docs/designs/2026-02-14-confirm-judgement-design.md`
 
 ---
 
@@ -832,7 +832,7 @@ The migration should apply all changes in order. Since `supabase db reset` can b
 
 ```sql
 -- Migration: Confirm Judgement & Binary Rating
--- Design: docs/plans/2026-02-14-confirm-judgement-design.md
+-- Design: docs/designs/2026-02-14-confirm-judgement-design.md
 
 -- 1. Create rating_type enum
 CREATE TYPE public.rating_type AS ENUM ('tasker', 'referee');

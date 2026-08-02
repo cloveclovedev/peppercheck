@@ -6,7 +6,7 @@
 # pgBackRest full/diff backups (also cron-driven) are the primary PITR
 # mechanism; this age-encrypted dump is the independent secondary logical
 # fallback, uploaded to a separate B2 prefix
-# (docs/superpowers/specs/2026-07-25-phase7a-infra-ops-foundation-design.md §8.1).
+# (docs/designs/2026-07-25-phase7a-infra-ops-foundation-design.md §8.1).
 set -eu
 
 # AGE_RECIPIENT (the age public key) is not inherently secret, but is

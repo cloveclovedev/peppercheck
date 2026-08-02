@@ -1,16 +1,40 @@
-# peppercheck_flutter
+# PepperCheck Flutter client
 
-A new Flutter project.
+The Flutter application targets iOS and Android and uses Riverpod, Freezed,
+GoRouter, slang, Dio, Firebase Authentication, and the shared project UI
+foundations.
 
-## Getting Started
+The client is in a staged migration. Authentication and the internal-user
+boundary use Firebase and the Go API. Several feature repositories still use
+Supabase until their Go API phases land. Do not add new direct Supabase access.
 
-This project is a starting point for a Flutter application.
+## Run locally
 
-A few resources to get you started if this is your first Flutter project:
+The repository-level launcher starts the backend and selected device:
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+```sh
+scripts/dev-run.sh --ios
+scripts/dev-run.sh --android
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+For a client-only session with an already running backend:
+
+```sh
+cd peppercheck_flutter
+flutter pub get
+flutter run --flavor dev -t lib/main_dev.dart
+```
+
+Platform Firebase configuration is local and must not be committed. See the
+[repository getting-started guide](../docs/getting-started.md) for the complete
+path and port overrides.
+
+## Verify changes
+
+```sh
+flutter analyze
+flutter test
+```
+
+Generated Riverpod, Freezed, JSON, slang, and asset files must be regenerated
+with the project's pinned dependencies when their sources change.

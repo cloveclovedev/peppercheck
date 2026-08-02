@@ -8,7 +8,7 @@
 
 **Tech Stack:** PostgreSQL (pg_cron, pg_net), Supabase Edge Functions (Deno/TypeScript), Stripe Connect API
 
-**Design Doc:** `docs/plans/2026-02-19-reward-payout-design.md`
+**Design Doc:** `docs/designs/2026-02-19-reward-payout-design.md`
 
 ---
 

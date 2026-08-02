@@ -30,7 +30,7 @@ services:
       - -c
       - archive_command=/usr/local/bin/archive-wal.sh %p %f
       - -c
-      # 900s (15min) matches the accepted RPO (docs/superpowers/specs/2026-07-22-phase0-baseline.md).
+      # 900s (15min) matches the accepted RPO (docs/designs/2026-07-22-phase0-baseline.md).
       # 60s forced a 16MiB segment every minute (~22.5 GiB/day of WAL); nothing
       # yet prunes /wal-archive or ships it off-site (B2) — retention/pruning +
       # off-site upload is Phase 7 and a pre-VPS-deploy requirement.

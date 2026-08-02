@@ -1,9 +1,9 @@
 # peppercheck backend
 
-Go backend for PepperCheck (Phase 1 foundation). One binary (`peppercheck`) run
-as `api`, `worker`, or `healthcheck`; PostgreSQL managed with Atlas; Docker
-Compose for local development. **No feature endpoints yet** — this is the
-foundation the rest of the Supabase → Go + VPS refactor builds on.
+Go backend for PepperCheck. One binary (`peppercheck`) runs as `api`, `worker`,
+or `healthcheck`; PostgreSQL is managed with Atlas; Docker Compose supports
+local development. The foundation and identity slice are implemented, and the
+remaining Supabase-backed features migrate here incrementally.
 
 ## Quick start
 
@@ -34,8 +34,9 @@ secrets (Phase 7).
   `migrations/` — generated versioned migrations; `atlas.hcl` — Atlas env.
 - `deploy/` — Caddy, Postgres init + WAL archiver, backup container.
 
-Feature packages (`internal/identity`, `internal/task`, …) with the
-`handler → service → store` layering arrive from Phase 2 onward.
+Feature packages use `handler → service → store` role separation. The identity
+feature is present; later feature directories are added as their migration
+phases land.
 
 ## Notes & caveats
 

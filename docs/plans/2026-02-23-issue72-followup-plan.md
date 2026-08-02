@@ -8,7 +8,7 @@
 
 **Tech Stack:** PostgreSQL (Supabase), Flutter/Dart (Freezed, slang i18n), Android XML, iOS strings
 
-**Design doc:** `docs/plans/2026-02-23-issue72-followup-design.md`
+**Design doc:** `docs/designs/2026-02-23-issue72-followup-design.md`
 
 ---
 

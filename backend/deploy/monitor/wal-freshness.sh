@@ -1,7 +1,7 @@
 #!/bin/sh
 # wal-freshness.sh -- multi-signal WAL-archiving freshness check (Phase 7-A
 # infra/ops foundation, Task 17, design doc
-# docs/superpowers/specs/2026-07-25-phase7a-infra-ops-foundation-design.md
+# docs/designs/2026-07-25-phase7a-infra-ops-foundation-design.md
 # §8.2/§9). Runs on the HOST (Droplet) via a systemd timer every 2 minutes
 # (wal-freshness.timer) and drives `docker exec` into the running
 # peppercheck-postgres container to read pg_stat_archiver and pgBackRest
