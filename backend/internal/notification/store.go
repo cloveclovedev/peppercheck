@@ -8,7 +8,7 @@ import (
 	"github.com/cloveclovedev/peppercheck/backend/internal/core/database"
 )
 
-// Store issues the SQL over notification_settings and user_fcm_tokens.
+// Store issues the SQL over notification_settings and device_push_tokens.
 type Store struct {
 	db *sql.DB
 }
@@ -32,7 +32,7 @@ func (s *Store) ProvisionSettingsInTx(ctx context.Context, q database.Querier, u
 func (s *Store) UpsertToken(ctx context.Context, userID, token, deviceType string) error {
 	device := sql.NullString{String: deviceType, Valid: deviceType != ""}
 	if _, err := s.db.ExecContext(ctx, `
-		INSERT INTO public.user_fcm_tokens (user_id, token, device_type)
+		INSERT INTO public.device_push_tokens (user_id, token, device_type)
 		VALUES ($1, $2, $3)
 		ON CONFLICT (token) DO UPDATE
 		SET user_id = EXCLUDED.user_id,
@@ -49,7 +49,7 @@ func (s *Store) UpsertToken(ctx context.Context, userID, token, deviceType strin
 // only delete their own binding. Deleting a non-existent binding is a no-op.
 func (s *Store) DeleteToken(ctx context.Context, userID, token string) error {
 	if _, err := s.db.ExecContext(ctx,
-		`DELETE FROM public.user_fcm_tokens WHERE user_id = $1 AND token = $2`,
+		`DELETE FROM public.device_push_tokens WHERE user_id = $1 AND token = $2`,
 		userID, token); err != nil {
 		return fmt.Errorf("delete fcm token: %w", err)
 	}

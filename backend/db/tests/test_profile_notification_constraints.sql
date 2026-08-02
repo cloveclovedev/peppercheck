@@ -1,6 +1,6 @@
 -- Verifies the Phase 3a schema constraints in isolation: profiles username is
 -- unique and length-checked (2..20), profiles/settings/fcm-tokens cascade from
--- users, and user_fcm_tokens is unique on token. Transactional and self-cleaning
+-- users, and device_push_tokens is unique on token. Transactional and self-cleaning
 -- (matches db/tests/test_identity_constraints.sql).
 BEGIN;
 
@@ -48,21 +48,21 @@ BEGIN
     'notification_settings not cascaded';
 END $$;
 
--- user_fcm_tokens: token unique + FK cascade from users.
+-- device_push_tokens: token unique + FK cascade from users.
 DO $$
 DECLARE u uuid;
 BEGIN
   INSERT INTO public.users DEFAULT VALUES RETURNING id INTO u;
-  INSERT INTO public.user_fcm_tokens (user_id, token) VALUES (u, 'tok-1');
+  INSERT INTO public.device_push_tokens (user_id, token) VALUES (u, 'tok-1');
 
   BEGIN
-    INSERT INTO public.user_fcm_tokens (user_id, token) VALUES (u, 'tok-1');
+    INSERT INTO public.device_push_tokens (user_id, token) VALUES (u, 'tok-1');
     ASSERT false, 'duplicate token was allowed';
   EXCEPTION WHEN unique_violation THEN NULL; END;
 
   DELETE FROM public.users WHERE id = u;
-  ASSERT NOT EXISTS (SELECT 1 FROM public.user_fcm_tokens WHERE user_id = u),
-    'user_fcm_tokens not cascaded';
+  ASSERT NOT EXISTS (SELECT 1 FROM public.device_push_tokens WHERE user_id = u),
+    'device_push_tokens not cascaded';
 END $$;
 
 ROLLBACK;

@@ -59,7 +59,7 @@ func TestUpsertTokenRebinds(t *testing.T) {
 	}
 	var owner, device string
 	if err := s.db.QueryRowContext(ctx,
-		`SELECT user_id, device_type FROM public.user_fcm_tokens WHERE token = $1`, "tok",
+		`SELECT user_id, device_type FROM public.device_push_tokens WHERE token = $1`, "tok",
 	).Scan(&owner, &device); err != nil {
 		t.Fatalf("read token: %v", err)
 	}
@@ -67,7 +67,7 @@ func TestUpsertTokenRebinds(t *testing.T) {
 		t.Fatalf("token owner=%s device=%s, want %s/ios", owner, device, u2)
 	}
 	var count int
-	if err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM public.user_fcm_tokens`).Scan(&count); err != nil {
+	if err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM public.device_push_tokens`).Scan(&count); err != nil {
 		t.Fatalf("count: %v", err)
 	}
 	if count != 1 {
@@ -85,7 +85,7 @@ func TestUpsertTokenAdvancesUpdatedAt(t *testing.T) {
 	// Seed a past updated_at/last_active_at, then upsert the same token.
 	past := time.Now().Add(-time.Hour)
 	if _, err := s.db.ExecContext(ctx,
-		`UPDATE public.user_fcm_tokens SET updated_at = $2, last_active_at = $2 WHERE token = $1`, "tok", past,
+		`UPDATE public.device_push_tokens SET updated_at = $2, last_active_at = $2 WHERE token = $1`, "tok", past,
 	); err != nil {
 		t.Fatalf("seed past: %v", err)
 	}
@@ -94,7 +94,7 @@ func TestUpsertTokenAdvancesUpdatedAt(t *testing.T) {
 	}
 	var updatedAt, lastActive time.Time
 	if err := s.db.QueryRowContext(ctx,
-		`SELECT updated_at, last_active_at FROM public.user_fcm_tokens WHERE token = $1`, "tok",
+		`SELECT updated_at, last_active_at FROM public.device_push_tokens WHERE token = $1`, "tok",
 	).Scan(&updatedAt, &lastActive); err != nil {
 		t.Fatalf("read timestamps: %v", err)
 	}
@@ -119,7 +119,7 @@ func TestDeleteTokenScoped(t *testing.T) {
 		t.Fatalf("scoped delete: %v", err)
 	}
 	var count int
-	if err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM public.user_fcm_tokens WHERE token = $1`, "tok-b").Scan(&count); err != nil {
+	if err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM public.device_push_tokens WHERE token = $1`, "tok-b").Scan(&count); err != nil {
 		t.Fatalf("count b: %v", err)
 	}
 	if count != 1 {
@@ -130,7 +130,7 @@ func TestDeleteTokenScoped(t *testing.T) {
 	if err := s.DeleteToken(ctx, u1, "tok-a"); err != nil {
 		t.Fatalf("own delete: %v", err)
 	}
-	if err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM public.user_fcm_tokens WHERE token = $1`, "tok-a").Scan(&count); err != nil {
+	if err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM public.device_push_tokens WHERE token = $1`, "tok-a").Scan(&count); err != nil {
 		t.Fatalf("count a: %v", err)
 	}
 	if count != 0 {

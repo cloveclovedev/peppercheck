@@ -37,7 +37,7 @@ func TestPutAndDeleteToken(t *testing.T) {
 		t.Fatalf("PUT status = %d, want 204; body=%s", rec.Code, rec.Body.String())
 	}
 	var count int
-	if err := db.QueryRow(`SELECT count(*) FROM public.user_fcm_tokens WHERE token = 'tok'`).Scan(&count); err != nil {
+	if err := db.QueryRow(`SELECT count(*) FROM public.device_push_tokens WHERE token = 'tok'`).Scan(&count); err != nil {
 		t.Fatalf("count: %v", err)
 	}
 	if count != 1 {
@@ -52,7 +52,7 @@ func TestPutAndDeleteToken(t *testing.T) {
 	if rec := do(t, h, "DELETE", "/api/v1/me/fcm-tokens", "sub-A", map[string]string{"token": "tok"}); rec.Code != http.StatusNoContent {
 		t.Fatalf("DELETE status = %d, want 204", rec.Code)
 	}
-	if err := db.QueryRow(`SELECT count(*) FROM public.user_fcm_tokens WHERE token = 'tok'`).Scan(&count); err != nil {
+	if err := db.QueryRow(`SELECT count(*) FROM public.device_push_tokens WHERE token = 'tok'`).Scan(&count); err != nil {
 		t.Fatalf("count after delete: %v", err)
 	}
 	if count != 0 {
@@ -80,7 +80,7 @@ func TestDeleteTokenIsOwnershipScoped(t *testing.T) {
 		t.Fatalf("B DELETE status = %d, want 204 (scoped no-op)", rec.Code)
 	}
 	var count int
-	if err := db.QueryRow(`SELECT count(*) FROM public.user_fcm_tokens WHERE token = 'tok-a'`).Scan(&count); err != nil {
+	if err := db.QueryRow(`SELECT count(*) FROM public.device_push_tokens WHERE token = 'tok-a'`).Scan(&count); err != nil {
 		t.Fatalf("count: %v", err)
 	}
 	if count != 1 {
