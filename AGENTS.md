@@ -2,15 +2,16 @@
 
 ## Rule Authority
 
-- This repository's `AGENTS.md` is the source of truth for repository-specific
-  agent rules.
+- The shared `~/.agents/AGENTS.md` is the source of truth for common agent
+  rules. This repository file adds only PepperCheck-specific guidance.
 - Do not use `developer-docs/` or the external developer-documentation
   repository as a source of contribution, issue, task, workflow, or engineering
   rules.
 - Treat `developer-docs/` as legacy content pending documentation cleanup.
   Inspect it only when a task explicitly requires migrating or auditing that
   content.
-- If another document conflicts with `AGENTS.md`, follow `AGENTS.md`.
+- If another document conflicts with the shared or repository `AGENTS.md`,
+  follow the applicable `AGENTS.md` guidance.
 
 ## Tools
 
