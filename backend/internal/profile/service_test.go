@@ -116,15 +116,22 @@ func TestValidateUsername(t *testing.T) {
 }
 
 func TestUpdateOwnTimezoneValidation(t *testing.T) {
-	s := newService(&fakeStore{updated: Profile{Timezone: "Asia/Tokyo"}})
-	tz := "Asia/Tokyo"
-	if _, err := s.UpdateOwn(context.Background(), "u1", UpdateInput{Timezone: &tz}); err != nil {
-		t.Fatalf("valid tz: %v", err)
+	for _, tz := range []string{"Asia/Tokyo", "UTC"} {
+		s := newService(&fakeStore{updated: Profile{Timezone: tz}})
+		v := tz
+		if _, err := s.UpdateOwn(context.Background(), "u1", UpdateInput{Timezone: &v}); err != nil {
+			t.Fatalf("valid tz %q: %v", tz, err)
+		}
 	}
-	bad := "Nowhere/Nope"
-	_, err := s.UpdateOwn(context.Background(), "u1", UpdateInput{Timezone: &bad})
-	if !errors.Is(err, ErrInvalidTimezone) {
-		t.Fatalf("err = %v, want ErrInvalidTimezone", err)
+	// "Local" resolves via LoadLocation to Go's process zone (non-IANA,
+	// host-dependent) and must be rejected alongside garbage input.
+	for _, tz := range []string{"Nowhere/Nope", "Local", ""} {
+		s := newService(&fakeStore{updated: Profile{}})
+		v := tz
+		_, err := s.UpdateOwn(context.Background(), "u1", UpdateInput{Timezone: &v})
+		if !errors.Is(err, ErrInvalidTimezone) {
+			t.Fatalf("tz %q err = %v, want ErrInvalidTimezone", tz, err)
+		}
 	}
 }
 
@@ -314,4 +321,39 @@ func TestAvatarFinalize(t *testing.T) {
 			t.Fatal("store.Update must not run when the object is missing")
 		}
 	})
+
+	t.Run("head transient error is unavailable not invalid", func(t *testing.T) {
+		// A non-not-found Head failure (timeout/auth/5xx) is a dependency issue:
+		// 503-retryable, never a 400 malformed-request.
+		up := &fakeUploader{headErr: errors.New("r2 timeout")}
+		store := &fakeStore{}
+		s := NewService(store, up, testDomain, allowAll{}, discard())
+		u := newURL
+		if _, err := s.UpdateOwn(context.Background(), uid, UpdateInput{AvatarURL: &u}); !errors.Is(err, ErrUnavailable) {
+			t.Fatalf("err = %v, want ErrUnavailable", err)
+		}
+		if store.updateCalled {
+			t.Fatal("store.Update must not run when Head fails transiently")
+		}
+	})
+}
+
+func TestAvatarDisabledWhenNoUploader(t *testing.T) {
+	const uid = "11111111-1111-1111-1111-111111111111"
+	// A nil uploader models R2 not being configured: avatar operations fail
+	// closed (unavailable), while non-avatar profile updates still work.
+	s := NewService(&fakeStore{updated: Profile{Username: "alice"}}, nil, testDomain, allowAll{}, discard())
+
+	if _, err := s.RequestAvatarUpload(context.Background(), uid, AvatarUploadInput{ContentType: "image/jpeg", FileSizeBytes: 2048}); !errors.Is(err, ErrUnavailable) {
+		t.Fatalf("RequestAvatarUpload err = %v, want ErrUnavailable", err)
+	}
+	avatarURL := "https://" + testDomain + "/avatar/" + uid + "/pic.jpg"
+	if _, err := s.UpdateOwn(context.Background(), uid, UpdateInput{AvatarURL: &avatarURL}); !errors.Is(err, ErrUnavailable) {
+		t.Fatalf("avatar PATCH err = %v, want ErrUnavailable", err)
+	}
+	// A non-avatar update still succeeds with no uploader.
+	name := "alice"
+	if _, err := s.UpdateOwn(context.Background(), uid, UpdateInput{Username: &name}); err != nil {
+		t.Fatalf("username update with no uploader: %v", err)
+	}
 }

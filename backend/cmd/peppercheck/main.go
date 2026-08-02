@@ -59,18 +59,6 @@ func main() {
 			logger.Error("firebase verifier init failed", "error", err)
 			os.Exit(1)
 		}
-		r2Client, err := r2.New(r2.Config{
-			AccountID:       cfg.R2AccountID,
-			AccessKeyID:     cfg.R2AccessKeyID,
-			SecretAccessKey: cfg.R2SecretAccessKey,
-			Bucket:          cfg.R2Bucket,
-			PublicDomain:    cfg.R2PublicDomain,
-		})
-		if err != nil {
-			logger.Error("r2 client init failed", "error", err)
-			os.Exit(1)
-		}
-
 		profileStore := profile.NewStore(db)
 		notifStore := notification.NewStore(db)
 
@@ -79,9 +67,26 @@ func main() {
 		idSvc := identity.NewService(identity.NewStore(db), api.NewProvisioner(profileStore, notifStore))
 		idHandler := identity.NewHandler(idSvc, logger)
 
+		// R2 backs avatar upload/finalize only. When it is not configured (per-env
+		// credentials are operator-provisioned at deploy), the api still runs with
+		// avatars failing closed at the feature (503) rather than crashing the
+		// whole process — profile/notification/identity do not need R2.
+		var avatarUploader r2.Uploader
+		if r2Client, err := r2.New(r2.Config{
+			AccountID:       cfg.R2AccountID,
+			AccessKeyID:     cfg.R2AccessKeyID,
+			SecretAccessKey: cfg.R2SecretAccessKey,
+			Bucket:          cfg.R2Bucket,
+			PublicDomain:    cfg.R2PublicDomain,
+		}); err != nil {
+			logger.Warn("R2 not configured; avatar upload/finalize disabled (503)", "error", err)
+		} else {
+			avatarUploader = r2Client
+		}
+
 		// Per-user avatar-upload rate limit: burst 10, ~10/hour, evict idle after 1h.
 		avatarLimiter := ratelimit.NewTokenBucket(10, 10, time.Hour, nil)
-		profileSvc := profile.NewService(profileStore, r2Client, cfg.R2PublicDomain, avatarLimiter, logger)
+		profileSvc := profile.NewService(profileStore, avatarUploader, cfg.R2PublicDomain, avatarLimiter, logger)
 		notifSvc := notification.NewService(notifStore)
 
 		if err := api.Run(ctx, cfg, logger, api.Deps{

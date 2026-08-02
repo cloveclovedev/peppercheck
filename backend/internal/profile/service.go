@@ -24,6 +24,10 @@ var (
 	// ErrRateLimited means the per-user avatar-upload quota was exceeded (429).
 	// The returned error is a *RateLimited carrying the retry delay.
 	ErrRateLimited = errors.New("rate limited")
+	// ErrUnavailable means the avatar object store is not configured or a
+	// dependency (R2) failed transiently — the caller should retry (503), not
+	// treat it as a malformed request.
+	ErrUnavailable = errors.New("avatar service unavailable")
 )
 
 // RateLimited is returned when the avatar-upload rate limit is hit; it carries
@@ -125,6 +129,9 @@ func (s *Service) UpdateOwn(ctx context.Context, userID string, in UpdateInput) 
 	}
 	var newAvatarKey string
 	if in.AvatarURL != nil {
+		if s.uploader == nil {
+			return Profile{}, ErrUnavailable
+		}
 		key, err := s.parseAvatarKey(*in.AvatarURL, userID)
 		if err != nil {
 			return Profile{}, ErrInvalidArgument
@@ -133,7 +140,13 @@ func (s *Service) UpdateOwn(ctx context.Context, userID string, in UpdateInput) 
 		// allowed content type. Best-effort (TOCTOU; not a hard cap) — see §4.6.
 		meta, err := s.uploader.Head(ctx, key)
 		if err != nil {
-			return Profile{}, ErrInvalidArgument
+			// A missing object is the caller's fault (400); a transient/dependency
+			// failure (timeout, auth, 5xx) must not be reported as malformed (503).
+			if errors.Is(err, r2.ErrObjectNotFound) {
+				return Profile{}, ErrInvalidArgument
+			}
+			s.logger.Error("avatar head failed", "error", err)
+			return Profile{}, ErrUnavailable
 		}
 		if meta.ContentLength < minAvatarBytes || meta.ContentLength > maxAvatarBytes {
 			return Profile{}, ErrInvalidArgument
@@ -170,6 +183,9 @@ func (s *Service) UpdateOwn(ctx context.Context, userID string, in UpdateInput) 
 // versioned per upload (avatar/{userID}/{token}.{ext}) so an upload never
 // clobbers the current avatar.
 func (s *Service) RequestAvatarUpload(ctx context.Context, userID string, in AvatarUploadInput) (AvatarUpload, error) {
+	if s.uploader == nil {
+		return AvatarUpload{}, ErrUnavailable
+	}
 	if ok, retry := s.limiter.Allow(userID); !ok {
 		return AvatarUpload{}, &RateLimited{RetryAfter: retry}
 	}
@@ -225,9 +241,12 @@ func validateUsername(u string) error {
 }
 
 // validateTimezone requires a valid IANA timezone (needs the tz database; the
-// api embeds it via time/tzdata).
+// api embeds it via time/tzdata). It rejects the empty string and Go's "Local"
+// pseudo-zone, which time.LoadLocation resolves to the deployment-dependent
+// process zone rather than an IANA entry — a non-portable value that would make
+// scheduling host-dependent. ("UTC" is a genuine IANA zone and stays allowed.)
 func validateTimezone(tz string) error {
-	if tz == "" {
+	if tz == "" || tz == "Local" {
 		return ErrInvalidTimezone
 	}
 	if _, err := time.LoadLocation(tz); err != nil {

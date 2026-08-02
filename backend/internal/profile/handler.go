@@ -122,6 +122,10 @@ func (h *Handler) PostAvatarUploadURL(w http.ResponseWriter, r *http.Request) {
 			httpserver.WriteError(w, r, http.StatusBadRequest, httpserver.CodeInvalidArgument, "invalid content type or size")
 			return
 		}
+		if errors.Is(err, ErrUnavailable) {
+			httpserver.WriteError(w, r, http.StatusServiceUnavailable, httpserver.CodeUnavailable, "avatar service temporarily unavailable")
+			return
+		}
 		httpserver.WriteError(w, r, http.StatusInternalServerError, httpserver.CodeInternal, "could not create upload url")
 		return
 	}
@@ -141,6 +145,8 @@ func writeUpdateError(w http.ResponseWriter, r *http.Request, err error) {
 		httpserver.WriteError(w, r, http.StatusBadRequest, httpserver.CodeInvalidTimezone, "invalid timezone")
 	case errors.Is(err, ErrInvalidArgument):
 		httpserver.WriteError(w, r, http.StatusBadRequest, httpserver.CodeInvalidArgument, "invalid argument")
+	case errors.Is(err, ErrUnavailable):
+		httpserver.WriteError(w, r, http.StatusServiceUnavailable, httpserver.CodeUnavailable, "avatar service temporarily unavailable")
 	default:
 		httpserver.WriteError(w, r, http.StatusInternalServerError, httpserver.CodeInternal, "could not update profile")
 	}

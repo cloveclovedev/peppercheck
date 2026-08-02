@@ -216,6 +216,21 @@ func TestAvatarFinalizeAcceptsValidObject(t *testing.T) {
 	}
 }
 
+func TestAvatarUnavailableWhenR2Unconfigured(t *testing.T) {
+	// nil uploader models R2 not configured (operator-provisioned at deploy):
+	// avatar endpoints fail closed with 503, the rest of the api still serves.
+	h, _ := stackDeps(t, fakeVerifier("sub-A"), nil, ratelimit.NewTokenBucket(10, 10, time.Hour, nil))
+
+	rec := do(t, h, "POST", "/api/v1/me/avatar/request-upload-url", "sub-A", map[string]any{"contentType": "image/jpeg", "fileSizeBytes": 2048})
+	if rec.Code != http.StatusServiceUnavailable || errorCode(t, rec) != "unavailable" {
+		t.Fatalf("status = %d code = %q, want 503 unavailable", rec.Code, errorCode(t, rec))
+	}
+	// Non-avatar profile still works.
+	if rec := do(t, h, "PATCH", "/api/v1/me/profile", "sub-A", map[string]string{"username": "alice"}); rec.Code != http.StatusOK {
+		t.Fatalf("username PATCH should still work: %d %s", rec.Code, rec.Body.String())
+	}
+}
+
 func TestProfileUserIsolation(t *testing.T) {
 	up := &fakeUploader{}
 	limiter := ratelimit.NewTokenBucket(10, 10, time.Hour, nil)
