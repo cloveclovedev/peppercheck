@@ -60,6 +60,22 @@ func TestLoadReadsFirebaseProjectID(t *testing.T) {
 	}
 }
 
+func TestLoadReadsR2Config(t *testing.T) {
+	t.Setenv("R2_ACCOUNT_ID", "acct-123")
+	t.Setenv("R2_ACCESS_KEY_ID", "AKID")
+	t.Setenv("R2_SECRET_ACCESS_KEY", "secret")
+	t.Setenv("R2_BUCKET", "avatars")
+	t.Setenv("R2_PUBLIC_DOMAIN", "cdn.example.com")
+	c, err := Load()
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if c.R2AccountID != "acct-123" || c.R2AccessKeyID != "AKID" || c.R2SecretAccessKey != "secret" ||
+		c.R2Bucket != "avatars" || c.R2PublicDomain != "cdn.example.com" {
+		t.Fatalf("R2 config = %+v", c)
+	}
+}
+
 func TestLoadOverridesAndValidation(t *testing.T) {
 	t.Setenv("PORT", "9090")
 	t.Setenv("DATABASE_URL", "postgres://x")
