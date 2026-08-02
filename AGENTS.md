@@ -1,21 +1,16 @@
 # AGENTS.md
 
-## Contribution Rules
+## Rule Authority
 
-Before producing any output related to issues, tasks, or project management:
-
-1. Use the web search/browsing tool to open and read all pages listed below.
-2. Follow the rules described in these pages.
-
-### Required pages
-
-- https://raw.githubusercontent.com/cloveclovedev/cloveclove-developer-docs/main/modules/ROOT/pages/contribution/issue.adoc
-  (Access the raw content, not the rendered HTML.)
-
-If the web tool is unavailable or the pages cannot be loaded:
-
-- **Leave all contribution-related actions to the user.**
-- Provide assistance only when explicitly instructed by the user.
+- This repository's `AGENTS.md` is the source of truth for repository-specific
+  agent rules.
+- Do not use `developer-docs/` or the external developer-documentation
+  repository as a source of contribution, issue, task, workflow, or engineering
+  rules.
+- Treat `developer-docs/` as legacy content pending documentation cleanup.
+  Inspect it only when a task explicitly requires migrating or auditing that
+  content.
+- If another document conflicts with `AGENTS.md`, follow `AGENTS.md`.
 
 ## Tools
 
