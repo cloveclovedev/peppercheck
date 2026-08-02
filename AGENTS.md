@@ -23,6 +23,29 @@ If the web tool is unavailable or the pages cannot be loaded:
 
 - Use `gh` command
 
+## Go/VPS Refactoring Plans
+
+Implementation plans for the Supabase-to-Go/VPS refactoring program are a
+temporary exception to the general rule that working plans are not committed.
+
+- Commit existing program plans under `docs/superpowers/plans/` so later phases
+  can reuse their implementation details, constraints, and verification steps.
+- GitHub Issues remain the source of truth for work status, priority,
+  dependencies, and acceptance. Plan checkboxes are implementation guidance,
+  not a second work tracker.
+- Mark a completed phase plan as `Implemented`, but retain it until the overall
+  refactoring program is complete. Remove the temporary program plans in the
+  final cleanup after durable decisions have been preserved in design documents.
+- Revalidate a plan against the current code, approved design, dependency
+  versions, and official third-party documentation before executing it.
+- Starting with Phase 4b, creating a separate implementation plan is optional.
+  An approved design document plus sufficiently scoped GitHub Issues and
+  acceptance criteria are enough when they provide clear implementation
+  guidance. Create a plan only when sequencing, migration risk, cross-component
+  coordination, or detailed verification makes one useful.
+- The existing Phase 4b plan remains a retained program plan; this policy does
+  not require equivalent plans for later phases.
+
 ## PepperCheck Flutter Best Practices
 
 ### Screen Implementation
