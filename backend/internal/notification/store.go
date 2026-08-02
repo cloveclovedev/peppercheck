@@ -26,8 +26,8 @@ func (s *Store) ProvisionSettingsInTx(ctx context.Context, q database.Querier, u
 	return nil
 }
 
-// UpsertToken binds an FCM token to the user, rebinding on conflict (a device
-// re-logging-in). updated_at and last_active_at are Go-maintained on the
+// UpsertToken binds a device push token to the user, rebinding on conflict (a
+// device re-logging-in). updated_at and last_active_at are Go-maintained on the
 // conflict path. An empty deviceType is stored as NULL.
 func (s *Store) UpsertToken(ctx context.Context, userID, token, deviceType string) error {
 	device := sql.NullString{String: deviceType, Valid: deviceType != ""}
@@ -40,7 +40,7 @@ func (s *Store) UpsertToken(ctx context.Context, userID, token, deviceType strin
 		    last_active_at = now(),
 		    updated_at = now()`,
 		userID, token, device); err != nil {
-		return fmt.Errorf("upsert fcm token: %w", err)
+		return fmt.Errorf("upsert push token: %w", err)
 	}
 	return nil
 }
@@ -51,7 +51,7 @@ func (s *Store) DeleteToken(ctx context.Context, userID, token string) error {
 	if _, err := s.db.ExecContext(ctx,
 		`DELETE FROM public.device_push_tokens WHERE user_id = $1 AND token = $2`,
 		userID, token); err != nil {
-		return fmt.Errorf("delete fcm token: %w", err)
+		return fmt.Errorf("delete push token: %w", err)
 	}
 	return nil
 }

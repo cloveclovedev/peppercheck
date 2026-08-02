@@ -14,9 +14,9 @@ import (
 	"github.com/cloveclovedev/peppercheck/backend/internal/profile"
 )
 
-// fcmStackFor builds an authed stack for a subject over an existing DB (no
+// pushTokenStackFor builds an authed stack for a subject over an existing DB (no
 // truncate), used to add a second user in the same test.
-func fcmStackFor(db *database.Handle, subject string) http.Handler {
+func pushTokenStackFor(db *database.Handle, subject string) http.Handler {
 	profileStore := profile.NewStore(db)
 	notifStore := notification.NewStore(db)
 	idSvc := identity.NewService(identity.NewStore(db), NewProvisioner(profileStore, notifStore))
@@ -75,7 +75,7 @@ func TestDeleteTokenIsOwnershipScoped(t *testing.T) {
 	}
 
 	// User B tries to delete A's token -> 204 (no-op), but the row survives.
-	hB := fcmStackFor(db, "sub-B")
+	hB := pushTokenStackFor(db, "sub-B")
 	if rec := do(t, hB, "DELETE", "/api/v1/me/device-push-tokens", "sub-B", map[string]string{"token": "tok-a"}); rec.Code != http.StatusNoContent {
 		t.Fatalf("B DELETE status = %d, want 204 (scoped no-op)", rec.Code)
 	}

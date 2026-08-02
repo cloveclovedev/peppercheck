@@ -14,7 +14,7 @@ type storeIface interface {
 	DeleteToken(ctx context.Context, userID, token string) error
 }
 
-// Service owns FCM token registration/deregistration, scoped to the caller.
+// Service owns device push-token registration/deregistration, scoped to the caller.
 type Service struct {
 	store storeIface
 }
@@ -22,8 +22,8 @@ type Service struct {
 // NewService builds a Service over a store.
 func NewService(store storeIface) *Service { return &Service{store: store} }
 
-// RegisterToken binds (or rebinds) an FCM token to the user. An empty token is
-// rejected.
+// RegisterToken binds (or rebinds) a device push token to the user. An empty
+// token is rejected.
 func (s *Service) RegisterToken(ctx context.Context, userID, token, deviceType string) error {
 	if token == "" {
 		return ErrInvalidArgument

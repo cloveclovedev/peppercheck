@@ -9,7 +9,7 @@ import (
 	"github.com/cloveclovedev/peppercheck/backend/internal/identity"
 )
 
-// Handler serves the FCM token registration surface, scoped to the caller.
+// Handler serves the device push-token registration surface, scoped to the caller.
 type Handler struct {
 	svc *Service
 }
@@ -22,7 +22,7 @@ type putTokenRequest struct {
 	DeviceType string `json:"deviceType"`
 }
 
-// PutToken registers (upserts) the caller's FCM token.
+// PutToken registers (upserts) the caller's device push token.
 func (h *Handler) PutToken(w http.ResponseWriter, r *http.Request) {
 	u, ok := identity.CurrentUser(r.Context())
 	if !ok {
@@ -45,7 +45,7 @@ type deleteTokenRequest struct {
 	Token string `json:"token"`
 }
 
-// DeleteToken removes the caller's FCM token binding.
+// DeleteToken removes the caller's device push-token binding.
 func (h *Handler) DeleteToken(w http.ResponseWriter, r *http.Request) {
 	u, ok := identity.CurrentUser(r.Context())
 	if !ok {

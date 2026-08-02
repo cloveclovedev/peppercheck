@@ -1,5 +1,5 @@
 -- Verifies the Phase 3a schema constraints in isolation: profiles username is
--- unique and length-checked (2..20), profiles/settings/fcm-tokens cascade from
+-- unique and length-checked (2..20), profiles/settings/device-push-tokens cascade from
 -- users, and device_push_tokens is unique on token. Transactional and self-cleaning
 -- (matches db/tests/test_identity_constraints.sql).
 BEGIN;
