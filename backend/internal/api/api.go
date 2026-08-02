@@ -63,8 +63,8 @@ func buildHandler(deps Deps) http.Handler {
 			mux.Handle("POST /api/v1/me/avatar/request-upload-url", chain(deps.Profile.PostAvatarUploadURL))
 		}
 		if deps.Notification != nil {
-			mux.Handle("PUT /api/v1/me/fcm-tokens", chain(deps.Notification.PutToken))
-			mux.Handle("DELETE /api/v1/me/fcm-tokens", chain(deps.Notification.DeleteToken))
+			mux.Handle("PUT /api/v1/me/device-push-tokens", chain(deps.Notification.PutToken))
+			mux.Handle("DELETE /api/v1/me/device-push-tokens", chain(deps.Notification.DeleteToken))
 		}
 	}
 	return mux

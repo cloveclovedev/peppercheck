@@ -33,7 +33,7 @@ func fcmStackFor(db *database.Handle, subject string) http.Handler {
 func TestPutAndDeleteToken(t *testing.T) {
 	h, db := stackDeps(t, fakeVerifier("sub-A"), &fakeUploader{}, ratelimit.NewTokenBucket(10, 10, time.Hour, nil))
 
-	if rec := do(t, h, "PUT", "/api/v1/me/fcm-tokens", "sub-A", map[string]string{"token": "tok", "deviceType": "android"}); rec.Code != http.StatusNoContent {
+	if rec := do(t, h, "PUT", "/api/v1/me/device-push-tokens", "sub-A", map[string]string{"token": "tok", "deviceType": "android"}); rec.Code != http.StatusNoContent {
 		t.Fatalf("PUT status = %d, want 204; body=%s", rec.Code, rec.Body.String())
 	}
 	var count int
@@ -45,11 +45,11 @@ func TestPutAndDeleteToken(t *testing.T) {
 	}
 
 	// Idempotent re-PUT.
-	if rec := do(t, h, "PUT", "/api/v1/me/fcm-tokens", "sub-A", map[string]string{"token": "tok", "deviceType": "android"}); rec.Code != http.StatusNoContent {
+	if rec := do(t, h, "PUT", "/api/v1/me/device-push-tokens", "sub-A", map[string]string{"token": "tok", "deviceType": "android"}); rec.Code != http.StatusNoContent {
 		t.Fatalf("re-PUT status = %d, want 204", rec.Code)
 	}
 
-	if rec := do(t, h, "DELETE", "/api/v1/me/fcm-tokens", "sub-A", map[string]string{"token": "tok"}); rec.Code != http.StatusNoContent {
+	if rec := do(t, h, "DELETE", "/api/v1/me/device-push-tokens", "sub-A", map[string]string{"token": "tok"}); rec.Code != http.StatusNoContent {
 		t.Fatalf("DELETE status = %d, want 204", rec.Code)
 	}
 	if err := db.QueryRow(`SELECT count(*) FROM public.device_push_tokens WHERE token = 'tok'`).Scan(&count); err != nil {
@@ -62,7 +62,7 @@ func TestPutAndDeleteToken(t *testing.T) {
 
 func TestPutTokenRejectsEmpty(t *testing.T) {
 	h, _ := stackDeps(t, fakeVerifier("sub-A"), &fakeUploader{}, ratelimit.NewTokenBucket(10, 10, time.Hour, nil))
-	rec := do(t, h, "PUT", "/api/v1/me/fcm-tokens", "sub-A", map[string]string{"token": "", "deviceType": "android"})
+	rec := do(t, h, "PUT", "/api/v1/me/device-push-tokens", "sub-A", map[string]string{"token": "", "deviceType": "android"})
 	if rec.Code != http.StatusBadRequest || errorCode(t, rec) != "invalid_argument" {
 		t.Fatalf("status = %d code = %q, want 400 invalid_argument", rec.Code, errorCode(t, rec))
 	}
@@ -70,13 +70,13 @@ func TestPutTokenRejectsEmpty(t *testing.T) {
 
 func TestDeleteTokenIsOwnershipScoped(t *testing.T) {
 	hA, db := stackDeps(t, fakeVerifier("sub-A"), &fakeUploader{}, ratelimit.NewTokenBucket(10, 10, time.Hour, nil))
-	if rec := do(t, hA, "PUT", "/api/v1/me/fcm-tokens", "sub-A", map[string]string{"token": "tok-a", "deviceType": "android"}); rec.Code != http.StatusNoContent {
+	if rec := do(t, hA, "PUT", "/api/v1/me/device-push-tokens", "sub-A", map[string]string{"token": "tok-a", "deviceType": "android"}); rec.Code != http.StatusNoContent {
 		t.Fatalf("A PUT: %d", rec.Code)
 	}
 
 	// User B tries to delete A's token -> 204 (no-op), but the row survives.
 	hB := fcmStackFor(db, "sub-B")
-	if rec := do(t, hB, "DELETE", "/api/v1/me/fcm-tokens", "sub-B", map[string]string{"token": "tok-a"}); rec.Code != http.StatusNoContent {
+	if rec := do(t, hB, "DELETE", "/api/v1/me/device-push-tokens", "sub-B", map[string]string{"token": "tok-a"}); rec.Code != http.StatusNoContent {
 		t.Fatalf("B DELETE status = %d, want 204 (scoped no-op)", rec.Code)
 	}
 	var count int
