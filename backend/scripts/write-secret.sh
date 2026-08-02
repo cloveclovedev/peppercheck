@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# Validates a secret name and writes stdin to the deploy-owned staging dir
-# (Task 6, Phase 7-A infra/ops foundation -- design doc §6.1/§6.5).
+# Validates a secret name and writes stdin to the deploy-owned staging dir.
 #
 # Run as the `deploy` user during a deploy. `deploy` -- already
 # root-equivalent via the docker group (§6.5) -- is trusted to write these
@@ -8,8 +7,8 @@
 # is validated against an exact allowlist (a `case` of literal names only --
 # no globs, no `..`, no `/`) before it ever touches a path. The written file
 # is owned by `deploy` and left world-unreadable (umask 077); re-owning it to
-# the consuming container's UID happens later, in a throwaway root container
-# (Task 10) -- this script never runs as root and never chowns.
+# the consuming container's UID happens later, in a throwaway root container;
+# this script never runs as root and never chowns.
 set -euo pipefail
 
 if [ "$#" -ne 1 ]; then
@@ -20,7 +19,7 @@ fi
 name="$1"
 
 # Exact allowlist -- must stay in sync with compose.prod.yaml's `secrets:`
-# block (Task 5) plus `ghcr_token` (used for the GHCR pull login, Task 10).
+# block plus `ghcr_token` (used for the GHCR pull login).
 # Every branch is a literal string; none of these patterns contain glob
 # metacharacters, so this only ever matches an exact name.
 case "$name" in

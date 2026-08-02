@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ship-deployment.sh <env> <ssh_host> <sha> <run_id> <manifest>
 #
-# Run from the CI runner (deploy-vps.yml, Phase 7-A Task 8) via
+# Run from the CI runner (deploy-vps.yml) via
 # `bws run -- ./backend/scripts/ship-deployment.sh ...` -- so every
 # `${secret_name}` referenced below already exists in this process's
 # environment, rendered by bws immediately before this script starts (and
@@ -87,7 +87,7 @@ rsync -a -e "${ssh_cmd[*]}" backend/ "deploy@${ssh_host}:${d}/"
 # expansion on the Droplet side, and `${!k}` here reads it straight out of
 # this process's own environment (populated by `bws run`, never echoed).
 # Ownership to the consuming container's UID happens later, in remote-deploy
-# .sh's throwaway root container (Task 10 design) -- this script only ever
+# .sh's throwaway root container -- this script only ever
 # writes deploy-owned, 0600 files via write-secret.sh.
 for k in database_url postgres_superuser_pw postgres_app_pw postgres_migrator_pw \
   postgres_backup_pw migrator_database_url pgbackrest_cipher b2_key_id b2_key_secret ghcr_token; do

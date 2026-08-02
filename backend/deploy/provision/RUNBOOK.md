@@ -2,7 +2,7 @@
 
 Operator runbook for standing up a PepperCheck deploy environment (Phase 7-A
 infrastructure/operations foundation,
-`docs/superpowers/specs/2026-07-25-phase7a-infra-ops-foundation-design.md`
+`docs/designs/2026-07-25-phase7a-infra-ops-foundation-design.md`
 §10). Staging is stood up first; production follows the same steps at
 cutover, substituting the `production` values called out inline.
 

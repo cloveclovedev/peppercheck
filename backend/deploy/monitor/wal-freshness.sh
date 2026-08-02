@@ -1,8 +1,6 @@
 #!/bin/sh
-# wal-freshness.sh -- multi-signal WAL-archiving freshness check (Phase 7-A
-# infra/ops foundation, Task 17, design doc
-# docs/superpowers/specs/2026-07-25-phase7a-infra-ops-foundation-design.md
-# §8.2/§9). Runs on the HOST (Droplet) via a systemd timer every 2 minutes
+# wal-freshness.sh -- multi-signal WAL-archiving freshness check. Runs on the
+# HOST (Droplet) via a systemd timer every 2 minutes
 # (wal-freshness.timer) and drives `docker exec` into the running
 # peppercheck-postgres container to read pg_stat_archiver and pgBackRest
 # state as the `postgres` user -- it does not run inside any container
@@ -115,7 +113,7 @@ B2_LAG_ALERT_STREAK="${B2_LAG_ALERT_STREAK:-3}"
 # `pgbackrest check` performs a real archive-push/archive-get round trip
 # (i.e. forces an extra WAL segment switch) -- valuable per the design doc's
 # multi-signal list, but expensive to run every 2 minutes forever. Default
-# off; enable once staging/production wiring (Task 22) has a view of the
+# off; enable once staging/production monitoring has a view of the
 # added WAL volume this causes, or lower the check cadence to compensate.
 WAL_FRESHNESS_RUN_PGBACKREST_CHECK="${WAL_FRESHNESS_RUN_PGBACKREST_CHECK:-false}"
 

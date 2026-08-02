@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# READ-ONLY preflight for the Phase 2 Firebase auth operator checklist.
+# READ-ONLY preflight for the Firebase auth operator checklist.
 # For each Firebase project it reports what is ALREADY configured vs missing:
 #   - Google / Apple sign-in providers enabled
 #   - "one account per email" (allowDuplicateEmails = false)

@@ -16,8 +16,8 @@
 #      Enabling the Google provider auto-creates the Web/Android/iOS clients and
 #      writes them into the config files. If they are absent, this script prints
 #      that checkpoint and stops.
-#   4. Reflect the iOS redirect scheme into the gitignored xcconfig.       [Task 3]
-#   5. Configure the Supabase Google provider (both client IDs, Web first). [Task 4]
+#   4. Reflect the iOS redirect scheme into the gitignored xcconfig.
+#   5. Configure the Supabase Google provider (both client IDs, Web first).
 #
 # Usage: scripts/setup/setup-google-signin.sh {dev|staging|production}
 # Pre-req: `firebase login`; `jq`; PlistBuddy (macOS). For dev, the release

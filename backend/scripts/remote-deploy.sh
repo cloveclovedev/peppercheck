@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # remote-deploy.sh -- runs ON THE DROPLET as the `deploy` user, piped in by
-# the deploy-vps.yml reusable workflow (Phase 7-A, Task 8):
+# the deploy-vps.yml reusable workflow:
 #
 #   ssh -i ~/.ssh/id deploy@<ssh_host> 'bash -s' "<env>" "<sha>-<run_id>" \
 #     < backend/scripts/remote-deploy.sh
@@ -8,7 +8,7 @@
 # Args (positional, arrive via `bash -s <arg1> <arg2>`):
 #   $1 = env   -- staging|production; also compose.prod.yaml's PC_ENV
 #   $2 = id    -- <sha>-<run_id>; deployments/<id> was staged under
-#                 /opt/peppercheck by ship-deployment.sh (Task 10) BEFORE
+#                 /opt/peppercheck by ship-deployment.sh BEFORE
 #                 this script runs (release files, images.env, and
 #                 deploy-owned secret files are already in place).
 #
@@ -72,7 +72,7 @@ compose --profile deploy pull
 # touches the plaintext secrets, and there is no network path out while they
 # are mounted.
 #
-# UID mapping (matches compose.prod.yaml's consumers + Task 10's allowlist):
+# UID mapping (matches compose.prod.yaml's consumers and the secret allowlist):
 #   database_url                                            -> 65532 (Go `nonroot`, api/worker)
 #   postgres_* / pgbackrest_cipher / b2_key_id / b2_key_secret -> 999 (postgres image's `postgres` user)
 #   migrator_database_url                                   -> 0 (root -- the Atlas one-shot image runs as root by default)
@@ -93,7 +93,7 @@ docker run --rm --network none --pull never --entrypoint sh \
 compose --profile deploy run --rm migrate
 
 # Flip current -> deployments/<id> only after a successful migration.
-# switch-deployment.sh (Task 6) operates on paths relative to the base dir
+# switch-deployment.sh operates on paths relative to the base dir
 # (deployments/, current, previous all live directly under $base), so it
 # must run with that as the working directory -- not $d.
 (cd "$base" && "$base/scripts/switch-deployment.sh" "$id")

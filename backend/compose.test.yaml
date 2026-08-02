@@ -1,7 +1,7 @@
-# pgBackRest local smoke stack (Task 4, Phase 7-A infra/ops foundation).
+# pgBackRest local smoke stack.
 #
 # Brings up MinIO (S3-compatible) + the custom peppercheck-postgres image
-# (deploy/postgres, built in Task 2) and proves pgBackRest can stanza-create,
+# (`deploy/postgres`) and proves pgBackRest can stanza-create,
 # push WAL, take a full backup, and pass `check` against an S3-compatible
 # repo. Driven by scripts/pgbackrest-local-smoke.sh -- not part of the dev
 # stack (compose.yaml/compose.override.yaml). Run with an explicit project

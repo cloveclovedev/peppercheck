@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # smoke-or-rollback.sh <host> <ssh_host> <env>
 #
-# Run from the CI runner (deploy-vps.yml, Phase 7-A Task 8) immediately after
+# Run from the CI runner (deploy-vps.yml) immediately after
 # remote-deploy.sh has switched traffic to the new release.
 #
 #   host     = public domain -- curl https://<host>/readyz
 #   ssh_host = tailnet MagicDNS name/IP -- SSH only; ufw allows port 22 on
 #              the tailscale0 interface alone, so the public host can never
 #              be reached over SSH
-#   env      = staging|production, forwarded to rollback.sh (Task 10) for
+#   env      = staging|production, forwarded to rollback.sh for
 #              its fixed peppercheck-<env> Compose project name
 #
 # Uses the same SSH identity the calling workflow's "Set up SSH + pinned

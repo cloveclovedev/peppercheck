@@ -2,10 +2,9 @@
 # firebase-test-token.sh
 #
 # Exchanges a restore-scoped Firebase test account's email/password for a
-# short-lived ID token, via the Firebase Auth REST API's "sign in with
-# email/password" endpoint (Task 16, Phase 7-A infra/ops foundation --
-# design doc §8.4: "obtain a Firebase ID token (test account / staging
-# Firebase) -> authenticated smoke"). Used by restore-drill.sh to
+# short-lived ID token via the Firebase Auth REST API's "sign in with
+# email/password" endpoint for staging restore verification. Used by
+# restore-drill.sh to
 # authenticate against the restored API's /api/v1/me -- never against
 # production, and never with a real user's credentials.
 #

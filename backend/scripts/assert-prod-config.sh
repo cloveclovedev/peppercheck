@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Asserts that backend/compose.prod.yaml's RESOLVED configuration upholds the
-# invariants that make it safe to run in production (Task 5, Phase 7-A
-# infra/ops foundation -- see the standalone-file rationale at the top of
+# invariants that make it safe to run in production (see the standalone-file
+# rationale at the top of
 # compose.prod.yaml and design doc §7):
 #
 #   1. No service defines `build:` -- production must only ever run
@@ -16,7 +16,7 @@
 #
 # This does not deploy anything; it only resolves `docker compose config`
 # against the standalone prod file and checks the JSON output with jq. Real
-# deploys supply real IMAGE_*/secrets (Tasks 6/8/10) -- this script fills in
+# deploys supply real IMAGE_*/secrets -- this script fills in
 # placeholder values only so `config` can resolve at all, and is safe to run
 # repeatedly in CI or locally. Wired into CI as a step in the `image` job
 # (.github/workflows/ci-backend.yml).

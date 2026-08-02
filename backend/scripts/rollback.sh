@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # rollback.sh <env>
 #
-# Installed at /opt/peppercheck/scripts/rollback.sh by bootstrap (Task 11).
+# Installed at /opt/peppercheck/scripts/rollback.sh by bootstrap.
 # Invoked two ways:
-#   - smoke-or-rollback.sh (Task 8), over SSH from the CI runner, immediately
+#   - smoke-or-rollback.sh, over SSH from the CI runner, immediately
 #     after a failed post-deploy smoke test:
 #       ssh -i ~/.ssh/id deploy@<ssh_host> '/opt/peppercheck/scripts/rollback.sh' <env>
 #   - directly by an operator on the Droplet during an incident.
@@ -32,7 +32,7 @@ fi
 
 prior_id="$(cat previous)"
 
-# Reuses switch-deployment.sh's own atomic-swap + validation logic (Task 6)
+# Reuses switch-deployment.sh's own atomic-swap + validation logic
 # rather than re-implementing it: calling it with the prior id both repoints
 # `current` -> deployments/<prior_id> and records the release being rolled
 # back AWAY FROM into `previous` -- so a second, mistaken rollback call

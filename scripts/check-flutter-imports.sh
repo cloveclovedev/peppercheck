@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Enforces Phase 2 import boundaries in the Flutter app:
+# Enforces import boundaries in the Flutter app:
 #   1. firebase_auth may only be imported under lib/features/auth/.
 #   2. the authenticated-user path (features/auth, core/network) must not
 #      import supabase_flutter.

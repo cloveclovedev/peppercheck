@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # bootstrap.sh -- idempotent provisioning for a fresh DigitalOcean Ubuntu
-# Droplet into a PepperCheck deploy target (Phase 7-A infra/ops foundation,
-# Task 11, design doc §10).
+# Droplet into a PepperCheck deploy target.
 #
 # Run ONCE as root, from a checked-out copy of this repo on the Droplet
 # (e.g. `git clone` over the console, or `scp`'d up), then safe to re-run any
@@ -199,7 +198,7 @@ systemctl enable --now unattended-upgrades
 mkdir -p /opt/peppercheck/deployments /opt/peppercheck/scripts
 chown -R deploy:deploy /opt/peppercheck
 
-# --- 8. On-Droplet helper scripts (Task 6/Task 11 carry-forward) -----------
+# --- 8. On-Droplet helper scripts ------------------------------------------
 # switch-deployment.sh and rollback.sh are invoked as
 # /opt/peppercheck/scripts/<name>.sh by remote-deploy.sh, rollback.sh itself,
 # and smoke-or-rollback.sh (over SSH from the CI runner) -- installed here,

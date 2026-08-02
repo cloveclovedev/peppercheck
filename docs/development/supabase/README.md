@@ -219,7 +219,7 @@ erDiagram
 * 目的: タスクエビデンス用画像のアップロード署名付きURL生成
 * 入力: タスクID、ファイル情報
 * 出力: Cloudflare R2への署名付きアップロードURL
-* 詳細: [functions/generate-upload-url/README.md](functions/generate-upload-url/README.md)
+* 詳細: [functions/generate-upload-url/README.md](../../../supabase/functions/generate-upload-url/README.md)
 
 ---
 

@@ -24,7 +24,7 @@ Last reviewed: 2026-07-27.
 The target stack is Flutter/Dart on Android and iOS; a Go API, worker, and
 server-rendered web surface; PostgreSQL managed with Atlas; Firebase Auth/FCM;
 Cloudflare R2; Stripe/RevenueCat; and Caddy plus Docker Compose on a VPS. See
-[the refactor strategy](superpowers/specs/2026-07-22-supabase-to-go-vps-refactor-design.md).
+[the refactor strategy](designs/2026-07-22-supabase-to-go-vps-refactor-design.md).
 
 ## Harness model
 
