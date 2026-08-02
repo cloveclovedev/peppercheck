@@ -23,7 +23,7 @@ func TestMiddlewareResolvesCurrentUser(t *testing.T) {
 		findResults:   []result{{err: ErrNotFound}},
 		createResults: []result{{u: User{ID: "u-42", Status: "active"}}},
 	}
-	svc := NewService(f)
+	svc := NewService(f, nil)
 
 	var seen User
 	var sawUser bool
@@ -46,7 +46,7 @@ func TestMiddlewareResolvesCurrentUser(t *testing.T) {
 // TestMiddlewareMissingIdentityReturns401 invokes the resolve middleware without
 // the auth middleware (no Identity in context), exercising its own guard.
 func TestMiddlewareMissingIdentityReturns401(t *testing.T) {
-	svc := NewService(&fakeStore{})
+	svc := NewService(&fakeStore{}, nil)
 	probe := http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
 		t.Fatal("handler must not run without an identity")
 	})

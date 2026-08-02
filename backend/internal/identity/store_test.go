@@ -2,6 +2,7 @@ package identity
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"testing"
 
@@ -28,7 +29,7 @@ func TestCreateWithIdentityThenFind(t *testing.T) {
 	s := newStore(t)
 	ctx := context.Background()
 
-	created, err := s.CreateWithIdentity(ctx, "iss", "sub-1")
+	created, err := s.CreateWithIdentity(ctx, "iss", "sub-1", nil)
 	if err != nil {
 		t.Fatalf("create: %v", err)
 	}
@@ -71,7 +72,7 @@ func TestStoreWorksWithRuntimeRole(t *testing.T) {
 
 	s := NewStore(db)
 	ctx := context.Background()
-	created, err := s.CreateWithIdentity(ctx, issuer, subject)
+	created, err := s.CreateWithIdentity(ctx, issuer, subject, nil)
 	if err != nil {
 		t.Fatalf("create with runtime role: %v", err)
 	}
@@ -87,12 +88,12 @@ func TestStoreWorksWithRuntimeRole(t *testing.T) {
 func TestCreateWithIdentityDuplicateSignalsNotFound(t *testing.T) {
 	s := newStore(t)
 	ctx := context.Background()
-	if _, err := s.CreateWithIdentity(ctx, "iss", "sub-dup"); err != nil {
+	if _, err := s.CreateWithIdentity(ctx, "iss", "sub-dup", nil); err != nil {
 		t.Fatalf("first create: %v", err)
 	}
 	// Second create for the same (issuer, subject) hits the unique constraint
 	// and reports ErrNotFound so the caller re-resolves.
-	if _, err := s.CreateWithIdentity(ctx, "iss", "sub-dup"); !errors.Is(err, ErrNotFound) {
+	if _, err := s.CreateWithIdentity(ctx, "iss", "sub-dup", nil); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("duplicate create err = %v, want ErrNotFound", err)
 	}
 	// The rolled-back second insert must leave NO orphan users row: the users
@@ -106,10 +107,33 @@ func TestCreateWithIdentityDuplicateSignalsNotFound(t *testing.T) {
 	}
 }
 
+func TestCreateWithIdentityProvisionErrorRollsBack(t *testing.T) {
+	s := newStore(t)
+	ctx := context.Background()
+	boom := errors.New("provision failed")
+
+	_, err := s.CreateWithIdentity(ctx, "iss", "sub-prov",
+		func(context.Context, *sql.Tx, string) error { return boom })
+	if !errors.Is(err, boom) {
+		t.Fatalf("err = %v, want the provision error", err)
+	}
+	// The whole transaction rolled back: no orphan user or identity remains.
+	var users, idents int
+	if err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM public.users`).Scan(&users); err != nil {
+		t.Fatalf("count users: %v", err)
+	}
+	if err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM public.user_identities`).Scan(&idents); err != nil {
+		t.Fatalf("count identities: %v", err)
+	}
+	if users != 0 || idents != 0 {
+		t.Fatalf("after a failed provision: users=%d identities=%d, want 0/0 (atomic rollback)", users, idents)
+	}
+}
+
 func TestDeleteUserCascadesIdentities(t *testing.T) {
 	s := newStore(t)
 	ctx := context.Background()
-	u, err := s.CreateWithIdentity(ctx, "iss", "sub-fk")
+	u, err := s.CreateWithIdentity(ctx, "iss", "sub-fk", nil)
 	if err != nil {
 		t.Fatalf("create: %v", err)
 	}

@@ -53,7 +53,7 @@ func main() {
 			logger.Error("firebase verifier init failed", "error", err)
 			os.Exit(1)
 		}
-		idSvc := identity.NewService(identity.NewStore(db))
+		idSvc := identity.NewService(identity.NewStore(db), nil)
 		idHandler := identity.NewHandler(idSvc, logger)
 
 		if err := api.Run(ctx, cfg, logger, api.Deps{

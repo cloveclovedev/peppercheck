@@ -20,7 +20,7 @@ func meHandler(t *testing.T, v auth.TokenVerifier) http.Handler {
 	if _, err := db.Exec("TRUNCATE public.users CASCADE"); err != nil {
 		t.Fatalf("truncate: %v", err)
 	}
-	svc := identity.NewService(identity.NewStore(db))
+	svc := identity.NewService(identity.NewStore(db), nil)
 	// Use the SAME chain builder as Run() so the tests exercise the real
 	// middleware stack; RequestID seeds the id the error envelope carries.
 	return rootHandler(
@@ -116,7 +116,7 @@ func TestMeIsolatesUsers(t *testing.T) {
 	if _, err := db.Exec("TRUNCATE public.users CASCADE"); err != nil {
 		t.Fatalf("truncate: %v", err)
 	}
-	svc := identity.NewService(identity.NewStore(db))
+	svc := identity.NewService(identity.NewStore(db), nil)
 
 	me := func(subject string) string {
 		h := buildHandler(Deps{
