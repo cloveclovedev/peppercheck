@@ -353,7 +353,8 @@ GUI-only steps that cannot be scripted:
 
 ### Not designed here, tracked elsewhere
 
-- Migration of remaining files from `docs/plans/` to `docs/designs/` — separate PR.
+- Durable design records were migrated to `docs/designs/`; temporary legacy
+  implementation plans were removed during the documentation cleanup.
 - Renaming the Flutter `billing/` feature directory to `point/` — separate PR.
 
 ## Open questions / decisions deferred

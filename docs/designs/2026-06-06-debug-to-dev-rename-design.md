@@ -85,7 +85,7 @@ A design document's **filename embeds the date it was written** — that is the 
 The document's **content** is the current source of truth for what to do or look at. Letting old terminology persist in active reference docs (roadmap, runbooks) causes future operators and contributors to read instructions in a vocabulary that no longer matches the code. So content is kept current, and a Revision log entry records when and why the terminology changed.
 
 - `2026-05-11-multi-environment-setup-roadmap-design.md` and `2026-05-31-stripe-debug-sandbox-design.md` are **active references** consumed by ongoing Phase 1 work and operator runbooks → rewrite content, add Revision log entry, preserve filename
-- Closed-feature historical specs and plans (e.g., `2026-05-16-non-prod-environment-banner-design.md`, `2026-04-27-draft-task-deletion-design.md`, legacy `docs/plans/*`) are **snapshots of decisions made at a point in time** → leave untouched
+- Closed-feature design documents (e.g., `2026-05-16-non-prod-environment-banner-design.md` and `2026-04-27-draft-task-deletion-design.md`) are **snapshots of decisions made at a point in time** → leave untouched. Temporary legacy implementation plans were removed during the documentation cleanup.
 
 Future readers of the snapshots can read `debug` as the historical name of the environment now called `dev`; the rationale lives in the android-flavor-split spec and is linked from each rewritten doc's Revision log.
 

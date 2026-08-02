@@ -24,8 +24,6 @@ legacy component documents.
 - `development/` contains task-oriented development procedures.
 - `operations/` contains environment and operator runbooks.
 - `overview/` contains product context and terminology.
-- `plans/` contains older implementation plans retained for historical context.
-  They must be revalidated before use and are not a work tracker.
 - `stripe/` contains legacy Stripe-specific operational notes pending migration
   into the relevant operations or design documents.
 
