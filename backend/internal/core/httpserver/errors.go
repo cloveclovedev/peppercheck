@@ -7,9 +7,13 @@ import (
 
 // Stable, machine-readable error codes returned in the error envelope.
 const (
-	CodeUnauthenticated = "unauthenticated" // 401: caller's auth is missing/invalid/expired
-	CodeUnavailable     = "unavailable"     // 503: a dependency (e.g. token key fetch) failed
-	CodeInternal        = "internal"        // 500: unexpected server error
+	CodeUnauthenticated = "unauthenticated"  // 401: caller's auth is missing/invalid/expired
+	CodeUnavailable     = "unavailable"      // 503: a dependency (e.g. token key fetch) failed
+	CodeInternal        = "internal"         // 500: unexpected server error
+	CodeInvalidArgument = "invalid_argument" // 400: request failed validation
+	CodeUsernameTaken   = "username_taken"   // 409: username already in use
+	CodeInvalidTimezone = "invalid_timezone" // 400: not a valid IANA timezone
+	CodeRateLimited     = "rate_limited"     // 429: per-user rate limit exceeded
 )
 
 type errorEnvelope struct {
