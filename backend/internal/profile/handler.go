@@ -3,7 +3,9 @@ package profile
 import (
 	"encoding/json"
 	"errors"
+	"math"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/cloveclovedev/peppercheck/backend/internal/core/httpserver"
@@ -80,6 +82,54 @@ func (h *Handler) PatchMe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, toResponse(p))
+}
+
+type avatarUploadRequest struct {
+	ContentType   string `json:"contentType"`
+	FileSizeBytes int64  `json:"fileSizeBytes"`
+}
+
+type avatarUploadResponse struct {
+	UploadURL string `json:"uploadUrl"`
+	PublicURL string `json:"publicUrl"`
+	ExpiresAt string `json:"expiresAt"`
+}
+
+// PostAvatarUploadURL mints a per-user rate-limited presigned avatar upload URL.
+func (h *Handler) PostAvatarUploadURL(w http.ResponseWriter, r *http.Request) {
+	u, ok := identity.CurrentUser(r.Context())
+	if !ok {
+		httpserver.WriteError(w, r, http.StatusUnauthorized, httpserver.CodeUnauthenticated, "missing user")
+		return
+	}
+	var req avatarUploadRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		httpserver.WriteError(w, r, http.StatusBadRequest, httpserver.CodeInvalidArgument, "invalid JSON body")
+		return
+	}
+	out, err := h.svc.RequestAvatarUpload(r.Context(), u.ID, AvatarUploadInput{
+		ContentType:   req.ContentType,
+		FileSizeBytes: req.FileSizeBytes,
+	})
+	if err != nil {
+		var rl *RateLimited
+		if errors.As(err, &rl) {
+			w.Header().Set("Retry-After", strconv.Itoa(int(math.Ceil(rl.RetryAfter.Seconds()))))
+			httpserver.WriteError(w, r, http.StatusTooManyRequests, httpserver.CodeRateLimited, "avatar upload rate limit exceeded")
+			return
+		}
+		if errors.Is(err, ErrInvalidArgument) {
+			httpserver.WriteError(w, r, http.StatusBadRequest, httpserver.CodeInvalidArgument, "invalid content type or size")
+			return
+		}
+		httpserver.WriteError(w, r, http.StatusInternalServerError, httpserver.CodeInternal, "could not create upload url")
+		return
+	}
+	writeJSON(w, http.StatusOK, avatarUploadResponse{
+		UploadURL: out.UploadURL,
+		PublicURL: out.PublicURL,
+		ExpiresAt: out.ExpiresAt.UTC().Format(time.RFC3339),
+	})
 }
 
 // writeUpdateError maps service errors to the stable envelope.

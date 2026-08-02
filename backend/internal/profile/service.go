@@ -2,7 +2,11 @@ package profile
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
+	"fmt"
+	"log/slog"
 	"net/url"
 	"regexp"
 	"strings"
@@ -17,7 +21,33 @@ var (
 	ErrInvalidArgument = errors.New("invalid argument")
 	// ErrInvalidTimezone means the timezone is not a valid IANA name (400).
 	ErrInvalidTimezone = errors.New("invalid timezone")
+	// ErrRateLimited means the per-user avatar-upload quota was exceeded (429).
+	// The returned error is a *RateLimited carrying the retry delay.
+	ErrRateLimited = errors.New("rate limited")
 )
+
+// RateLimited is returned when the avatar-upload rate limit is hit; it carries
+// the wait until the next allowed request. errors.Is(err, ErrRateLimited) matches.
+type RateLimited struct{ RetryAfter time.Duration }
+
+func (e *RateLimited) Error() string        { return "rate limited" }
+func (e *RateLimited) Is(target error) bool { return target == ErrRateLimited }
+
+const (
+	minAvatarBytes   = 1
+	maxAvatarBytes   = 5 * 1024 * 1024 // 5 MiB, best-effort (see spec §4.6)
+	avatarPresignTTL = 600 * time.Second
+)
+
+// allowedAvatarContentTypes maps an accepted content type to its file extension.
+var allowedAvatarContentTypes = map[string]string{
+	"image/jpeg": "jpg",
+	"image/png":  "png",
+	"image/webp": "webp",
+	"image/gif":  "gif",
+	"image/heic": "heic",
+	"image/heif": "heif",
+}
 
 // storeIface is the persistence the service needs; *Store satisfies it.
 type storeIface interface {
@@ -25,17 +55,29 @@ type storeIface interface {
 	Update(ctx context.Context, userID string, in UpdateFields) (Profile, *string, error)
 }
 
+// Limiter bounds avatar-upload issuance per user; *ratelimit.TokenBucket
+// satisfies it.
+type Limiter interface {
+	Allow(key string) (bool, time.Duration)
+}
+
 // Service owns profile reads and updates, scoped to the authenticated caller.
 type Service struct {
 	store        storeIface
-	uploader     r2.Uploader // avatar finalize (Head/Delete); may be nil where avatars are unused
+	uploader     r2.Uploader // avatar presign + finalize (Head/Delete); may be nil where avatars are unused
 	publicDomain string      // the R2 public host avatar URLs must match
+	limiter      Limiter     // per-user avatar-upload rate limit
+	logger       *slog.Logger
 }
 
-// NewService builds a Service. uploader may be nil in contexts that never touch
-// avatars (e.g. validation-only tests).
-func NewService(store storeIface, uploader r2.Uploader, publicDomain string) *Service {
-	return &Service{store: store, uploader: uploader, publicDomain: publicDomain}
+// NewService builds a Service. uploader/limiter may be nil in contexts that
+// never touch avatars (e.g. validation-only tests). A nil logger falls back to
+// slog.Default().
+func NewService(store storeIface, uploader r2.Uploader, publicDomain string, limiter Limiter, logger *slog.Logger) *Service {
+	if logger == nil {
+		logger = slog.Default()
+	}
+	return &Service{store: store, uploader: uploader, publicDomain: publicDomain, limiter: limiter, logger: logger}
 }
 
 // UpdateInput is a partial profile update from the caller; a nil field is
@@ -44,6 +86,19 @@ type UpdateInput struct {
 	Username  *string
 	Timezone  *string
 	AvatarURL *string
+}
+
+// AvatarUploadInput is the request for a presigned avatar upload URL.
+type AvatarUploadInput struct {
+	ContentType   string
+	FileSizeBytes int64
+}
+
+// AvatarUpload is the presigned-upload response.
+type AvatarUpload struct {
+	UploadURL string
+	PublicURL string
+	ExpiresAt time.Time
 }
 
 // GetOwn returns the caller's profile.
@@ -68,18 +123,91 @@ func (s *Service) UpdateOwn(ctx context.Context, userID string, in UpdateInput) 
 		}
 		fields.Timezone = in.Timezone
 	}
+	var newAvatarKey string
 	if in.AvatarURL != nil {
-		if _, err := s.parseAvatarKey(*in.AvatarURL, userID); err != nil {
+		key, err := s.parseAvatarKey(*in.AvatarURL, userID)
+		if err != nil {
 			return Profile{}, ErrInvalidArgument
 		}
+		// Finalize backstop: the object must exist, be within 1..5 MiB, and be an
+		// allowed content type. Best-effort (TOCTOU; not a hard cap) — see §4.6.
+		meta, err := s.uploader.Head(ctx, key)
+		if err != nil {
+			return Profile{}, ErrInvalidArgument
+		}
+		if meta.ContentLength < minAvatarBytes || meta.ContentLength > maxAvatarBytes {
+			return Profile{}, ErrInvalidArgument
+		}
+		if _, ok := allowedAvatarContentTypes[meta.ContentType]; !ok {
+			return Profile{}, ErrInvalidArgument
+		}
+		newAvatarKey = key
 		fields.AvatarURL = in.AvatarURL
 	}
 
-	updated, _, err := s.store.Update(ctx, userID, fields)
+	// Commit the DB update FIRST, then delete the previous object. This never
+	// turns a committed change into a failure and never deletes on a DB failure.
+	updated, prevAvatar, err := s.store.Update(ctx, userID, fields)
 	if err != nil {
 		return Profile{}, err
 	}
+
+	if in.AvatarURL != nil && prevAvatar != nil {
+		// Only delete a real, different prior object; a same-URL retry keeps it.
+		if oldKey, perr := s.parseAvatarKey(*prevAvatar, userID); perr == nil && oldKey != newAvatarKey {
+			if derr := s.uploader.Delete(ctx, oldKey); derr != nil {
+				// Log-only: the stale object is reclaimed by the Phase 4 sweep;
+				// the already-committed PATCH must still succeed.
+				s.logger.Warn("avatar delete-previous failed", "error", derr)
+			}
+		}
+	}
 	return updated, nil
+}
+
+// RequestAvatarUpload rate-limits per user, validates the content type and size,
+// and returns a presigned PUT URL plus the eventual public URL. The key is
+// versioned per upload (avatar/{userID}/{token}.{ext}) so an upload never
+// clobbers the current avatar.
+func (s *Service) RequestAvatarUpload(ctx context.Context, userID string, in AvatarUploadInput) (AvatarUpload, error) {
+	if ok, retry := s.limiter.Allow(userID); !ok {
+		return AvatarUpload{}, &RateLimited{RetryAfter: retry}
+	}
+	ext, ok := allowedAvatarContentTypes[in.ContentType]
+	if !ok {
+		return AvatarUpload{}, ErrInvalidArgument
+	}
+	if in.FileSizeBytes < minAvatarBytes || in.FileSizeBytes > maxAvatarBytes {
+		return AvatarUpload{}, ErrInvalidArgument
+	}
+	token, err := randomToken()
+	if err != nil {
+		return AvatarUpload{}, err
+	}
+	key := fmt.Sprintf("avatar/%s/%s.%s", userID, token, ext)
+	uploadURL, err := s.uploader.PresignPut(ctx, r2.PresignPutInput{
+		Key:           key,
+		ContentType:   in.ContentType,
+		ContentLength: in.FileSizeBytes,
+		TTL:           avatarPresignTTL,
+	})
+	if err != nil {
+		return AvatarUpload{}, fmt.Errorf("presign avatar upload: %w", err)
+	}
+	return AvatarUpload{
+		UploadURL: uploadURL,
+		PublicURL: fmt.Sprintf("https://%s/%s", s.publicDomain, key),
+		ExpiresAt: time.Now().Add(avatarPresignTTL),
+	}, nil
+}
+
+// randomToken returns a 16-byte random hex string for a per-upload object key.
+func randomToken() (string, error) {
+	var b [16]byte
+	if _, err := rand.Read(b[:]); err != nil {
+		return "", fmt.Errorf("random token: %w", err)
+	}
+	return hex.EncodeToString(b[:]), nil
 }
 
 var usernameCharset = regexp.MustCompile(`^[\p{L}\p{N}_-]+$`)
