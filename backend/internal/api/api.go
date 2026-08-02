@@ -16,10 +16,11 @@ import (
 
 // Deps are the runtime dependencies the api handler wires into routes.
 type Deps struct {
-	Ready    func(context.Context) error
-	Verifier auth.TokenVerifier
-	Identity *identity.Handler
-	Logger   *slog.Logger // used by the auth middleware; Run injects the run logger when nil
+	Ready       func(context.Context) error
+	Verifier    auth.TokenVerifier
+	Identity    *identity.Handler
+	ResolveUser func(http.Handler) http.Handler // identity.NewMiddleware: verified Identity -> internal User in ctx
+	Logger      *slog.Logger                    // used by the auth middleware; Run injects the run logger when nil
 }
 
 // buildHandler wires routes and middleware. deps.Ready is the readiness probe;
@@ -45,9 +46,12 @@ func buildHandler(deps Deps) http.Handler {
 		_, _ = w.Write([]byte("ready"))
 	})
 
-	if deps.Identity != nil && deps.Verifier != nil {
+	if deps.Identity != nil && deps.Verifier != nil && deps.ResolveUser != nil {
 		authed := auth.Middleware(deps.Verifier, deps.Logger)
-		mux.Handle("GET /api/v1/me", authed(http.HandlerFunc(deps.Identity.Me)))
+		// authed verifies the token (Identity in ctx); ResolveUser turns it into
+		// the internal User (CurrentUser in ctx) before the handler runs.
+		chain := func(h http.Handler) http.Handler { return authed(deps.ResolveUser(h)) }
+		mux.Handle("GET /api/v1/me", chain(http.HandlerFunc(deps.Identity.Me)))
 	}
 	return mux
 }

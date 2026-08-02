@@ -39,23 +39,16 @@ type meIdentity struct {
 	Issuer string `json:"issuer"`
 }
 
-// Me resolves the verified identity to the internal user, provisioning on first
-// sighting, and returns it. It assumes the auth middleware ran.
+// Me returns the internal user resolved by the identity middleware (which
+// provisions on first sighting) together with the verified issuer. It assumes
+// both the auth and resolve middlewares ran; the Phase 2 contract is unchanged.
 func (h *Handler) Me(w http.ResponseWriter, r *http.Request) {
-	id, ok := auth.IdentityFrom(r.Context())
+	u, ok := CurrentUser(r.Context())
 	if !ok {
-		httpserver.WriteError(w, r, http.StatusUnauthorized, httpserver.CodeUnauthenticated, "missing identity")
+		httpserver.WriteError(w, r, http.StatusUnauthorized, httpserver.CodeUnauthenticated, "missing user")
 		return
 	}
-	u, err := h.svc.ResolveOrProvision(r.Context(), id.Issuer, id.Subject)
-	if err != nil {
-		h.logger.LogAttrs(r.Context(), slog.LevelError, "me_resolve_failed",
-			slog.String("request_id", httpserver.RequestIDFrom(r.Context())),
-			slog.Any("error", err),
-		)
-		httpserver.WriteError(w, r, http.StatusInternalServerError, httpserver.CodeInternal, "could not resolve user")
-		return
-	}
+	id, _ := auth.IdentityFrom(r.Context())
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(meResponse{
 		User: meUser{

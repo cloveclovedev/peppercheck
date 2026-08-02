@@ -53,12 +53,14 @@ func main() {
 			logger.Error("firebase verifier init failed", "error", err)
 			os.Exit(1)
 		}
-		idHandler := identity.NewHandler(identity.NewService(identity.NewStore(db)), logger)
+		idSvc := identity.NewService(identity.NewStore(db))
+		idHandler := identity.NewHandler(idSvc, logger)
 
 		if err := api.Run(ctx, cfg, logger, api.Deps{
-			Ready:    db.PingContext,
-			Verifier: verifier,
-			Identity: idHandler,
+			Ready:       db.PingContext,
+			Verifier:    verifier,
+			Identity:    idHandler,
+			ResolveUser: identity.NewMiddleware(idSvc, logger),
 		}); err != nil {
 			logger.Error("api exited with error", "error", err)
 			os.Exit(1)
