@@ -84,22 +84,28 @@ start_backend() {
 # can't run on the JDK 25/26 that Android Studio / Homebrew now ship (KT-83610),
 # and Flutter uses Android Studio's bundled JBR unless --jdk-dir overrides it.
 # See docs/development/flutter/android-jdk.md.
+# AGP 8.11 requires JDK 17+, and the pinned Gradle 8.14 can't run on JDK 22+,
+# so a usable Android build JDK must be in the 17-21 range.
+ANDROID_JDK_MIN=17
 ANDROID_JDK_MAX=21
 
 jdk_major() { # $1 = JDK home; echoes the major version (e.g. 21), or nothing
   "$1/bin/java" -version 2>&1 | sed -n '1s/.*version "\([0-9][0-9]*\).*/\1/p'
 }
 
-compatible_jdk() { # echoes a JDK home whose major <= ANDROID_JDK_MAX, or nothing
-  local c major
+jdk_supported() { # $1 = major version; true when within [ANDROID_JDK_MIN, ANDROID_JDK_MAX]
+  [ -n "$1" ] && [ "$1" -ge "$ANDROID_JDK_MIN" ] && [ "$1" -le "$ANDROID_JDK_MAX" ]
+}
+
+compatible_jdk() { # echoes a JDK home whose major is in the supported range, or nothing
+  local c
   for c in \
     "$(brew --prefix openjdk@21 2>/dev/null)/libexec/openjdk.jdk/Contents/Home" \
     "$(brew --prefix openjdk@17 2>/dev/null)/libexec/openjdk.jdk/Contents/Home" \
     "$(/usr/libexec/java_home -v 21 2>/dev/null)" \
     "$(/usr/libexec/java_home -v 17 2>/dev/null)"; do
     [ -x "$c/bin/java" ] || continue
-    major="$(jdk_major "$c")"
-    [ -n "$major" ] && [ "$major" -le "$ANDROID_JDK_MAX" ] && { echo "$c"; return 0; }
+    jdk_supported "$(jdk_major "$c")" && { echo "$c"; return 0; }
   done
   return 1
 }
@@ -110,11 +116,11 @@ ensure_android_jdk() {
     | sed -n 's/.*"jdk-dir"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')"
   if [ -n "$configured" ] && [ -x "$configured/bin/java" ]; then
     major="$(jdk_major "$configured")"
-    if [ -n "$major" ] && [ "$major" -le "$ANDROID_JDK_MAX" ]; then
+    if jdk_supported "$major"; then
       echo "==> Android build JDK: $configured (JDK $major, via flutter --jdk-dir)"
       return 0
     fi
-    echo "==> Flutter's configured JDK ($configured, JDK ${major:-?}) is too new for the pinned Gradle 8.14 + AGP 8.11 toolchain."
+    echo "==> Flutter's configured JDK ($configured, JDK ${major:-?}) is outside the supported ${ANDROID_JDK_MIN}-${ANDROID_JDK_MAX} range for the pinned Gradle 8.14 + AGP 8.11 toolchain."
   fi
   if jdk="$(compatible_jdk)"; then
     echo "==> Pinning Flutter Android build JDK to $jdk"
