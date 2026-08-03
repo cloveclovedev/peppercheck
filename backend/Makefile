@@ -15,9 +15,13 @@ TEST_POSTGRES_PORT ?= 55432
 help: ## Show available targets
 	grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  %-9s %s\n", $$1, $$2}'
 
-up: ## Start the core stack (creates .env from the template if missing)
+up: ## Start the core stack (creates .env if missing). Add BWS_PROJECT_ID=<id> to inject real dev secrets via Bitwarden Secrets Manager (see docs/development/bws-development.md)
 	[ -f .env ] || cp .env.example .env
-	docker compose up -d --build
+	@if [ -n "$(BWS_PROJECT_ID)" ]; then \
+		scripts/bws-dev-up.sh "$(BWS_PROJECT_ID)"; \
+	else \
+		docker compose up -d --build; \
+	fi
 
 down: ## Stop the stack (keep volumes)
 	docker compose down

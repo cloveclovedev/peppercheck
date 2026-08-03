@@ -21,8 +21,11 @@ first. Run `make help` for all targets.
 
 `.env` holds **non-sensitive local defaults only** (throwaway dev passwords, an
 age public key). Never put a real provider secret or real DB password in it —
-real secrets are injected at runtime via Bitwarden Secrets Manager / Docker
-secrets (Phase 7).
+staging/production secrets are injected at runtime via Bitwarden Secrets
+Manager / Docker secrets (Phase 7). For local development against a real
+external service (e.g. R2 avatar uploads), run
+`make up BWS_PROJECT_ID=<id>` instead — see
+[docs/development/bws-development.md](../docs/development/bws-development.md).
 
 ## Structure
 
