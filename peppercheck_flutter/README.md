@@ -29,6 +29,12 @@ Platform Firebase configuration is local and must not be committed. See the
 [repository getting-started guide](../docs/getting-started.md) for the complete
 path and port overrides.
 
+Android builds pin JDK 21; the bundled Android Studio / Homebrew JDK (25/26) is
+too new for the current Gradle/AGP toolchain. `scripts/dev-run.sh --android`
+configures this automatically. See
+[Android build JDK](../docs/development/flutter/android-jdk.md) for one-time
+setup and the rationale.
+
 ## Verify changes
 
 ```sh
