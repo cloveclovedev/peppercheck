@@ -25,7 +25,9 @@ curl http://localhost/readyz
 
 `make up` creates `backend/.env` from the committed example when it is missing.
 That file is local-only. Keep real provider credentials and production secrets
-out of it.
+out of it. To exercise a flow that calls a real external service (e.g. R2
+avatar uploads), run `make up BWS_PROJECT_ID=<id>` instead — see
+[Bitwarden Secrets Manager development injection](development/bws-development.md).
 
 Stop the stack while preserving data with `make down`. Use `make down-v` only
 when intentionally discarding the local database and WAL archive.
