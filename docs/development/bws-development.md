@@ -9,8 +9,13 @@ today that's the Cloudflare R2 avatar upload/finalize flow.
 
 `make up BWS_PROJECT_ID=<id>` injects real credential values from Bitwarden
 Secrets Manager (`bws`) into the Compose stack for the duration of that one
-run. This is optional: plain `make up` (no `BWS_PROJECT_ID`) keeps working on
-dummies, with avatar upload disabled (503).
+run. This is optional: plain `make up` (no `BWS_PROJECT_ID`) keeps working
+without it, exercising the avatar upload/finalize code path against a
+nonexistent R2 account rather than a real bucket (see [#483][] — the shipped
+dummy values don't currently make the api fail closed the way earlier docs in
+this area assumed).
+
+[#483]: https://github.com/cloveclovedev/peppercheck/issues/483
 
 This repository shares the `development` Bitwarden Secrets Manager project
 with other personal projects on the same free-tier account (capped at 3

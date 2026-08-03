@@ -89,13 +89,15 @@ services:
       # R2 (avatar uploads). R2_ACCOUNT_ID / R2_BUCKET / R2_PUBLIC_DOMAIN are
       # non-secret (see internal/core/config/config.go) and come from .env;
       # fill in real values there for local testing against a real bucket.
-      # R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY are real credentials: local
-      # dummies let the api construct the client and exercise the avatar flow
-      # shape without reaching a real bucket (avatars disabled, 503), and
-      # `make up BWS_PROJECT_ID=<id>` overrides them with the real dev
-      # credential via Bitwarden Secrets Manager (see
-      # docs/development/bws-development.md) — Compose gives that injected
-      # process-environment value precedence over the .env dummy below.
+      # R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY are real credentials: with the
+      # dummy values below the api still constructs an R2 client (r2.New only
+      # rejects empty fields, not placeholder ones — see #483) that presigns
+      # against a nonexistent account, so a real upload attempt fails at the
+      # client PUT step rather than at the api. `make up BWS_PROJECT_ID=<id>`
+      # overrides these two with the real dev credential via Bitwarden Secrets
+      # Manager (see docs/development/bws-development.md) — Compose gives that
+      # injected process-environment value precedence over the .env dummy
+      # below.
       R2_ACCOUNT_ID: ${R2_ACCOUNT_ID:-r2-local-account}
       R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID:-r2-local-key}
       R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY:-r2-local-secret}
