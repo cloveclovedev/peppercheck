@@ -5,10 +5,12 @@
 After modifying Dart source files, verify the app compiles:
 
 ```bash
-cd peppercheck_flutter && flutter build apk --debug -t lib/main_dev.dart 2>&1 | tail -10
+cd peppercheck_flutter && flutter build apk --debug --flavor dev -t lib/main_dev.dart 2>&1 | tail -10
 ```
 
-The project uses flavored entry points (`main_dev.dart`, `main_staging.dart`, `main_production.dart`), not `lib/main.dart`.
+The project uses flavored entry points (`main_dev.dart`, `main_staging.dart`, `main_production.dart`), not `lib/main.dart`. Pass `--flavor dev` to match the entry point; without a flavor, Gradle builds every flavor and Flutter reports a misleading "failed to produce an .apk file" even on a successful build.
+
+Local Android builds require a JDK ≤ 21; the JDK 25/26 that Android Studio / Homebrew now ship is too new for the pinned Gradle/AGP toolchain. See `docs/development/flutter/android-jdk.md`.
 
 ## Riverpod Controller Naming
 
