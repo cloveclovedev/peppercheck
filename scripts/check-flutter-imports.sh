@@ -30,7 +30,7 @@ if [ -n "$bad_sb" ]; then
   fail=1
 fi
 
-bad_dio=$(grep -rl "Dio(" "$lib" \
+bad_dio=$(grep -rlE "Dio\(|Dio\.new" "$lib" \
   | grep -v "^$lib/core/network/" \
   | grep -v "^$lib/features/evidence/" || true)
 if [ -n "$bad_dio" ]; then
