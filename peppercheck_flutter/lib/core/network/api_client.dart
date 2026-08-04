@@ -84,6 +84,52 @@ class ApiClient {
     throw _mapErrorResponse(res);
   }
 
+  /// PATCH [path] with a JSON [body] and decode the JSON object response.
+  /// Never auto-retries on 401.
+  Future<Map<String, dynamic>> patchJson(String path, {Object? body}) =>
+      _sendJson('PATCH', path, body: body);
+
+  /// POST [path] with a JSON [body] and decode the JSON object response.
+  /// Never auto-retries on 401.
+  Future<Map<String, dynamic>> postJson(String path, {Object? body}) =>
+      _sendJson('POST', path, body: body);
+
+  /// PUT [path] with a JSON [body]; succeeds on any 2xx, including a body-less
+  /// 204. Never auto-retries on 401.
+  Future<void> putJson(String path, {Object? body}) =>
+      _sendVoid('PUT', path, body: body);
+
+  /// DELETE [path] with an optional JSON [body]; succeeds on any 2xx,
+  /// including a body-less 204. Never auto-retries on 401.
+  Future<void> deleteJson(String path, {Object? body}) =>
+      _sendVoid('DELETE', path, body: body);
+
+  Future<Map<String, dynamic>> _sendJson(
+    String method,
+    String path, {
+    Object? body,
+  }) async {
+    final res = await _sendBody(method, path, body: body, forceRefresh: false);
+    if (res.statusCode != null &&
+        res.statusCode! >= 200 &&
+        res.statusCode! < 300) {
+      final data = res.data;
+      if (data is Map<String, dynamic>) return data;
+      return <String, dynamic>{};
+    }
+    throw _mapErrorResponse(res);
+  }
+
+  Future<void> _sendVoid(String method, String path, {Object? body}) async {
+    final res = await _sendBody(method, path, body: body, forceRefresh: false);
+    if (res.statusCode != null &&
+        res.statusCode! >= 200 &&
+        res.statusCode! < 300) {
+      return;
+    }
+    throw _mapErrorResponse(res);
+  }
+
   Future<Response<dynamic>> _send(
     String path, {
     required bool authenticated,
@@ -103,6 +149,37 @@ class ApiClient {
       if (token != null) headers['Authorization'] = 'Bearer $token';
     }
     return _dio.get<dynamic>(path, options: Options(headers: headers));
+  }
+
+  /// Attaches the bearer + request-id headers and issues an authenticated
+  /// [method] request with a JSON [body]. Used by the write verbs, which
+  /// never retry on 401 (unlike [getJson]).
+  Future<Response<dynamic>> _sendBody(
+    String method,
+    String path, {
+    required Object? body,
+    required bool forceRefresh,
+  }) async {
+    final headers = <String, dynamic>{_requestIdHeader: _newRequestId()};
+    final String? token;
+    try {
+      token = await _idTokenProvider(forceRefresh: forceRefresh);
+    } catch (_, stackTrace) {
+      Error.throwWithStackTrace(
+        const ApiException.tokenUnavailable(),
+        stackTrace,
+      );
+    }
+    if (token != null) headers['Authorization'] = 'Bearer $token';
+    try {
+      return await _dio.request<dynamic>(
+        path,
+        data: body,
+        options: Options(method: method, headers: headers),
+      );
+    } on DioException catch (e) {
+      throw _mapDioException(e);
+    }
   }
 
   ApiException _mapErrorResponse(Response<dynamic> res) {
