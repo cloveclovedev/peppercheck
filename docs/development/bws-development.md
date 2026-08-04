@@ -79,7 +79,10 @@ evidence, Phase 5 Stripe/RevenueCat, ...) introduce real dev-side credentials.
    `development` project — there is only one token, not one per repository.
 4. Set real, non-secret values for `R2_ACCOUNT_ID`, `R2_BUCKET`, and
    `R2_PUBLIC_DOMAIN` in `backend/.env` (see above — these don't go through
-   bws).
+   bws). `R2_PUBLIC_DOMAIN` must be a **bare hostname with no `https://`
+   prefix** — the api prepends it itself when building/validating the avatar
+   URL, so an included scheme makes every avatar `PATCH` fail with `400
+   invalid_argument` no matter how correct the credentials are.
 5. Run:
 
    ```bash
