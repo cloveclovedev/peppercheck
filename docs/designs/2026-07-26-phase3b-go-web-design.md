@@ -47,14 +47,17 @@ Workers via OpenNext, served from `peppercheck.dev` — to **Go `html/template`
 pages served from the VPS behind Caddy**, removing Supabase from the web entirely
 and delivering a cutover-ready set of pages on the integration branch. The DNS
 switch, staging verification, and Cloudflare teardown belong to **Phase 7**; 3b
-produces the parity + redirects + tests, not the production cutover.
+produces the parity + tests, not the production cutover.
 
 The public web is also a **marketing surface** (the app's public face), so visual
 fidelity to the current design is a first-class requirement, not an afterthought.
 
-### 1.2 In scope (the 8 "keep" routes + 4 redirects)
+### 1.2 In scope (the 8 "keep" routes)
 
-Per baseline §9 (Web Route Freeze): **8 keep / 4 redirect**.
+Per baseline §9 (Web Route Freeze), narrowed by P3b-D15: **8 keep routes**. The 4
+legacy auth/subscription routes (`auth/callback`, `login`, `dashboard`,
+`pricing`) are dropped without a redirect — no Go route is registered for them,
+so they 404 by default (see P3b-D15).
 
 **Keep (ported to Go html/template):**
 
@@ -68,15 +71,6 @@ Per baseline §9 (Web Route Freeze): **8 keep / 4 redirect**.
 | `/{locale}/stripe/connect/return` | Static "onboarding complete" landing (path-fixed, see §5.2). |
 | `/{locale}/stripe/connect/refresh` | Static "restart onboarding" landing (path-fixed, see §5.2). |
 | `/{locale}/account/delete` | **Redefined** as an unauthenticated account-deletion **request/instructions** resource (see §4). |
-
-**Redirect (301 → localized home):**
-
-| Route | Decision |
-|-------|----------|
-| `/{locale}/auth/callback` | 301 → `/{locale}` |
-| `/{locale}/login` | 301 → `/{locale}` |
-| `/{locale}/dashboard` | 301 → `/{locale}` |
-| `/{locale}/pricing` | 301 → `/{locale}` |
 
 ### 1.3 Out of scope (explicit)
 
@@ -154,7 +148,8 @@ The Go router (behind the existing single Caddy reverse-proxy to `api`) dispatch
 
 - `/api/v1/*` → JSON API (`internal/api`, unchanged).
 - `/`, `/{locale}/*`, static assets → `internal/web`.
-- The 4 removed routes → 301 to localized home.
+- The 4 legacy auth/subscription routes have no registered route and 404 by
+  default (P3b-D15).
 
 Caddy itself changes minimally: TLS/HSTS and `reverse_proxy api:{$API_PORT}` stay
 as-is; all path dispatch happens inside the Go process.
@@ -350,16 +345,7 @@ Recorded in follow-ups (§8) so Phase 6 knows to consume `account_deletion_reque
   link via a short-lived signed `state` query param. The frozen path is preserved
   regardless.
 
-### 5.3 Redirects (4 removed routes → localized home)
-
-- `/{locale}/{auth/callback,login,dashboard,pricing}` → **301 → `/{locale}`**.
-- Bare forms (`/login`, …) resolve the locale and 301 uniformly.
-- `pricing`: subscription is **IAP-only** (webapp subscribe is disabled), so its
-  checkout is dead; 301 → home is the minimal choice. A "subscription explanation"
-  section on home or a static info page is optional and not built by default
-  (YAGNI).
-
-### 5.4 tokushoho price (P3b-D8)
+### 5.3 tokushoho price (P3b-D8)
 
 - The current page fetches price rows from Supabase; **3b removes that Supabase
   read** (removing the last Supabase dependency from the legal pages).
@@ -478,8 +464,9 @@ test covers this.
 
 - **Template render tests** for all kept pages × `ja`/`en`.
 - **Per-locale route tests** + **`hreflang` output** verification.
-- **Redirect tests**: the 4 removed routes → localized home; bare Stripe Connect
-  paths → default-locale page.
+- **Redirect tests**: bare Stripe Connect paths → default-locale page.
+- **404 test**: the 4 legacy auth/subscription routes resolve to a plain 404
+  (no route registered).
 - **Deletion form tests** (fake identity store): valid token / honeypot tripped /
   timing too fast / rate-limited / matched vs unmatched email producing the
   **identical** response / upsert dedup.
@@ -498,7 +485,7 @@ test covers this.
 | **P3b-D4** | Accept from anyone, but **store a row only on a real-account email match**; **uniform generic response**; **no email on submission**. | Bounds operator confirmation cost to real accounts; prevents enumeration/harassment; removes the email-amplification vector. |
 | **P3b-D5** | Anti-abuse layers: honeypot + signed form token + timing + per-IP rate limit + per-account upsert. Turnstile only if needed later. | Low-friction, no third-party dependency, no added secret; sufficient at this scale. |
 | **P3b-D6** | **Locale = subdirectory `/{locale}/` (kept)** + add `hreflang`; not subdomain. | Preserves frozen store-registered/indexed URLs (no console updates, no old→new redirects); single origin; best link-equity for one bilingual app on one VPS. (§3.4) |
-| **P3b-D7** | 4 removed routes → **301 to localized home**; Stripe Connect return/refresh are **path-fixed static pages** accepting bare paths. | Uniform simple rule for dead auth/subscription URLs; `payout-setup` sends locale-less bare paths that must keep resolving. |
+| **P3b-D7** | Stripe Connect return/refresh are **path-fixed static pages** accepting bare, locale-less paths. | `payout-setup` sends `return_url`/`refresh_url` as bare paths (no locale prefix) that must keep resolving regardless of locale routing. |
 | **P3b-D8** | Act on Specified Commercial Transactions price = **hardcoded reviewed constant** (referencing the 2,580 vs 2,480 blocker); Phase 5 switches to API read. | No machine-readable Go price source exists until Phase 5; the Act requires a real price now. |
 | **P3b-D9** | Move the i18n copy from the next-intl catalogs into a **Go embedded catalog as the single source of truth**. | The web app is deleted in 3b; the copy must live somewhere Go can render it. |
 | **P3b-D10** | Self-host the **same** fonts (Inter + Noto Sans JP) as embedded `woff2` (Noto = `unicode-range` split), `font-display: swap`, `preload`, and content-`ETag` + `max-age=3600` revalidation for `/static/`. | Preserves the marketing design exactly while removing runtime Google Fonts dependency; OFL permits self-hosting; ETag revalidation avoids a fingerprint build pipeline for a small site. |
@@ -506,6 +493,7 @@ test covers this.
 | **P3b-D12** | The only new table is **`account_deletion_requests`** (name includes "account" for clarity vs other deletion concepts); the deletion domain lives in a dedicated **`internal/accountdeletion`** feature, not folded into `identity`. | Self-documenting; consistent with the existing `check_account_deletable` / `delete-account` vocabulary. Deletion is an account-lifecycle concern (Phase 6 grows it into the cross-system saga), distinct from identity's auth responsibility; `accountdeletion` is the precise bounded name (vs a broad `account` grab-bag). The split is for responsibility isolation + Phase 6 forward-compat, **not** DB least-privilege (roles are shared `peppercheck_app`). |
 | **P3b-D13** | **Persist `email` (+ `email_verified`) on `user_identities`**, captured from the verified token at provisioning and refreshed on login; add `FindUserByEmail`. | Email is not stored today, so match-on-real-account (P3b-D4) is otherwise impossible. Email is a per-provider-identity attribute, so `user_identities` is the conceptually correct, best-practice home (`users` holds no provider data by design). |
 | **P3b-D14** | **Follow the implemented backend conventions:** `updated_at` is Go-maintained (no `set_updated_at()` trigger), stores hold `*sql.DB` directly (no `Querier`), DB tests are plain assert-SQL in `db/tests/` (not pgTAP). The form-signing key `WEB_FORM_SIGNING_KEY` is a new secret via `lookupEnvOrFile` + 7a's file-secret delivery. | The codebase (verified 2026-07-26) does not yet have the Phase 3a-designed helper APIs. The Phase 3a design now agrees with this `updated_at` convention; the remaining helper dependencies still require execution-time revalidation. |
+| **P3b-D15** | **Supersedes the redirect half of P3b-D7 (2026-08-04):** the 4 legacy auth/subscription routes (`auth/callback`, `login`, `dashboard`, `pricing`) are **not implemented and not redirected** — no Go route is registered for them, so they 404 by default. | The public web has not gone to production yet, so these routes carry no external indexing or backlinks to preserve. Treating them as if they never existed avoids unneeded redirect logic; a 301 can be added later without design impact if real external references ever surface. |
 
 ---
 
@@ -526,8 +514,9 @@ test covers this.
 
 - The 8 keep pages render via Go `html/template` in `ja`/`en`, **preserve the
   current design**, and emit `hreflang`.
-- The 4 removed routes 301 to localized home. Stripe Connect return/refresh resolve
-  at the fixed paths (including bare, locale-less paths).
+- The 4 legacy auth/subscription routes have no registered route (404 by
+  default). Stripe Connect return/refresh resolve at the fixed paths (including
+  bare, locale-less paths).
 - The account-deletion request resource works **without auth** (store-on-match,
   uniform response, anti-abuse layers), backed by `account_deletion_requests`.
 - The web has **no Supabase imports** (`peppercheck-webapp/` deleted on the
