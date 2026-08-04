@@ -182,4 +182,150 @@ void main() {
     );
     expect(adapter.requests, isEmpty);
   });
+
+  test(
+    'patchJson sends PATCH with bearer + request-id and decodes the body',
+    () async {
+      final adapter = _FakeAdapter((o, _) => _json(200, {'username': 'alice'}));
+      final client = _client(adapter);
+
+      final body = await client.patchJson(
+        '/api/v1/me/profile',
+        body: {'username': 'alice'},
+      );
+
+      expect(adapter.requests.single.method, 'PATCH');
+      expect(adapter.requests.single.headers['Authorization'], 'Bearer tok-1');
+      expect(adapter.requests.single.headers['X-Request-Id'], isNotEmpty);
+      expect(adapter.requests.single.data, {'username': 'alice'});
+      expect(body['username'], 'alice');
+    },
+  );
+
+  test(
+    'patchJson maps a 409 envelope to ApiException(username_taken)',
+    () async {
+      final adapter = _FakeAdapter(
+        (o, _) => _json(409, {
+          'error': {
+            'code': 'username_taken',
+            'message': 'already taken',
+            'requestId': 'req-1',
+          },
+        }),
+      );
+      final client = _client(adapter);
+
+      await expectLater(
+        () => client.patchJson('/api/v1/me/profile', body: {'username': 'x'}),
+        throwsA(
+          isA<ApiException>()
+              .having((e) => e.code, 'code', 'username_taken')
+              .having((e) => e.statusCode, 'statusCode', 409),
+        ),
+      );
+    },
+  );
+
+  test('patchJson does not retry on 401', () async {
+    final adapter = _FakeAdapter(
+      (o, _) => _json(401, {
+        'error': {'code': 'unauthenticated', 'message': 'x', 'requestId': 'r'},
+      }),
+    );
+    final client = _client(adapter);
+
+    await expectLater(
+      () => client.patchJson('/api/v1/me/profile', body: {'username': 'x'}),
+      throwsA(isA<ApiException>()),
+    );
+    expect(adapter.requests.length, 1, reason: 'no auto-retry on write verbs');
+  });
+
+  test(
+    'postJson sends POST with bearer + request-id and decodes the body',
+    () async {
+      final adapter = _FakeAdapter(
+        (o, _) => _json(200, {'uploadUrl': 'https://r2.example/put'}),
+      );
+      final client = _client(adapter);
+
+      final body = await client.postJson(
+        '/api/v1/me/profile/avatar-upload',
+        body: {'contentType': 'image/jpeg'},
+      );
+
+      expect(adapter.requests.single.method, 'POST');
+      expect(adapter.requests.single.headers['Authorization'], 'Bearer tok-1');
+      expect(adapter.requests.single.headers['X-Request-Id'], isNotEmpty);
+      expect(body['uploadUrl'], 'https://r2.example/put');
+    },
+  );
+
+  test('postJson does not retry on 401', () async {
+    final adapter = _FakeAdapter(
+      (o, _) => _json(401, {
+        'error': {'code': 'unauthenticated', 'message': 'x', 'requestId': 'r'},
+      }),
+    );
+    final client = _client(adapter);
+
+    await expectLater(
+      () => client.postJson('/api/v1/me/profile/avatar-upload'),
+      throwsA(isA<ApiException>()),
+    );
+    expect(adapter.requests.length, 1, reason: 'no auto-retry on write verbs');
+  });
+
+  test('putJson succeeds on 204 with no body', () async {
+    final adapter = _FakeAdapter((o, _) => ResponseBody.fromString('', 204));
+    final client = _client(adapter);
+
+    await client.putJson('/api/v1/me/fcm-tokens', body: {'token': 't1'});
+
+    expect(adapter.requests.single.method, 'PUT');
+    expect(adapter.requests.single.headers['Authorization'], 'Bearer tok-1');
+    expect(adapter.requests.single.headers['X-Request-Id'], isNotEmpty);
+  });
+
+  test('putJson does not retry on 401', () async {
+    final adapter = _FakeAdapter(
+      (o, _) => _json(401, {
+        'error': {'code': 'unauthenticated', 'message': 'x', 'requestId': 'r'},
+      }),
+    );
+    final client = _client(adapter);
+
+    await expectLater(
+      () => client.putJson('/api/v1/me/fcm-tokens', body: {'token': 't1'}),
+      throwsA(isA<ApiException>()),
+    );
+    expect(adapter.requests.length, 1, reason: 'no auto-retry on write verbs');
+  });
+
+  test('deleteJson succeeds on 204 with no body', () async {
+    final adapter = _FakeAdapter((o, _) => ResponseBody.fromString('', 204));
+    final client = _client(adapter);
+
+    await client.deleteJson('/api/v1/me/fcm-tokens', body: {'token': 't1'});
+
+    expect(adapter.requests.single.method, 'DELETE');
+    expect(adapter.requests.single.headers['Authorization'], 'Bearer tok-1');
+    expect(adapter.requests.single.headers['X-Request-Id'], isNotEmpty);
+  });
+
+  test('deleteJson does not retry on 401', () async {
+    final adapter = _FakeAdapter(
+      (o, _) => _json(401, {
+        'error': {'code': 'unauthenticated', 'message': 'x', 'requestId': 'r'},
+      }),
+    );
+    final client = _client(adapter);
+
+    await expectLater(
+      () => client.deleteJson('/api/v1/me/fcm-tokens', body: {'token': 't1'}),
+      throwsA(isA<ApiException>()),
+    );
+    expect(adapter.requests.length, 1, reason: 'no auto-retry on write verbs');
+  });
 }
