@@ -5,7 +5,11 @@
 #   1. ensures the backend (Go api + Postgres + Caddy) is up via docker compose,
 #      pinning FIREBASE_PROJECT_ID so real Firebase tokens verify, and waits
 #      until GET /api/v1/me responds
-#   2. boots the iOS Simulator or Android emulator
+#   2. boots the iOS Simulator or Android emulator (Android: also checks
+#      /data free space and trims app caches if it's tight — the default AVD
+#      data partition is only 6G, and Play Store/GMS auto-updates plus repeat
+#      debug-build reinstalls can fill it, failing the install with
+#      INSTALL_FAILED_INSUFFICIENT_STORAGE)
 #   3. execs the Flutter dev flavor in the foreground (interactive hot reload:
 #      press r / R / q) — one platform at a time
 #
@@ -211,6 +215,47 @@ boot_android() {
   done
   ANDROID_DEVICE="$(adb devices | awk '$2=="device" && $1 ~ /^emulator-/ {print $1; exit}')"
   printf ' ready (%s)\n' "$ANDROID_DEVICE"
+  ensure_android_storage
+}
+
+# APK install fails with INSTALL_FAILED_INSUFFICIENT_STORAGE on the small
+# (6G) default AVD data partition once Play Store/GMS auto-updates and a few
+# debug-build reinstalls accumulate. `pm trim-caches` is safe and reversible
+# (it only reclaims cache, never app data or account state), so run it
+# automatically; below that, freeing more space means removing app data,
+# which is a per-developer call — print instructions instead of doing it.
+ANDROID_STORAGE_MIN_KB=1048576 # 1G headroom for the APK + Gradle install overhead
+
+ensure_android_storage() {
+  local avail
+  avail="$(adb -s "$ANDROID_DEVICE" shell df /data 2>/dev/null \
+    | awk 'NR==2 {print $4}' | tr -d '\r')"
+  [ -n "$avail" ] || return 0 # df parsing failed; don't block on a soft check
+  if [ "$avail" -ge "$ANDROID_STORAGE_MIN_KB" ]; then
+    return 0
+  fi
+  echo "==> Low storage on $ANDROID_DEVICE ($((avail / 1024))M free on /data) — trimming app caches"
+  adb -s "$ANDROID_DEVICE" shell pm trim-caches 4G >/dev/null 2>&1 || true
+  avail="$(adb -s "$ANDROID_DEVICE" shell df /data 2>/dev/null \
+    | awk 'NR==2 {print $4}' | tr -d '\r')"
+  [ -n "$avail" ] && [ "$avail" -ge "$ANDROID_STORAGE_MIN_KB" ] && {
+    echo "    freed enough via cache trim ($((avail / 1024))M free now)"; return 0
+  }
+  cat >&2 <<EOF
+    still low on space ($((avail / 1024))M free) after trimming caches.
+    Free more by removing non-essential preinstalled apps for this user only
+    (reversible with 'pm install-existing <package>'; does not touch the
+    signed-in Google account, which lives in com.google.android.gms):
+      adb -s $ANDROID_DEVICE shell pm uninstall --user 0 com.google.android.youtube
+      adb -s $ANDROID_DEVICE shell pm uninstall --user 0 com.google.android.apps.youtube.music
+      adb -s $ANDROID_DEVICE shell pm uninstall --user 0 com.google.android.apps.maps
+      adb -s $ANDROID_DEVICE shell pm uninstall --user 0 com.google.android.apps.photos
+      adb -s $ANDROID_DEVICE shell pm uninstall --user 0 com.google.android.apps.docs
+      adb -s $ANDROID_DEVICE shell pm uninstall --user 0 com.google.android.calendar
+    If this AVD is chronically tight on space, its data partition is a small
+    default (6G) — recreate it with a larger one via Android Studio's Device
+    Manager or 'flutter emulators --create'.
+EOF
 }
 
 # --- main ---
