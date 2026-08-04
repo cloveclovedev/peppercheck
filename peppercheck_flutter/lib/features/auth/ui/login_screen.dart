@@ -5,12 +5,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:peppercheck_flutter/app/sign_out_coordinator.dart';
 import 'package:peppercheck_flutter/app/theme/app_colors.dart';
 import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
 import 'package:peppercheck_flutter/common_widgets/app_background.dart';
 import 'package:peppercheck_flutter/features/about/presentation/app_explanation_bottom_sheet.dart';
 import 'package:peppercheck_flutter/features/auth/application/auth_state.dart';
-import 'package:peppercheck_flutter/features/auth/data/auth_repository.dart';
 import 'package:peppercheck_flutter/features/auth/ui/sign_in_view_model.dart';
 import 'package:peppercheck_flutter/gen/assets.gen.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
@@ -68,7 +68,7 @@ class LoginScreen extends ConsumerWidget {
                           const SizedBox(height: AppSizes.spacingSmall),
                           TextButton(
                             onPressed: () =>
-                                ref.read(authRepositoryProvider).signOut(),
+                                ref.read(signOutCoordinatorProvider).signOut(),
                             child: const Text('Sign out'),
                           ),
                         ],

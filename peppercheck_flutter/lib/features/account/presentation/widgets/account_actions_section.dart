@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:peppercheck_flutter/app/sign_out_coordinator.dart';
 import 'package:peppercheck_flutter/app/theme/app_colors.dart';
 import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
 import 'package:peppercheck_flutter/common_widgets/base_section.dart';
@@ -8,7 +9,6 @@ import 'package:peppercheck_flutter/common_widgets/destructive_action_button.dar
 import 'package:peppercheck_flutter/features/account/data/account_repository.dart';
 import 'package:peppercheck_flutter/features/account/presentation/account_deletion_controller.dart';
 import 'package:peppercheck_flutter/features/account/presentation/widgets/delete_account_confirmation_dialog.dart';
-import 'package:peppercheck_flutter/features/auth/data/auth_repository.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 
 class AccountActionsSection extends ConsumerWidget {
@@ -45,7 +45,7 @@ class AccountActionsSection extends ConsumerWidget {
   }
 
   Future<void> _logout(BuildContext context, WidgetRef ref) async {
-    await ref.read(authRepositoryProvider).signOut();
+    await ref.read(signOutCoordinatorProvider).signOut();
     // signOut flips the Firebase auth state; the router redirect sends us back
     // to '/', but navigate explicitly so it is immediate.
     if (context.mounted) context.go('/');
@@ -96,7 +96,7 @@ class AccountActionsSection extends ConsumerWidget {
         .executeDelete(
           force: force,
           onSuccess: () async {
-            await ref.read(authRepositoryProvider).signOut();
+            await ref.read(signOutCoordinatorProvider).signOut();
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text(t.account.actions.deletedSnackbar)),
