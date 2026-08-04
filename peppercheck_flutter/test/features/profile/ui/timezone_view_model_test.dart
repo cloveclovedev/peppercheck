@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:logger/logger.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:peppercheck_flutter/app/app_logger.dart';
@@ -8,11 +9,10 @@ import 'package:peppercheck_flutter/features/auth/application/auth_state.dart';
 import 'package:peppercheck_flutter/features/auth/domain/app_user.dart';
 import 'package:peppercheck_flutter/features/profile/data/profile_repository.dart';
 import 'package:peppercheck_flutter/features/profile/domain/profile.dart';
-import 'package:peppercheck_flutter/features/profile/presentation/providers/current_profile_provider.dart';
-import 'package:peppercheck_flutter/features/profile/presentation/timezone_controller.dart';
-import 'package:logger/logger.dart';
+import 'package:peppercheck_flutter/features/profile/ui/current_profile_provider.dart';
+import 'package:peppercheck_flutter/features/profile/ui/timezone_view_model.dart';
 
-import 'timezone_controller_test.mocks.dart';
+import 'timezone_view_model_test.mocks.dart';
 
 @GenerateNiceMocks([MockSpec<ProfileRepository>(), MockSpec<Logger>()])
 void main() {
@@ -57,7 +57,7 @@ void main() {
       const userId = 'user-123';
       const dbTimezone = 'America/New_York';
       const deviceTimezone = 'Asia/Tokyo';
-      final profile = Profile(id: userId, timezone: dbTimezone);
+      const profile = Profile(timezone: dbTimezone);
 
       // Mock Device Timezone
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -71,21 +71,17 @@ void main() {
           });
 
       // Mock Repository Response
-      when(
-        mockProfileRepository.fetchProfile(userId),
-      ).thenAnswer((_) async => profile);
+      when(mockProfileRepository.fetchOwn()).thenAnswer((_) async => profile);
 
       final container = await makeContainer(userId: userId);
 
       // Act
-      // Reading the controller triggers build -> fetch profile -> check timezone
+      // Reading the view model triggers build -> fetch profile -> check timezone
       await container.read(currentProfileProvider.future);
-      await container.read(timezoneControllerProvider.future);
+      await container.read(timezoneViewModelProvider.future);
 
       // Assert
-      verify(
-        mockProfileRepository.updateTimezone(userId, deviceTimezone),
-      ).called(1);
+      verify(mockProfileRepository.updateTimezone(deviceTimezone)).called(1);
     },
   );
 
@@ -96,7 +92,7 @@ void main() {
       const userId = 'user-123';
       const dbTimezone = 'Asia/Tokyo';
       const deviceTimezone = 'Asia/Tokyo';
-      final profile = Profile(id: userId, timezone: dbTimezone);
+      const profile = Profile(timezone: dbTimezone);
 
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(const MethodChannel('flutter_timezone'), (
@@ -108,18 +104,16 @@ void main() {
             return null;
           });
 
-      when(
-        mockProfileRepository.fetchProfile(userId),
-      ).thenAnswer((_) async => profile);
+      when(mockProfileRepository.fetchOwn()).thenAnswer((_) async => profile);
 
       final container = await makeContainer(userId: userId);
 
       // Act
       await container.read(currentProfileProvider.future);
-      await container.read(timezoneControllerProvider.future);
+      await container.read(timezoneViewModelProvider.future);
 
       // Assert
-      verifyNever(mockProfileRepository.updateTimezone(any, any));
+      verifyNever(mockProfileRepository.updateTimezone(any));
     },
   );
 
@@ -136,10 +130,10 @@ void main() {
     await container.read(currentAppUserProvider.future);
 
     // Act
-    await container.read(timezoneControllerProvider.future);
+    await container.read(timezoneViewModelProvider.future);
 
     // Assert
-    verifyNever(mockProfileRepository.fetchProfile(any));
-    verifyNever(mockProfileRepository.updateTimezone(any, any));
+    verifyNever(mockProfileRepository.fetchOwn());
+    verifyNever(mockProfileRepository.updateTimezone(any));
   });
 }

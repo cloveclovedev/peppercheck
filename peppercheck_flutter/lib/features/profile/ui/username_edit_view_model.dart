@@ -1,11 +1,10 @@
 import 'dart:async';
 
-import 'package:peppercheck_flutter/features/auth/application/auth_state.dart';
 import 'package:peppercheck_flutter/features/profile/data/profile_repository.dart';
-import 'package:peppercheck_flutter/features/profile/presentation/providers/current_profile_provider.dart';
+import 'package:peppercheck_flutter/features/profile/ui/current_profile_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-part 'username_edit_controller.g.dart';
+part 'username_edit_view_model.g.dart';
 
 /// Validates a username synchronously. Returns an error key on failure,
 /// or null if the value is valid. Shared between the dialog (real-time
@@ -23,11 +22,11 @@ String? validateUsername(String value) {
 }
 
 @riverpod
-class UsernameEditController extends _$UsernameEditController {
+class UsernameEditViewModel extends _$UsernameEditViewModel {
   @override
   FutureOr<void> build() {}
 
-  /// Resets controller state to the initial clean state.
+  /// Resets view model state to the initial clean state.
   /// Call this when the dialog opens to clear any error from a previous session.
   void reset() {
     state = const AsyncData(null);
@@ -45,12 +44,6 @@ class UsernameEditController extends _$UsernameEditController {
       return;
     }
 
-    final user = ref.read(currentAppUserProvider).value;
-    if (user == null) {
-      state = AsyncError('not_logged_in', StackTrace.current);
-      return;
-    }
-
     // Skip API call if value is unchanged
     final currentProfile = ref.read(currentProfileProvider).value;
     if (currentProfile?.username == trimmed) {
@@ -60,9 +53,7 @@ class UsernameEditController extends _$UsernameEditController {
 
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
-      await ref
-          .read(profileRepositoryProvider)
-          .updateUsername(user.internalUserId, trimmed);
+      await ref.read(profileRepositoryProvider).updateUsername(trimmed);
       ref.invalidate(currentProfileProvider);
       onSuccess();
     });
