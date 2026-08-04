@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'username_edit_controller.dart';
+part of 'username_edit_view_model.dart';
 
 // **************************************************************************
 // RiverpodGenerator
@@ -9,34 +9,34 @@ part of 'username_edit_controller.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 
-@ProviderFor(UsernameEditController)
-const usernameEditControllerProvider = UsernameEditControllerProvider._();
+@ProviderFor(UsernameEditViewModel)
+const usernameEditViewModelProvider = UsernameEditViewModelProvider._();
 
-final class UsernameEditControllerProvider
-    extends $AsyncNotifierProvider<UsernameEditController, void> {
-  const UsernameEditControllerProvider._()
+final class UsernameEditViewModelProvider
+    extends $AsyncNotifierProvider<UsernameEditViewModel, void> {
+  const UsernameEditViewModelProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
-        name: r'usernameEditControllerProvider',
+        name: r'usernameEditViewModelProvider',
         isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
 
   @override
-  String debugGetCreateSourceHash() => _$usernameEditControllerHash();
+  String debugGetCreateSourceHash() => _$usernameEditViewModelHash();
 
   @$internal
   @override
-  UsernameEditController create() => UsernameEditController();
+  UsernameEditViewModel create() => UsernameEditViewModel();
 }
 
-String _$usernameEditControllerHash() =>
-    r'59fb8dc8ca610541ed29b8c1a7f1f42e6cb38348';
+String _$usernameEditViewModelHash() =>
+    r'a6f3462592eb707f91873f64a849c5cdda5d0839';
 
-abstract class _$UsernameEditController extends $AsyncNotifier<void> {
+abstract class _$UsernameEditViewModel extends $AsyncNotifier<void> {
   FutureOr<void> build();
   @$mustCallSuper
   @override

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:peppercheck_flutter/common_widgets/base_dialog.dart';
 import 'package:peppercheck_flutter/features/profile/data/profile_errors.dart';
-import 'package:peppercheck_flutter/features/profile/presentation/username_edit_controller.dart';
+import 'package:peppercheck_flutter/features/profile/ui/username_edit_view_model.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 
 class EditUsernameDialog extends ConsumerStatefulWidget {
@@ -24,7 +24,7 @@ class _EditUsernameDialogState extends ConsumerState<EditUsernameDialog> {
     _localErrorKey = validateUsername(widget.currentUsername);
     // Clear any leftover error state from a previous dialog session.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(usernameEditControllerProvider.notifier).reset();
+      ref.read(usernameEditViewModelProvider.notifier).reset();
     });
   }
 
@@ -71,7 +71,7 @@ class _EditUsernameDialogState extends ConsumerState<EditUsernameDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(usernameEditControllerProvider);
+    final state = ref.watch(usernameEditViewModelProvider);
     final isLoading = state.isLoading;
     final errorMessage = _resolveErrorMessage(state.error);
     final canSubmit = !isLoading && _localErrorKey == null;
@@ -103,7 +103,7 @@ class _EditUsernameDialogState extends ConsumerState<EditUsernameDialog> {
           onPressed: canSubmit
               ? () {
                   ref
-                      .read(usernameEditControllerProvider.notifier)
+                      .read(usernameEditViewModelProvider.notifier)
                       .updateUsername(
                         username: _controller.text,
                         onSuccess: () => Navigator.of(context).pop(),

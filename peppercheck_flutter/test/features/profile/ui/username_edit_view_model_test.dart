@@ -1,38 +1,31 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:logger/logger.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
-import 'package:peppercheck_flutter/app/app_logger.dart';
 import 'package:peppercheck_flutter/features/auth/application/auth_state.dart';
 import 'package:peppercheck_flutter/features/auth/domain/app_user.dart';
 import 'package:peppercheck_flutter/features/profile/data/profile_errors.dart';
 import 'package:peppercheck_flutter/features/profile/data/profile_repository.dart';
-import 'package:peppercheck_flutter/features/profile/presentation/username_edit_controller.dart';
+import 'package:peppercheck_flutter/features/profile/ui/username_edit_view_model.dart';
 
-import 'username_edit_controller_test.mocks.dart';
+import 'username_edit_view_model_test.mocks.dart';
 
-@GenerateNiceMocks([MockSpec<ProfileRepository>(), MockSpec<Logger>()])
+@GenerateNiceMocks([MockSpec<ProfileRepository>()])
 void main() {
   late MockProfileRepository mockProfileRepository;
-  late MockLogger mockLogger;
 
   setUp(() {
     TestWidgetsFlutterBinding.ensureInitialized();
     mockProfileRepository = MockProfileRepository();
-    mockLogger = MockLogger();
   });
 
-  // Async because the controller reads `currentAppUserProvider` synchronously
-  // (`.value`), relying on the app router having already resolved it before
-  // any of these screens are reachable (see `app_router.dart`'s redirect
-  // gate). Awaiting the override's future here reproduces that same
-  // precondition instead of racing the controller against `/me` resolution.
-  Future<ProviderContainer> makeContainer() async {
+  // The view model reads `currentProfileProvider`, which in turn watches
+  // `currentAppUserProvider` to gate the fetch (see `app_router.dart`'s
+  // redirect gate for the same precondition in production).
+  ProviderContainer makeContainer() {
     final container = ProviderContainer(
       overrides: [
         profileRepositoryProvider.overrideWithValue(mockProfileRepository),
-        loggerProvider.overrideWithValue(mockLogger),
         currentAppUserProvider.overrideWith(
           (ref) async => AppUser(
             internalUserId: 'user-123',
@@ -44,128 +37,121 @@ void main() {
       ],
     );
     addTearDown(container.dispose);
-    await container.read(currentAppUserProvider.future);
     return container;
   }
 
   group('updateUsername', () {
     test('rejects values shorter than 2 characters', () async {
-      final container = await makeContainer();
+      final container = makeContainer();
       var successCalled = false;
 
       await container
-          .read(usernameEditControllerProvider.notifier)
+          .read(usernameEditViewModelProvider.notifier)
           .updateUsername(username: 'a', onSuccess: () => successCalled = true);
 
-      final state = container.read(usernameEditControllerProvider);
+      final state = container.read(usernameEditViewModelProvider);
       expect(state.hasError, isTrue);
       expect(state.error, equals('tooShort'));
-      verifyNever(mockProfileRepository.updateUsername(any, any));
+      verifyNever(mockProfileRepository.updateUsername(any));
       expect(successCalled, isFalse);
     });
 
     test('rejects values longer than 20 characters', () async {
-      final container = await makeContainer();
+      final container = makeContainer();
       await container
-          .read(usernameEditControllerProvider.notifier)
+          .read(usernameEditViewModelProvider.notifier)
           .updateUsername(username: 'a' * 21, onSuccess: () {});
 
-      final state = container.read(usernameEditControllerProvider);
+      final state = container.read(usernameEditViewModelProvider);
       expect(state.hasError, isTrue);
       expect(state.error, equals('tooLong'));
-      verifyNever(mockProfileRepository.updateUsername(any, any));
+      verifyNever(mockProfileRepository.updateUsername(any));
     });
 
     test('rejects values containing emoji', () async {
-      final container = await makeContainer();
+      final container = makeContainer();
       await container
-          .read(usernameEditControllerProvider.notifier)
+          .read(usernameEditViewModelProvider.notifier)
           .updateUsername(username: 'hello🍀', onSuccess: () {});
 
-      final state = container.read(usernameEditControllerProvider);
+      final state = container.read(usernameEditViewModelProvider);
       expect(state.hasError, isTrue);
       expect(state.error, equals('invalidChars'));
-      verifyNever(mockProfileRepository.updateUsername(any, any));
+      verifyNever(mockProfileRepository.updateUsername(any));
     });
 
     test('rejects values containing punctuation/symbols', () async {
-      final container = await makeContainer();
+      final container = makeContainer();
       await container
-          .read(usernameEditControllerProvider.notifier)
+          .read(usernameEditViewModelProvider.notifier)
           .updateUsername(username: 'tanaka@home', onSuccess: () {});
 
-      final state = container.read(usernameEditControllerProvider);
+      final state = container.read(usernameEditViewModelProvider);
       expect(state.hasError, isTrue);
       expect(state.error, equals('invalidChars'));
     });
 
     test('accepts Japanese characters', () async {
-      final container = await makeContainer();
+      final container = makeContainer();
       when(
-        mockProfileRepository.updateUsername('user-123', 'たなか花子'),
+        mockProfileRepository.updateUsername('たなか花子'),
       ).thenAnswer((_) async {});
 
       await container
-          .read(usernameEditControllerProvider.notifier)
+          .read(usernameEditViewModelProvider.notifier)
           .updateUsername(username: 'たなか花子', onSuccess: () {});
 
-      verify(
-        mockProfileRepository.updateUsername('user-123', 'たなか花子'),
-      ).called(1);
-      expect(container.read(usernameEditControllerProvider).hasError, isFalse);
+      verify(mockProfileRepository.updateUsername('たなか花子')).called(1);
+      expect(container.read(usernameEditViewModelProvider).hasError, isFalse);
     });
 
     test('trims whitespace before validation and submission', () async {
-      final container = await makeContainer();
+      final container = makeContainer();
       when(
-        mockProfileRepository.updateUsername('user-123', 'tanaka'),
+        mockProfileRepository.updateUsername('tanaka'),
       ).thenAnswer((_) async {});
 
       await container
-          .read(usernameEditControllerProvider.notifier)
+          .read(usernameEditViewModelProvider.notifier)
           .updateUsername(username: '  tanaka  ', onSuccess: () {});
 
-      verify(
-        mockProfileRepository.updateUsername('user-123', 'tanaka'),
-      ).called(1);
+      verify(mockProfileRepository.updateUsername('tanaka')).called(1);
     });
 
     test('calls repository and onSuccess on valid input', () async {
-      final container = await makeContainer();
+      final container = makeContainer();
       when(
-        mockProfileRepository.updateUsername('user-123', 'tanaka'),
+        mockProfileRepository.updateUsername('tanaka'),
       ).thenAnswer((_) async {});
 
       var successCalled = false;
       await container
-          .read(usernameEditControllerProvider.notifier)
+          .read(usernameEditViewModelProvider.notifier)
           .updateUsername(
             username: 'tanaka',
             onSuccess: () => successCalled = true,
           );
 
-      verify(
-        mockProfileRepository.updateUsername('user-123', 'tanaka'),
-      ).called(1);
+      verify(mockProfileRepository.updateUsername('tanaka')).called(1);
       expect(successCalled, isTrue);
-      expect(container.read(usernameEditControllerProvider).hasError, isFalse);
+      expect(container.read(usernameEditViewModelProvider).hasError, isFalse);
     });
 
     test('surfaces UsernameAlreadyTakenException as error state', () async {
-      final container = await makeContainer();
+      final container = makeContainer();
       when(
-        mockProfileRepository.updateUsername('user-123', 'existing'),
+        mockProfileRepository.updateUsername('existing'),
       ).thenThrow(const UsernameAlreadyTakenException());
 
       var successCalled = false;
       await container
-          .read(usernameEditControllerProvider.notifier)
+          .read(usernameEditViewModelProvider.notifier)
           .updateUsername(
             username: 'existing',
             onSuccess: () => successCalled = true,
           );
 
-      final state = container.read(usernameEditControllerProvider);
+      final state = container.read(usernameEditViewModelProvider);
       expect(state.hasError, isTrue);
       expect(state.error, isA<UsernameAlreadyTakenException>());
       expect(successCalled, isFalse);
