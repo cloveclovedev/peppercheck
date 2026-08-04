@@ -110,6 +110,37 @@ void main() {
     );
   });
 
+  test('a PUT failure skips commitAvatar and surfaces uploadFailed', () async {
+    final container = makeContainer();
+    final bytes = List<int>.filled(1024, 1);
+
+    when(
+      mockProfileRepository.requestAvatarUpload(
+        contentType: 'image/jpeg',
+        fileSizeBytes: bytes.length,
+      ),
+    ).thenAnswer((_) async => upload);
+    when(
+      mockPresignedUploadClient.put(
+        uploadUrl: upload.uploadUrl,
+        bytes: bytes,
+        contentType: 'image/jpeg',
+      ),
+    ).thenThrow(const UploadFailed(statusCode: 500));
+
+    String? errorKey;
+    await container
+        .read(avatarEditViewModelProvider.notifier)
+        .uploadAvatarBytes(
+          bytes,
+          onSuccess: () {},
+          onError: (key) => errorKey = key,
+        );
+
+    expect(errorKey, 'uploadFailed');
+    verifyNever(mockProfileRepository.commitAvatar(any));
+  });
+
   test('rate_limited surfaces the retry message', () async {
     final container = makeContainer();
     final bytes = List<int>.filled(1024, 1);
