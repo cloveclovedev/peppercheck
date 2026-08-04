@@ -14,11 +14,6 @@ if ! command -v bws >/dev/null 2>&1; then
   exit 127
 fi
 
-if ! command -v jq >/dev/null 2>&1; then
-  echo "jq is not installed; required to resolve the bws project (brew install jq)" >&2
-  exit 127
-fi
-
 if [ -z "${BWS_ACCESS_TOKEN:-}" ] && command -v security >/dev/null 2>&1; then
   # This machine account's token is shared across repos that read the same
   # BWS `development` project (see docs/development/bws-development.md). The
@@ -37,7 +32,12 @@ if [ -z "$PROJECT_ID" ]; then
   # The project ID is not secret, and this machine account can only ever see
   # the one shared 'development' project (see docs/development/bws-development.md)
   # — resolve it by name instead of requiring every operator to look it up
-  # and pass it on every invocation.
+  # and pass it on every invocation. jq is only needed for this lookup, not
+  # for the explicit-project-ID path below, so check for it here.
+  if ! command -v jq >/dev/null 2>&1; then
+    echo "jq is not installed; required to resolve the bws project by name (brew install jq), or pass one explicitly: $0 <project-id>" >&2
+    exit 127
+  fi
   PROJECT_ID="$(bws project list | jq -r '
     [.[] | select(.name == "development")] as $matches
     | if ($matches | length) == 1 then $matches[0].id
