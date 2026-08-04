@@ -57,7 +57,13 @@ class AvatarEditViewModel extends _$AvatarEditViewModel {
     );
     if (cropped == null) return; // user cancelled cropper
 
-    final bytes = await cropped.readAsBytes();
+    final List<int> bytes;
+    try {
+      bytes = await cropped.readAsBytes();
+    } catch (_) {
+      onError('uploadFailed');
+      return;
+    }
     await uploadAvatarBytes(bytes, onSuccess: onSuccess, onError: onError);
   }
 
