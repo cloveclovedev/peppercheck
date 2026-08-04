@@ -84,6 +84,13 @@ evidence, Phase 5 Stripe/RevenueCat, ...) introduce real dev-side credentials.
    make up BWS_PROJECT_ID=<development-project-id>
    ```
 
+   Find the `development` project's id with `bws project list` (it reads the
+   same `BWS_ACCESS_TOKEN` described below):
+
+   ```bash
+   bws project list
+   ```
+
 ## How it works
 
 `make up BWS_PROJECT_ID=<id>` still creates `backend/.env` from the template

@@ -40,22 +40,39 @@ From the repository root:
 scripts/dev-run.sh --ios
 ```
 
-Use `--android` for Android, or omit the platform flag to start both. The script
-starts the Go backend, waits for the API, boots the selected simulator or
-emulator, and runs the Flutter dev flavor.
+Use `--android` for Android. Run one platform at a time — `flutter run` holds
+the terminal for interactive hot reload (`r` / `R` / `q`). A platform flag
+ensures the backend is up (starting it only if it is not already answering),
+boots the selected simulator or emulator, and runs the Flutter dev flavor.
 
-Useful options:
+Backend control:
 
 ```sh
-scripts/dev-run.sh --android --avd NAME
-scripts/dev-run.sh --ios --no-backend
-scripts/dev-run.sh --ios --caddy-port 18080 --postgres-port 15432
+scripts/dev-run.sh --android            # ensure backend is up, then run Android
+scripts/dev-run.sh --backend --android  # rebuild/restart backend, then run Android
+scripts/dev-run.sh --backend            # (re)build/restart the backend only
 ```
 
+Pass `--backend` after editing backend code to force `make up` (rebuild changed
+images, recreate changed containers). Without it, a running backend is left
+untouched. For a full reset including the local database, use
+`cd backend && make reset`.
+
+Other options:
+
+```sh
+scripts/dev-run.sh --build                          # Android debug APK compile check (no backend/emulator)
+scripts/dev-run.sh --android --avd NAME
+scripts/dev-run.sh --android --caddy-port 18080 --postgres-port 15432
+```
+
+`--build` compiles a debug APK with the JDK-21 pin and `--flavor dev` applied,
+as a quick compile check.
+
 See [local port configuration](operations/local-ports.md) when running multiple
-worktrees or products concurrently. See
-[parallel development with worktrees](development/git-worktrees.md) for the
-repository worktree workflow.
+worktrees or products concurrently. To run several isolated backends in parallel
+worktrees, use `scripts/worktree/dev.sh` — see
+[parallel development with worktrees](development/git-worktrees.md).
 
 ## Verify changes
 
