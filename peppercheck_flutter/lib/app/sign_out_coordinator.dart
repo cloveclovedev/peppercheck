@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:logger/logger.dart';
 import 'package:peppercheck_flutter/app/app_logger.dart';
@@ -18,10 +20,12 @@ class SignOutCoordinator {
     required AuthRepository authRepository,
     required Logger logger,
     Future<String?> Function()? getToken,
+    Duration deregisterTimeout = const Duration(seconds: 3),
   }) : _notificationRepository = notificationRepository,
        _authRepository = authRepository,
        _logger = logger,
-       _getToken = getToken;
+       _getToken = getToken,
+       _deregisterTimeout = deregisterTimeout;
 
   final NotificationRepository _notificationRepository;
   final AuthRepository _authRepository;
@@ -32,22 +36,32 @@ class SignOutCoordinator {
   /// `FirebaseMessaging.instance.getToken` so construction never touches it.
   final Future<String?> Function()? _getToken;
 
+  /// Injectable so tests can exercise the timeout path quickly instead of
+  /// waiting out the real 3-second bound.
+  final Duration _deregisterTimeout;
+
   Future<void> signOut() async {
     await _deregisterFcmToken();
     await _authRepository.signOut();
   }
 
-  /// Best-effort: a failed FCM delete is logged and must not block Firebase
-  /// sign-out.
+  /// Best-effort and bounded: a failed or slow FCM delete is logged and must
+  /// not block Firebase sign-out — an offline user should not be stuck on
+  /// the authenticated screen waiting for this network call to time out on
+  /// its own.
   Future<void> _deregisterFcmToken() async {
     try {
-      final getToken = _getToken ?? FirebaseMessaging.instance.getToken;
-      final token = await getToken();
-      if (token == null) return;
-      await _notificationRepository.deregisterToken(token);
+      await _deregisterFcmTokenUnbounded().timeout(_deregisterTimeout);
     } catch (e, st) {
       _logger.w('FCM token deregistration failed', error: e, stackTrace: st);
     }
+  }
+
+  Future<void> _deregisterFcmTokenUnbounded() async {
+    final getToken = _getToken ?? FirebaseMessaging.instance.getToken;
+    final token = await getToken();
+    if (token == null) return;
+    await _notificationRepository.deregisterToken(token);
   }
 }
 

@@ -35,12 +35,14 @@ void main() {
 
   SignOutCoordinator makeCoordinator({
     required Future<String?> Function() getToken,
+    Duration deregisterTimeout = const Duration(seconds: 3),
   }) {
     return SignOutCoordinator(
       notificationRepository: notificationRepository,
       authRepository: authRepository,
       logger: logger,
       getToken: getToken,
+      deregisterTimeout: deregisterTimeout,
     );
   }
 
@@ -64,6 +66,24 @@ void main() {
 
     verify(authRepository.signOut()).called(1);
   });
+
+  test(
+    'signs out promptly when deregistration hangs past its timeout',
+    () async {
+      final coordinator = makeCoordinator(
+        getToken: () async {
+          await Future<void>.delayed(const Duration(milliseconds: 200));
+          return 'tok-abc';
+        },
+        deregisterTimeout: const Duration(milliseconds: 20),
+      );
+
+      await expectLater(coordinator.signOut(), completes);
+
+      verify(authRepository.signOut()).called(1);
+      verifyNever(notificationRepository.deregisterToken(any));
+    },
+  );
 
   test('skips deregistration when there is no current token', () async {
     final coordinator = makeCoordinator(getToken: () async => null);

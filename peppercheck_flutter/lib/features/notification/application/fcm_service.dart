@@ -63,8 +63,20 @@ class FcmService {
     // 2. Initialize flutter_local_notifications
     await _initLocalNotifications();
 
-    // 3. Upload Token on start
-    await _upsertCurrentToken();
+    // 3. Upload Token on start. Isolated in its own try/catch: a transient
+    // API failure here must not abort the listener registrations below,
+    // or notification handling stays disabled for the rest of the process.
+    try {
+      await _upsertCurrentToken();
+    } catch (e, st) {
+      ref
+          .read(loggerProvider)
+          .w(
+            '[FCM] Token registration failed at startup',
+            error: e,
+            stackTrace: st,
+          );
+    }
 
     // 4. Listen to token refresh
     FirebaseMessaging.instance.onTokenRefresh.listen(registerToken);
