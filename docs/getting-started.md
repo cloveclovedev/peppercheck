@@ -76,6 +76,10 @@ worktrees, use `scripts/worktree/dev.sh` — see
 
 ## Verify changes
 
+These checks are enforced automatically by pre-commit and CI, so you do not need
+to re-run them by hand; see [verification checks](development/verification-checks.md)
+for where each one runs. To run one directly:
+
 Backend:
 
 ```sh
