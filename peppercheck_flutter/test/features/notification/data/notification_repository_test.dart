@@ -69,4 +69,45 @@ void main() {
 
     expect(callOrder, ['PUT', 'DELETE']);
   });
+
+  test(
+    'registerToken is a silent no-op while a sign-out is in progress',
+    () async {
+      // Regression test: a token-refresh event can fire registerToken while
+      // SignOutCoordinator's deregister is in flight but Firebase sign-out
+      // hasn't completed yet (the signed-in check still passes). Queuing
+      // order alone isn't enough — that PUT would still land right after
+      // the DELETE and undo it — so it must be dropped outright.
+      final api = MockApiClient();
+      when(
+        api.putJson('/api/v1/me/device-push-tokens', body: anyNamed('body')),
+      ).thenAnswer((_) async {});
+
+      final repo = NotificationRepository(api)..beginSignOut();
+      await repo.registerToken('tok-123', 'android');
+
+      verifyNever(
+        api.putJson('/api/v1/me/device-push-tokens', body: anyNamed('body')),
+      );
+    },
+  );
+
+  test('registerToken resumes normally after endSignOut', () async {
+    final api = MockApiClient();
+    when(
+      api.putJson('/api/v1/me/device-push-tokens', body: anyNamed('body')),
+    ).thenAnswer((_) async {});
+
+    final repo = NotificationRepository(api)
+      ..beginSignOut()
+      ..endSignOut();
+    await repo.registerToken('tok-123', 'android');
+
+    verify(
+      api.putJson(
+        '/api/v1/me/device-push-tokens',
+        body: {'token': 'tok-123', 'deviceType': 'android'},
+      ),
+    ).called(1);
+  });
 }

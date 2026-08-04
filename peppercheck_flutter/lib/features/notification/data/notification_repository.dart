@@ -26,6 +26,15 @@ class NotificationRepository {
   /// leaking notifications to a signed-out (or since-switched) account.
   Future<void> _queue = Future<void>.value();
 
+  /// Set for the duration of [SignOutCoordinator.signOut] via
+  /// [beginSignOut]/[endSignOut]. Ordering the queue alone is not enough: an
+  /// FCM token-refresh event can fire `registerToken` *while* sign-out is in
+  /// flight (the auth state doesn't flip to signed-out until Firebase sign-
+  /// out itself completes), and that call would otherwise be queued right
+  /// after the deregister and immediately recreate the binding it just
+  /// removed. While this flag is set, `registerToken` is a silent no-op.
+  bool _signOutInProgress = false;
+
   Future<void> _enqueue(Future<void> Function() op) {
     final previous = _queue;
     final completer = Completer<void>();
@@ -40,6 +49,7 @@ class NotificationRepository {
   }
 
   Future<void> registerToken(String token, String deviceType) {
+    if (_signOutInProgress) return Future<void>.value();
     return _enqueue(
       () =>
           _api.putJson(_path, body: {'token': token, 'deviceType': deviceType}),
@@ -49,6 +59,14 @@ class NotificationRepository {
   Future<void> deregisterToken(String token) {
     return _enqueue(() => _api.deleteJson(_path, body: {'token': token}));
   }
+
+  /// Brackets [SignOutCoordinator.signOut] so no `registerToken` call
+  /// invoked during sign-out (deregister through Firebase actually signing
+  /// out) can slip in and undo it. Always pair with [endSignOut] in a
+  /// `finally` block.
+  void beginSignOut() => _signOutInProgress = true;
+
+  void endSignOut() => _signOutInProgress = false;
 }
 
 @Riverpod(keepAlive: true)

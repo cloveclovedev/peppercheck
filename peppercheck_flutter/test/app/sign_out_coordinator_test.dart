@@ -117,4 +117,23 @@ void main() {
     verifyNever(notificationRepository.deregisterToken(any));
     verify(authRepository.signOut()).called(1);
   });
+
+  test('brackets the whole flow with beginSignOut/endSignOut, clearing it even '
+      'on failure', () async {
+    // Regression test: NotificationRepository.registerToken drops calls
+    // made while beginSignOut()/endSignOut() bracket sign-out — but only
+    // if the coordinator actually calls them, and only around the *whole*
+    // flow (deregister through Firebase sign-out), not just the deregister
+    // leg, since a token-refresh event can race either part.
+    when(authRepository.signOut()).thenThrow(Exception('firebase down'));
+    final coordinator = makeCoordinator(getToken: () async => 'tok-abc');
+
+    await expectLater(coordinator.signOut(), throwsException);
+
+    verifyInOrder([
+      notificationRepository.beginSignOut(),
+      notificationRepository.deregisterToken('tok-abc'),
+      notificationRepository.endSignOut(),
+    ]);
+  });
 }

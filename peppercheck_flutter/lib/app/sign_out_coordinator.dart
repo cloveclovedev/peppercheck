@@ -40,9 +40,21 @@ class SignOutCoordinator {
   /// waiting out the real 3-second bound.
   final Duration _deregisterTimeout;
 
+  /// Brackets the whole flow — not just the deregister call — with
+  /// [NotificationRepository.beginSignOut]/[endSignOut]. A token-refresh
+  /// event can still fire `registerToken` after the deregister is queued
+  /// but before Firebase sign-out actually completes (the signed-in check
+  /// stays true until then); the repository drops such calls while this
+  /// flag is set instead of letting them re-create the token binding sign-
+  /// out just removed.
   Future<void> signOut() async {
-    await _deregisterFcmToken();
-    await _authRepository.signOut();
+    _notificationRepository.beginSignOut();
+    try {
+      await _deregisterFcmToken();
+      await _authRepository.signOut();
+    } finally {
+      _notificationRepository.endSignOut();
+    }
   }
 
   /// Best-effort and bounded: a failed or slow FCM delete is logged and must
