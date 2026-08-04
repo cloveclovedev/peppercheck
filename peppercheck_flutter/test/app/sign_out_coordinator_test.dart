@@ -41,6 +41,8 @@ void main() {
   SignOutCoordinator makeCoordinator({
     required Future<String?> Function() getToken,
     Duration deregisterTimeout = const Duration(seconds: 3),
+    bool Function()? isSignedIn,
+    Future<void> Function(String token)? reRegisterToken,
   }) {
     return SignOutCoordinator(
       notificationRepository: notificationRepository,
@@ -48,6 +50,8 @@ void main() {
       logger: logger,
       getToken: getToken,
       deregisterTimeout: deregisterTimeout,
+      isSignedIn: isSignedIn,
+      reRegisterToken: reRegisterToken,
     );
   }
 
@@ -167,4 +171,64 @@ void main() {
       notificationRepository.endSignOut(),
     ]);
   });
+
+  test('restores the token when Firebase sign-out silently fails', () async {
+    // Regression test: AuthRepository.signOut() never throws — each leg is
+    // guarded independently — so a native Firebase sign-out failure is
+    // silent and signOut() "succeeds" even though the user is still
+    // authenticated. Left as-is, that account would have no FCM token
+    // (just deregistered) until an unrelated token refresh happened to
+    // fire; the coordinator must restore it.
+    final reRegistered = <String>[];
+    final coordinator = makeCoordinator(
+      getToken: () async => 'tok-abc',
+      isSignedIn: () => true, // Firebase sign-out silently no-op'd
+      reRegisterToken: (token) async => reRegistered.add(token),
+    );
+
+    await coordinator.signOut();
+
+    expect(reRegistered, ['tok-abc']);
+  });
+
+  test('does not restore the token when sign-out actually succeeded', () async {
+    var reRegisterCalls = 0;
+    final coordinator = makeCoordinator(
+      getToken: () async => 'tok-abc',
+      isSignedIn: () => false, // Firebase sign-out actually took effect
+      reRegisterToken: (token) async => reRegisterCalls++,
+    );
+
+    await coordinator.signOut();
+
+    expect(reRegisterCalls, 0);
+  });
+
+  test(
+    'restoring the token happens after endSignOut, not while suppressed',
+    () async {
+      // NotificationRepository.registerToken is a silent no-op while
+      // beginSignOut()/endSignOut() bracket the flow — the restore call
+      // must happen after endSignOut() or it would be dropped too.
+      final callOrder = <String>[];
+      when(notificationRepository.beginSignOut()).thenAnswer((_) {
+        callOrder.add('beginSignOut');
+      });
+      when(notificationRepository.endSignOut()).thenAnswer((_) {
+        callOrder.add('endSignOut');
+      });
+      final coordinator = makeCoordinator(
+        getToken: () async => 'tok-abc',
+        isSignedIn: () => true,
+        reRegisterToken: (token) async => callOrder.add('reRegisterToken'),
+      );
+
+      await coordinator.signOut();
+
+      expect(
+        callOrder.indexOf('reRegisterToken'),
+        greaterThan(callOrder.indexOf('endSignOut')),
+      );
+    },
+  );
 }
