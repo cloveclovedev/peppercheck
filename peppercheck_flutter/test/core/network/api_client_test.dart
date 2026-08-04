@@ -216,7 +216,7 @@ void main() {
       );
       final client = _client(adapter);
 
-      expect(
+      await expectLater(
         () => client.patchJson('/api/v1/me/profile', body: {'username': 'x'}),
         throwsA(
           isA<ApiException>()
