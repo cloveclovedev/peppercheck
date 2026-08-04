@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 # Enforces import boundaries in the Flutter app:
 #   1. firebase_auth may only be imported under lib/features/auth/.
-#   2. the authenticated-user path (features/auth, core/network) must not
-#      import supabase_flutter.
-# The "Dio construction only in core/network" rule from the design (spec §8) is
-# deliberately NOT enforced yet: evidence/profile still build Dio for R2 uploads
-# until their own migration phase. Add that check when those features move.
+#   2. supabase_flutter must not be imported by the features already migrated
+#      off it: features/auth, features/profile, features/notification, or by
+#      core/network.
+#   3. Dio is only constructed in core/network — features must go through
+#      ApiClient/PresignedUploadClient, never build their own Dio instance.
+# evidence still builds Dio directly for R2 uploads until its own migration
+# phase (Phase 4b); it is deliberately excluded from rule 3 until then.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 lib=peppercheck_flutter/lib
@@ -20,10 +22,20 @@ if [ -n "$bad_fb" ]; then
 fi
 
 bad_sb=$(grep -rl "package:supabase_flutter/" \
-  "$lib/features/auth" "$lib/core/network" || true)
+  "$lib/features/auth" "$lib/features/profile" "$lib/features/notification" \
+  "$lib/core/network" || true)
 if [ -n "$bad_sb" ]; then
-  echo "ERROR: supabase_flutter imported on the auth path (features/auth, core/network):"
+  echo "ERROR: supabase_flutter imported on a migrated path (features/auth, features/profile, features/notification, core/network):"
   echo "$bad_sb"
+  fail=1
+fi
+
+bad_dio=$(grep -rlE "Dio\(|Dio\.new" "$lib" \
+  | grep -v "^$lib/core/network/" \
+  | grep -v "^$lib/features/evidence/" || true)
+if [ -n "$bad_dio" ]; then
+  echo "ERROR: Dio constructed outside core/network (features must use ApiClient/PresignedUploadClient):"
+  echo "$bad_dio"
   fail=1
 fi
 
