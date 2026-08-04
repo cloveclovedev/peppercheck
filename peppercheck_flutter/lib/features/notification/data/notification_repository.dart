@@ -1,28 +1,91 @@
+import 'dart:async';
+
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+import '../../../core/network/api_client.dart';
+import '../../../core/network/api_client_provider.dart';
 
 part 'notification_repository.g.dart';
 
-@Riverpod(keepAlive: true)
-NotificationRepository notificationRepository(Ref ref) {
-  return NotificationRepository();
+/// Syncs the device's push token with the Go API. The route is
+/// `/api/v1/me/device-push-tokens` (a legacy "fcm-tokens" name lingers in
+/// planning docs; the backend handler lives in `internal/notification`).
+class NotificationRepository {
+  NotificationRepository(this._api);
+
+  final ApiClient _api;
+
+  static const _path = '/api/v1/me/device-push-tokens';
+
+  /// Serializes register/deregister calls so they complete in invocation
+  /// order regardless of individual network timing. Without this, a
+  /// fire-and-forget startup registration that is still in flight when the
+  /// user signs out can complete *after* the sign-out deregistration — the
+  /// backend upserts on conflict (`internal/notification/store.go`), so a
+  /// late PUT silently recreates the token binding the DELETE just removed,
+  /// leaking notifications to a signed-out (or since-switched) account.
+  Future<void> _queue = Future<void>.value();
+
+  /// Set for the duration of [SignOutCoordinator.signOut] via
+  /// [beginSignOut]/[endSignOut]. Ordering the queue alone is not enough: an
+  /// FCM token-refresh event can fire `registerToken` *while* sign-out is in
+  /// flight (the auth state doesn't flip to signed-out until Firebase sign-
+  /// out itself completes), and that call would otherwise be queued right
+  /// after the deregister and immediately recreate the binding it just
+  /// removed. While this flag is set, `registerToken` is a silent no-op.
+  bool _signOutInProgress = false;
+
+  /// [shouldRun] (when given) is re-checked immediately before [op] actually
+  /// runs, not just before it is enqueued — an earlier operation can occupy
+  /// the queue long enough that a caller-side deadline (e.g. the sign-out
+  /// coordinator's deregister timeout) has already passed by the time this
+  /// one's turn comes up. Checking only at enqueue time is not enough: the
+  /// call could still fire after local sign-out with no bearer to
+  /// authenticate it.
+  Future<void> _enqueue(
+    Future<void> Function() op, {
+    bool Function()? shouldRun,
+  }) {
+    final previous = _queue;
+    final completer = Completer<void>();
+    _queue = completer.future;
+    unawaited(
+      previous
+          .catchError((_) {}) // a prior failure must not block this op
+          .then((_) {
+            if (shouldRun != null && !shouldRun()) return null;
+            return op();
+          })
+          .then(completer.complete, onError: completer.completeError),
+    );
+    return completer.future;
+  }
+
+  Future<void> registerToken(String token, String deviceType) {
+    if (_signOutInProgress) return Future<void>.value();
+    return _enqueue(
+      () =>
+          _api.putJson(_path, body: {'token': token, 'deviceType': deviceType}),
+    );
+  }
+
+  Future<void> deregisterToken(String token, {bool Function()? isCancelled}) {
+    return _enqueue(
+      () => _api.deleteJson(_path, body: {'token': token}),
+      shouldRun: isCancelled == null ? null : () => !isCancelled(),
+    );
+  }
+
+  /// Brackets [SignOutCoordinator.signOut] so no `registerToken` call
+  /// invoked during sign-out (deregister through Firebase actually signing
+  /// out) can slip in and undo it. Always pair with [endSignOut] in a
+  /// `finally` block.
+  void beginSignOut() => _signOutInProgress = true;
+
+  void endSignOut() => _signOutInProgress = false;
 }
 
-class NotificationRepository {
-  /// Upserts the FCM token to the `public.user_fcm_tokens` table.
-  ///
-  /// Disabled until the notification feature migrates to the Go API
-  /// (Phase 3). Token sync was keyed on the Supabase session, which no
-  /// longer exists on the auth path after the Firebase identity switch.
-  /// Re-enable when notifications move; do not silently no-op without this
-  /// guard comment.
-  Future<void> upsertToken(String token) async {
-    return;
-  }
-
-  /// Removes the token on logout.
-  ///
-  /// Disabled for the same reason as [upsertToken] — see above.
-  Future<void> deleteToken(String token) async {
-    return;
-  }
+@Riverpod(keepAlive: true)
+NotificationRepository notificationRepository(Ref ref) {
+  return NotificationRepository(ref.watch(apiClientProvider));
 }
