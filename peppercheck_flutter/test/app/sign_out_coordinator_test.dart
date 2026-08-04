@@ -25,7 +25,12 @@ void main() {
     logger = MockLogger();
     callOrder = [];
 
-    when(notificationRepository.deregisterToken(any)).thenAnswer((_) async {
+    when(
+      notificationRepository.deregisterToken(
+        any,
+        isCancelled: anyNamed('isCancelled'),
+      ),
+    ).thenAnswer((_) async {
       callOrder.add('deregisterToken');
     });
     when(authRepository.signOut()).thenAnswer((_) async {
@@ -52,13 +57,21 @@ void main() {
     await coordinator.signOut();
 
     expect(callOrder, ['deregisterToken', 'signOut']);
-    verify(notificationRepository.deregisterToken('tok-abc')).called(1);
+    verify(
+      notificationRepository.deregisterToken(
+        'tok-abc',
+        isCancelled: anyNamed('isCancelled'),
+      ),
+    ).called(1);
     verify(authRepository.signOut()).called(1);
   });
 
   test('still signs out of Firebase when FCM deregistration fails', () async {
     when(
-      notificationRepository.deregisterToken(any),
+      notificationRepository.deregisterToken(
+        any,
+        isCancelled: anyNamed('isCancelled'),
+      ),
     ).thenThrow(Exception('network error'));
     final coordinator = makeCoordinator(getToken: () async => 'tok-abc');
 
@@ -81,7 +94,12 @@ void main() {
       await expectLater(coordinator.signOut(), completes);
 
       verify(authRepository.signOut()).called(1);
-      verifyNever(notificationRepository.deregisterToken(any));
+      verifyNever(
+        notificationRepository.deregisterToken(
+          any,
+          isCancelled: anyNamed('isCancelled'),
+        ),
+      );
     },
   );
 
@@ -106,7 +124,12 @@ void main() {
     // Let the abandoned getToken() future actually resolve.
     await Future<void>.delayed(const Duration(milliseconds: 100));
 
-    verifyNever(notificationRepository.deregisterToken(any));
+    verifyNever(
+      notificationRepository.deregisterToken(
+        any,
+        isCancelled: anyNamed('isCancelled'),
+      ),
+    );
   });
 
   test('skips deregistration when there is no current token', () async {
@@ -114,7 +137,12 @@ void main() {
 
     await coordinator.signOut();
 
-    verifyNever(notificationRepository.deregisterToken(any));
+    verifyNever(
+      notificationRepository.deregisterToken(
+        any,
+        isCancelled: anyNamed('isCancelled'),
+      ),
+    );
     verify(authRepository.signOut()).called(1);
   });
 
@@ -132,7 +160,10 @@ void main() {
 
     verifyInOrder([
       notificationRepository.beginSignOut(),
-      notificationRepository.deregisterToken('tok-abc'),
+      notificationRepository.deregisterToken(
+        'tok-abc',
+        isCancelled: anyNamed('isCancelled'),
+      ),
       notificationRepository.endSignOut(),
     ]);
   });

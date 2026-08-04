@@ -92,6 +92,50 @@ void main() {
     },
   );
 
+  test('deregisterToken is dropped if cancelled by the time its turn in the '
+      'queue arrives, even though it passed the check when enqueued', () async {
+    // Regression test: a slow registerToken can occupy the queue past the
+    // sign-out coordinator's own deregister deadline. Checking isCancelled
+    // only once, before handing off to the repository, misses this — the
+    // queued DELETE would still run once the PUT ahead of it finally
+    // clears, by which point Firebase may have already signed out (no
+    // bearer) or a different account may be signed in. The check must be
+    // re-evaluated at queue execution time, not just at enqueue time.
+    final api = MockApiClient();
+    final calls = <String>[];
+    when(
+      api.putJson('/api/v1/me/device-push-tokens', body: anyNamed('body')),
+    ).thenAnswer((_) async {
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      calls.add('PUT');
+    });
+    when(
+      api.deleteJson('/api/v1/me/device-push-tokens', body: anyNamed('body')),
+    ).thenAnswer((_) async {
+      calls.add('DELETE');
+    });
+
+    final repo = NotificationRepository(api);
+    final register = repo.registerToken('tok-123', 'android');
+    // Not yet cancelled at enqueue time — the coordinator's own deadline
+    // hasn't elapsed yet when it hands off to the repository.
+    var cancelled = false;
+    final deregister = repo.deregisterToken(
+      'tok-123',
+      isCancelled: () => cancelled,
+    );
+    // The coordinator's deadline elapses while the PUT still occupies the
+    // queue — this is what the coordinator does when its own timeout
+    // fires (SignOutCoordinator._deregisterFcmToken).
+    cancelled = true;
+    await Future.wait([register, deregister]);
+
+    expect(calls, ['PUT']);
+    verifyNever(
+      api.deleteJson('/api/v1/me/device-push-tokens', body: anyNamed('body')),
+    );
+  });
+
   test('registerToken resumes normally after endSignOut', () async {
     final api = MockApiClient();
     when(

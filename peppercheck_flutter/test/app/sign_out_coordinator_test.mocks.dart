@@ -49,13 +49,32 @@ class MockNotificationRepository extends _i1.Mock
           as _i4.Future<void>);
 
   @override
-  _i4.Future<void> deregisterToken(String? token) =>
+  _i4.Future<void> deregisterToken(
+    String? token, {
+    bool Function()? isCancelled,
+  }) =>
       (super.noSuchMethod(
-            Invocation.method(#deregisterToken, [token]),
+            Invocation.method(
+              #deregisterToken,
+              [token],
+              {#isCancelled: isCancelled},
+            ),
             returnValue: _i4.Future<void>.value(),
             returnValueForMissingStub: _i4.Future<void>.value(),
           )
           as _i4.Future<void>);
+
+  @override
+  void beginSignOut() => super.noSuchMethod(
+    Invocation.method(#beginSignOut, []),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void endSignOut() => super.noSuchMethod(
+    Invocation.method(#endSignOut, []),
+    returnValueForMissingStub: null,
+  );
 }
 
 /// A class which mocks [AuthRepository].

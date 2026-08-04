@@ -35,14 +35,27 @@ class NotificationRepository {
   /// removed. While this flag is set, `registerToken` is a silent no-op.
   bool _signOutInProgress = false;
 
-  Future<void> _enqueue(Future<void> Function() op) {
+  /// [shouldRun] (when given) is re-checked immediately before [op] actually
+  /// runs, not just before it is enqueued — an earlier operation can occupy
+  /// the queue long enough that a caller-side deadline (e.g. the sign-out
+  /// coordinator's deregister timeout) has already passed by the time this
+  /// one's turn comes up. Checking only at enqueue time is not enough: the
+  /// call could still fire after local sign-out with no bearer to
+  /// authenticate it.
+  Future<void> _enqueue(
+    Future<void> Function() op, {
+    bool Function()? shouldRun,
+  }) {
     final previous = _queue;
     final completer = Completer<void>();
     _queue = completer.future;
     unawaited(
       previous
           .catchError((_) {}) // a prior failure must not block this op
-          .then((_) => op())
+          .then((_) {
+            if (shouldRun != null && !shouldRun()) return null;
+            return op();
+          })
           .then(completer.complete, onError: completer.completeError),
     );
     return completer.future;
@@ -56,8 +69,11 @@ class NotificationRepository {
     );
   }
 
-  Future<void> deregisterToken(String token) {
-    return _enqueue(() => _api.deleteJson(_path, body: {'token': token}));
+  Future<void> deregisterToken(String token, {bool Function()? isCancelled}) {
+    return _enqueue(
+      () => _api.deleteJson(_path, body: {'token': token}),
+      shouldRun: isCancelled == null ? null : () => !isCancelled(),
+    );
   }
 
   /// Brackets [SignOutCoordinator.signOut] so no `registerToken` call

@@ -64,12 +64,15 @@ class SignOutCoordinator {
   ///
   /// `Future.timeout` does not cancel the underlying work, so the unbounded
   /// call keeps running after we give up on it. If we let it reach the
-  /// repository after that point, it could delete a *different* signed-in
+  /// network after that point, it could delete a *different* signed-in
   /// user's token — e.g. this device's shared FCM token gets rebound to a
   /// second account that signs in while the first account's slow deregister
-  /// is still in flight. [_cancelled] is checked immediately before the
-  /// network call so a request that arrives past the deadline is dropped
-  /// instead of sent.
+  /// is still in flight, or fire with no bearer at all once Firebase has
+  /// signed out. `isCancelled` is checked both before handing off to the
+  /// repository *and* passed through to it, since the repository's own
+  /// serialization queue (an earlier `registerToken` occupying it) can defer
+  /// the actual network call past this deadline even after the first check
+  /// passes — see [NotificationRepository.deregisterToken].
   Future<void> _deregisterFcmToken() async {
     var cancelled = false;
     final unbounded = _deregisterFcmTokenUnbounded(
@@ -97,7 +100,10 @@ class SignOutCoordinator {
     final token = await getToken();
     if (token == null) return;
     if (isCancelled()) return;
-    await _notificationRepository.deregisterToken(token);
+    await _notificationRepository.deregisterToken(
+      token,
+      isCancelled: isCancelled,
+    );
   }
 }
 
