@@ -15,12 +15,14 @@ TEST_POSTGRES_PORT ?= 55432
 help: ## Show available targets
 	grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  %-9s %s\n", $$1, $$2}'
 
-up: ## Start the core stack (creates .env if missing). Add BWS_PROJECT_ID=<id> to inject real dev secrets via Bitwarden Secrets Manager (see docs/development/bws-development.md)
+up: ## Start the core stack (creates .env if missing). Off by default (plain .env dummies) so a fresh clone with no Bitwarden access always works. Add BWS_PROJECT_ID=auto to inject real dev secrets via the shared 'development' project (auto-resolved by name — see docs/development/bws-development.md), or BWS_PROJECT_ID=<id> for a specific project.
 	[ -f .env ] || cp .env.example .env
-	@if [ -n "$(BWS_PROJECT_ID)" ]; then \
-		scripts/bws-dev-up.sh "$(BWS_PROJECT_ID)"; \
-	else \
+	@if [ -z "$(BWS_PROJECT_ID)" ]; then \
 		docker compose up -d --build; \
+	elif [ "$(BWS_PROJECT_ID)" = "auto" ]; then \
+		scripts/bws-dev-up.sh; \
+	else \
+		scripts/bws-dev-up.sh "$(BWS_PROJECT_ID)"; \
 	fi
 
 down: ## Stop the stack (keep volumes)

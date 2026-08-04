@@ -7,13 +7,16 @@ Local development normally boots on non-sensitive dummy values in
 and exercise most flows, but not ones that call a real external service —
 today that's the Cloudflare R2 avatar upload/finalize flow.
 
-`make up BWS_PROJECT_ID=<id>` injects real credential values from Bitwarden
-Secrets Manager (`bws`) into the Compose stack for the duration of that one
-run. This is optional: plain `make up` (no `BWS_PROJECT_ID`) keeps working
-without it, exercising the avatar upload/finalize code path against a
-nonexistent R2 account rather than a real bucket (see [#483][] — the shipped
-dummy values don't currently make the api fail closed the way earlier docs in
-this area assumed).
+`make up BWS_PROJECT_ID=auto` (or `scripts/dev-run.sh --backend --bws`)
+injects real credential values from Bitwarden Secrets Manager (`bws`) into
+the Compose stack for the duration of that one run. This is optional and off
+by default — plain `make up` (no `BWS_PROJECT_ID`) keeps working without it,
+exercising the avatar upload/finalize code path against a nonexistent R2
+account rather than a real bucket (see [#483][] — the shipped dummy values
+don't currently make the api fail closed the way earlier docs in this area
+assumed). Off-by-default is deliberate: this repository intends to build in
+the open, and a contributor without Bitwarden access should never need it to
+get a working local stack.
 
 [#483]: https://github.com/cloveclovedev/peppercheck/issues/483
 
@@ -76,32 +79,45 @@ evidence, Phase 5 Stripe/RevenueCat, ...) introduce real dev-side credentials.
    `development` project — there is only one token, not one per repository.
 4. Set real, non-secret values for `R2_ACCOUNT_ID`, `R2_BUCKET`, and
    `R2_PUBLIC_DOMAIN` in `backend/.env` (see above — these don't go through
-   bws).
+   bws). `R2_PUBLIC_DOMAIN` must be a **bare hostname with no `https://`
+   prefix** — the api prepends it itself when building/validating the avatar
+   URL, so an included scheme makes every avatar `PATCH` fail with `400
+   invalid_argument` no matter how correct the credentials are.
 5. Run:
 
    ```bash
    cd backend
-   make up BWS_PROJECT_ID=<development-project-id>
+   make up BWS_PROJECT_ID=auto
    ```
 
-   Find the `development` project's id with `bws project list` (it reads the
-   same `BWS_ACCESS_TOKEN` described below):
+   or from the repo root: `scripts/dev-run.sh --backend --bws` (also works
+   combined with `--android`/`--ios`, and forces a backend restart even if
+   one is already running, since secrets are injected only at `docker
+   compose up` time).
 
-   ```bash
-   bws project list
-   ```
+   `auto` resolves the shared `development` project by name — this machine
+   account only ever has access to that one project, so there's normally
+   nothing to look up. Pass a specific `BWS_PROJECT_ID=<id>` instead if you
+   ever need to point at a different project; find candidates with
+   `bws project list` (it reads the same `BWS_ACCESS_TOKEN` described below).
 
 ## How it works
 
-`make up BWS_PROJECT_ID=<id>` still creates `backend/.env` from the template
-if missing, then runs `backend/scripts/bws-dev-up.sh <id>` instead of a plain
-`docker compose up`. The script:
+`make up BWS_PROJECT_ID=auto` (or `=<id>`) still creates `backend/.env` from
+the template if missing, then runs `backend/scripts/bws-dev-up.sh` (with or
+without an explicit project ID) instead of a plain `docker compose up`.
+`BWS_PROJECT_ID` unset or empty skips bws entirely — that's the default. The
+script:
 
 - Fails closed if `bws` isn't installed.
 - Reads `BWS_ACCESS_TOKEN` from the `bws-local-access-token` Keychain item
   into its own process tree (falling back to an already-exported
   `BWS_ACCESS_TOKEN`, e.g. for a one-shot override), and fails closed if
   neither is available.
+- With no project ID argument (`BWS_PROJECT_ID=auto`), resolves the
+  `development` project by name via `bws project list | jq` — `jq` is only
+  required for this path, not for an explicit `BWS_PROJECT_ID=<id>` — failing
+  closed if none or more than one match.
 - Runs `bws run --project-id <id> -- docker compose up -d --build`. Only the
   selected project's secret values reach that one process tree; the BWS
   access token itself is never listed in Compose or passed to a container.

@@ -3,8 +3,9 @@
 # Secrets Manager (bws). See docs/development/bws-development.md.
 set -euo pipefail
 
-if [ "$#" -ne 1 ]; then
-  echo "usage: $0 <BWS development project ID>" >&2
+if [ "$#" -gt 1 ]; then
+  echo "usage: $0 [BWS project ID]" >&2
+  echo "  (with no argument, auto-resolves the shared 'development' project)" >&2
   exit 2
 fi
 
@@ -26,12 +27,39 @@ if [ -z "${BWS_ACCESS_TOKEN:-}" ]; then
   exit 2
 fi
 
-# The project ID is not secret. bws injects only this project's secret values
-# (e.g. R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY) into Compose's process
-# environment; BWS_ACCESS_TOKEN itself is never listed in compose.yaml or
-# passed to a container. .env is still loaded as normal -- Compose gives
-# process-environment variables precedence over .env, so the bws-injected
-# values override the .env dummies for the keys bws actually provides, while
-# every other variable (non-secret config and required-but-non-secret
-# variables such as POSTGRES_PASSWORD and API_PORT) keeps coming from .env.
-exec bws run --project-id "$1" -- docker compose up -d --build
+PROJECT_ID="${1:-}"
+if [ -z "$PROJECT_ID" ]; then
+  # The project ID is not secret, and this machine account can only ever see
+  # the one shared 'development' project (see docs/development/bws-development.md)
+  # — resolve it by name instead of requiring every operator to look it up
+  # and pass it on every invocation. jq is only needed for this lookup, not
+  # for the explicit-project-ID path below, so check for it here.
+  if ! command -v jq >/dev/null 2>&1; then
+    echo "jq is not installed; required to resolve the bws project by name (brew install jq), or pass one explicitly: $0 <project-id>" >&2
+    exit 127
+  fi
+  PROJECT_ID="$(bws project list | jq -r '
+    [.[] | select(.name == "development")] as $matches
+    | if ($matches | length) == 1 then $matches[0].id
+      elif ($matches | length) == 0 then "MISSING"
+      else "AMBIGUOUS" end
+  ')"
+  case "$PROJECT_ID" in
+    MISSING)
+      echo "no bws project named 'development' visible to this access token" >&2
+      exit 2 ;;
+    AMBIGUOUS)
+      echo "multiple bws projects named 'development' are visible; pass one explicitly: $0 <project-id>" >&2
+      exit 2 ;;
+  esac
+fi
+
+# bws injects only this project's secret values (e.g. R2_ACCESS_KEY_ID,
+# R2_SECRET_ACCESS_KEY) into Compose's process environment; BWS_ACCESS_TOKEN
+# itself is never listed in compose.yaml or passed to a container. .env is
+# still loaded as normal -- Compose gives process-environment variables
+# precedence over .env, so the bws-injected values override the .env
+# dummies for the keys bws actually provides, while every other variable
+# (non-secret config and required-but-non-secret variables such as
+# POSTGRES_PASSWORD and API_PORT) keeps coming from .env.
+exec bws run --project-id "$PROJECT_ID" -- docker compose up -d --build
