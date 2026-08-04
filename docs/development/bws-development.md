@@ -109,13 +109,15 @@ without an explicit project ID) instead of a plain `docker compose up`.
 `BWS_PROJECT_ID` unset or empty skips bws entirely — that's the default. The
 script:
 
-- Fails closed if `bws` or `jq` isn't installed.
+- Fails closed if `bws` isn't installed.
 - Reads `BWS_ACCESS_TOKEN` from the `bws-local-access-token` Keychain item
   into its own process tree (falling back to an already-exported
   `BWS_ACCESS_TOKEN`, e.g. for a one-shot override), and fails closed if
   neither is available.
-- With no project ID argument, resolves the `development` project by name via
-  `bws project list | jq`, failing closed if none or more than one match.
+- With no project ID argument (`BWS_PROJECT_ID=auto`), resolves the
+  `development` project by name via `bws project list | jq` — `jq` is only
+  required for this path, not for an explicit `BWS_PROJECT_ID=<id>` — failing
+  closed if none or more than one match.
 - Runs `bws run --project-id <id> -- docker compose up -d --build`. Only the
   selected project's secret values reach that one process tree; the BWS
   access token itself is never listed in Compose or passed to a container.
