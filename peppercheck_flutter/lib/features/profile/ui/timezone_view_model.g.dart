@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'timezone_controller.dart';
+part of 'timezone_view_model.dart';
 
 // **************************************************************************
 // RiverpodGenerator
@@ -9,34 +9,33 @@ part of 'timezone_controller.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 
-@ProviderFor(TimezoneController)
-const timezoneControllerProvider = TimezoneControllerProvider._();
+@ProviderFor(TimezoneViewModel)
+const timezoneViewModelProvider = TimezoneViewModelProvider._();
 
-final class TimezoneControllerProvider
-    extends $AsyncNotifierProvider<TimezoneController, void> {
-  const TimezoneControllerProvider._()
+final class TimezoneViewModelProvider
+    extends $AsyncNotifierProvider<TimezoneViewModel, void> {
+  const TimezoneViewModelProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
-        name: r'timezoneControllerProvider',
+        name: r'timezoneViewModelProvider',
         isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
 
   @override
-  String debugGetCreateSourceHash() => _$timezoneControllerHash();
+  String debugGetCreateSourceHash() => _$timezoneViewModelHash();
 
   @$internal
   @override
-  TimezoneController create() => TimezoneController();
+  TimezoneViewModel create() => TimezoneViewModel();
 }
 
-String _$timezoneControllerHash() =>
-    r'b9f02f402c53c7a5f5f3e661886ffaa30656bac6';
+String _$timezoneViewModelHash() => r'f19aa273a86c3f50337b856a6bc6c989de281738';
 
-abstract class _$TimezoneController extends $AsyncNotifier<void> {
+abstract class _$TimezoneViewModel extends $AsyncNotifier<void> {
   FutureOr<void> build();
   @$mustCallSuper
   @override

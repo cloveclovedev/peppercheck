@@ -15,8 +15,6 @@ class CurrentProfile extends _$CurrentProfile {
       return null;
     }
 
-    return ref
-        .watch(profileRepositoryProvider)
-        .fetchProfile(user.internalUserId);
+    return ref.watch(profileRepositoryProvider).fetchOwn();
   }
 }

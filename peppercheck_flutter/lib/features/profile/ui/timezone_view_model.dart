@@ -3,13 +3,13 @@ import 'dart:async';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:peppercheck_flutter/app/app_logger.dart';
 import 'package:peppercheck_flutter/features/profile/data/profile_repository.dart';
-import 'package:peppercheck_flutter/features/profile/presentation/providers/current_profile_provider.dart';
+import 'package:peppercheck_flutter/features/profile/ui/current_profile_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-part 'timezone_controller.g.dart';
+part 'timezone_view_model.g.dart';
 
 @Riverpod(keepAlive: true)
-class TimezoneController extends _$TimezoneController {
+class TimezoneViewModel extends _$TimezoneViewModel {
   @override
   FutureOr<void> build() async {
     // Watch the current profile to trigger check when profile loads or changes
@@ -22,13 +22,10 @@ class TimezoneController extends _$TimezoneController {
 
     final profile = profileAsync.value!;
 
-    await _checkAndUpdateTimezone(profile.id, profile.timezone);
+    await _checkAndUpdateTimezone(profile.timezone);
   }
 
-  Future<void> _checkAndUpdateTimezone(
-    String userId,
-    String? dbTimezone,
-  ) async {
+  Future<void> _checkAndUpdateTimezone(String? dbTimezone) async {
     try {
       final String deviceTimezone = await FlutterTimezone.getLocalTimezone();
 
@@ -40,7 +37,7 @@ class TimezoneController extends _$TimezoneController {
             );
         await ref
             .read(profileRepositoryProvider)
-            .updateTimezone(userId, deviceTimezone);
+            .updateTimezone(deviceTimezone);
 
         // Invalidate profile provider to fetch fresh data
         ref.invalidate(currentProfileProvider);

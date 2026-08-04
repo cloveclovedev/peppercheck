@@ -4,9 +4,9 @@ import 'package:peppercheck_flutter/app/theme/app_colors.dart';
 import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
 import 'package:peppercheck_flutter/common_widgets/base_card.dart';
 import 'package:peppercheck_flutter/common_widgets/base_section.dart';
-import 'package:peppercheck_flutter/features/profile/presentation/avatar_edit_controller.dart';
-import 'package:peppercheck_flutter/features/profile/presentation/providers/current_profile_provider.dart';
-import 'package:peppercheck_flutter/features/profile/presentation/widgets/edit_username_dialog.dart';
+import 'package:peppercheck_flutter/features/profile/ui/avatar_edit_view_model.dart';
+import 'package:peppercheck_flutter/features/profile/ui/current_profile_provider.dart';
+import 'package:peppercheck_flutter/features/profile/ui/widgets/edit_username_dialog.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 
 class ProfileHeaderSection extends ConsumerWidget {
@@ -15,7 +15,7 @@ class ProfileHeaderSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profileAsync = ref.watch(currentProfileProvider);
-    final avatarState = ref.watch(avatarEditControllerProvider);
+    final avatarState = ref.watch(avatarEditViewModelProvider);
     final isUploadingAvatar = avatarState.isLoading;
 
     return BaseSection(
@@ -77,7 +77,7 @@ class ProfileHeaderSection extends ConsumerWidget {
 
   void _onAvatarTap(BuildContext context, WidgetRef ref) {
     ref
-        .read(avatarEditControllerProvider.notifier)
+        .read(avatarEditViewModelProvider.notifier)
         .pickCropAndUpdateAvatar(
           onSuccess: () {},
           onError: (errorKey) {
@@ -86,6 +86,8 @@ class ProfileHeaderSection extends ConsumerWidget {
             final message = switch (errorKey) {
               'galleryPermission' => t.profile.edit.errors.galleryPermission,
               'uploadFailed' => t.profile.edit.errors.uploadFailed,
+              'tooLarge' => t.profile.edit.errors.tooLarge,
+              'rateLimited' => t.profile.edit.errors.rateLimited,
               _ => t.profile.edit.errors.generic,
             };
             messenger.showSnackBar(SnackBar(content: Text(message)));

@@ -1508,6 +1508,12 @@ class TranslationsProfileEditErrorsJa {
 	/// ja: '設定から写真へのアクセスを許可してください'
 	String get galleryPermission => '設定から写真へのアクセスを許可してください';
 
+	/// ja: '画像サイズが大きすぎます。5MB以下の画像を選んでください'
+	String get tooLarge => '画像サイズが大きすぎます。5MB以下の画像を選んでください';
+
+	/// ja: 'しばらく時間をおいてからもう一度お試しください'
+	String get rateLimited => 'しばらく時間をおいてからもう一度お試しください';
+
 	/// ja: 'エラーが発生しました。しばらくしてからお試しください'
 	String get generic => 'エラーが発生しました。しばらくしてからお試しください';
 }
@@ -1835,6 +1841,8 @@ extension on Translations {
 			'profile.edit.errors.taken' => 'このユーザー名は既に使われています',
 			'profile.edit.errors.uploadFailed' => '画像のアップロードに失敗しました',
 			'profile.edit.errors.galleryPermission' => '設定から写真へのアクセスを許可してください',
+			'profile.edit.errors.tooLarge' => '画像サイズが大きすぎます。5MB以下の画像を選んでください',
+			'profile.edit.errors.rateLimited' => 'しばらく時間をおいてからもう一度お試しください',
 			'profile.edit.errors.generic' => 'エラーが発生しました。しばらくしてからお試しください',
 			'report.menuItem' => '問題を報告',
 			'report.menuItemReported' => '問題を報告（報告済み）',
