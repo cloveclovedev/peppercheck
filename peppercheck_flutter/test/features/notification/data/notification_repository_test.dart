@@ -39,4 +39,34 @@ void main() {
       ),
     ).called(1);
   });
+
+  test('a slow registerToken started before deregisterToken still completes '
+      'its PUT before the DELETE runs, not after', () async {
+    // Regression test: a fire-and-forget startup registerToken() can still
+    // be in flight when the user signs out and calls deregisterToken(). If
+    // the calls raced by network timing instead of invocation order, the
+    // DELETE could finish first and the slow PUT could land afterward,
+    // silently recreating the token binding the DELETE just removed
+    // (the backend upserts on conflict).
+    final api = MockApiClient();
+    final callOrder = <String>[];
+    when(
+      api.putJson('/api/v1/me/device-push-tokens', body: anyNamed('body')),
+    ).thenAnswer((_) async {
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      callOrder.add('PUT');
+    });
+    when(
+      api.deleteJson('/api/v1/me/device-push-tokens', body: anyNamed('body')),
+    ).thenAnswer((_) async {
+      callOrder.add('DELETE');
+    });
+
+    final repo = NotificationRepository(api);
+    final register = repo.registerToken('tok-123', 'android');
+    final deregister = repo.deregisterToken('tok-123');
+    await Future.wait([register, deregister]);
+
+    expect(callOrder, ['PUT', 'DELETE']);
+  });
 }
