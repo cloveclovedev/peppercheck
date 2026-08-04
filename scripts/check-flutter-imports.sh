@@ -30,7 +30,8 @@ if [ -n "$bad_sb" ]; then
   fail=1
 fi
 
-bad_dio=$(grep -rl "Dio(" "$lib/features" \
+bad_dio=$(grep -rl "Dio(" "$lib" \
+  | grep -v "^$lib/core/network/" \
   | grep -v "^$lib/features/evidence/" || true)
 if [ -n "$bad_dio" ]; then
   echo "ERROR: Dio constructed outside core/network (features must use ApiClient/PresignedUploadClient):"
