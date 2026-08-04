@@ -55,7 +55,8 @@ scripts/dev-run.sh --backend            # (re)build/restart the backend only
 
 Pass `--backend` after editing backend code to force `make up` (rebuild changed
 images, recreate changed containers). Without it, a running backend is left
-untouched. For a full reset including the local database, use `make reset`.
+untouched. For a full reset including the local database, use
+`cd backend && make reset`.
 
 Other options:
 

@@ -88,10 +88,12 @@ FLUTTER_RUN="$FLUTTER_RUN_BASE --dart-define=DEV_API_PORT=$CADDY_PORT"
 
 IOS_DEVICE="" ANDROID_DEVICE=""
 
-backend_healthy() { # true when something answers the ingress on this caddy port
-  local code
-  code="$(curl -s -o /dev/null -w '%{http_code}' "$API_HEALTH_URL" 2>/dev/null || true)"
-  [ -n "$code" ] && [ "$code" != "000" ]
+backend_healthy() { # true only for the PepperCheck API's expected unauthenticated 401
+  # A bare 2xx/3xx/4xx isn't enough: Caddy up but the api down returns 502, and
+  # an unrelated service on this port could return anything. Require the exact
+  # 401 that GET /api/v1/me gives without a token so we never skip startup for,
+  # or launch the app against, a broken or unrelated backend.
+  [ "$(curl -s -o /dev/null -w '%{http_code}' "$API_HEALTH_URL" 2>/dev/null || true)" = "401" ]
 }
 
 ensure_backend() { # idempotent: start the backend only if it is not already up
@@ -116,9 +118,8 @@ start_backend() {
   fi
   printf '==> Waiting for %s ' "$API_HEALTH_URL"
   for i in $(seq 1 60); do
-    code="$(curl -s -o /dev/null -w '%{http_code}' "$API_HEALTH_URL" || true)"
-    if [ -n "$code" ] && [ "$code" != "000" ]; then
-      printf ' ready (HTTP %s — 401 is expected)\n' "$code"; return 0
+    if backend_healthy; then
+      printf ' ready (HTTP 401 as expected)\n'; return 0
     fi
     printf '.'; sleep 2
   done
