@@ -49,18 +49,42 @@ class SignOutCoordinator {
   /// not block Firebase sign-out — an offline user should not be stuck on
   /// the authenticated screen waiting for this network call to time out on
   /// its own.
+  ///
+  /// `Future.timeout` does not cancel the underlying work, so the unbounded
+  /// call keeps running after we give up on it. If we let it reach the
+  /// repository after that point, it could delete a *different* signed-in
+  /// user's token — e.g. this device's shared FCM token gets rebound to a
+  /// second account that signs in while the first account's slow deregister
+  /// is still in flight. [_cancelled] is checked immediately before the
+  /// network call so a request that arrives past the deadline is dropped
+  /// instead of sent.
   Future<void> _deregisterFcmToken() async {
+    var cancelled = false;
+    final unbounded = _deregisterFcmTokenUnbounded(
+      isCancelled: () => cancelled,
+    );
+    unawaited(
+      unbounded.catchError((Object e, StackTrace st) {
+        _logger.w('FCM token deregistration failed', error: e, stackTrace: st);
+      }),
+    );
     try {
-      await _deregisterFcmTokenUnbounded().timeout(_deregisterTimeout);
-    } catch (e, st) {
-      _logger.w('FCM token deregistration failed', error: e, stackTrace: st);
+      await unbounded.timeout(_deregisterTimeout);
+    } on TimeoutException {
+      cancelled = true;
+      _logger.w('FCM token deregistration timed out after $_deregisterTimeout');
+    } catch (_) {
+      // Already logged by the detached handler above.
     }
   }
 
-  Future<void> _deregisterFcmTokenUnbounded() async {
+  Future<void> _deregisterFcmTokenUnbounded({
+    required bool Function() isCancelled,
+  }) async {
     final getToken = _getToken ?? FirebaseMessaging.instance.getToken;
     final token = await getToken();
     if (token == null) return;
+    if (isCancelled()) return;
     await _notificationRepository.deregisterToken(token);
   }
 }

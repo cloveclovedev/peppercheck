@@ -85,6 +85,30 @@ void main() {
     },
   );
 
+  test('never calls the repository once the deadline has passed, even after '
+      'the late getToken() eventually resolves', () async {
+    // Regression test: a naive Future.timeout() only stops *awaiting* the
+    // slow work — it does not stop the work itself. If the abandoned
+    // getToken() call is allowed to reach the repository once it finally
+    // resolves, it fires with whatever the *current* identity is by
+    // then — potentially a second account that signed in after the first
+    // account's sign-out — and can delete that account's valid token
+    // binding for this device.
+    final coordinator = makeCoordinator(
+      getToken: () async {
+        await Future<void>.delayed(const Duration(milliseconds: 60));
+        return 'tok-abc';
+      },
+      deregisterTimeout: const Duration(milliseconds: 10),
+    );
+
+    await coordinator.signOut();
+    // Let the abandoned getToken() future actually resolve.
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+
+    verifyNever(notificationRepository.deregisterToken(any));
+  });
+
   test('skips deregistration when there is no current token', () async {
     final coordinator = makeCoordinator(getToken: () async => null);
 

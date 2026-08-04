@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -30,7 +31,7 @@ FcmService fcmService(Ref ref) {
   // called later.
   ref.listen(authStateChangesProvider, (previous, next) {
     if (next.value != null) {
-      service.onSignedIn();
+      unawaited(service.onSignedIn());
     }
   });
   return service;
@@ -63,22 +64,15 @@ class FcmService {
     // 2. Initialize flutter_local_notifications
     await _initLocalNotifications();
 
-    // 3. Upload Token on start. Isolated in its own try/catch: a transient
-    // API failure here must not abort the listener registrations below,
-    // or notification handling stays disabled for the rest of the process.
-    try {
-      await _upsertCurrentToken();
-    } catch (e, st) {
-      ref
-          .read(loggerProvider)
-          .w(
-            '[FCM] Token registration failed at startup',
-            error: e,
-            stackTrace: st,
-          );
-    }
+    // 3. Upload token on start — fire-and-forget. A slow or unreachable API
+    // must not delay the listener registrations below (ApiClient's timeouts
+    // alone can run up to ~20s); registerToken/_upsertCurrentToken never
+    // throw, so nothing here needs a try/catch.
+    unawaited(_upsertCurrentToken());
 
-    // 4. Listen to token refresh
+    // 4. Listen to token refresh. registerToken never throws (see below), so
+    // a failure here is logged internally rather than becoming an unhandled
+    // Stream-listener error.
     FirebaseMessaging.instance.onTokenRefresh.listen(registerToken);
 
     // 5. Auth-state-triggered retry is registered once, at provider-build
@@ -200,8 +194,16 @@ class FcmService {
   }
 
   Future<void> _upsertCurrentToken() async {
-    final getToken = _getToken ?? FirebaseMessaging.instance.getToken;
-    final token = await getToken();
+    final String? token;
+    try {
+      final getToken = _getToken ?? FirebaseMessaging.instance.getToken;
+      token = await getToken();
+    } catch (e, st) {
+      ref
+          .read(loggerProvider)
+          .w('[FCM] Failed to retrieve token', error: e, stackTrace: st);
+      return;
+    }
     if (token == null) {
       debugPrint('[FCM] Token is null');
       return;
@@ -211,16 +213,25 @@ class FcmService {
 
   /// Registers [token] with the Go API, gated on the current signed-in
   /// state — a signed-out call is a no-op rather than an unauthenticated
-  /// request. Shared by app start, `onTokenRefresh`, and [onSignedIn].
+  /// request. Shared by app start, `onTokenRefresh`, and [onSignedIn]; never
+  /// throws — each of those call sites either fires this without awaiting or
+  /// runs it ahead of unrelated work, so a failure here is logged rather
+  /// than propagated.
   Future<void> registerToken(String token) async {
     if (!ref.read(isFirebaseAuthenticatedProvider)) {
       debugPrint('[FCM] Skipping token registration; signed out');
       return;
     }
     debugPrint('[FCM] Registering token (${_maskToken(token)})');
-    await ref
-        .read(notificationRepositoryProvider)
-        .registerToken(token, _deviceType());
+    try {
+      await ref
+          .read(notificationRepositoryProvider)
+          .registerToken(token, _deviceType());
+    } catch (e, st) {
+      ref
+          .read(loggerProvider)
+          .w('[FCM] Token registration failed', error: e, stackTrace: st);
+    }
   }
 
   String _deviceType() {
