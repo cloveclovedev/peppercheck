@@ -93,7 +93,7 @@ services:
       # dummy values below the api still constructs an R2 client (r2.New only
       # rejects empty fields, not placeholder ones — see #483) that presigns
       # against a nonexistent account, so a real upload attempt fails at the
-      # client PUT step rather than at the api. `make up BWS_PROJECT_ID=<id>`
+      # client PUT step rather than at the api. `make up BWS_PROJECT_ID=auto`
       # overrides these two with the real dev credential via Bitwarden Secrets
       # Manager (see docs/development/bws-development.md) — Compose gives that
       # injected process-environment value precedence over the .env dummy

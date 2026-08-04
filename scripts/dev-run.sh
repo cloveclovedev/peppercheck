@@ -16,6 +16,14 @@
 #                          changed containers) — use after editing backend code
 #   --backend --android    rebuild/restart the backend AND run the app, one shot
 #   --backend              (alone) bring the backend up without running an app
+#   --bws                  inject real dev secrets (currently R2 credentials)
+#                          from Bitwarden Secrets Manager instead of the .env
+#                          dummies — see docs/development/bws-development.md.
+#                          Off by default: most flows don't need it, and a
+#                          fresh clone with no Bitwarden access should always
+#                          work. Forces a backend restart even if one is
+#                          already running, since secrets are injected only
+#                          at `docker compose up` time.
 # For a full reset incl. the local DB, use `cd backend && make reset` instead.
 #
 # --build compiles a debug Android APK (JDK pin + --flavor dev) as a
@@ -27,6 +35,7 @@
 #   scripts/dev-run.sh --ios                 # ensure backend, run iOS
 #   scripts/dev-run.sh --backend             # (re)build/restart backend only
 #   scripts/dev-run.sh --backend --android   # rebuild backend, then run Android
+#   scripts/dev-run.sh --backend --bws       # restart backend with real bws dev secrets
 #   scripts/dev-run.sh --build               # Android debug APK compile check
 #   scripts/dev-run.sh --avd NAME            # Android AVD (default below; see: flutter emulators)
 #   scripts/dev-run.sh --caddy-port N        # host ingress port (default 80) when 80 is taken
@@ -48,7 +57,7 @@ FLUTTER_DIR="$REPO/peppercheck_flutter"
 BACKEND_DIR="$REPO/backend"
 FLUTTER_RUN_BASE="flutter run --flavor dev -t lib/main_dev.dart"
 
-RUN_IOS=0 RUN_ANDROID=0 FORCE_BACKEND=0 DO_BUILD=0
+RUN_IOS=0 RUN_ANDROID=0 FORCE_BACKEND=0 DO_BUILD=0 USE_BWS=0
 AVD="Medium_Phone_API_36.1"
 FIREBASE_PROJECT="peppercheck-dev"
 CADDY_PORT=80       # host ingress port (backend CADDY_HTTP_PORT + app DEV_API_PORT)
@@ -59,12 +68,13 @@ while [ $# -gt 0 ]; do
     --ios)      RUN_IOS=1 ;;
     --android)  RUN_ANDROID=1 ;;
     --backend)  FORCE_BACKEND=1 ;;
+    --bws)      USE_BWS=1 ;;
     --build)    DO_BUILD=1 ;;
     --avd)      AVD="${2:?}"; shift ;;
     --caddy-port)    CADDY_PORT="${2:?}"; shift ;;
     --postgres-port) PG_PORT="${2:?}"; shift ;;
     --firebase-project) FIREBASE_PROJECT="${2:?}"; shift ;;
-    -h|--help)  sed -n '2,42p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h|--help)  sed -n '2,56p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "unknown arg: $1" >&2; exit 2 ;;
   esac
   shift
@@ -96,8 +106,11 @@ backend_healthy() { # true only for the PepperCheck API's expected unauthenticat
   [ "$(curl -s -o /dev/null -w '%{http_code}' "$API_HEALTH_URL" 2>/dev/null || true)" = "401" ]
 }
 
-ensure_backend() { # idempotent: start the backend only if it is not already up
-  if backend_healthy; then
+ensure_backend() { # idempotent: start the backend only if it is not already up.
+  # --bws always restarts even if a backend is already up: bws secrets are
+  # injected only at `docker compose up` time, so an already-running backend
+  # (started without --bws) would otherwise silently keep the .env dummies.
+  if [ "$USE_BWS" -eq 0 ] && backend_healthy; then
     echo "==> Backend already up on :$CADDY_PORT (skipping; pass --backend to rebuild/restart)"
     return 0
   fi
@@ -105,10 +118,16 @@ ensure_backend() { # idempotent: start the backend only if it is not already up
 }
 
 start_backend() {
-  echo "==> Starting backend (FIREBASE_PROJECT_ID=$FIREBASE_PROJECT, Caddy :$CADDY_PORT, Postgres :$PG_PORT)"
+  local bws_project_id="" bws_note=""
+  if [ "$USE_BWS" -eq 1 ]; then
+    bws_project_id="auto"
+    bws_note=", bws dev secrets"
+  fi
+  echo "==> Starting backend (FIREBASE_PROJECT_ID=$FIREBASE_PROJECT, Caddy :$CADDY_PORT, Postgres :$PG_PORT$bws_note)"
   if ! ( cd "$BACKEND_DIR" \
       && FIREBASE_PROJECT_ID="$FIREBASE_PROJECT" \
-         CADDY_HTTP_PORT="$CADDY_PORT" POSTGRES_HOST_PORT="$PG_PORT" make up ); then
+         CADDY_HTTP_PORT="$CADDY_PORT" POSTGRES_HOST_PORT="$PG_PORT" \
+         BWS_PROJECT_ID="$bws_project_id" make up ); then
     echo
     echo "backend failed to start. If compose reported a missing variable"
     echo "(e.g. API_PORT), your backend/.env predates a template change and"
