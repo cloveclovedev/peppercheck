@@ -105,30 +105,39 @@ provider-specific is public-domain URL composition. Phase 4b's `PresignGet` +
 
 Presigned URLs sign the host, so they must be signed with the host the client
 (Flutter emulator / browser) actually reaches — which locally differs from the
-host the API container uses. Introduce two endpoints:
+host the API container uses. **Model three endpoint roles, not two**, because
+presigned traffic and anonymous public reads hit different surfaces (the S3 API
+vs the CDN/website host — different ports locally):
 
-- **internal** — server-side Head/Delete/List (`http://garage:3900` locally)
-- **external** — presigned PUT/GET, and public-read URL composition
-  (client-reachable)
+- **internal S3** — server-side Head/Delete/List (`http://garage:3900` locally)
+- **external S3-API** — presigned PUT/GET, signed against the S3 API host the
+  client reaches (Garage port 3900 via Caddy; the R2 account endpoint in prod)
+- **external public-read** — anonymous public-URL composition, against the
+  web/CDN host (Garage web port 3902 via Caddy; `R2_PUBLIC_DOMAIN` in prod)
 
-In production both collapse to the single R2 endpoint / Cloudflare custom
-domain.
+The public-read base is already distinct from the S3 endpoint today — `r2.go`
+composes the avatar URL from `R2_PUBLIC_DOMAIN`, separate from the S3 endpoint
+it presigns against. Collapsing them would sign presigned URLs for the CDN host
+(no S3 there) or compose avatar URLs for the S3-API host (no anonymous serving
+there), breaking one media class. In production the two S3 roles collapse to the
+R2 account endpoint and public-read stays the Cloudflare custom domain — the
+same split as today.
 
-**The external base must be request-derived, not a single static value.**
-Storage URLs (presigned PUT/GET and the public avatar URL) are composed and
-**signed by the Go server**, and SigV4 covers the host — so the client cannot
-rewrite it after the fact. The Flutter dev app applies `10.0.2.2` (Android) vs
-`127.0.0.1` (iOS) only when *it* builds the API base URL; that per-platform
-choice does **not** carry over to a server-emitted host. A single configured
-external endpoint would therefore hand one of the two emulators an unreachable
-or wrongly-signed URL.
+**Both external bases must be request-derived, not static values.** Storage URLs
+(presigned PUT/GET and the public avatar URL) are composed and **signed by the
+Go server**, and SigV4 covers the host — so the client cannot rewrite it after
+the fact. The Flutter dev app applies `10.0.2.2` (Android) vs `127.0.0.1` (iOS)
+only when *it* builds the API base URL; that per-platform choice does **not**
+carry over to a server-emitted host. A single static external endpoint would
+therefore hand one of the two emulators an unreachable or wrongly-signed URL.
 
-Resolve it by deriving the external base from the **incoming request's host**
-(the `Host` / `X-Forwarded-Host` that Caddy forwards): a request that arrived
-via `10.0.2.2` gets `10.0.2.2`-based storage URLs, one via `127.0.0.1` gets
+Resolve it by deriving both the external S3-API and external public-read bases
+from the **incoming request's host** (the `Host` / `X-Forwarded-Host` that Caddy
+forwards), each routed to its own Garage port: a request that arrived via
+`10.0.2.2` gets `10.0.2.2`-based storage URLs, one via `127.0.0.1` gets
 `127.0.0.1`-based ones, and the SigV4 signature matches because the presign is
 computed against that same host. Caddy fronts both the API and Garage on that
-host, so the URL routes back to Garage. (An alternative — binding a single host
+host, so the URLs route back to Garage. (An alternative — binding a single host
 LAN IP both emulators can reach — is more fragile and network-specific;
 request-derived is preferred.) In CI there is no emulator, so the request host
 is stable and this collapses to a single value. This corrects an earlier draft
@@ -221,11 +230,14 @@ path that works for avatars but breaks at evidence is not actually "done."
 
 ## Consequences
 
-- Config axes added: the operator opt-in R2 override, and the internal/external
-  endpoint seam whose **external base is request-derived** (from the
-  Caddy-forwarded host) so it stays per-platform-safe without static
-  Android/iOS config. This is a real mechanism, not a no-op — the Go server must
-  compose/sign storage URLs from the request host, not a fixed env value.
+- Config axes added: the operator opt-in R2 override, and a **three-role**
+  endpoint seam — internal S3 (server ops), external S3-API (presigned), and
+  external public-read (anonymous CDN/web) — whose two external bases are
+  **request-derived** (from the Caddy-forwarded host) so they stay
+  per-platform-safe without static Android/iOS config. This is a real mechanism,
+  not a no-op — the Go server must compose/sign storage URLs from the request
+  host per surface, not a fixed env value. Public-read is already a base distinct
+  from the S3 endpoint today (`R2_PUBLIC_DOMAIN`).
 - The Garage bootstrap must include **website-allow on the public bucket**
   (`PutBucketWebsite`); without it the anonymous avatar URL 404s even though
   presigned PUT/Head/List pass.
@@ -292,5 +304,12 @@ path that works for avatars but breaks at evidence is not actually "done."
   an Android upload would save a `10.0.2.2` URL iOS/a browser cannot later fetch.
   Adopted host-neutral persistence — store the object key, compose the public URL
   on read from the request-local base — converging avatars onto Phase 4b's
-  `object_key`-only model. Noted the 3a-touching scope in #523. Per the review
-  cap, this third-round fix was not sent for a fourth independent review.
+  `object_key`-only model. Noted the 3a-touching scope in #523.
+- **2026-08-06** — Fourth Codex round (operator-authorized beyond the 3-round
+  cap) caught that §3 conflated two serving surfaces into one external base.
+  Split the seam into **three roles**: internal S3, external S3-API (presigned,
+  Garage 3900 / R2 endpoint), and external public-read (anonymous, Garage web
+  3902 / `R2_PUBLIC_DOMAIN`). Both external bases are request-derived. This
+  matches the split that already exists in prod (`r2.go` composes the public URL
+  from `R2_PUBLIC_DOMAIN`, separate from the S3 endpoint), which the round-2
+  request-derived fix had over-collapsed.
