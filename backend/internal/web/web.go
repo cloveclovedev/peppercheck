@@ -116,10 +116,17 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	segs := strings.Split(strings.Trim(p, "/"), "/")
 	if !isSupported(segs[0]) {
-		// Bare (locale-less) path with no locale prefix: the legacy
+		// Bare (locale-less) path with no locale prefix. Stripe's Account
+		// Links contract sends return_url/refresh_url as these exact bare
+		// paths (payout-setup, ported in Phase 5), so they must keep
+		// resolving; 301 to the default-locale page. The legacy
 		// auth/subscription routes are dropped entirely (P3b-D15, no
-		// redirect); everything else is a plain 404 too. Stripe Connect's
-		// bare-path handling is added when that page lands.
+		// redirect) -- everything else is a plain 404.
+		bare := strings.Join(segs, "/")
+		if bare == "stripe/connect/return" || bare == "stripe/connect/refresh" {
+			http.Redirect(w, r, "/"+defaultLocale+"/"+bare, http.StatusMovedPermanently)
+			return
+		}
 		h.renderNotFound(w, r, defaultLocale)
 		return
 	}
@@ -131,6 +138,19 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.render(w, http.StatusOK, "home", h.page(r, locale, "Meta.defaultTitle", ""))
 	case len(rest) == 2 && rest[0] == "legal":
 		h.serveLegal(w, r, locale, rest[1])
+	case len(rest) == 3 && rest[0] == "stripe" && rest[1] == "connect":
+		h.serveStripeConnect(w, r, locale, rest[2])
+	default:
+		h.renderNotFound(w, r, locale)
+	}
+}
+
+func (h *Handler) serveStripeConnect(w http.ResponseWriter, r *http.Request, locale, page string) {
+	switch page {
+	case "return":
+		h.render(w, http.StatusOK, "stripe_return", h.page(r, locale, "StripeConnect.return.title", "/stripe/connect/return"))
+	case "refresh":
+		h.render(w, http.StatusOK, "stripe_refresh", h.page(r, locale, "StripeConnect.refresh.title", "/stripe/connect/refresh"))
 	default:
 		h.renderNotFound(w, r, locale)
 	}

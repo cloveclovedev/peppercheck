@@ -94,6 +94,44 @@ func TestLegacyRoutesAre404NotRedirect(t *testing.T) {
 	}
 }
 
+func TestStripeConnectPagesRender(t *testing.T) {
+	for _, kind := range []string{"return", "refresh"} {
+		for _, loc := range []string{"en", "ja"} {
+			rec := httptest.NewRecorder()
+			newTestHandler().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/"+loc+"/stripe/connect/"+kind, nil))
+			if rec.Code != http.StatusOK {
+				t.Fatalf("%s/stripe/connect/%s status = %d", loc, kind, rec.Code)
+			}
+			if !strings.Contains(rec.Body.String(), "hi@cloveclove.dev") {
+				t.Fatalf("%s/stripe/connect/%s missing interpolated contact email; body=%s", loc, kind, rec.Body.String())
+			}
+		}
+	}
+}
+
+func TestStripeConnectBarePathsRedirectToDefaultLocale(t *testing.T) {
+	// payout-setup (Phase 5) sends return_url/refresh_url as these exact
+	// bare, locale-less paths; they must keep resolving.
+	for _, kind := range []string{"return", "refresh"} {
+		rec := httptest.NewRecorder()
+		newTestHandler().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/stripe/connect/"+kind, nil))
+		if rec.Code != http.StatusMovedPermanently {
+			t.Fatalf("bare %s status = %d", kind, rec.Code)
+		}
+		if loc := rec.Header().Get("Location"); loc != "/en/stripe/connect/"+kind {
+			t.Fatalf("bare %s Location = %q", kind, loc)
+		}
+	}
+}
+
+func TestUnknownStripeConnectPageIs404(t *testing.T) {
+	rec := httptest.NewRecorder()
+	newTestHandler().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/en/stripe/connect/nope", nil))
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("status = %d", rec.Code)
+	}
+}
+
 func TestLegalPagesRender(t *testing.T) {
 	for _, page := range []string{"privacy", "terms", "refund", "tokushoho"} {
 		for _, loc := range []string{"en", "ja"} {

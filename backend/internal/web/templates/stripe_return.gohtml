@@ -1,0 +1,8 @@
+{{define "content"}}
+<div>
+<h1>{{t .Locale "StripeConnect.return.title"}}</h1>
+<p>{{t .Locale "StripeConnect.return.description"}}</p>
+<p>{{t .Locale "StripeConnect.return.note"}}</p>
+<p>{{replace (t .Locale "StripeConnect.return.contact") "{email}" (t .Locale "Meta.contactEmail")}}</p>
+</div>
+{{end}}

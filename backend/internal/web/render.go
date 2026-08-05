@@ -47,7 +47,7 @@ var pages = parsePages()
 func list(items ...string) []string { return items }
 
 func parsePages() map[string]*template.Template {
-	fm := template.FuncMap{"t": cat.T, "langLabel": langLabel, "list": list}
+	fm := template.FuncMap{"t": cat.T, "langLabel": langLabel, "list": list, "replace": strings.ReplaceAll}
 	entries, err := fs.Glob(templatesFS, "templates/*.gohtml")
 	if err != nil {
 		panic("web: glob templates: " + err.Error())
