@@ -13,6 +13,7 @@ import (
 
 	_ "time/tzdata" // embed the IANA tz database so time.LoadLocation works in the container
 
+	"github.com/cloveclovedev/peppercheck/backend/internal/accountdeletion"
 	"github.com/cloveclovedev/peppercheck/backend/internal/api"
 	"github.com/cloveclovedev/peppercheck/backend/internal/core/config"
 	"github.com/cloveclovedev/peppercheck/backend/internal/core/database"
@@ -90,6 +91,14 @@ func main() {
 		profileSvc := profile.NewService(profileStore, avatarUploader, cfg.R2PublicDomain, avatarLimiter, logger)
 		notifSvc := notification.NewService(notifStore)
 
+		// identity.Store's FindUserByEmail satisfies accountdeletion's
+		// userLookup; a separate identity.NewStore(db) here is cheap (no
+		// state beyond the *sql.DB handle already shared elsewhere).
+		delSvc := accountdeletion.NewService(identity.NewStore(db), accountdeletion.NewStore(db))
+		deletionLimiter := ratelimit.NewTokenBucket(
+			web.AccountDeletionRateLimitBurst, web.AccountDeletionRateLimitPerHour,
+			web.AccountDeletionRateLimitIdleEvict, nil)
+
 		if err := api.Run(ctx, cfg, logger, api.Deps{
 			Ready:        db.PingContext,
 			Verifier:     verifier,
@@ -97,7 +106,12 @@ func main() {
 			Profile:      profile.NewHandler(profileSvc),
 			Notification: notification.NewHandler(notifSvc),
 			ResolveUser:  identity.NewMiddleware(idSvc, logger),
-			Web:          web.NewHandler(web.Deps{Logger: logger}),
+			Web: web.NewHandler(web.Deps{
+				Logger:    logger,
+				Deletion:  delSvc,
+				FormToken: web.NewFormToken([]byte(cfg.WebFormSigningKey)),
+				RateLim:   deletionLimiter,
+			}),
 		}); err != nil {
 			logger.Error("api exited with error", "error", err)
 			os.Exit(1)

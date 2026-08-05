@@ -308,5 +308,21 @@
       "note": "Any information you have already entered has been saved. You only need to provide the missing details.",
       "contact": "If you have any questions, contact us at {email}."
     }
+  },
+  "AccountDelete": {
+    "title": "Delete Account",
+    "intro": "The most reliable way to delete your account is from within the app: go to Account and tap Delete Account.",
+    "formIntro": "If you can't use the app anymore -- for example, you uninstalled it or lost your device -- you can request deletion here instead.",
+    "emailLabel": "Email address",
+    "emailHelp": "Enter the email address you used to sign in (Google or Apple).",
+    "emailHelpHideMyEmail": "If you don't know it, or you used Apple's Hide My Email, please delete your account from within the app instead.",
+    "consentLabel": "I understand this requests permanent deletion of my account and data.",
+    "submitButton": "Request deletion",
+    "submitted": "If an account with this email exists, we've received your request. It will be processed as described in our Privacy Policy.",
+    "honeypotLabel": "Leave this field blank"
+  },
+  "Error": {
+    "title": "Something went wrong",
+    "retry": "Please try again in a moment. If the problem continues, contact us."
   }
 }
