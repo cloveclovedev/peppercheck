@@ -1,4 +1,4 @@
-h1:urbP4h6Kx4UCzCZqoGYNyL3YI1tbnbfkaoWU4nCzr5c=
+h1:e65diI/CpNsBeE8S4v3PY2xbR49FCX0f0y10dDQTbFs=
 20260723132843_phase1_baseline.sql h1:6ruU5+0h61Vu2x1TdLLKgdyKkqVcOHj5k5mTSyy/LJQ=
 20260723142427_add_jobs.sql h1:gtIwPrilHLjMbx/7vsVSI8R2USaKfauzUbU8PH3cLjc=
 20260723143726_add_webhook_inbox.sql h1:IXSVNx+WE9EJ+f1msmGlM2dD0sHPKMbPHGzqHhv+rxQ=
@@ -7,3 +7,4 @@ h1:urbP4h6Kx4UCzCZqoGYNyL3YI1tbnbfkaoWU4nCzr5c=
 20260802141836_add_profile_notification_tables.sql h1:GVKYUYPZ/UTcaUzEE/1Wq8jTnVYsvDujXL3uGidC0tA=
 20260805100941_add_user_identities_email.sql h1:zmDem053owihlIi/peQdgvAE84f0szC4vltouPZmdxo=
 20260805101537_add_account_deletion_requests.sql h1:miAj56+l/abiQLB+s1k9KXStmv342y8QJqmqdjNkeNU=
+20260805122924_phase4a_task_authoring_matching.sql h1:VLHoVUKr2vGW6b2NvTgOENW43Bu/vhXIzoY+as8PezI=
