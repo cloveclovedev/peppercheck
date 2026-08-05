@@ -14,6 +14,7 @@ const (
 	CodeUsernameTaken   = "username_taken"   // 409: username already in use
 	CodeInvalidTimezone = "invalid_timezone" // 400: not a valid IANA timezone
 	CodeRateLimited     = "rate_limited"     // 429: per-user rate limit exceeded
+	CodeNotFound        = "not_found"        // 404: no route matches this API path/method
 )
 
 type errorEnvelope struct {

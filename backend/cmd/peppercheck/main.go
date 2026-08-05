@@ -23,6 +23,7 @@ import (
 	"github.com/cloveclovedev/peppercheck/backend/internal/platform/auth"
 	"github.com/cloveclovedev/peppercheck/backend/internal/platform/r2"
 	"github.com/cloveclovedev/peppercheck/backend/internal/profile"
+	"github.com/cloveclovedev/peppercheck/backend/internal/web"
 	"github.com/cloveclovedev/peppercheck/backend/internal/worker"
 )
 
@@ -96,6 +97,7 @@ func main() {
 			Profile:      profile.NewHandler(profileSvc),
 			Notification: notification.NewHandler(notifSvc),
 			ResolveUser:  identity.NewMiddleware(idSvc, logger),
+			Web:          web.NewHandler(web.Deps{Logger: logger}),
 		}); err != nil {
 			logger.Error("api exited with error", "error", err)
 			os.Exit(1)

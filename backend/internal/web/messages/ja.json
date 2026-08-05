@@ -1,0 +1,34 @@
+{
+  "Meta": {
+    "siteName": "peppercheck",
+    "defaultTitle": "Peppercheck"
+  },
+  "Footer": {
+    "terms": "利用規約",
+    "privacy": "プライバシーポリシー",
+    "tokushoho": "特定商取引法に基づく表記",
+    "refund": "返金・キャンセルポリシー",
+    "copyright": "© 2024 CloveClove"
+  },
+  "HomePage": {
+    "title": "タスクのためのピア・レフリー プラットフォーム",
+    "subtitle": "あなたのタスクを第三者がチェック。習慣化を支え、質を高めるレフリーマッチングサービス。",
+    "features": {
+      "create": {
+        "heading": "タスクを作成",
+        "body": "明確な基準と期限を設定してタスクを作成します。"
+      },
+      "review": {
+        "heading": "ピアレビュー",
+        "body": "レフリーとマッチングし、エビデンスを審査してフィードバックを受けられます。"
+      },
+      "reward": {
+        "heading": "リワードを獲得",
+        "body": "他のユーザーのレフリーを務めてリワードポイントを獲得し、報酬として受け取れます。"
+      }
+    }
+  },
+  "NotFound": {
+    "title": "ページが見つかりません"
+  }
+}
