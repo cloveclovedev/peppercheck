@@ -77,6 +77,21 @@ caching (URL churns every TTL) and cost one signature per image per list — so
 public media must resolve to a durable URL, and `PublicURL(key)` stays a pure
 string composition with no S3 client call.
 
+**Persist the object key, not a host-bearing URL; compose the public URL on
+read.** Because the external base is request-derived (§3), a full URL is only
+valid for the host it was built on. The existing 3a flow persists a full
+`profiles.avatar_url` (Flutter PATCHes back the server-returned `publicUrl`,
+which `profile/service.go` validates and stores), so locally an Android upload
+would persist a `10.0.2.2` URL that iOS / a browser later cannot fetch, and even
+in prod a persisted absolute URL rots if the CDN domain ever changes. The fix
+is host-neutral persistence: store the **object key** (or path) as the canonical
+value and derive the fetchable public URL from the request-local base on every
+read. This aligns avatars with the Phase 4b evidence decision (which already
+drops `public_url`/`file_url` for an `object_key`-only column). #523 therefore
+carries a 3a-touching change — `profiles.avatar_url` semantics, the profile
+service, and the Flutter avatar PATCH/read path move from persisting a URL to
+persisting a key + composing on read.
+
 ### 2. `core/objectstore` promotion
 
 Promote the provider-neutral S3 client out of `platform/r2` into
@@ -214,6 +229,11 @@ path that works for avatars but breaks at evidence is not actually "done."
 - The Garage bootstrap must include **website-allow on the public bucket**
   (`PutBucketWebsite`); without it the anonymous avatar URL 404s even though
   presigned PUT/Head/List pass.
+- Avatar persistence changes: the DB stores the **object key**, not a full
+  `avatar_url`, and the public URL is composed on read from the request-local
+  base. This touches existing 3a code (`profiles.avatar_url` semantics, the
+  profile service, the Flutter avatar PATCH/read path) and converges avatars
+  onto the Phase 4b evidence `object_key`-only model.
 - Fidelity gaps to verify against real R2 before shipping (operator opt-in):
   Cloudflare custom-domain CDN serving/cache/public-access toggle, R2's actual
   CORS enforcement, R2 not enforcing Content-Length (already backstopped by the
@@ -267,3 +287,10 @@ path that works for avatars but breaks at evidence is not actually "done."
   static config. (2) Added **public-bucket website-allow** (`PutBucketWebsite`)
   to the Garage bootstrap contract, without which the anonymous avatar URL 404s
   despite passing presigned PUT/Head/List.
+- **2026-08-06** — Third Codex round on PR #526 caught that a request-derived
+  URL must not be **persisted**: the 3a flow stores the returned `avatar_url`, so
+  an Android upload would save a `10.0.2.2` URL iOS/a browser cannot later fetch.
+  Adopted host-neutral persistence — store the object key, compose the public URL
+  on read from the request-local base — converging avatars onto Phase 4b's
+  `object_key`-only model. Noted the 3a-touching scope in #523. Per the review
+  cap, this third-round fix was not sent for a fourth independent review.
