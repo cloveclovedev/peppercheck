@@ -20,6 +20,12 @@ func TestBuildMulticastUsesLocKeys(t *testing.T) {
 	if mm.Android == nil || mm.Android.Notification == nil {
 		t.Fatal("android notification missing")
 	}
+	if mm.Android.Priority != "high" {
+		t.Fatalf("android priority = %q, want high (Doze delivery)", mm.Android.Priority)
+	}
+	if mm.APNS.Payload.Aps.Sound != "default" {
+		t.Fatalf("apns sound = %q, want default", mm.APNS.Payload.Aps.Sound)
+	}
 	if mm.Android.Notification.TitleLocKey != msg.TitleLocKey {
 		t.Fatalf("android title loc key = %q, want %q", mm.Android.Notification.TitleLocKey, msg.TitleLocKey)
 	}

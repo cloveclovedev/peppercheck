@@ -64,13 +64,17 @@ func New(ctx context.Context, projectID string) (Client, error) {
 }
 
 // buildMulticast builds a loc-key multicast message for Android and iOS. The
-// title and body share LocArgs. Kept as a pure function so message construction
-// is unit-tested without Firebase.
+// title and body share LocArgs. Android priority is "high" and iOS carries the
+// default alert sound, preserving the behavior of the legacy send-notification
+// Edge Function (time-sensitive assignment/deadline pushes must not be delayed
+// in Doze or land silently on iOS). Kept as a pure function so message
+// construction is unit-tested without Firebase.
 func buildMulticast(tokens []string, m Message) *messaging.MulticastMessage {
 	return &messaging.MulticastMessage{
 		Tokens: tokens,
 		Data:   m.Data,
 		Android: &messaging.AndroidConfig{
+			Priority: "high",
 			Notification: &messaging.AndroidNotification{
 				TitleLocKey:  m.TitleLocKey,
 				TitleLocArgs: m.LocArgs,
@@ -86,6 +90,7 @@ func buildMulticast(tokens []string, m Message) *messaging.MulticastMessage {
 					LocKey:       m.BodyLocKey,
 					LocArgs:      m.LocArgs,
 				},
+				Sound: "default",
 			}},
 		},
 	}
