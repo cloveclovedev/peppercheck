@@ -16,7 +16,7 @@ Flutter
 
 Go worker ──> PostgreSQL-backed jobs
 
-Legacy Next.js web application ──> Supabase and external services
+Go API (internal/web) ──> server-rendered public web (html/template)
 ```
 
 The Go backend foundation, internal identity model, Firebase token verification,
@@ -26,9 +26,12 @@ Authentication and the Go API. Profile, task, matching, evidence, judgement,
 billing, payout, report, and several supporting client paths still contain
 Supabase access and are migrated phase by phase.
 
-The `supabase/` and `peppercheck-webapp/` trees therefore remain build inputs or
-historical implementation references until their replacement phases land. Their
-presence does not make them the target architecture.
+The `supabase/` tree therefore remains a build input and historical
+implementation reference until its replacement phases land. Its presence does
+not make it the target architecture. The legacy Next.js public web application
+(`peppercheck-webapp/`) has been fully replaced by `backend/internal/web` and
+removed from the integration branch; the live production site still serves
+from `main`/Cloudflare until the Phase 7 cutover.
 
 ## Go backend
 
@@ -88,8 +91,8 @@ gates still apply before release.
 ## Direction of travel
 
 The approved target removes direct database access from clients, moves the
-remaining behavior into feature-oriented Go packages, replaces the legacy web
-application with a small Go-rendered surface, and removes Supabase after the
-cutover. See the
+remaining behavior into feature-oriented Go packages, and removes Supabase
+after the cutover. The legacy Next.js web application has already been
+replaced by the small Go-rendered surface in `internal/web`. See the
 [Go/VPS refactoring strategy](../designs/2026-07-22-supabase-to-go-vps-refactor-design.md)
 for durable decisions and phase boundaries.
