@@ -14,6 +14,7 @@ func TestLoadDefaults(t *testing.T) {
 	t.Setenv("FIREBASE_PROJECT_ID", "")
 	t.Setenv("HEARTBEAT_URL_WORKER", "")
 	t.Setenv("HEARTBEAT_URL_WORKER_FILE", "")
+	t.Setenv("WEB_FORM_SIGNING_KEY", "test-signing-key")
 	c, err := Load()
 	if err != nil {
 		t.Fatalf("Load: %v", err)
@@ -40,6 +41,7 @@ func TestLoadDefaults(t *testing.T) {
 
 func TestLoadReadsHeartbeatURLWorker(t *testing.T) {
 	t.Setenv("HEARTBEAT_URL_WORKER", "https://uptime.betterstack.com/api/v1/heartbeat/token")
+	t.Setenv("WEB_FORM_SIGNING_KEY", "test-signing-key")
 	c, err := Load()
 	if err != nil {
 		t.Fatalf("Load: %v", err)
@@ -51,6 +53,7 @@ func TestLoadReadsHeartbeatURLWorker(t *testing.T) {
 
 func TestLoadReadsFirebaseProjectID(t *testing.T) {
 	t.Setenv("FIREBASE_PROJECT_ID", "peppercheck-dev")
+	t.Setenv("WEB_FORM_SIGNING_KEY", "test-signing-key")
 	c, err := Load()
 	if err != nil {
 		t.Fatalf("Load: %v", err)
@@ -66,6 +69,7 @@ func TestLoadReadsR2Config(t *testing.T) {
 	t.Setenv("R2_SECRET_ACCESS_KEY", "secret")
 	t.Setenv("R2_BUCKET", "avatars")
 	t.Setenv("R2_PUBLIC_DOMAIN", "cdn.example.com")
+	t.Setenv("WEB_FORM_SIGNING_KEY", "test-signing-key")
 	c, err := Load()
 	if err != nil {
 		t.Fatalf("Load: %v", err)
@@ -79,6 +83,7 @@ func TestLoadReadsR2Config(t *testing.T) {
 func TestLoadOverridesAndValidation(t *testing.T) {
 	t.Setenv("PORT", "9090")
 	t.Setenv("DATABASE_URL", "postgres://x")
+	t.Setenv("WEB_FORM_SIGNING_KEY", "test-signing-key")
 	c, err := Load()
 	if err != nil {
 		t.Fatalf("Load: %v", err)
@@ -93,6 +98,15 @@ func TestLoadOverridesAndValidation(t *testing.T) {
 	t.Setenv("PORT", "70000")
 	if _, err := Load(); err == nil {
 		t.Errorf("expected error for out-of-range PORT")
+	}
+}
+
+func TestLoadRequiresWebFormSigningKey(t *testing.T) {
+	t.Setenv("DATABASE_URL", "postgres://x")
+	t.Setenv("WEB_FORM_SIGNING_KEY", "")
+	t.Setenv("WEB_FORM_SIGNING_KEY_FILE", "")
+	if _, err := Load(); err == nil {
+		t.Fatal("expected an error when WEB_FORM_SIGNING_KEY is unset")
 	}
 }
 
