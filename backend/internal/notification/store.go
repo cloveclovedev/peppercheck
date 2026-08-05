@@ -100,3 +100,12 @@ func (s *Store) EnqueueSendInTx(ctx context.Context, tx database.Querier, kind s
 	_, err := s.jobs.EnqueueInTx(ctx, tx, kind, payload, jobs.EnqueueOpts{})
 	return err
 }
+
+// EnqueueSendIdempotentInTx is EnqueueSendInTx with an idempotency key, so a
+// caller that may re-run (e.g. the matching sweep re-enqueuing a match for a
+// still-pending request) enqueues the job at most once — a colliding key is a
+// no-op via the jobs table's ON CONFLICT (idempotency_key).
+func (s *Store) EnqueueSendIdempotentInTx(ctx context.Context, tx database.Querier, kind string, payload any, idempotencyKey string) error {
+	_, err := s.jobs.EnqueueInTx(ctx, tx, kind, payload, jobs.EnqueueOpts{IdempotencyKey: idempotencyKey})
+	return err
+}

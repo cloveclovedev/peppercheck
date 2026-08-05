@@ -29,6 +29,18 @@ type Config struct {
 	PointCostPerRequest int
 }
 
+// RequestContext carries the task facts the match handler needs to notify: the
+// task id/title, the tasker (empty when the task's author was deleted), and
+// whether the task already has a cancelled request. HasCancelledSibling marks a
+// re-match after a referee cancelled, which selects the reassigned/
+// cancelled-pending notification variants over the first-match ones.
+type RequestContext struct {
+	TaskID              string
+	TaskerID            string // "" when the task's tasker was deleted
+	Title               string
+	HasCancelledSibling bool
+}
+
 // ExpiredCandidate is a pending request that has passed the rematch cutoff and
 // is a candidate for expiry by the sweep. TaskerID/Title come from the joined
 // task so the sweep can refund and notify without a second round-trip; both may

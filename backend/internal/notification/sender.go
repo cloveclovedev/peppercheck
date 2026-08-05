@@ -20,6 +20,7 @@ type sendStore interface {
 	TokensForUser(ctx context.Context, userID string) ([]string, error)
 	DeleteTokens(ctx context.Context, userID string, tokens []string) error
 	EnqueueSendInTx(ctx context.Context, tx database.Querier, kind string, payload any) error
+	EnqueueSendIdempotentInTx(ctx context.Context, tx database.Querier, kind string, payload any, idempotencyKey string) error
 }
 
 // Sender enqueues and delivers push notifications. It is distinct from the
@@ -55,6 +56,18 @@ func (s *Sender) EnqueueInTx(ctx context.Context, tx database.Querier, userID, k
 		Args:    args,
 		Data:    data,
 	})
+}
+
+// EnqueueIdempotentInTx is EnqueueInTx keyed by idempotencyKey, so a caller that
+// may re-run the same enqueue (e.g. the matching sweep repeatedly re-matching a
+// still-pending request) delivers the push exactly once.
+func (s *Sender) EnqueueIdempotentInTx(ctx context.Context, tx database.Querier, userID, keyBase string, args []string, data map[string]string, idempotencyKey string) error {
+	return s.store.EnqueueSendIdempotentInTx(ctx, tx, JobKindSendNotification, sendPayload{
+		UserID:  userID,
+		KeyBase: keyBase,
+		Args:    args,
+		Data:    data,
+	}, idempotencyKey)
 }
 
 // HandleSend is the worker handler for JobKindSendNotification: load the user's

@@ -2,6 +2,7 @@ package matching
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 
@@ -119,6 +120,27 @@ WHERE wl = (SELECT MIN(wl) FROM workloads)`, requestID)
 		out = append(out, id)
 	}
 	return out, rows.Err()
+}
+
+// RequestContext loads the task facts the match handler notifies with: the task
+// id/title, the tasker (NULL when the author was deleted), and whether the task
+// already has a cancelled request (the re-match signal).
+func (s *Store) RequestContext(ctx context.Context, q database.Querier, requestID string) (RequestContext, error) {
+	var rc RequestContext
+	var tasker sql.NullString
+	err := q.QueryRowContext(ctx, `
+		SELECT rr.task_id, t.tasker_id, t.title,
+		       EXISTS (SELECT 1 FROM public.referee_requests c
+		               WHERE c.task_id = rr.task_id AND c.status = 'cancelled') AS has_cancelled
+		FROM public.referee_requests rr
+		JOIN public.tasks t ON t.id = rr.task_id
+		WHERE rr.id = $1`, requestID).
+		Scan(&rc.TaskID, &tasker, &rc.Title, &rc.HasCancelledSibling)
+	if err != nil {
+		return RequestContext{}, fmt.Errorf("load request context: %w", err)
+	}
+	rc.TaskerID = tasker.String
+	return rc, nil
 }
 
 // MarkAcceptedInTx transitions a request pending->accepted only if it is still
