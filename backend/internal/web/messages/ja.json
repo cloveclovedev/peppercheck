@@ -12,7 +12,8 @@
     "copyright": "© 2024 CloveClove"
   },
   "HomePage": {
-    "title": "タスクのためのピア・レフリー プラットフォーム",
+    "titleLine1": "タスクのための",
+    "titleLine2": "ピア・レフリー プラットフォーム",
     "subtitle": "あなたのタスクを第三者がチェック。習慣化を支え、質を高めるレフリーマッチングサービス。",
     "features": {
       "create": {

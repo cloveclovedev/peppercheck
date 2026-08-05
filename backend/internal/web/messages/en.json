@@ -12,7 +12,8 @@
     "copyright": "© 2024 CloveClove"
   },
   "HomePage": {
-    "title": "Peer Referee Platform for Tasks",
+    "titleLine1": "Peer Referee Platform",
+    "titleLine2": "for Tasks",
     "subtitle": "Get your tasks reviewed by real people. Stay accountable, improve quality, and build better habits.",
     "features": {
       "create": {
