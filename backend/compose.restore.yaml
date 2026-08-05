@@ -68,8 +68,13 @@ services:
       # real (staging) Firebase project.
       FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:?FIREBASE_PROJECT_ID is required}
       DATABASE_URL_FILE: /run/secrets/database_url
+      # config.Load() fails closed without this (see compose.prod.yaml); the
+      # restored api never serves the web form, but still needs a value to
+      # boot at all -- reuses the same already-deployed secret file below.
+      WEB_FORM_SIGNING_KEY_FILE: /run/secrets/web_form_signing_key
     secrets:
       - database_url
+      - web_form_signing_key
     depends_on:
       postgres:
         condition: service_healthy
@@ -91,6 +96,8 @@ services:
 secrets:
   database_url:
     file: ${DATABASE_URL_SECRET_FILE:?DATABASE_URL_SECRET_FILE is required}
+  web_form_signing_key:
+    file: ${WEB_FORM_SIGNING_KEY_SECRET_FILE:?WEB_FORM_SIGNING_KEY_SECRET_FILE is required}
 
 volumes:
   # Created + chowned (for the pgBackRest UID, 999) and then restored into

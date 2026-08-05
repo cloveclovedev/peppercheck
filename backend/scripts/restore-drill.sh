@@ -124,6 +124,7 @@ readonly RESTORE_VOLUME="pgdata-restore-drill-$$"
 # the SAME file write-secret.sh/remote-deploy.sh already placed there for
 # the live deployment's own api/worker services.
 readonly DATABASE_URL_SECRET_FILE="${DATABASE_URL_SECRET_FILE:-secrets/database_url}"
+readonly WEB_FORM_SIGNING_KEY_SECRET_FILE="${WEB_FORM_SIGNING_KEY_SECRET_FILE:-secrets/web_form_signing_key}"
 readonly RESTORE_API_PORT="${RESTORE_API_PORT:-18765}"
 readonly WAL_POLL_TIMEOUT_SECONDS="${WAL_POLL_TIMEOUT_SECONDS:-300}"
 readonly WAL_POLL_INTERVAL_SECONDS="${WAL_POLL_INTERVAL_SECONDS:-5}"
@@ -146,6 +147,7 @@ restore_compose() {
     IMAGE_POSTGRES="$IMAGE_POSTGRES" IMAGE_BACKEND="$IMAGE_BACKEND" \
     API_PORT="$API_PORT" FIREBASE_PROJECT_ID="$FIREBASE_PROJECT_ID" \
     DATABASE_URL_SECRET_FILE="$DATABASE_URL_SECRET_FILE" \
+    WEB_FORM_SIGNING_KEY_SECRET_FILE="$WEB_FORM_SIGNING_KEY_SECRET_FILE" \
     docker compose -p "$RESTORE_PROJECT" -f "$RESTORE_COMPOSE" "$@"
 }
 

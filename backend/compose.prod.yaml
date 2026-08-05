@@ -158,8 +158,14 @@ services:
       # the connection string (including the peppercheck_app password) is
       # rendered into this file at deploy time, never passed as plain env.
       DATABASE_URL_FILE: /run/secrets/database_url
+      # HMAC key for internal/web's account-deletion form token. config.Load()
+      # fails closed if this is missing (unlike every other secret here,
+      # which only fails closed against an unreadable _FILE) -- see
+      # internal/core/config/config.go.
+      WEB_FORM_SIGNING_KEY_FILE: /run/secrets/web_form_signing_key
     secrets:
       - database_url
+      - web_form_signing_key
     depends_on:
       postgres:
         condition: service_healthy
@@ -185,8 +191,13 @@ services:
       APP_ENV: ${PC_ENV}
       LOG_LEVEL: ${LOG_LEVEL:-info}
       DATABASE_URL_FILE: /run/secrets/database_url
+      # The worker never uses this (internal/web only mounts in the api
+      # command), but config.Load() is shared by both commands and fails
+      # closed if it's missing -- see the api service's comment above.
+      WEB_FORM_SIGNING_KEY_FILE: /run/secrets/web_form_signing_key
     secrets:
       - database_url
+      - web_form_signing_key
     depends_on:
       postgres:
         condition: service_healthy
@@ -265,6 +276,8 @@ secrets:
     file: ./secrets/database_url
   migrator_database_url:
     file: ./secrets/migrator_database_url
+  web_form_signing_key:
+    file: ./secrets/web_form_signing_key
 
 volumes:
   pgdata:

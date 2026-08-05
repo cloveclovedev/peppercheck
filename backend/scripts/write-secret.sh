@@ -32,6 +32,7 @@ case "$name" in
   pgbackrest_cipher | \
   b2_key_id | \
   b2_key_secret | \
+  web_form_signing_key | \
   ghcr_token)
     ;;
   *)
