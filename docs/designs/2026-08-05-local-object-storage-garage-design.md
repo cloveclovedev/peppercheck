@@ -111,9 +111,39 @@ with internal == external (no emulator, no host split).
 Local reproduction per class:
 
 - **public bucket (avatar)** — served anonymously via Garage's web port,
-  yielding a stable URL that matches prod's CDN model (`R2_PUBLIC_DOMAIN` points
-  at the local web endpoint). No presigning of public media, locally or in prod.
+  yielding a stable URL that matches prod's CDN model. No presigning of public
+  media, locally or in prod. See the routing note below — this is more than
+  repointing `R2_PUBLIC_DOMAIN`.
 - **private bucket (evidence)** — presigned GET via the S3 API port.
+
+#### Local public-read routing (Garage web port)
+
+Reproducing anonymous public avatar reads locally is **not** as simple as
+pointing `R2_PUBLIC_DOMAIN` at `garage:3902`. Three facts collide:
+
+1. Garage's web endpoint selects the bucket from the HTTP **`Host` header** and
+   serves over **http**, on a **separate port** from the S3 API.
+2. `PublicURL` composes `https://<R2_PUBLIC_DOMAIN>/<key>` from a
+   **bare-hostname, no-scheme** config (the `R2_PUBLIC_DOMAIN`-no-scheme
+   gotcha from #503) — it hardcodes `https` and cannot express http or a
+   custom port cleanly.
+3. The Flutter dev app reaches local containers as **`10.0.2.2` (Android)** vs
+   **`127.0.0.1` (iOS)**.
+
+Naively repointing `R2_PUBLIC_DOMAIN` therefore yields a stable URL the emulator
+cannot actually fetch. Resolve it by **fronting Garage's web port with the
+stack's existing Caddy reverse proxy** (the Compose stack already runs Caddy):
+Caddy owns the `Host`-header → public-bucket routing and exposes one stable
+public host that the emulator reaches through the **same host mapping already
+used for the Go API** (`10.0.2.2` / `127.0.0.1`), so no `Host`-header handling
+or per-platform axis leaks into app config. Because local serving is http on a
+non-443 port, the public-base config must carry a **scheme (and port)** locally
+— either widen the avatar public-URL config from a bare hostname to a full base
+URL, or terminate TLS at Caddy so the existing `https://…/<key>` composition
+still holds. Production is unaffected: the Cloudflare custom domain already
+provides scheme + a stable host, so both collapse to today's behavior. The
+implementation issue (#523) must not treat this as a config-only change; it
+carries the small `PublicURL`/config widening described here.
 
 ### 5. Sequencing — land within Phase 4b
 
@@ -159,6 +189,10 @@ path that works for avatars but breaks at evidence is not actually "done."
   fail-closed change.
 - `platform/r2` shrinks to public-domain URL strategy; the S3 client moves to
   `core/objectstore`, tidying the architecture boundary.
+- The avatar public-URL composition needs a small widening (scheme + port, i.e.
+  a base URL instead of a bare hostname) plus a Caddy route in front of Garage's
+  web port for local serving — see "Local public-read routing." Prod behavior is
+  unchanged.
 
 ## Deferred / related work
 
@@ -185,3 +219,10 @@ path that works for avatars but breaks at evidence is not actually "done."
   sequencing. Filed under parent #522 (OSS local dev profile) with siblings
   #524 (auth emulator) and #525 (FCM stub); supersedes the fail-closed framing
   of #483.
+- **2026-08-06** — Added the "Local public-read routing" note after a Codex
+  review of PR #526 flagged that repointing `R2_PUBLIC_DOMAIN` at Garage's web
+  port cannot serve avatars to the emulator (Host-header bucket selection, http
+  on a non-443 port, bare-hostname/no-scheme config, and Android `10.0.2.2` vs
+  iOS `127.0.0.1`). Resolution: front Garage's web port with the existing Caddy
+  proxy and widen the avatar public-URL config to a scheme-carrying base URL;
+  prod unchanged.
