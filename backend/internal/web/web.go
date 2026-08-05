@@ -42,6 +42,7 @@ type Handler struct {
 	deletion  deletionRequester
 	formToken *FormToken
 	rateLim   *ratelimit.TokenBucket
+	static    *assetServer
 }
 
 // NewHandler builds the web Handler. A nil logger falls back to slog.Default().
@@ -50,7 +51,10 @@ func NewHandler(d Deps) *Handler {
 	if l == nil {
 		l = slog.Default()
 	}
-	return &Handler{logger: l, deletion: d.Deletion, formToken: d.FormToken, rateLim: d.RateLim}
+	return &Handler{
+		logger: l, deletion: d.Deletion, formToken: d.FormToken, rateLim: d.RateLim,
+		static: newAssetServer(),
+	}
 }
 
 // contentSecurityPolicy locks the pages to their own self-contained origin.
@@ -124,6 +128,10 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
 
 	p := r.URL.Path
+	if strings.HasPrefix(p, "/static/") {
+		h.static.ServeHTTP(w, r)
+		return
+	}
 	if p == "/" {
 		target := "/" + defaultLocale
 		if r.URL.RawQuery != "" {
@@ -314,11 +322,19 @@ func requestOrigin(r *http.Request) string {
 // page builds pageData for a locale, a title message key, and the
 // locale-relative path (used for hreflang + the language switcher).
 // Hreflang tags get absolute URLs (requestOrigin); the language switcher's
-// nav links stay relative, matching every other in-page link.
+// nav links stay relative, matching every other in-page link. Every page's
+// <title> is "<page title> | Peppercheck", matching the current site's
+// title template -- except the home page itself, which passes
+// "Meta.defaultTitle" as titleKey and gets just "Peppercheck" (no
+// self-referential suffix), matching Next's `default: 'Peppercheck'`.
 func (h *Handler) page(r *http.Request, locale, titleKey, relPath string) pageData {
+	title := cat.T(locale, titleKey)
+	if titleKey != "Meta.defaultTitle" {
+		title += " | " + cat.T(locale, "Meta.defaultTitle")
+	}
 	return pageData{
 		Locale:     locale,
-		Title:      cat.T(locale, titleKey),
+		Title:      title,
 		Hreflang:   hreflangAlternates(requestOrigin(r), relPath),
 		LangSwitch: hreflangAlternates("", relPath)[:len(supportedLocales)],
 	}

@@ -35,8 +35,8 @@ func TestRootRedirectPreservesQueryString(t *testing.T) {
 
 func TestLocalizedHomeRenders(t *testing.T) {
 	for _, tc := range []struct{ loc, want string }{
-		{"en", "Peer Referee Platform for Tasks"},
-		{"ja", "ピア・レフリー"},
+		{"en", "Peer Referee Platform<br>for Tasks"},
+		{"ja", "タスクのための<br>ピア・レフリー"},
 	} {
 		rec := httptest.NewRecorder()
 		newTestHandler().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/"+tc.loc, nil))
