@@ -2,6 +2,7 @@ package matching
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -141,6 +142,9 @@ func (s *Service) notifyMatch(ctx context.Context, tx database.Querier, requestI
 // silent no-op; the sweep keeps retrying.
 func (s *Service) maybeNotifyCancelledPending(ctx context.Context, tx database.Querier, requestID string) error {
 	rc, err := s.store.RequestContext(ctx, tx, requestID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil // request vanished (e.g. its task was deleted); nothing to notify (#464)
+	}
 	if err != nil {
 		return err
 	}

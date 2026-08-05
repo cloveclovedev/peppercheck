@@ -269,6 +269,16 @@ func TestHandleMatchCancelOriginatedNoCandidateNotifiesTasker(t *testing.T) {
 	}
 }
 
+func TestHandleMatchMissingRequestIsNoop(t *testing.T) {
+	db := testsupport.DB(t)
+	svc, _ := newTestMatchingService(t, db)
+	// A well-formed uuid that maps to no request row (e.g. its task was deleted):
+	// the handler must succeed as a no-op, not error and burn retries (#464).
+	if err := svc.HandleMatch(context.Background(), matchJob("00000000-0000-0000-0000-000000000000")); err != nil {
+		t.Fatalf("want no-op for a missing request, got %v", err)
+	}
+}
+
 func TestHandleMatchPastCutoffLeavesPending(t *testing.T) {
 	db := testsupport.DB(t)
 	svc, _ := newTestMatchingService(t, db)

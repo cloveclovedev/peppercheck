@@ -139,12 +139,12 @@ func setAvailability(t *testing.T, db *sql.DB, refereeID string, accepting bool,
 	}
 }
 
-// newPendingRequest inserts a pending referee_request for a task, returning its id.
+// newPendingRequest inserts a pending referee_request for a task via the store's
+// InsertRequestInTx (exercising it), returning its id.
 func newPendingRequest(t *testing.T, db *sql.DB, taskID string) string {
 	t.Helper()
-	var id string
-	if err := db.QueryRow(
-		`INSERT INTO public.referee_requests (task_id) VALUES ($1) RETURNING id`, taskID).Scan(&id); err != nil {
+	id, err := matching.NewStore(db).InsertRequestInTx(context.Background(), db, taskID)
+	if err != nil {
 		t.Fatalf("seed request: %v", err)
 	}
 	return id
