@@ -1,0 +1,27 @@
+{{define "content"}}
+<article>
+<h1>{{t .Locale "Refund.title"}}</h1>
+<p class="effective-date">{{t .Locale "Refund.effectiveDate"}}</p>
+
+<section>
+<h2>{{t .Locale "Refund.cancellation.heading"}}</h2>
+<p>{{t .Locale "Refund.cancellation.body"}}</p>
+</section>
+
+<section>
+<h2>{{t .Locale "Refund.refund.heading"}}</h2>
+<p>{{t .Locale "Refund.refund.body"}}</p>
+</section>
+
+<section>
+<h2>{{t .Locale "Refund.exceptions.heading"}}</h2>
+<p>{{t .Locale "Refund.exceptions.body"}}</p>
+</section>
+
+<section>
+<h2>{{t .Locale "Refund.contact.heading"}}</h2>
+<p>{{t .Locale "Refund.contact.body"}}</p>
+<p><a href="mailto:{{t .Locale "Meta.contactEmail"}}">{{t .Locale "Meta.contactEmail"}}</a></p>
+</section>
+</article>
+{{end}}

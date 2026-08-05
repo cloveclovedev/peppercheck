@@ -1,7 +1,8 @@
 {
   "Meta": {
     "siteName": "peppercheck",
-    "defaultTitle": "Peppercheck"
+    "defaultTitle": "Peppercheck",
+    "contactEmail": "hi@cloveclove.dev"
   },
   "Footer": {
     "terms": "Terms of Service",
@@ -30,5 +31,268 @@
   },
   "NotFound": {
     "title": "Page not found"
+  },
+  "Privacy": {
+    "title": "Privacy Policy",
+    "effectiveDate": "Effective date: May 5, 2026",
+    "operator": {
+      "heading": "1. Operator",
+      "body": "This app (\"Peppercheck\") is operated by CloveClove (\"we\", \"us\", or \"our\"). For inquiries, please contact us at the email address listed at the bottom of this page."
+    },
+    "collect": {
+      "heading": "2. Information We Collect",
+      "intro": "We collect the following categories of information:",
+      "account": {
+        "heading": "Account Information",
+        "items": {
+          "email": "Email address (obtained through Google Sign-In)",
+          "name": "Display name and profile image (set by the user within the app)",
+          "timezone": "Timezone (automatically obtained from device information)"
+        }
+      },
+      "task": {
+        "heading": "Task Data",
+        "items": {
+          "details": "Task details (title, description, completion criteria)",
+          "refereeMatching": "Referee matching preferences",
+          "evidence": "Evidence (text and uploaded images)",
+          "reviewMessages": "Judgment messages",
+          "comments": "Rating comments",
+          "points": "Point and reward balances and transaction history"
+        }
+      },
+      "payment": {
+        "heading": "Payment Information",
+        "items": {
+          "subscription": "Subscription information (provider, status, and purchase transaction identifiers from Apple / Google Play)",
+          "stripe": "Stripe account identifiers (used for receiving referee payouts)",
+          "payouts": "Payout history"
+        },
+        "note": "Credit card and bank account information are handled directly by Apple, Google, and Stripe and are never stored on our servers."
+      },
+      "device": {
+        "heading": "Device Information",
+        "items": {
+          "pushToken": "Push notification tokens (FCM)",
+          "type": "Device type",
+          "lastActive": "Last active timestamp"
+        }
+      },
+      "usage": {
+        "heading": "Usage Data",
+        "items": {
+          "matching": "Matching history"
+        }
+      }
+    },
+    "purpose": {
+      "heading": "3. Purpose of Use",
+      "intro": "We use collected information for the following purposes:",
+      "items": {
+        "auth": "To authenticate users and manage accounts",
+        "service": "To provide, maintain, and improve the Peppercheck service",
+        "payment": "To process payments and referee payouts",
+        "notification": "To send push notifications about task updates and matching results",
+        "support": "To respond to inquiries and provide support",
+        "safety": "To ensure safety, prevent fraud, and enforce our terms of service"
+      }
+    },
+    "thirdParty": {
+      "heading": "4. Third-Party Services",
+      "intro": "We share information with the following third-party services as necessary to operate the app. These providers are located outside of Japan (primarily in the United States) and process personal information in accordance with their own privacy policies and applicable local laws.",
+      "google": {
+        "name": "Google",
+        "body": "Email and profile information for sign-in authentication, and transaction information for subscription billing on Google Play. (United States)"
+      },
+      "apple": {
+        "name": "Apple",
+        "body": "Transaction information for subscription billing on the App Store. Personal information from your Apple Account is not shared with us. (United States)"
+      },
+      "stripe": {
+        "name": "Stripe",
+        "body": "Stripe Connect account information for sending referee payouts. (United States)"
+      },
+      "firebase": {
+        "name": "Firebase",
+        "body": "Device tokens for delivering push notifications. (United States)"
+      },
+      "supabase": {
+        "name": "Supabase",
+        "body": "Backend data storage and authentication. Media files are stored on Cloudflare R2. (United States)"
+      },
+      "cloudflare": {
+        "name": "Cloudflare",
+        "body": "Website delivery and storage of user media files. Access logs include IP addresses and similar information. (United States)"
+      }
+    },
+    "security": {
+      "heading": "5. Data Storage and Security",
+      "body": "We use industry-standard security measures, including encryption in transit (TLS) and access controls, to protect your data. However, no method of transmission or storage is 100% secure, and we cannot guarantee absolute security.",
+      "operatorAccess": "We may access user data only as necessary to operate the service. Such access is limited to specific purposes — handling inquiries, troubleshooting, legal compliance, and investigating misuse — and is restricted to the minimum scope required."
+    },
+    "retention": {
+      "heading": "6. Data Retention",
+      "body": "We retain your data for as long as your account is active. If you delete your account, personally identifiable information (profile, email address, payment information, point and reward balances, notification settings, avatar image, etc.) will be deleted promptly. However, task-related content (task titles and descriptions, evidence, judgment messages, rating comments, referee judgments, etc.) will be retained in anonymized form, with personally identifiable information removed, in order to maintain service quality and protect other users.",
+      "evidenceFiles": "Evidence image files are automatically deleted 90 days after the corresponding task's due date.",
+      "legalException": "Where retention is required by law or necessary for legitimate business purposes (e.g., resolving disputes, enforcing agreements, tax records), we may retain data beyond the periods above to the extent necessary."
+    },
+    "rights": {
+      "heading": "7. Your Rights",
+      "intro": "You have the right to:",
+      "items": {
+        "access": "Request access to the personal data we hold about you",
+        "correction": "Request correction of inaccurate data",
+        "deletion": "Request deletion of your data",
+        "withdrawal": "Withdraw consent for data processing"
+      },
+      "howTo": "To exercise any of these rights, please contact us at the email address below. We will respond to your request within 30 days."
+    },
+    "children": {
+      "heading": "8. Children's Privacy",
+      "body": "Peppercheck is intended for users 18 and older, and is not intended for use by minors. We do not knowingly collect personal information from minors. If we become aware that we have collected such information, we will promptly delete it."
+    },
+    "changes": {
+      "heading": "9. Changes to This Policy",
+      "body": "We may update this privacy policy from time to time. When we make material changes, we will notify users through the app or by other appropriate means. Continued use of the app after changes take effect constitutes acceptance of the updated policy."
+    },
+    "contact": {
+      "heading": "10. Contact Us",
+      "body": "If you have any questions about this privacy policy or our data practices, please contact us at:"
+    }
+  },
+  "Terms": {
+    "title": "Terms of Service",
+    "effectiveDate": "Effective date: April 5, 2026",
+    "intro": {
+      "heading": "1. Introduction",
+      "body": "These Terms of Service (\"Terms\") govern your use of Peppercheck (\"the Service\"), operated by CloveClove (\"we\", \"us\", or \"our\"). By using the Service, you agree to be bound by these Terms. If you do not agree, please do not use the Service."
+    },
+    "eligibility": {
+      "heading": "2. Eligibility",
+      "body": "You must be at least 18 years old to use the Service. By using the Service, you represent and warrant that you meet this age requirement. If you do not meet this requirement, you must not access or use the Service."
+    },
+    "service": {
+      "heading": "3. Service Description",
+      "body": "Peppercheck is a peer referee platform that allows users to create tasks and have them reviewed by other users. The Service includes subscription plans that provide monthly points for task creation, a referee matching system, and a payout system for referees."
+    },
+    "subscription": {
+      "heading": "4. Subscription Terms",
+      "body": "Subscriptions are billed monthly and automatically renew at the end of each billing cycle. You may cancel your subscription at any time, but access continues until the end of the current billing period. No prorated refunds are issued for partial billing periods. Please refer to our Refund & Cancellation Policy for details. Points included in your plan are reset to the plan's allocated amount on each renewal date. Unused points do not carry over to the next billing period. Points reserved for in-progress referee matches are preserved through renewal."
+    },
+    "prohibited": {
+      "heading": "5. Prohibited Conduct",
+      "intro": "You agree not to:",
+      "items": {
+        "abuse": "Use the Service for any unlawful purpose or in violation of applicable laws",
+        "fraud": "Provide false or misleading information in tasks, reviews, or account details",
+        "interference": "Interfere with or disrupt the Service, servers, or networks",
+        "scraping": "Scrape, crawl, or use automated means to access the Service without permission",
+        "impersonation": "Impersonate another person or entity",
+        "obscene": "Submit content that is obscene, harassing, defamatory, or otherwise objectionable in tasks, evidence, or comments",
+        "pii": "Upload evidence containing personally identifiable information of third parties without their consent"
+      }
+    },
+    "ip": {
+      "heading": "6. Intellectual Property",
+      "body": "All content, features, and functionality of the Service are owned by CloveClove and are protected by copyright, trademark, and other intellectual property laws. User-submitted content (tasks, evidence, reviews) remains the property of the respective users, but you grant us a license to use it as necessary to operate the Service."
+    },
+    "disclaimer": {
+      "heading": "7. Limitation of Liability",
+      "body": "The Service is provided \"as is\" without warranties of any kind, either express or implied. To the fullest extent permitted by law, CloveClove shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the Service."
+    },
+    "dispute": {
+      "heading": "8. Dispute Resolution & Governing Law",
+      "support": "If you experience any issues with the Service, please contact us at the email address listed in Section 10. We will make reasonable efforts to address your concerns.",
+      "mediation": "For disputes between users (e.g., disagreements regarding task reviews), the platform will make best efforts to mediate. However, CloveClove is not legally responsible for resolving disputes between users.",
+      "jurisdiction": "These Terms are governed by and construed in accordance with the laws of Japan. Any disputes arising from these Terms shall be subject to the exclusive jurisdiction of the courts of Japan."
+    },
+    "changes": {
+      "heading": "9. Modification of Terms",
+      "body": "We may modify these Terms at any time. When we make material changes, we will notify users through the app or by other appropriate means. Continued use of the Service after changes take effect constitutes acceptance of the updated Terms."
+    },
+    "contact": {
+      "heading": "10. Contact Us",
+      "body": "If you have any questions about these Terms or need to report an issue, please contact us at:"
+    }
+  },
+  "Refund": {
+    "title": "Refund & Cancellation Policy",
+    "effectiveDate": "Effective date: March 12, 2026",
+    "cancellation": {
+      "heading": "1. How to Cancel",
+      "body": "You may cancel your subscription at any time through the app settings (Google Play / App Store subscription management). Cancellation takes effect at the end of the current billing period — you will continue to have access until then."
+    },
+    "refund": {
+      "heading": "2. Refund Policy",
+      "body": "We do not offer prorated refunds for unused portions of a billing period. Once a billing cycle has begun, the charge for that period is non-refundable."
+    },
+    "exceptions": {
+      "heading": "3. Exceptions",
+      "body": "Refunds may be considered on a case-by-case basis in the event of service errors, duplicate charges, or other exceptional circumstances. Please contact us to discuss your situation."
+    },
+    "contact": {
+      "heading": "4. Contact",
+      "body": "For refund inquiries or cancellation assistance, please contact us at:"
+    }
+  },
+  "Tokushoho": {
+    "title": "Specified Commercial Transactions Act Disclosure",
+    "seller": {
+      "label": "Business Name",
+      "value": "CloveClove"
+    },
+    "address": {
+      "label": "Address",
+      "value": "Disclosed without delay upon request"
+    },
+    "phone": {
+      "label": "Phone Number",
+      "value": "Disclosed without delay upon request"
+    },
+    "contact": {
+      "label": "Email"
+    },
+    "representative": {
+      "label": "Head of Operations",
+      "value": "Makoto Kurihara"
+    },
+    "additionalFees": {
+      "label": "Additional Fees",
+      "value": "Internet connection fees and other communication charges are borne by the customer"
+    },
+    "cancellation": {
+      "label": "Exchange and Return Policy",
+      "normalHeading": "Normal cancellation",
+      "normalBody": "You can cancel your subscription at any time from the app settings (Google Play / App Store subscription management). Cancellation takes effect at the end of the current billing period. No prorated refunds are provided for the unused portion of a billing period.",
+      "defectHeading": "Service issues / defects",
+      "defectBody": "In cases of service outages, duplicate charges, or other exceptional circumstances, refunds will be considered on a case-by-case basis.",
+      "details": "See full policy"
+    },
+    "delivery": {
+      "label": "Delivery Time",
+      "value": "Available immediately after subscription purchase"
+    },
+    "payment": {
+      "label": "Available Payment Methods",
+      "value": "In-app purchase (Google Play / App Store)"
+    },
+    "paymentPeriod": {
+      "label": "Payment Period",
+      "value": "In-app purchases follow the respective store's billing terms."
+    },
+    "price": {
+      "label": "Price",
+      "perMonth": "/mo",
+      "taxIncluded": " (tax included)"
+    },
+    "environment": {
+      "label": "System Requirements",
+      "value": "Android 5.0 or later, iOS 13.0 or later"
+    },
+    "plans": {
+      "light": "Light Plan",
+      "standard": "Standard Plan",
+      "premium": "Premium Plan"
+    }
   }
 }

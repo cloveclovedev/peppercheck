@@ -1,0 +1,93 @@
+{{define "content"}}
+<article>
+<h1>{{t .Locale "Privacy.title"}}</h1>
+<p class="effective-date">{{t .Locale "Privacy.effectiveDate"}}</p>
+
+<section>
+<h2>{{t .Locale "Privacy.operator.heading"}}</h2>
+<p>{{t .Locale "Privacy.operator.body"}}</p>
+</section>
+
+<section>
+<h2>{{t .Locale "Privacy.collect.heading"}}</h2>
+<p>{{t .Locale "Privacy.collect.intro"}}</p>
+<dl>
+<div>
+<dt>{{t .Locale "Privacy.collect.account.heading"}}</dt>
+<dd><ul>{{range list "email" "name" "timezone"}}<li>{{t $.Locale (printf "Privacy.collect.account.items.%s" .)}}</li>{{end}}</ul></dd>
+</div>
+<div>
+<dt>{{t .Locale "Privacy.collect.task.heading"}}</dt>
+<dd><ul>{{range list "details" "refereeMatching" "evidence" "reviewMessages" "comments" "points"}}<li>{{t $.Locale (printf "Privacy.collect.task.items.%s" .)}}</li>{{end}}</ul></dd>
+</div>
+<div>
+<dt>{{t .Locale "Privacy.collect.payment.heading"}}</dt>
+<dd><ul>{{range list "subscription" "stripe" "payouts"}}<li>{{t $.Locale (printf "Privacy.collect.payment.items.%s" .)}}</li>{{end}}</ul>
+<p>{{t .Locale "Privacy.collect.payment.note"}}</p>
+</dd>
+</div>
+<div>
+<dt>{{t .Locale "Privacy.collect.device.heading"}}</dt>
+<dd><ul>{{range list "pushToken" "type" "lastActive"}}<li>{{t $.Locale (printf "Privacy.collect.device.items.%s" .)}}</li>{{end}}</ul></dd>
+</div>
+<div>
+<dt>{{t .Locale "Privacy.collect.usage.heading"}}</dt>
+<dd><ul>{{range list "matching"}}<li>{{t $.Locale (printf "Privacy.collect.usage.items.%s" .)}}</li>{{end}}</ul></dd>
+</div>
+</dl>
+</section>
+
+<section>
+<h2>{{t .Locale "Privacy.purpose.heading"}}</h2>
+<p>{{t .Locale "Privacy.purpose.intro"}}</p>
+<ul>{{range list "auth" "service" "payment" "notification" "support" "safety"}}<li>{{t $.Locale (printf "Privacy.purpose.items.%s" .)}}</li>{{end}}</ul>
+</section>
+
+<section>
+<h2>{{t .Locale "Privacy.thirdParty.heading"}}</h2>
+<p>{{t .Locale "Privacy.thirdParty.intro"}}</p>
+<dl>
+{{range list "google" "apple" "stripe" "firebase" "supabase" "cloudflare"}}<div>
+<dt>{{t $.Locale (printf "Privacy.thirdParty.%s.name" .)}}</dt>
+<dd>{{t $.Locale (printf "Privacy.thirdParty.%s.body" .)}}</dd>
+</div>
+{{end}}</dl>
+</section>
+
+<section>
+<h2>{{t .Locale "Privacy.security.heading"}}</h2>
+<p>{{t .Locale "Privacy.security.body"}}</p>
+<p>{{t .Locale "Privacy.security.operatorAccess"}}</p>
+</section>
+
+<section>
+<h2>{{t .Locale "Privacy.retention.heading"}}</h2>
+<p>{{t .Locale "Privacy.retention.body"}}</p>
+<p>{{t .Locale "Privacy.retention.evidenceFiles"}}</p>
+<p>{{t .Locale "Privacy.retention.legalException"}}</p>
+</section>
+
+<section>
+<h2>{{t .Locale "Privacy.rights.heading"}}</h2>
+<p>{{t .Locale "Privacy.rights.intro"}}</p>
+<ul>{{range list "access" "correction" "deletion" "withdrawal"}}<li>{{t $.Locale (printf "Privacy.rights.items.%s" .)}}</li>{{end}}</ul>
+<p>{{t .Locale "Privacy.rights.howTo"}}</p>
+</section>
+
+<section>
+<h2>{{t .Locale "Privacy.children.heading"}}</h2>
+<p>{{t .Locale "Privacy.children.body"}}</p>
+</section>
+
+<section>
+<h2>{{t .Locale "Privacy.changes.heading"}}</h2>
+<p>{{t .Locale "Privacy.changes.body"}}</p>
+</section>
+
+<section>
+<h2>{{t .Locale "Privacy.contact.heading"}}</h2>
+<p>{{t .Locale "Privacy.contact.body"}}</p>
+<p><a href="mailto:{{t .Locale "Meta.contactEmail"}}">{{t .Locale "Meta.contactEmail"}}</a></p>
+</section>
+</article>
+{{end}}
