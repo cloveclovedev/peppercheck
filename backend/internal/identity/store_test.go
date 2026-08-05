@@ -29,7 +29,7 @@ func TestCreateWithIdentityThenFind(t *testing.T) {
 	s := newStore(t)
 	ctx := context.Background()
 
-	created, err := s.CreateWithIdentity(ctx, "iss", "sub-1", nil)
+	created, err := s.CreateWithIdentity(ctx, "iss", "sub-1", "sub-1@example.com", true, nil)
 	if err != nil {
 		t.Fatalf("create: %v", err)
 	}
@@ -72,7 +72,7 @@ func TestStoreWorksWithRuntimeRole(t *testing.T) {
 
 	s := NewStore(db)
 	ctx := context.Background()
-	created, err := s.CreateWithIdentity(ctx, issuer, subject, nil)
+	created, err := s.CreateWithIdentity(ctx, issuer, subject, "runtime-role@example.com", true, nil)
 	if err != nil {
 		t.Fatalf("create with runtime role: %v", err)
 	}
@@ -88,12 +88,12 @@ func TestStoreWorksWithRuntimeRole(t *testing.T) {
 func TestCreateWithIdentityDuplicateSignalsNotFound(t *testing.T) {
 	s := newStore(t)
 	ctx := context.Background()
-	if _, err := s.CreateWithIdentity(ctx, "iss", "sub-dup", nil); err != nil {
+	if _, err := s.CreateWithIdentity(ctx, "iss", "sub-dup", "sub-dup@example.com", true, nil); err != nil {
 		t.Fatalf("first create: %v", err)
 	}
 	// Second create for the same (issuer, subject) hits the unique constraint
 	// and reports ErrNotFound so the caller re-resolves.
-	if _, err := s.CreateWithIdentity(ctx, "iss", "sub-dup", nil); !errors.Is(err, ErrNotFound) {
+	if _, err := s.CreateWithIdentity(ctx, "iss", "sub-dup", "sub-dup@example.com", true, nil); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("duplicate create err = %v, want ErrNotFound", err)
 	}
 	// The rolled-back second insert must leave NO orphan users row: the users
@@ -112,7 +112,7 @@ func TestCreateWithIdentityProvisionErrorRollsBack(t *testing.T) {
 	ctx := context.Background()
 	boom := errors.New("provision failed")
 
-	_, err := s.CreateWithIdentity(ctx, "iss", "sub-prov",
+	_, err := s.CreateWithIdentity(ctx, "iss", "sub-prov", "sub-prov@example.com", true,
 		func(context.Context, *sql.Tx, string) error { return boom })
 	if !errors.Is(err, boom) {
 		t.Fatalf("err = %v, want the provision error", err)
@@ -133,7 +133,7 @@ func TestCreateWithIdentityProvisionErrorRollsBack(t *testing.T) {
 func TestDeleteUserCascadesIdentities(t *testing.T) {
 	s := newStore(t)
 	ctx := context.Background()
-	u, err := s.CreateWithIdentity(ctx, "iss", "sub-fk", nil)
+	u, err := s.CreateWithIdentity(ctx, "iss", "sub-fk", "sub-fk@example.com", true, nil)
 	if err != nil {
 		t.Fatalf("create: %v", err)
 	}
@@ -146,5 +146,71 @@ func TestDeleteUserCascadesIdentities(t *testing.T) {
 	}
 	if n != 0 {
 		t.Fatalf("identities remaining = %d after user delete; want 0 (FK cascade)", n)
+	}
+}
+
+func TestFindUserByEmail(t *testing.T) {
+	s := newStore(t)
+	ctx := context.Background()
+
+	u, err := s.CreateWithIdentity(ctx, "firebase", "sub-1", "User@Example.com", true, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := s.FindUserByEmail(ctx, "user@example.com") // case-insensitive, verified
+	if err != nil {
+		t.Fatalf("FindUserByEmail: %v", err)
+	}
+	if got.ID != u.ID {
+		t.Fatalf("got %s want %s", got.ID, u.ID)
+	}
+	if _, err := s.FindUserByEmail(ctx, "nobody@example.com"); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("want ErrNotFound, got %v", err)
+	}
+
+	// UNVERIFIED email must NOT match.
+	if _, err := s.CreateWithIdentity(ctx, "firebase", "sub-2", "unverified@example.com", false, nil); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.FindUserByEmail(ctx, "unverified@example.com"); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("unverified email should not match, got %v", err)
+	}
+
+	// A second VERIFIED identity for the SAME user still resolves to that user.
+	if _, err := s.db.ExecContext(ctx, `INSERT INTO public.user_identities (user_id, issuer, subject, email, email_verified)
+		VALUES ($1, 'apple', 'sub-3', 'User@Example.com', true)`, u.ID); err != nil {
+		t.Fatal(err)
+	}
+	if got, err := s.FindUserByEmail(ctx, "user@example.com"); err != nil || got.ID != u.ID {
+		t.Fatalf("same-user duplicate should resolve: id=%s err=%v", got.ID, err)
+	}
+
+	// Two DIFFERENT verified users with the same email -> ambiguous -> ErrNotFound.
+	if _, err := s.CreateWithIdentity(ctx, "firebase", "sub-4", "shared@example.com", true, nil); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.CreateWithIdentity(ctx, "firebase", "sub-5", "shared@example.com", true, nil); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.FindUserByEmail(ctx, "shared@example.com"); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("ambiguous email should refuse (ErrNotFound), got %v", err)
+	}
+}
+
+func TestTouchIdentityEmailRefreshesOnChange(t *testing.T) {
+	s := newStore(t)
+	ctx := context.Background()
+
+	if _, err := s.CreateWithIdentity(ctx, "iss", "sub-touch", "old@example.com", false, nil); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.TouchIdentityEmail(ctx, "iss", "sub-touch", "new@example.com", true); err != nil {
+		t.Fatalf("touch: %v", err)
+	}
+	if _, err := s.FindUserByEmail(ctx, "old@example.com"); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("old email should no longer match, got %v", err)
+	}
+	if _, err := s.FindUserByEmail(ctx, "new@example.com"); err != nil {
+		t.Fatalf("new email should match after touch: %v", err)
 	}
 }

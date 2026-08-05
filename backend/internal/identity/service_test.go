@@ -32,7 +32,7 @@ func (f *fakeStore) FindByIdentity(_ context.Context, _, _ string) (User, error)
 	return r.u, r.err
 }
 
-func (f *fakeStore) CreateWithIdentity(ctx context.Context, _, _ string,
+func (f *fakeStore) CreateWithIdentity(ctx context.Context, _, _, _ string, _ bool,
 	provision func(ctx context.Context, tx *sql.Tx, userID string) error) (User, error) {
 	r := f.createResults[f.creates]
 	f.creates++
@@ -45,6 +45,12 @@ func (f *fakeStore) CreateWithIdentity(ctx context.Context, _, _ string,
 		}
 	}
 	return r.u, nil
+}
+
+// TouchIdentityEmail is a no-op in the fake; ResolveOrProvision calls it
+// best-effort and ignores its result.
+func (f *fakeStore) TouchIdentityEmail(context.Context, string, string, string, bool) error {
+	return nil
 }
 
 // fakeProvisioner records the user ids it was asked to provision and can be
@@ -61,7 +67,7 @@ func (f *fakeProvisioner) ProvisionInTx(_ context.Context, _ database.Querier, u
 
 func TestResolveExistingUser(t *testing.T) {
 	f := &fakeStore{findResults: []result{{u: User{ID: "u1"}}}}
-	got, err := NewService(f, nil).ResolveOrProvision(context.Background(), "iss", "sub")
+	got, err := NewService(f, nil).ResolveOrProvision(context.Background(), "iss", "sub", "user@example.com", true)
 	if err != nil || got.ID != "u1" {
 		t.Fatalf("got %+v err %v", got, err)
 	}
@@ -75,7 +81,7 @@ func TestResolveProvisionsNewUser(t *testing.T) {
 		findResults:   []result{{err: ErrNotFound}},
 		createResults: []result{{u: User{ID: "u2"}}},
 	}
-	got, err := NewService(f, nil).ResolveOrProvision(context.Background(), "iss", "sub")
+	got, err := NewService(f, nil).ResolveOrProvision(context.Background(), "iss", "sub", "user@example.com", true)
 	if err != nil || got.ID != "u2" {
 		t.Fatalf("got %+v err %v", got, err)
 	}
@@ -87,7 +93,7 @@ func TestResolveOrProvisionRunsProvisioner(t *testing.T) {
 		findResults:   []result{{err: ErrNotFound}},
 		createResults: []result{{u: User{ID: "u2"}}},
 	}
-	got, err := NewService(f, p).ResolveOrProvision(context.Background(), "iss", "sub")
+	got, err := NewService(f, p).ResolveOrProvision(context.Background(), "iss", "sub", "user@example.com", true)
 	if err != nil || got.ID != "u2" {
 		t.Fatalf("got %+v err %v", got, err)
 	}
@@ -98,7 +104,7 @@ func TestResolveOrProvisionRunsProvisioner(t *testing.T) {
 	// An already-known identity must not re-run the provisioner.
 	p2 := &fakeProvisioner{}
 	f2 := &fakeStore{findResults: []result{{u: User{ID: "u1"}}}}
-	if _, err := NewService(f2, p2).ResolveOrProvision(context.Background(), "iss", "sub"); err != nil {
+	if _, err := NewService(f2, p2).ResolveOrProvision(context.Background(), "iss", "sub", "user@example.com", true); err != nil {
 		t.Fatalf("resolve existing: %v", err)
 	}
 	if len(p2.calls) != 0 {
@@ -113,7 +119,7 @@ func TestResolveOrProvisionProvisionerErrorAborts(t *testing.T) {
 		findResults:   []result{{err: ErrNotFound}},
 		createResults: []result{{u: User{ID: "u2"}}},
 	}
-	got, err := NewService(f, p).ResolveOrProvision(context.Background(), "iss", "sub")
+	got, err := NewService(f, p).ResolveOrProvision(context.Background(), "iss", "sub", "user@example.com", true)
 	if err == nil || got.ID != "" {
 		t.Fatalf("got %+v err %v, want a provisioning error and no user", got, err)
 	}
@@ -124,7 +130,7 @@ func TestResolveRefindsWhenCreateLosesRace(t *testing.T) {
 		findResults:   []result{{err: ErrNotFound}, {u: User{ID: "u3"}}}, // 1st: absent, 2nd: winner's row
 		createResults: []result{{err: ErrNotFound}},                      // create lost the unique race
 	}
-	got, err := NewService(f, nil).ResolveOrProvision(context.Background(), "iss", "sub")
+	got, err := NewService(f, nil).ResolveOrProvision(context.Background(), "iss", "sub", "user@example.com", true)
 	if err != nil || got.ID != "u3" {
 		t.Fatalf("got %+v err %v", got, err)
 	}
@@ -145,7 +151,7 @@ func TestResolveOrProvisionConcurrentFirstSighting(t *testing.T) {
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
-			u, err := svc.ResolveOrProvision(context.Background(), "iss", "race")
+			u, err := svc.ResolveOrProvision(context.Background(), "iss", "race", "race@example.com", true)
 			ids[i], errs[i] = u.ID, err
 		}(i)
 	}

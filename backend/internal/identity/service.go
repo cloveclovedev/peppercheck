@@ -12,8 +12,9 @@ import (
 // store is the persistence the service needs; *Store satisfies it.
 type store interface {
 	FindByIdentity(ctx context.Context, issuer, subject string) (User, error)
-	CreateWithIdentity(ctx context.Context, issuer, subject string,
+	CreateWithIdentity(ctx context.Context, issuer, subject, email string, emailVerified bool,
 		provision func(ctx context.Context, tx *sql.Tx, userID string) error) (User, error)
+	TouchIdentityEmail(ctx context.Context, issuer, subject, email string, emailVerified bool) error
 }
 
 // Provisioner fans first-sighting provisioning out to feature stores inside the
@@ -40,17 +41,21 @@ func NewService(s store, p Provisioner) *Service {
 // creating it on first sighting. First-sighting creation runs the provisioner
 // fan-out inside the same transaction, so users + identity + profile + settings
 // commit atomically. A concurrent first sighting is resolved by re-finding after
-// the losing insert reports ErrNotFound.
-func (s *Service) ResolveOrProvision(ctx context.Context, issuer, subject string) (User, error) {
+// the losing insert reports ErrNotFound. On every resolve of an existing
+// identity, the stored email is best-effort refreshed from the token so it
+// tracks provider changes (account-deletion request matching relies on it
+// staying current).
+func (s *Service) ResolveOrProvision(ctx context.Context, issuer, subject, email string, emailVerified bool) (User, error) {
 	u, err := s.store.FindByIdentity(ctx, issuer, subject)
 	if err == nil {
+		_ = s.store.TouchIdentityEmail(ctx, issuer, subject, email, emailVerified)
 		return u, nil
 	}
 	if !errors.Is(err, ErrNotFound) {
 		return User{}, err
 	}
 
-	u, err = s.store.CreateWithIdentity(ctx, issuer, subject,
+	u, err = s.store.CreateWithIdentity(ctx, issuer, subject, email, emailVerified,
 		func(ctx context.Context, tx *sql.Tx, userID string) error {
 			if s.provisioner == nil {
 				return nil
@@ -70,5 +75,6 @@ func (s *Service) ResolveOrProvision(ctx context.Context, issuer, subject string
 	if err != nil {
 		return User{}, fmt.Errorf("resolve after create race: %w", err)
 	}
+	_ = s.store.TouchIdentityEmail(ctx, issuer, subject, email, emailVerified)
 	return u, nil
 }
