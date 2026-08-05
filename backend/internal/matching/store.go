@@ -143,6 +143,76 @@ func (s *Store) RequestContext(ctx context.Context, q database.Querier, requestI
 	return rc, nil
 }
 
+// PastCutoffPendingIDs lists pending requests whose task is within
+// rematchCutoffHours of its due date (or already past it) — matching can no
+// longer place them, so the sweep expires them. Rows carry the task facts the
+// sweep refunds and notifies with. A NULL due date is skipped (an unpublished
+// task has no requests; a defensively-NULL one can neither match nor expire).
+func (s *Store) PastCutoffPendingIDs(ctx context.Context, rematchCutoffHours int) ([]ExpiredCandidate, error) {
+	rows, err := s.db.QueryContext(ctx, `
+		SELECT rr.id, rr.task_id, t.tasker_id, t.title
+		FROM public.referee_requests rr
+		JOIN public.tasks t ON t.id = rr.task_id
+		WHERE rr.status = 'pending'
+		  AND t.due_date IS NOT NULL
+		  AND t.due_date <= now() + make_interval(hours => $1)`, rematchCutoffHours)
+	if err != nil {
+		return nil, fmt.Errorf("past-cutoff pendings: %w", err)
+	}
+	defer rows.Close()
+	var out []ExpiredCandidate
+	for rows.Next() {
+		var e ExpiredCandidate
+		var tasker sql.NullString
+		if err := rows.Scan(&e.ID, &e.TaskID, &tasker, &e.Title); err != nil {
+			return nil, err
+		}
+		e.TaskerID = tasker.String
+		out = append(out, e)
+	}
+	return out, rows.Err()
+}
+
+// ExpireIfPendingInTx flips a request pending->expired only while it is still
+// pending, returning whether it changed. The CAS is the concurrency guard: a
+// request a concurrent match already accepted is left untouched (0 rows), so the
+// sweep never refunds/notifies a request that was in fact matched.
+func (s *Store) ExpireIfPendingInTx(ctx context.Context, q database.Querier, requestID string) (bool, error) {
+	res, err := q.ExecContext(ctx,
+		`UPDATE public.referee_requests SET status = 'expired', updated_at = now()
+		 WHERE id = $1 AND status = 'pending'`, requestID)
+	if err != nil {
+		return false, fmt.Errorf("expire request: %w", err)
+	}
+	n, _ := res.RowsAffected()
+	return n > 0, nil
+}
+
+// PendingWithinWindow lists pending requests whose task is still more than
+// rematchCutoffHours from its due date — matching can still place them, so the
+// sweep re-enqueues a match.
+func (s *Store) PendingWithinWindow(ctx context.Context, rematchCutoffHours int) ([]string, error) {
+	rows, err := s.db.QueryContext(ctx, `
+		SELECT rr.id
+		FROM public.referee_requests rr
+		JOIN public.tasks t ON t.id = rr.task_id
+		WHERE rr.status = 'pending'
+		  AND t.due_date > now() + make_interval(hours => $1)`, rematchCutoffHours)
+	if err != nil {
+		return nil, fmt.Errorf("in-window pendings: %w", err)
+	}
+	defer rows.Close()
+	var out []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		out = append(out, id)
+	}
+	return out, rows.Err()
+}
+
 // MarkAcceptedInTx transitions a request pending->accepted only if it is still
 // pending AND its task is still within the matching window (due_date is more
 // than rematch_cutoff_hours away). The cutoff guard is in the UPDATE itself so a

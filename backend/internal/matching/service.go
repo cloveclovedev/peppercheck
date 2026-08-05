@@ -153,6 +153,65 @@ func (s *Service) maybeNotifyCancelledPending(ctx context.Context, tx database.Q
 		"cancelled_pending:"+requestID)
 }
 
+// HandleSweep is the recurring worker pass. It first reschedules itself (so a
+// mid-run failure never stops the chain — the bucketed key makes a duplicate
+// schedule on retry a no-op), then expires every pending request past the
+// rematch cutoff (refund + notify, each in its own transaction) and re-enqueues
+// a match for the pendings still inside the window.
+func (s *Service) HandleSweep(ctx context.Context, _ *jobs.Job) error {
+	if err := s.scheduleNextSweep(ctx); err != nil {
+		return err
+	}
+	cfg, err := s.store.LoadConfig(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Expire past-cutoff pendings. The expire CAS shares the transaction with the
+	// refund + notify, so a request a concurrent match already accepted is neither
+	// expired nor refunded.
+	expiring, err := s.store.PastCutoffPendingIDs(ctx, cfg.RematchCutoffHours)
+	if err != nil {
+		return err
+	}
+	for _, e := range expiring {
+		if err := database.WithTx(ctx, s.db, func(tx database.Querier) error {
+			expired, err := s.store.ExpireIfPendingInTx(ctx, tx, e.ID)
+			if err != nil {
+				return err
+			}
+			if !expired {
+				return nil // a concurrent match accepted it; leave it be
+			}
+			if err := s.points.RefundForRequestInTx(ctx, tx, e.ID, "matching expired: no referee found"); err != nil {
+				return err
+			}
+			if e.TaskerID == "" {
+				return nil // tasker was deleted; nothing to notify
+			}
+			return s.notifier.EnqueueInTx(ctx, tx, e.TaskerID,
+				"notification_matching_expired_refunded_tasker", []string{e.Title},
+				map[string]string{"route": "/tasks/" + e.TaskID})
+		}); err != nil {
+			return err
+		}
+	}
+
+	// Re-enqueue a match for the pendings still inside the window.
+	remaining, err := s.store.PendingWithinWindow(ctx, cfg.RematchCutoffHours)
+	if err != nil {
+		return err
+	}
+	for _, id := range remaining {
+		if err := database.WithTx(ctx, s.db, func(tx database.Querier) error {
+			return s.EnqueueMatchInTx(ctx, tx, id)
+		}); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // pickIndex derives a stable index into the least-workload candidate set from
 // the request id, so the choice is deterministic and idempotent (no math/rand
 // inside the transaction). Faithful randomness is not required — any stable pick
