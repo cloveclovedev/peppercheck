@@ -4,7 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{.Title}}</title>
-<link rel="stylesheet" href="/static/styles.css">
+{{/* Self-hosted CSS/fonts land in a follow-up sub-issue (Phase 3b Task 6);
+     no /static/ handler is mounted yet, so no stylesheet link here until then. */}}
 {{range .Hreflang}}<link rel="alternate" hreflang="{{.Lang}}" href="{{.Href}}">
 {{end}}</head>
 <body>

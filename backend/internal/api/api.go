@@ -69,9 +69,21 @@ func buildHandler(deps Deps) http.Handler {
 		}
 	}
 
+	// Methodless /api/ fallback: without this, a request that hits a
+	// registered path with the wrong method (e.g. POST /api/v1/me, which only
+	// registers GET) is NOT rejected by the specific pattern -- ServeMux falls
+	// through to the least-specific matching pattern instead, which would be
+	// the web catch-all below, silently serving an HTML page for an API path.
+	// Registering this JSON fallback for the whole /api/ prefix keeps every
+	// /api/* response API-shaped regardless of Web being mounted.
+	mux.Handle("/api/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		httpserver.WriteError(w, r, http.StatusNotFound, httpserver.CodeNotFound, "not found")
+	}))
+
 	if deps.Web != nil {
-		// Catch-all: anything not matched by a more specific pattern above
-		// (ServeMux prioritizes specificity, so /api/v1/* routes still win).
+		// Catch-all for everything else not matched by a more specific
+		// pattern above (/api/ never reaches here; see the fallback registered
+		// just above).
 		mux.Handle("/", deps.Web)
 	}
 	return mux

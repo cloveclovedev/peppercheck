@@ -46,6 +46,29 @@ func TestWebCatchAllServesRootAndDoesNotShadowMountedAPIRoutes(t *testing.T) {
 	}
 }
 
+func TestAPIPrefixFallbackStaysJSONOnMethodMismatch(t *testing.T) {
+	// Regression: stdlib ServeMux does NOT return 405 for a wrong-method
+	// request against a registered path when a less-specific catch-all ("/")
+	// also matches -- it silently dispatches to the catch-all instead. Without
+	// the /api/ prefix fallback, POST /api/v1/me (only GET is registered)
+	// would be served by the web handler as an HTML 404 page.
+	h := buildHandler(Deps{Web: web.NewHandler(web.Deps{})})
+
+	for _, tc := range []struct{ method, path string }{
+		{http.MethodPost, "/api/v1/me"},            // registered path, wrong method
+		{http.MethodGet, "/api/v1/does-not-exist"}, // unregistered path
+	} {
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, httptest.NewRequest(tc.method, tc.path, nil))
+		if rec.Code != http.StatusNotFound {
+			t.Fatalf("%s %s = %d, want 404", tc.method, tc.path, rec.Code)
+		}
+		if ct := rec.Header().Get("Content-Type"); ct != "application/json" {
+			t.Fatalf("%s %s Content-Type = %q, want application/json (leaked to the web handler?)", tc.method, tc.path, ct)
+		}
+	}
+}
+
 func TestBuildHandlerWithoutWebHasNoCatchAll(t *testing.T) {
 	h := buildHandler(Deps{})
 	rec := httptest.NewRecorder()
