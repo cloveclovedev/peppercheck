@@ -94,6 +94,63 @@ func TestLegacyRoutesAre404NotRedirect(t *testing.T) {
 	}
 }
 
+func TestLegalPagesRender(t *testing.T) {
+	for _, page := range []string{"privacy", "terms", "refund", "tokushoho"} {
+		for _, loc := range []string{"en", "ja"} {
+			rec := httptest.NewRecorder()
+			newTestHandler().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/"+loc+"/legal/"+page, nil))
+			if rec.Code != http.StatusOK {
+				t.Fatalf("%s/%s status = %d", loc, page, rec.Code)
+			}
+			if !strings.Contains(rec.Body.String(), `hreflang="ja"`) {
+				t.Fatalf("%s/%s missing hreflang", loc, page)
+			}
+		}
+	}
+}
+
+func TestUnknownLegalPageIs404(t *testing.T) {
+	rec := httptest.NewRecorder()
+	newTestHandler().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/en/legal/nope", nil))
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("status = %d", rec.Code)
+	}
+}
+
+func TestTokushohoShowsAllThreePlanPrices(t *testing.T) {
+	// The current page only shows the dead Stripe Web Checkout prices
+	// (subscription is IAP-only); this asserts the real, reviewed IAP price
+	// points for all three plans, not just Premium.
+	rec := httptest.NewRecorder()
+	newTestHandler().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/ja/legal/tokushoho", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d", rec.Code)
+	}
+	body := rec.Body.String()
+	for _, want := range []string{"650", "1,280", "2,480"} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("tokushoho page missing formatted price %q; body=%s", want, body)
+		}
+	}
+}
+
+func TestFormatJPY(t *testing.T) {
+	for _, tc := range []struct {
+		in   int
+		want string
+	}{
+		{0, "0"},
+		{650, "650"},
+		{1280, "1,280"},
+		{2480, "2,480"},
+		{1000000, "1,000,000"},
+	} {
+		if got := formatJPY(tc.in); got != tc.want {
+			t.Fatalf("formatJPY(%d) = %q, want %q", tc.in, got, tc.want)
+		}
+	}
+}
+
 func TestSecurityHeadersOnEveryResponse(t *testing.T) {
 	rec := httptest.NewRecorder()
 	newTestHandler().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/en", nil))

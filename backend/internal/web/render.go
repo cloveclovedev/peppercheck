@@ -15,13 +15,15 @@ import (
 var templatesFS embed.FS
 
 // pageData is the data every template receives. Later Phase 3b sub-issues
-// (legal pages, tokushoho price, account-deletion form) extend this struct
-// as they add pages that need it.
+// (account-deletion form) extend this struct as they add pages that need it.
 type pageData struct {
 	Locale     string
 	Title      string
 	Hreflang   []alt
 	LangSwitch []alt
+	// PriceLines is only set for the tokushoho page: formatted
+	// "<plan name> ¥<amount>" strings, one per subscription plan.
+	PriceLines []string
 }
 
 // langLabel is the language-switcher display label for a locale code, e.g.
@@ -40,8 +42,12 @@ func langLabel(locale string) string {
 // block. Every templates/<name>.gohtml auto-registers as page <name>.
 var pages = parsePages()
 
+// list lets a template build an ordered string slice inline (e.g. an item
+// key list for a {{range}}) without a Go-side helper per page.
+func list(items ...string) []string { return items }
+
 func parsePages() map[string]*template.Template {
-	fm := template.FuncMap{"t": cat.T, "langLabel": langLabel}
+	fm := template.FuncMap{"t": cat.T, "langLabel": langLabel, "list": list}
 	entries, err := fs.Glob(templatesFS, "templates/*.gohtml")
 	if err != nil {
 		panic("web: glob templates: " + err.Error())

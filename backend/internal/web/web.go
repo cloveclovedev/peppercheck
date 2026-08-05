@@ -5,8 +5,10 @@
 package web
 
 import (
+	"fmt"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -36,6 +38,56 @@ func NewHandler(d Deps) *Handler {
 // and served same-origin), so this is strict: no scripts, no framing, forms
 // only to self. data: is allowed for images (favicons/inline SVG) only.
 const contentSecurityPolicy = "default-src 'self'; script-src 'none'; style-src 'self'; font-src 'self'; img-src 'self' data:; form-action 'self'; base-uri 'self'; frame-ancestors 'none'; object-src 'none'"
+
+// Reviewed IAP subscription prices (JPY/month) shown on the tokushoho page.
+// These are Apple's confirmed subscription tiers (docs/designs/2026-05-09-ios-iap-design.md);
+// Google Play is pending reconciliation to the same values via issue #411.
+// Do NOT resurrect the `subscription_plan_prices` provider='stripe' seed
+// rows (¥480/¥980/¥1,980) -- those are for the disabled web Stripe Checkout
+// path and are not what subscribers actually pay.
+const (
+	lightPriceJPY    = 650
+	standardPriceJPY = 1280
+	premiumPriceJPY  = 2480
+)
+
+// tokushohoPriceLines builds the localized, formatted price lines shown in
+// the tokushoho price row, e.g. "Light Plan ¥650" / "ライトプラン ¥650".
+func tokushohoPriceLines(locale string) []string {
+	plans := []struct {
+		key string
+		jpy int
+	}{
+		{"light", lightPriceJPY},
+		{"standard", standardPriceJPY},
+		{"premium", premiumPriceJPY},
+	}
+	lines := make([]string, 0, len(plans))
+	for _, p := range plans {
+		name := cat.T(locale, "Tokushoho.plans."+p.key)
+		lines = append(lines, fmt.Sprintf("%s ¥%s", name, formatJPY(p.jpy)))
+	}
+	return lines
+}
+
+// formatJPY adds thousands separators to a JPY yen amount, e.g. 2480 -> "2,480".
+func formatJPY(n int) string {
+	s := strconv.Itoa(n)
+	if len(s) <= 3 {
+		return s
+	}
+	var out strings.Builder
+	first := len(s) % 3
+	if first == 0 {
+		first = 3
+	}
+	out.WriteString(s[:first])
+	for i := first; i < len(s); i += 3 {
+		out.WriteByte(',')
+		out.WriteString(s[i : i+3])
+	}
+	return out.String()
+}
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Security headers on every web response (set before any body/redirect write).
@@ -69,6 +121,25 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case len(rest) == 0: // localized home
 		h.render(w, http.StatusOK, "home", h.page(r, locale, "Meta.defaultTitle", ""))
+	case len(rest) == 2 && rest[0] == "legal":
+		h.serveLegal(w, r, locale, rest[1])
+	default:
+		h.renderNotFound(w, r, locale)
+	}
+}
+
+func (h *Handler) serveLegal(w http.ResponseWriter, r *http.Request, locale, page string) {
+	switch page {
+	case "privacy":
+		h.render(w, http.StatusOK, "legal_privacy", h.page(r, locale, "Privacy.title", "/legal/privacy"))
+	case "terms":
+		h.render(w, http.StatusOK, "legal_terms", h.page(r, locale, "Terms.title", "/legal/terms"))
+	case "refund":
+		h.render(w, http.StatusOK, "legal_refund", h.page(r, locale, "Refund.title", "/legal/refund"))
+	case "tokushoho":
+		data := h.page(r, locale, "Tokushoho.title", "/legal/tokushoho")
+		data.PriceLines = tokushohoPriceLines(locale)
+		h.render(w, http.StatusOK, "legal_tokushoho", data)
 	default:
 		h.renderNotFound(w, r, locale)
 	}

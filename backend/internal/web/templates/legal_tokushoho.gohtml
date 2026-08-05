@@ -1,0 +1,62 @@
+{{define "content"}}
+<article>
+<h1>{{t .Locale "Tokushoho.title"}}</h1>
+
+<dl>
+<div>
+<dt>{{t .Locale "Tokushoho.seller.label"}}</dt>
+<dd>{{t .Locale "Tokushoho.seller.value"}}</dd>
+</div>
+<div>
+<dt>{{t .Locale "Tokushoho.address.label"}}</dt>
+<dd>{{t .Locale "Tokushoho.address.value"}}</dd>
+</div>
+<div>
+<dt>{{t .Locale "Tokushoho.phone.label"}}</dt>
+<dd>{{t .Locale "Tokushoho.phone.value"}}</dd>
+</div>
+<div>
+<dt>{{t .Locale "Tokushoho.contact.label"}}</dt>
+<dd><a href="mailto:{{t .Locale "Meta.contactEmail"}}">{{t .Locale "Meta.contactEmail"}}</a></dd>
+</div>
+<div>
+<dt>{{t .Locale "Tokushoho.representative.label"}}</dt>
+<dd>{{t .Locale "Tokushoho.representative.value"}}</dd>
+</div>
+<div>
+<dt>{{t .Locale "Tokushoho.additionalFees.label"}}</dt>
+<dd>{{t .Locale "Tokushoho.additionalFees.value"}}</dd>
+</div>
+<div>
+<dt>{{t .Locale "Tokushoho.cancellation.label"}}</dt>
+<dd>
+<p><strong>{{t .Locale "Tokushoho.cancellation.normalHeading"}}</strong><br>{{t .Locale "Tokushoho.cancellation.normalBody"}}</p>
+<p><strong>{{t .Locale "Tokushoho.cancellation.defectHeading"}}</strong><br>{{t .Locale "Tokushoho.cancellation.defectBody"}}</p>
+<p><a href="/{{.Locale}}/legal/refund">{{t .Locale "Tokushoho.cancellation.details"}}</a></p>
+</dd>
+</div>
+<div>
+<dt>{{t .Locale "Tokushoho.delivery.label"}}</dt>
+<dd>{{t .Locale "Tokushoho.delivery.value"}}</dd>
+</div>
+<div>
+<dt>{{t .Locale "Tokushoho.payment.label"}}</dt>
+<dd>{{t .Locale "Tokushoho.payment.value"}}</dd>
+</div>
+<div>
+<dt>{{t .Locale "Tokushoho.paymentPeriod.label"}}</dt>
+<dd>{{t .Locale "Tokushoho.paymentPeriod.value"}}</dd>
+</div>
+<div>
+<dt>{{t .Locale "Tokushoho.price.label"}}</dt>
+<dd>
+<p>{{range $i, $line := .PriceLines}}{{if $i}}、{{end}}{{$line}}{{t $.Locale "Tokushoho.price.perMonth"}}{{end}}{{t .Locale "Tokushoho.price.taxIncluded"}}</p>
+</dd>
+</div>
+<div>
+<dt>{{t .Locale "Tokushoho.environment.label"}}</dt>
+<dd>{{t .Locale "Tokushoho.environment.value"}}</dd>
+</div>
+</dl>
+</article>
+{{end}}
