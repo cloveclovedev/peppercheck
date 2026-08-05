@@ -40,11 +40,19 @@ func NewHandler(d Deps) *Handler {
 const contentSecurityPolicy = "default-src 'self'; script-src 'none'; style-src 'self'; font-src 'self'; img-src 'self' data:; form-action 'self'; base-uri 'self'; frame-ancestors 'none'; object-src 'none'"
 
 // Reviewed IAP subscription prices (JPY/month) shown on the tokushoho page.
-// These are Apple's confirmed subscription tiers (docs/designs/2026-05-09-ios-iap-design.md);
-// Google Play is pending reconciliation to the same values via issue #411.
+// These are Apple's confirmed subscription tiers (docs/designs/2026-05-09-ios-iap-design.md).
 // Do NOT resurrect the `subscription_plan_prices` provider='stripe' seed
 // rows (¥480/¥980/¥1,980) -- those are for the disabled web Stripe Checkout
 // path and are not what subscribers actually pay.
+//
+// RELEASE GATE: Google Play's live Premium price is still ¥2,580 as of this
+// commit (issue #411, blocked on #402) -- this constant anticipates the
+// reconciled value. This page is safe to merge now because the whole
+// refactor is big-bang on the integration branch and does not reach
+// production until the Phase 7 cutover (see the design doc §5.1); #477
+// Phase 5 already tracks resolving #411 as a pre-cutover requirement. Do
+// NOT let this value reach production before Google Play is actually
+// updated to match.
 const (
 	lightPriceJPY    = 650
 	standardPriceJPY = 1280
