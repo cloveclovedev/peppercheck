@@ -16,6 +16,8 @@ import (
 	"errors"
 	"fmt"
 	"time"
+
+	"github.com/cloveclovedev/peppercheck/backend/internal/core/database"
 )
 
 // DefaultLease is how long a claimed job stays leased before another worker may
@@ -51,9 +53,17 @@ type EnqueueOpts struct {
 	IdempotencyKey string
 }
 
-// Enqueue inserts a job. When IdempotencyKey collides with an existing row it
-// returns ("", nil) — the duplicate is a no-op, not an error.
+// Enqueue inserts a job on the store's pool. When IdempotencyKey collides with
+// an existing row it returns ("", nil) — the duplicate is a no-op, not an error.
 func (s *Store) Enqueue(ctx context.Context, kind string, payload any, opts EnqueueOpts) (string, error) {
+	return s.EnqueueInTx(ctx, s.db, kind, payload, opts)
+}
+
+// EnqueueInTx inserts a job using the caller's transaction (any database.Querier,
+// which *sql.Tx satisfies), so the enqueue commits or rolls back atomically with
+// the caller's other writes — the transactional-outbox pattern. Like Enqueue, a
+// colliding IdempotencyKey returns ("", nil).
+func (s *Store) EnqueueInTx(ctx context.Context, q database.Querier, kind string, payload any, opts EnqueueOpts) (string, error) {
 	raw, err := json.Marshal(payload)
 	if err != nil {
 		return "", fmt.Errorf("marshal payload: %w", err)
@@ -70,7 +80,7 @@ func (s *Store) Enqueue(ctx context.Context, kind string, payload any, opts Enqu
 		key = opts.IdempotencyKey
 	}
 	var id string
-	err = s.db.QueryRowContext(ctx, `
+	err = q.QueryRowContext(ctx, `
 		INSERT INTO public.jobs (kind, payload, run_at, max_attempts, idempotency_key)
 		VALUES ($1, $2, COALESCE($3, now()), $4, $5)
 		ON CONFLICT (idempotency_key) DO NOTHING
