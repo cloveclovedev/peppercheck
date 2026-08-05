@@ -92,6 +92,15 @@ carries a 3a-touching change — `profiles.avatar_url` semantics, the profile
 service, and the Flutter avatar PATCH/read path move from persisting a URL to
 persisting a key + composing on read.
 
+**Existing rows need a migration, not just a semantics switch.** Phase 3a rows
+already hold absolute `https://…` values in `avatar_url`. Composing a public URL
+on read over an already-absolute value would double-prefix it, and Head/Delete
+would receive a URL where they now expect a key. #523 must **backfill existing
+`avatar_url` values to bare object keys** (strip the known public-domain prefix)
+before switching read semantics — or dual-read (treat a value containing `://`
+as already-absolute) during a transition window — rather than flipping the
+contract in place.
+
 ### 2. `core/objectstore` promotion
 
 Promote the provider-neutral S3 client out of `platform/r2` into
@@ -123,26 +132,39 @@ there), breaking one media class. In production the two S3 roles collapse to the
 R2 account endpoint and public-read stays the Cloudflare custom domain — the
 same split as today.
 
-**Both external bases must be request-derived, not static values.** Storage URLs
-(presigned PUT/GET and the public avatar URL) are composed and **signed by the
-Go server**, and SigV4 covers the host — so the client cannot rewrite it after
-the fact. The Flutter dev app applies `10.0.2.2` (Android) vs `127.0.0.1` (iOS)
-only when *it* builds the API base URL; that per-platform choice does **not**
-carry over to a server-emitted host. A single static external endpoint would
-therefore hand one of the two emulators an unreachable or wrongly-signed URL.
+**Request-derivation is a local-Garage-only mechanism; real R2 always uses
+configured static bases.** Storage URLs (presigned PUT/GET and the public avatar
+URL) are composed and **signed by the Go server**, and SigV4 covers the host —
+so the client cannot rewrite it after the fact. Locally the Flutter dev app
+applies `10.0.2.2` (Android) vs `127.0.0.1` (iOS) only when *it* builds the API
+base URL; that per-platform choice does **not** carry over to a server-emitted
+host, so a single static external endpoint would hand one of the two emulators
+an unreachable or wrongly-signed URL.
 
-Resolve it by deriving both the external S3-API and external public-read bases
-from the **incoming request's host** (the `Host` / `X-Forwarded-Host` that Caddy
-forwards), each routed to its own Garage port: a request that arrived via
-`10.0.2.2` gets `10.0.2.2`-based storage URLs, one via `127.0.0.1` gets
-`127.0.0.1`-based ones, and the SigV4 signature matches because the presign is
-computed against that same host. Caddy fronts both the API and Garage on that
-host, so the URLs route back to Garage. (An alternative — binding a single host
-LAN IP both emulators can reach — is more fragile and network-specific;
-request-derived is preferred.) In CI there is no emulator, so the request host
-is stable and this collapses to a single value. This corrects an earlier draft
-that claimed "no new per-platform axis": there is one, but it is satisfied by
-request-derived hosts rather than static per-platform config.
+For the **local Garage + Caddy** backend, resolve this by deriving both the
+external S3-API and external public-read bases from the **incoming request's
+host** (the `Host` / `X-Forwarded-Host` that Caddy forwards), each routed to its
+own Garage port: a request via `10.0.2.2` gets `10.0.2.2`-based URLs, one via
+`127.0.0.1` gets `127.0.0.1`-based ones, and the SigV4 signature matches because
+the presign is computed against that same host. Caddy fronts both the API and
+Garage on that host, so the URLs route back to Garage. (An alternative — binding
+a single host LAN IP both emulators can reach — is more fragile and
+network-specific; request-derived is preferred.)
+
+**This request-derivation must be gated to the Garage path only.** On the real
+R2 backend (production, and the operator opt-in override even when run locally),
+the S3-API base is the fixed `https://<account>.r2.cloudflarestorage.com` and
+public-read is the fixed `R2_PUBLIC_DOMAIN`; R2 presigns against its account
+endpoint and the production Caddyfile proxies only the app API, not R2. Deriving
+those bases from the request host there would sign uploads for
+`peppercheck.dev` / `staging.peppercheck.dev` and break real uploads. So #523
+must select the base source by backend (Garage → request-derived; R2 →
+configured static), not apply request-derivation universally — this is what
+keeps the "prod code path unchanged" goal true. In CI (Garage, no emulator) the
+request host is stable, so the local mechanism collapses to a single value
+anyway. This also corrects an earlier draft that claimed "no new per-platform
+axis": there is one for local Garage, satisfied by request-derived hosts rather
+than static per-platform config.
 
 ### 4. Garage is the default; real R2 is operator opt-in
 
@@ -245,7 +267,12 @@ path that works for avatars but breaks at evidence is not actually "done."
   `avatar_url`, and the public URL is composed on read from the request-local
   base. This touches existing 3a code (`profiles.avatar_url` semantics, the
   profile service, the Flutter avatar PATCH/read path) and converges avatars
-  onto the Phase 4b evidence `object_key`-only model.
+  onto the Phase 4b evidence `object_key`-only model. It also requires a
+  **one-time backfill** of existing absolute `avatar_url` rows to keys (or a
+  dual-read transition) — not an in-place semantics flip.
+- Request-derivation is **local-Garage-only**: #523 selects the base source by
+  backend (Garage → request-derived; real R2 → configured static account/
+  public-read endpoints), so the prod/opt-in-R2 code path is genuinely unchanged.
 - Fidelity gaps to verify against real R2 before shipping (operator opt-in):
   Cloudflare custom-domain CDN serving/cache/public-access toggle, R2's actual
   CORS enforcement, R2 not enforcing Content-Length (already backstopped by the
@@ -313,3 +340,12 @@ path that works for avatars but breaks at evidence is not actually "done."
   matches the split that already exists in prod (`r2.go` composes the public URL
   from `R2_PUBLIC_DOMAIN`, separate from the S3 endpoint), which the round-2
   request-derived fix had over-collapsed.
+- **2026-08-06** — Fifth Codex round (operator-requested). (1) **Scoped**
+  request-derivation to the local Garage/Caddy backend only: real R2 (prod and
+  the opt-in override) uses the fixed account S3 endpoint + `R2_PUBLIC_DOMAIN`,
+  and deriving from the request host there would sign uploads for
+  `peppercheck.dev`/`staging.peppercheck.dev` and break prod. #523 selects base
+  source by backend. (2) Added a **backfill** requirement: existing absolute
+  `avatar_url` rows must be normalized to object keys (or dual-read) before the
+  key + compose-on-read switch, to avoid double-prefixing and Head/Delete
+  receiving a URL instead of a key.
