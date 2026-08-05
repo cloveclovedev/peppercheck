@@ -93,20 +93,45 @@ Presigned URLs sign the host, so they must be signed with the host the client
 host the API container uses. Introduce two endpoints:
 
 - **internal** — server-side Head/Delete/List (`http://garage:3900` locally)
-- **external** — presigned PUT/GET (emulator-reachable, e.g. Android
-  `http://10.0.2.2:3900`, iOS sim `http://localhost:3900`)
+- **external** — presigned PUT/GET, and public-read URL composition
+  (client-reachable)
 
-In production both collapse to the single R2 endpoint. This seam is the one
-genuinely new design element; it reuses the **same host mapping the Flutter dev
-app already uses to reach the local Go API**, so it introduces no new
-per-platform axis.
+In production both collapse to the single R2 endpoint / Cloudflare custom
+domain.
+
+**The external base must be request-derived, not a single static value.**
+Storage URLs (presigned PUT/GET and the public avatar URL) are composed and
+**signed by the Go server**, and SigV4 covers the host — so the client cannot
+rewrite it after the fact. The Flutter dev app applies `10.0.2.2` (Android) vs
+`127.0.0.1` (iOS) only when *it* builds the API base URL; that per-platform
+choice does **not** carry over to a server-emitted host. A single configured
+external endpoint would therefore hand one of the two emulators an unreachable
+or wrongly-signed URL.
+
+Resolve it by deriving the external base from the **incoming request's host**
+(the `Host` / `X-Forwarded-Host` that Caddy forwards): a request that arrived
+via `10.0.2.2` gets `10.0.2.2`-based storage URLs, one via `127.0.0.1` gets
+`127.0.0.1`-based ones, and the SigV4 signature matches because the presign is
+computed against that same host. Caddy fronts both the API and Garage on that
+host, so the URL routes back to Garage. (An alternative — binding a single host
+LAN IP both emulators can reach — is more fragile and network-specific;
+request-derived is preferred.) In CI there is no emulator, so the request host
+is stable and this collapses to a single value. This corrects an earlier draft
+that claimed "no new per-platform axis": there is one, but it is satisfied by
+request-derived hosts rather than static per-platform config.
 
 ### 4. Garage is the default; real R2 is operator opt-in
 
-The local Compose stack ships a Garage service plus a bucket/key/CORS bootstrap
-as the **default** backend (zero flags). Real R2 is an operator opt-in override
-(mirrors the BWS secret-injection opt-in default, #480/#482). CI uses Garage
-with internal == external (no emulator, no host split).
+The local Compose stack ships a Garage service plus a bootstrap as the
+**default** backend (zero flags). The bootstrap must create: both buckets
+(public + private), an access key granting both, CORS rules on both (browser
+presigned upload/download), and — critically — **website exposure on the public
+bucket** (`garage bucket website --allow`, i.e. `PutBucketWebsite`), without
+which Garage's web port (3902) will not serve the bucket anonymously even though
+the bucket exists. Omitting this is a silent trap: presigned PUT/Head/List can
+all pass while the stable avatar URL still 404s. Real R2 is an operator opt-in
+override (mirrors the BWS secret-injection opt-in default, #480/#482). CI uses
+Garage with internal == external (no emulator, no host split).
 
 Local reproduction per class:
 
@@ -133,17 +158,20 @@ pointing `R2_PUBLIC_DOMAIN` at `garage:3902`. Three facts collide:
 Naively repointing `R2_PUBLIC_DOMAIN` therefore yields a stable URL the emulator
 cannot actually fetch. Resolve it by **fronting Garage's web port with the
 stack's existing Caddy reverse proxy** (the Compose stack already runs Caddy):
-Caddy owns the `Host`-header → public-bucket routing and exposes one stable
-public host that the emulator reaches through the **same host mapping already
-used for the Go API** (`10.0.2.2` / `127.0.0.1`), so no `Host`-header handling
-or per-platform axis leaks into app config. Because local serving is http on a
-non-443 port, the public-base config must carry a **scheme (and port)** locally
-— either widen the avatar public-URL config from a bare hostname to a full base
-URL, or terminate TLS at Caddy so the existing `https://…/<key>` composition
-still holds. Production is unaffected: the Cloudflare custom domain already
-provides scheme + a stable host, so both collapse to today's behavior. The
-implementation issue (#523) must not treat this as a config-only change; it
-carries the small `PublicURL`/config widening described here.
+Caddy owns the `Host`-header → public-bucket routing so no `Host`-header
+handling leaks into app config. The public host itself is **request-derived**
+per §3 — the server composes the avatar URL from the host the request arrived
+on, so Android (`10.0.2.2`) and iOS (`127.0.0.1`) each get a fetchable URL
+without static per-platform config. Because local serving is http on a non-443
+port, the public-base composition must carry a **scheme (and port)** — either
+widen the avatar public-URL config/logic from a bare hostname to a full,
+request-derived base URL, or terminate TLS at Caddy so the existing
+`https://…/<key>` composition still holds. Production is unaffected: the
+Cloudflare custom domain already provides scheme + a stable host, so the
+request-derived base collapses to today's single value. The implementation issue
+(#523) must not treat this as a config-only change; it carries the
+request-derived `PublicURL` widening described here, and the public-bucket
+website-allow bootstrap step above.
 
 ### 5. Sequencing — land within Phase 4b
 
@@ -178,9 +206,14 @@ path that works for avatars but breaks at evidence is not actually "done."
 
 ## Consequences
 
-- One config axis is added — the operator opt-in R2 override — and the
-  internal/external endpoint seam. No new per-platform axis (rides the existing
-  API host mapping).
+- Config axes added: the operator opt-in R2 override, and the internal/external
+  endpoint seam whose **external base is request-derived** (from the
+  Caddy-forwarded host) so it stays per-platform-safe without static
+  Android/iOS config. This is a real mechanism, not a no-op — the Go server must
+  compose/sign storage URLs from the request host, not a fixed env value.
+- The Garage bootstrap must include **website-allow on the public bucket**
+  (`PutBucketWebsite`); without it the anonymous avatar URL 404s even though
+  presigned PUT/Head/List pass.
 - Fidelity gaps to verify against real R2 before shipping (operator opt-in):
   Cloudflare custom-domain CDN serving/cache/public-access toggle, R2's actual
   CORS enforcement, R2 not enforcing Content-Length (already backstopped by the
@@ -226,3 +259,11 @@ path that works for avatars but breaks at evidence is not actually "done."
   iOS `127.0.0.1`). Resolution: front Garage's web port with the existing Caddy
   proxy and widen the avatar public-URL config to a scheme-carrying base URL;
   prod unchanged.
+- **2026-08-06** — Second Codex round on PR #526. (1) **Corrected** the
+  overstated "no new per-platform axis" claim in §3: server-emitted, SigV4-signed
+  storage URLs cannot be client-rewritten, so a single static external endpoint
+  breaks one of Android/iOS. The external base is now specified as
+  **request-derived** (Caddy-forwarded host), which is per-platform-safe without
+  static config. (2) Added **public-bucket website-allow** (`PutBucketWebsite`)
+  to the Garage bootstrap contract, without which the anonymous avatar URL 404s
+  despite passing presigned PUT/Head/List.
