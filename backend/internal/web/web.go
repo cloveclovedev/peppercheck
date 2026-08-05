@@ -45,7 +45,13 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	p := r.URL.Path
 	if p == "/" {
-		http.Redirect(w, r, "/"+defaultLocale, http.StatusMovedPermanently)
+		target := "/" + defaultLocale
+		if r.URL.RawQuery != "" {
+			// Preserve campaign/attribution query params (e.g. utm_source)
+			// through the locale redirect instead of dropping them.
+			target += "?" + r.URL.RawQuery
+		}
+		http.Redirect(w, r, target, http.StatusMovedPermanently)
 		return
 	}
 	segs := strings.Split(strings.Trim(p, "/"), "/")
@@ -54,7 +60,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// auth/subscription routes are dropped entirely (P3b-D15, no
 		// redirect); everything else is a plain 404 too. Stripe Connect's
 		// bare-path handling is added when that page lands.
-		h.renderNotFound(w, defaultLocale)
+		h.renderNotFound(w, r, defaultLocale)
 		return
 	}
 	locale := segs[0]
@@ -62,24 +68,38 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	switch {
 	case len(rest) == 0: // localized home
-		h.render(w, http.StatusOK, "home", h.page(locale, "Meta.defaultTitle", ""))
+		h.render(w, http.StatusOK, "home", h.page(r, locale, "Meta.defaultTitle", ""))
 	default:
-		h.renderNotFound(w, locale)
+		h.renderNotFound(w, r, locale)
 	}
 }
 
-func (h *Handler) renderNotFound(w http.ResponseWriter, locale string) {
-	h.render(w, http.StatusNotFound, "notfound", h.page(locale, "NotFound.title", ""))
+func (h *Handler) renderNotFound(w http.ResponseWriter, r *http.Request, locale string) {
+	h.render(w, http.StatusNotFound, "notfound", h.page(r, locale, "NotFound.title", ""))
+}
+
+// requestOrigin returns the scheme+host the current request arrived on, for
+// building fully-qualified URLs (Google requires hreflang alternates to be
+// absolute). Caddy sets X-Forwarded-Proto when reverse-proxying; https is the
+// correct default for every real deployment (this is a public site, never
+// served over plain http in staging/production).
+func requestOrigin(r *http.Request) string {
+	scheme := "https"
+	if proto := r.Header.Get("X-Forwarded-Proto"); proto != "" {
+		scheme = proto
+	}
+	return scheme + "://" + r.Host
 }
 
 // page builds pageData for a locale, a title message key, and the
 // locale-relative path (used for hreflang + the language switcher).
-func (h *Handler) page(locale, titleKey, relPath string) pageData {
-	alts := hreflangAlternates(relPath)
+// Hreflang tags get absolute URLs (requestOrigin); the language switcher's
+// nav links stay relative, matching every other in-page link.
+func (h *Handler) page(r *http.Request, locale, titleKey, relPath string) pageData {
 	return pageData{
 		Locale:     locale,
 		Title:      cat.T(locale, titleKey),
-		Hreflang:   alts,
-		LangSwitch: alts[:len(supportedLocales)],
+		Hreflang:   hreflangAlternates(requestOrigin(r), relPath),
+		LangSwitch: hreflangAlternates("", relPath)[:len(supportedLocales)],
 	}
 }

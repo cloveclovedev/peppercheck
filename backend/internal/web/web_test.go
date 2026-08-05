@@ -20,6 +20,19 @@ func TestRootRedirectsToDefaultLocale(t *testing.T) {
 	}
 }
 
+func TestRootRedirectPreservesQueryString(t *testing.T) {
+	// Campaign/attribution params (utm_source, etc.) must survive the locale
+	// redirect instead of being dropped at the root.
+	rec := httptest.NewRecorder()
+	newTestHandler().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/?utm_source=ad&utm_campaign=x", nil))
+	if rec.Code != http.StatusMovedPermanently {
+		t.Fatalf("status = %d", rec.Code)
+	}
+	if loc := rec.Header().Get("Location"); loc != "/en?utm_source=ad&utm_campaign=x" {
+		t.Fatalf("Location = %q, want query string preserved", loc)
+	}
+}
+
 func TestLocalizedHomeRenders(t *testing.T) {
 	for _, tc := range []struct{ loc, want string }{
 		{"en", "Peer Referee Platform for Tasks"},
@@ -39,6 +52,16 @@ func TestLocalizedHomeRenders(t *testing.T) {
 		}
 		if !strings.Contains(body, `hreflang="ja"`) || !strings.Contains(body, `hreflang="x-default"`) {
 			t.Fatalf("%s home missing hreflang tags", tc.loc)
+		}
+		// Google requires hreflang alternates to be fully qualified (scheme +
+		// host), not relative paths.
+		if !strings.Contains(body, `hreflang="en" href="https://example.com/en"`) {
+			t.Fatalf("%s home hreflang href is not absolute; body=%s", tc.loc, body)
+		}
+		// The language switcher's visible nav links stay relative, unlike the
+		// hreflang tags -- distinct hrefs to the same locale in the same page.
+		if !strings.Contains(body, `<a href="/en">EN</a>`) {
+			t.Fatalf("%s home language switcher missing relative EN link", tc.loc)
 		}
 		if !strings.Contains(body, `lang="`+tc.loc+`"`) {
 			t.Fatalf("%s home missing <html lang>", tc.loc)
