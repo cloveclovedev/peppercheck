@@ -5,23 +5,43 @@
 package web
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
+
+	"github.com/cloveclovedev/peppercheck/backend/internal/core/ratelimit"
 )
 
-// Deps are the web handler's dependencies. Later Phase 3b sub-issues add
-// fields (e.g. the account-deletion service).
+// deletionRequester is the account-deletion use case; accountdeletion.Service
+// satisfies it. A consumer-declared interface (web depends on it, not the
+// other way around) keeps internal/web free of an internal/accountdeletion
+// import cycle concern and lets tests use a fake.
+type deletionRequester interface {
+	RequestDeletion(ctx context.Context, claimedEmail string) error
+}
+
+// Deps are the web handler's dependencies.
 type Deps struct {
 	Logger *slog.Logger
+	// Deletion, FormToken, and RateLim back the account-deletion request
+	// form. When any is nil (e.g. skeleton tests), the delete page renders
+	// instructions only, with no form -- see accountDelete/deletePage.
+	Deletion  deletionRequester
+	FormToken *FormToken
+	RateLim   *ratelimit.TokenBucket
 }
 
 // Handler serves the server-rendered public web on every path not owned by
 // the JSON API. It is mounted as the ServeMux catch-all ("/").
 type Handler struct {
-	logger *slog.Logger
+	logger    *slog.Logger
+	deletion  deletionRequester
+	formToken *FormToken
+	rateLim   *ratelimit.TokenBucket
 }
 
 // NewHandler builds the web Handler. A nil logger falls back to slog.Default().
@@ -30,7 +50,7 @@ func NewHandler(d Deps) *Handler {
 	if l == nil {
 		l = slog.Default()
 	}
-	return &Handler{logger: l}
+	return &Handler{logger: l, deletion: d.Deletion, formToken: d.FormToken, rateLim: d.RateLim}
 }
 
 // contentSecurityPolicy locks the pages to their own self-contained origin.
@@ -140,6 +160,8 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.serveLegal(w, r, locale, rest[1])
 	case len(rest) == 3 && rest[0] == "stripe" && rest[1] == "connect":
 		h.serveStripeConnect(w, r, locale, rest[2])
+	case len(rest) == 2 && rest[0] == "account" && rest[1] == "delete":
+		h.accountDelete(w, r, locale)
 	default:
 		h.renderNotFound(w, r, locale)
 	}
@@ -171,6 +193,105 @@ func (h *Handler) serveLegal(w http.ResponseWriter, r *http.Request, locale, pag
 	default:
 		h.renderNotFound(w, r, locale)
 	}
+}
+
+// maxDeletionFormBytes bounds the public POST body -- this form is tiny.
+const maxDeletionFormBytes = 4 << 10 // 4 KiB
+
+// AccountDeletionRateLimit{Burst,PerHour,IdleEvict} parameterize the
+// ratelimit.TokenBucket main.go constructs for the public deletion form: a
+// low, deliberately tight per-IP volume. Unlike the authenticated
+// avatar-upload limiter (burst 10 / 10 per hour), this endpoint has no auth
+// to fall back on, so it favors blocking casual abuse over convenience.
+// Escalate to Cloudflare Turnstile if real spam gets past this (recorded in
+// the design doc's follow-ups).
+const (
+	AccountDeletionRateLimitBurst     = 5
+	AccountDeletionRateLimitPerHour   = 5
+	AccountDeletionRateLimitIdleEvict = time.Hour
+)
+
+func (h *Handler) accountDelete(w http.ResponseWriter, r *http.Request, locale string) {
+	switch r.Method {
+	case http.MethodGet:
+		submitted := r.URL.Query().Get("submitted") == "1"
+		h.render(w, http.StatusOK, "account_delete", h.deletePage(r, locale, submitted))
+	case http.MethodPost:
+		h.handleDeletePost(w, r, locale)
+	default:
+		w.Header().Set("Allow", "GET, POST")
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+// deletePage builds pageData for the account-deletion page. ShowForm is only
+// true when every dependency the form needs is actually wired.
+func (h *Handler) deletePage(r *http.Request, locale string, submitted bool) pageData {
+	data := h.page(r, locale, "AccountDelete.title", "/account/delete")
+	data.Submitted = submitted
+	if !submitted && h.deletion != nil && h.formToken != nil {
+		data.ShowForm = true
+		data.FormToken = h.formToken.Issue(time.Now())
+	}
+	return data
+}
+
+func (h *Handler) handleDeletePost(w http.ResponseWriter, r *http.Request, locale string) {
+	redirect := "/" + locale + "/account/delete?submitted=1" // uniform response
+	if h.deletion == nil || h.formToken == nil {
+		// Dependencies not wired (shouldn't happen outside tests/skeleton) --
+		// fail closed to the uniform redirect rather than a 500 that could
+		// hint at server state.
+		http.Redirect(w, r, redirect, http.StatusSeeOther)
+		return
+	}
+	// Rate limit first, before touching the body.
+	if h.rateLim != nil {
+		if allowed, _ := h.rateLim.Allow(clientIP(r)); !allowed {
+			http.Error(w, "too many requests", http.StatusTooManyRequests)
+			return
+		}
+	}
+	// Bound the body BEFORE parsing (defends the public, unauthenticated form).
+	r.Body = http.MaxBytesReader(w, r.Body, maxDeletionFormBytes)
+	if err := r.ParseForm(); err != nil {
+		http.Redirect(w, r, redirect, http.StatusSeeOther)
+		return
+	}
+	// Honeypot: any value means bot -> silently accept, do nothing.
+	if r.PostForm.Get("website") != "" {
+		http.Redirect(w, r, redirect, http.StatusSeeOther)
+		return
+	}
+	// Consent is mandatory: without the checkbox, record nothing.
+	if r.PostForm.Get("consent") != "on" {
+		http.Redirect(w, r, redirect, http.StatusSeeOther)
+		return
+	}
+	// Form token: invalid/expired/too-fast -> silently accept, do nothing.
+	if h.formToken.Verify(r.PostForm.Get("form_token"), time.Now()) != nil {
+		http.Redirect(w, r, redirect, http.StatusSeeOther)
+		return
+	}
+	email := r.PostForm.Get("email")
+	if err := h.deletion.RequestDeletion(r.Context(), email); err != nil {
+		// Infrastructure failure (e.g. DB down): the request was NOT saved, so
+		// we must NOT tell the user it was received. Return a generic 503
+		// retry page. This is independent of whether an account matched
+		// (RequestDeletion returns nil for both match and no-match), so it
+		// leaks no account existence. No PII in the log line.
+		h.logger.Error("web_deletion_request_failed", slog.Any("error", err))
+		h.renderError(w, r, locale, http.StatusServiceUnavailable)
+		return
+	}
+	http.Redirect(w, r, redirect, http.StatusSeeOther)
+}
+
+// renderError renders the shared error page (used for the 503 on infra
+// failure). Monitoring alerts fire off the logged web_deletion_request_failed
+// / 5xx rate, not this page.
+func (h *Handler) renderError(w http.ResponseWriter, r *http.Request, locale string, status int) {
+	h.render(w, status, "error", h.page(r, locale, "Error.title", ""))
 }
 
 func (h *Handler) renderNotFound(w http.ResponseWriter, r *http.Request, locale string) {

@@ -14,8 +14,7 @@ import (
 //go:embed templates/*.gohtml
 var templatesFS embed.FS
 
-// pageData is the data every template receives. Later Phase 3b sub-issues
-// (account-deletion form) extend this struct as they add pages that need it.
+// pageData is the data every template receives.
 type pageData struct {
 	Locale     string
 	Title      string
@@ -24,6 +23,10 @@ type pageData struct {
 	// PriceLines is only set for the tokushoho page: formatted
 	// "<plan name> ¥<amount>" strings, one per subscription plan.
 	PriceLines []string
+	// account_delete page only:
+	ShowForm  bool   // false when Deletion/FormToken aren't wired (renders instructions only, no form)
+	Submitted bool   // true after a successful POST (?submitted=1); shows the uniform confirmation instead of the form
+	FormToken string // hidden form_token field value
 }
 
 // langLabel is the language-switcher display label for a locale code, e.g.

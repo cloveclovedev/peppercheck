@@ -88,12 +88,13 @@ project the runner's token can read.
    only by the restore drill (Task 16/21, Group D/E) — B2 read key, cipher
    passphrase, age private key, Firebase test credential — and must never be
    readable by the primary deploy pipeline.
-2. Populate the following 10 secrets in each of the staging and production
+2. Populate the following 11 secrets in each of the staging and production
    BWS projects — this is the exact set `ship-deployment.sh` loops over
    (`database_url postgres_superuser_pw postgres_app_pw postgres_migrator_pw
    postgres_backup_pw migrator_database_url pgbackrest_cipher b2_key_id
-   b2_key_secret ghcr_token`), which is also the exact allowlist enforced by
-   `backend/scripts/write-secret.sh` on the Droplet side:
+   b2_key_secret web_form_signing_key ghcr_token`), which is also the exact
+   allowlist enforced by `backend/scripts/write-secret.sh` on the Droplet
+   side:
 
    | Secret name | Consumer (compose.prod.yaml) | Notes |
    |---|---|---|
@@ -106,6 +107,7 @@ project the runner's token can read.
    | `pgbackrest_cipher` | `postgres`, `backup` | pgBackRest repo cipher passphrase (symmetric, §8.5 of the design doc) |
    | `b2_key_id` | `postgres`, `backup` | B2 application key ID |
    | `b2_key_secret` | `postgres`, `backup` | B2 application key secret |
+   | `web_form_signing_key` | `api`, `worker` (`WEB_FORM_SIGNING_KEY_FILE`) | HMAC key for the Phase 3b account-deletion form token (`internal/web`); any random string, `config.Load()` fails closed if missing |
    | `ghcr_token` | consumed by `remote-deploy.sh`'s scoped `docker login ghcr.io`, not a container secret | read-only GHCR pull token, see §1.4 |
 
    `AGE_RECIPIENT` (the age *public* key) is deliberately **not** in this
@@ -310,8 +312,8 @@ After `deploy-staging` finishes green, verify manually:
   fallback.
 - On the Droplet, `/opt/peppercheck/deployments/<sha>-<run_id>/secrets/*`
   files exist and are all `0400`. `remote-deploy.sh` chowns each one to its
-  consumer UID — `65532` for `database_url`, `999` for the
-  postgres/pgBackRest secrets, `0` for `migrator_database_url` — with the one
+  consumer UID — `65532` for `database_url`/`web_form_signing_key`, `999`
+  for the postgres/pgBackRest secrets, `0` for `migrator_database_url` — with the one
   exception of `ghcr_token`, which stays owned by the `deploy` user (it is
   consumed by the runner's scoped `docker login ghcr.io`, not mounted into
   any container).

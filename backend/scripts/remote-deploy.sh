@@ -73,14 +73,14 @@ compose --profile deploy pull
 # are mounted.
 #
 # UID mapping (matches compose.prod.yaml's consumers and the secret allowlist):
-#   database_url                                            -> 65532 (Go `nonroot`, api/worker)
+#   database_url / web_form_signing_key                     -> 65532 (Go `nonroot`, api/worker)
 #   postgres_* / pgbackrest_cipher / b2_key_id / b2_key_secret -> 999 (postgres image's `postgres` user)
 #   migrator_database_url                                   -> 0 (root -- the Atlas one-shot image runs as root by default)
 #   ghcr_token is left alone -- it stays deploy-owned, already consumed by the login above, not read by any container.
 docker run --rm --network none --pull never --entrypoint sh \
   -v "$d/secrets":/s \
   "$IMAGE_POSTGRES" -c '
-    chown 65532 /s/database_url
+    chown 65532 /s/database_url /s/web_form_signing_key
     chown 999 /s/postgres_* /s/pgbackrest_cipher /s/b2_*
     chown 0 /s/migrator_database_url
     chmod 0400 /s/*

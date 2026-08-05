@@ -63,6 +63,7 @@ readonly SECRET_NAMES=(
   b2_key_secret
   database_url
   migrator_database_url
+  web_form_signing_key
 )
 mkdir -p "$SECRETS_DIR"
 for name in "${SECRET_NAMES[@]}"; do

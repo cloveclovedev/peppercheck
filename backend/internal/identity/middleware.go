@@ -35,7 +35,7 @@ func NewMiddleware(svc *Service, logger *slog.Logger) func(http.Handler) http.Ha
 				httpserver.WriteError(w, r, http.StatusUnauthorized, httpserver.CodeUnauthenticated, "missing identity")
 				return
 			}
-			u, err := svc.ResolveOrProvision(r.Context(), id.Issuer, id.Subject)
+			u, err := svc.ResolveOrProvision(r.Context(), id.Issuer, id.Subject, id.Email, id.EmailVerified)
 			if err != nil {
 				logger.LogAttrs(r.Context(), slog.LevelError, "resolve_user_failed",
 					slog.String("request_id", httpserver.RequestIDFrom(r.Context())),

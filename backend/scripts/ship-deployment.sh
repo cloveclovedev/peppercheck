@@ -90,7 +90,8 @@ rsync -a -e "${ssh_cmd[*]}" backend/ "deploy@${ssh_host}:${d}/"
 # .sh's throwaway root container -- this script only ever
 # writes deploy-owned, 0600 files via write-secret.sh.
 for k in database_url postgres_superuser_pw postgres_app_pw postgres_migrator_pw \
-  postgres_backup_pw migrator_database_url pgbackrest_cipher b2_key_id b2_key_secret ghcr_token; do
+  postgres_backup_pw migrator_database_url pgbackrest_cipher b2_key_id b2_key_secret \
+  web_form_signing_key ghcr_token; do
   printf '%s' "${!k:?missing $k}" |
     "${ssh_cmd[@]}" "deploy@${ssh_host}" "DEPLOY_SECRET_DIR='${d}/secrets' /opt/peppercheck/scripts/write-secret.sh '$k'"
 done

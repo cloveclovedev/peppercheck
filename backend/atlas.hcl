@@ -10,6 +10,7 @@ env "local" {
     "file://schema/notification",
     "file://schema/jobs",
     "file://schema/ops",
+    "file://schema/web",
   ]
   dev = "docker://postgres/17/dev?search_path=public"
   url = var.url

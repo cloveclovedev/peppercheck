@@ -7,6 +7,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -31,6 +32,13 @@ type Config struct {
 	R2SecretAccessKey string
 	R2Bucket          string
 	R2PublicDomain    string // e.g. "cdn.peppercheck.dev" — the host avatar URLs are served from
+
+	// WebFormSigningKey is the HMAC key for internal/web's anti-abuse form
+	// token (Phase 3b account-deletion request form). Unlike every other
+	// secret here, this one is validated non-empty in Load(): an empty HMAC
+	// key would let anyone forge a valid form token, so this fails closed at
+	// startup rather than silently accepting forgeable tokens.
+	WebFormSigningKey string
 }
 
 // Load reads configuration from the environment and validates it.
@@ -58,6 +66,14 @@ func Load() (Config, error) {
 		return Config{}, fmt.Errorf("resolving R2_SECRET_ACCESS_KEY: %w", err)
 	}
 
+	webFormSigningKey, _, err := lookupEnvOrFile("WEB_FORM_SIGNING_KEY")
+	if err != nil {
+		return Config{}, fmt.Errorf("resolving WEB_FORM_SIGNING_KEY: %w", err)
+	}
+	if webFormSigningKey == "" {
+		return Config{}, errors.New("config: WEB_FORM_SIGNING_KEY (or _FILE) is required")
+	}
+
 	c := Config{
 		Env:                getenv("APP_ENV", "local"),
 		Port:               getenvInt("PORT", 8765),
@@ -71,6 +87,7 @@ func Load() (Config, error) {
 		R2SecretAccessKey:  r2SecretAccessKey,
 		R2Bucket:           os.Getenv("R2_BUCKET"),
 		R2PublicDomain:     os.Getenv("R2_PUBLIC_DOMAIN"),
+		WebFormSigningKey:  webFormSigningKey,
 	}
 	if c.Port < 1 || c.Port > 65535 {
 		return Config{}, fmt.Errorf("invalid PORT: %d", c.Port)

@@ -103,6 +103,10 @@ services:
       R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY:-r2-local-secret}
       R2_BUCKET: ${R2_BUCKET:-peppercheck-avatars-local}
       R2_PUBLIC_DOMAIN: ${R2_PUBLIC_DOMAIN:-cdn.local.example.com}
+      # HMAC key for internal/web's anti-abuse form token (Phase 3b
+      # account-deletion request form). Fails closed in config.Load() if
+      # empty; the dummy default below is fine for local dev only.
+      WEB_FORM_SIGNING_KEY: ${WEB_FORM_SIGNING_KEY:-local-dev-form-signing-key-not-for-production}
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -120,6 +124,10 @@ services:
       APP_ENV: local
       LOG_LEVEL: info
       DATABASE_URL: postgres://peppercheck_app:${POSTGRES_APP_PASSWORD:?POSTGRES_APP_PASSWORD is required}@postgres:5432/peppercheck?sslmode=disable
+      # The worker never uses this (internal/web only mounts in the api
+      # command), but config.Load() is shared by both commands and fails
+      # closed if it's missing -- see the api service's comment above.
+      WEB_FORM_SIGNING_KEY: ${WEB_FORM_SIGNING_KEY:-local-dev-form-signing-key-not-for-production}
     depends_on:
       migrate:
         condition: service_completed_successfully
