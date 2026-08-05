@@ -25,6 +25,7 @@ type Deps struct {
 	Notification *notification.Handler
 	ResolveUser  func(http.Handler) http.Handler // identity.NewMiddleware: verified Identity -> internal User in ctx
 	Logger       *slog.Logger                    // used by the auth middleware; Run injects the run logger when nil
+	Web          http.Handler                    // server-rendered public web (internal/web); mounted as the catch-all
 }
 
 // buildHandler wires routes and middleware. deps.Ready is the readiness probe;
@@ -66,6 +67,12 @@ func buildHandler(deps Deps) http.Handler {
 			mux.Handle("PUT /api/v1/me/device-push-tokens", chain(deps.Notification.PutToken))
 			mux.Handle("DELETE /api/v1/me/device-push-tokens", chain(deps.Notification.DeleteToken))
 		}
+	}
+
+	if deps.Web != nil {
+		// Catch-all: anything not matched by a more specific pattern above
+		// (ServeMux prioritizes specificity, so /api/v1/* routes still win).
+		mux.Handle("/", deps.Web)
 	}
 	return mux
 }
