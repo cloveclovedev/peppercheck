@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -43,11 +44,51 @@ func TestNewErrorCodesAreStable(t *testing.T) {
 		CodeUsernameTaken:   "username_taken",
 		CodeInvalidTimezone: "invalid_timezone",
 		CodeRateLimited:     "rate_limited",
+		CodeNotFound:        "not_found",
+		CodeForbidden:       "forbidden",
+		CodeConflict:        "conflict",
 	}
 	for got, want := range cases {
 		if got != want {
 			t.Fatalf("code = %q, want %q", got, want)
 		}
+	}
+}
+
+func TestDecodeJSONRejectsUnknownFields(t *testing.T) {
+	r := httptest.NewRequest("POST", "/", strings.NewReader(`{"nope":1}`))
+	w := httptest.NewRecorder()
+	var dst struct {
+		Name string `json:"name"`
+	}
+	if DecodeJSON(w, r, &dst) {
+		t.Fatal("want false for unknown field")
+	}
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("want 400, got %d", w.Code)
+	}
+	var body struct {
+		Error struct{ Code string } `json:"error"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
+		t.Fatalf("unmarshal: %v; body=%s", err, w.Body.String())
+	}
+	if body.Error.Code != CodeInvalidArgument {
+		t.Fatalf("code = %q, want %q", body.Error.Code, CodeInvalidArgument)
+	}
+}
+
+func TestDecodeJSONAcceptsKnownFields(t *testing.T) {
+	r := httptest.NewRequest("POST", "/", strings.NewReader(`{"name":"ok"}`))
+	w := httptest.NewRecorder()
+	var dst struct {
+		Name string `json:"name"`
+	}
+	if !DecodeJSON(w, r, &dst) {
+		t.Fatalf("want true; body=%s", w.Body.String())
+	}
+	if dst.Name != "ok" {
+		t.Fatalf("name = %q, want ok", dst.Name)
 	}
 }
 
