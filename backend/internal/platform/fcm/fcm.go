@@ -40,6 +40,12 @@ type Client interface {
 	Send(ctx context.Context, tokens []string, msg Message) (SendResult, error)
 }
 
+// maxMulticastTokens is the FCM multicast target limit: SendEachForMulticast
+// rejects a message addressing more than 500 tokens, so Send batches into
+// chunks of at most this size.
+// https://firebase.google.com/docs/cloud-messaging/send/admin-sdk
+const maxMulticastTokens = 500
+
 type client struct{ msg *messaging.Client }
 
 // New builds an FCM client using Application Default Credentials for projectID
@@ -85,23 +91,38 @@ func buildMulticast(tokens []string, m Message) *messaging.MulticastMessage {
 	}
 }
 
-// Send delivers msg to tokens and returns the tokens FCM reported as permanently
-// invalid. A nil/empty token list is a no-op. A transport-level error fails the
-// whole send; per-token failures are classified, not returned as an error, so a
+// Send delivers msg to tokens and returns the tokens FCM reported as no longer
+// registered (safe to prune). A nil/empty token list is a no-op. Tokens are
+// batched to the multicast limit; a transport-level error on any batch fails the
+// whole send. Per-token failures are classified, not returned as an error, so a
 // partial success still prunes dead tokens.
+//
+// Only IsUnregistered is treated as prune-worthy. INVALID_ARGUMENT is
+// deliberately NOT pruned: it also fires for a bad message payload (Data is
+// caller-supplied and unvalidated here), and classifying that as a dead token
+// would delete every one of a user's tokens on a single malformed notification.
 func (c *client) Send(ctx context.Context, tokens []string, m Message) (SendResult, error) {
-	if len(tokens) == 0 {
-		return SendResult{}, nil
-	}
-	resp, err := c.msg.SendEachForMulticast(ctx, buildMulticast(tokens, m))
-	if err != nil {
-		return SendResult{}, fmt.Errorf("fcm send: %w", err)
-	}
 	var invalid []string
-	for i, r := range resp.Responses {
-		if r.Error != nil && (messaging.IsUnregistered(r.Error) || messaging.IsInvalidArgument(r.Error)) {
-			invalid = append(invalid, tokens[i])
+	for _, batch := range chunkTokens(tokens, maxMulticastTokens) {
+		resp, err := c.msg.SendEachForMulticast(ctx, buildMulticast(batch, m))
+		if err != nil {
+			return SendResult{}, fmt.Errorf("fcm send: %w", err)
+		}
+		for i, r := range resp.Responses {
+			if r.Error != nil && messaging.IsUnregistered(r.Error) {
+				invalid = append(invalid, batch[i])
+			}
 		}
 	}
 	return SendResult{InvalidTokens: invalid}, nil
+}
+
+// chunkTokens splits tokens into contiguous batches of at most size, each a
+// slice of the input (no copy). An empty input yields no batches.
+func chunkTokens(tokens []string, size int) [][]string {
+	var batches [][]string
+	for start := 0; start < len(tokens); start += size {
+		batches = append(batches, tokens[start:min(start+size, len(tokens))])
+	}
+	return batches
 }

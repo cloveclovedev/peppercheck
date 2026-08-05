@@ -38,6 +38,46 @@ func TestBuildMulticastUsesLocKeys(t *testing.T) {
 	}
 }
 
+func TestChunkTokensRespectsMulticastLimit(t *testing.T) {
+	mk := func(n int) []string {
+		s := make([]string, n)
+		for i := range s {
+			s[i] = "t"
+		}
+		return s
+	}
+	cases := []struct {
+		n          int
+		wantChunks int
+		wantLast   int
+	}{
+		{0, 0, 0},
+		{1, 1, 1},
+		{maxMulticastTokens, 1, maxMulticastTokens},
+		{maxMulticastTokens + 1, 2, 1},
+		{2*maxMulticastTokens + 3, 3, 3},
+	}
+	for _, c := range cases {
+		got := chunkTokens(mk(c.n), maxMulticastTokens)
+		if len(got) != c.wantChunks {
+			t.Fatalf("n=%d: chunks=%d, want %d", c.n, len(got), c.wantChunks)
+		}
+		total := 0
+		for _, b := range got {
+			if len(b) > maxMulticastTokens {
+				t.Fatalf("n=%d: a batch has %d > %d tokens", c.n, len(b), maxMulticastTokens)
+			}
+			total += len(b)
+		}
+		if total != c.n {
+			t.Fatalf("n=%d: batched %d tokens total", c.n, total)
+		}
+		if c.wantChunks > 0 && len(got[len(got)-1]) != c.wantLast {
+			t.Fatalf("n=%d: last batch=%d, want %d", c.n, len(got[len(got)-1]), c.wantLast)
+		}
+	}
+}
+
 func TestBuildMulticastCarriesArgsToBothPlatforms(t *testing.T) {
 	msg := Message{TitleLocKey: "t", BodyLocKey: "b", LocArgs: []string{"x"}}
 	mm := buildMulticast([]string{"tok"}, msg)
