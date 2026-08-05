@@ -54,6 +54,6 @@ to create matching plan files solely for process consistency.
 | `2026-07-25-phase4a-backend.md` | Needs revalidation | The database convention is reconciled; revalidate after Phase 3a and against current backend APIs. |
 | `2026-07-25-phase7a-infra-ops-foundation.md` | Implemented | Infrastructure and operations foundation landed in the integration branch. |
 | `2026-07-26-infra-foundation-setup.md` | Blocked | Reconcile its design reference and current operator workflow before execution. |
-| `2026-07-26-phase3b-go-web.md` | Needs revalidation | Revalidate dependencies and the final database conventions. |
+| `2026-07-26-phase3b-go-web.md` | Implemented | Phase 3b (#505/#477) landed across #511/#513/#514/#515/#516/#517/#518. Several deviations from the plan as written: Task 5 (redirects) dropped per P3b-D15; Task 9's `CreateWithIdentity` signature adapted to the merged provision-callback form; Task 11's rate limiter reuses `core/ratelimit.TokenBucket` instead of a new type; Task 6's font subsetting used a smaller, content-derived character set instead of the plan's weight list. |
 | `2026-07-26-phase4a-flutter-task-authoring-matching.md` | Needs revalidation | Depends on the Phase 3a Flutter and Phase 4a backend contracts. |
 | `2026-07-26-phase4b-evidence-private-r2.md` | Needs revalidation | Existing optional plan with the database convention reconciled; revalidate dependencies and current APIs before execution. |

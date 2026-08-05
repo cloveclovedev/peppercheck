@@ -13,12 +13,6 @@ repos:
         language: system
         pass_filenames: true
         files: ^supabase/functions/.*\.(ts|tsx|js|jsx)$
-      - id: prettier-webapp
-        name: Prettier (Webapp)
-        entry: bash -c 'cd peppercheck-webapp && npx prettier --check .'
-        language: system
-        pass_filenames: false
-        files: ^peppercheck-webapp/
       - id: dart-format
         name: Dart format (Flutter)
         entry: dart format --set-exit-if-changed --line-length 80

@@ -24,9 +24,9 @@ only commands.
 
 ## Repository layout
 
-- `backend/` — Go API, worker, PostgreSQL schema, migrations, and Compose stack
+- `backend/` — Go API, worker, server-rendered public web, PostgreSQL schema,
+  migrations, and Compose stack
 - `peppercheck_flutter/` — Flutter client
-- `peppercheck-webapp/` — legacy web application retained during migration
 - `supabase/` — legacy database and Edge Functions retained during migration
 - `docs/` — canonical project documentation and design records
 
