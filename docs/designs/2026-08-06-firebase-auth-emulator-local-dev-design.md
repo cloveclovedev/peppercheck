@@ -137,8 +137,16 @@ registration against the demo config will no-op/fail gracefully locally
 ### 4. Compose — run the Auth emulator as a zero-flag default
 
 Add an auth-emulator service to the local stack: a `firebase-tools` container
-running `firebase emulators:start --only auth --project demo-peppercheck` (a
-minimal `firebase.json` enabling only the Auth emulator, port 9099).
+running `firebase emulators:start --only auth --project demo-peppercheck`. The
+`firebase.json` must set the Auth emulator's **`host` to `0.0.0.0`** (not just
+`port: 9099`): the Firebase CLI binds to `127.0.0.1` by default, which inside a
+dedicated container is unreachable from the api container or the Flutter
+emulator, so every token request/verification would fail. Bind `0.0.0.0` and
+control exposure through Compose port mapping.
+
+```json
+{ "emulators": { "auth": { "host": "0.0.0.0", "port": 9099 } } }
+```
 
 **Seed fixed-UID named users so stable identities survive an emulator restart.**
 The API database (Compose Postgres volume) persists across restarts and keys
@@ -248,3 +256,7 @@ runs the same way for any auth-dependent integration test.
   restart a named user re-mints a new UID while the persisted API DB keys the old
   `(iss, sub)`. Named users now need **fixed-UID seeding** (admin REST `localId`)
   or auth-state persistence.
+- **2026-08-06** — Second Codex round on PR #530 (P1): the Firebase CLI binds the
+  emulator to `127.0.0.1` by default, unreachable from the api container / Flutter
+  emulator inside a dedicated container. The `firebase.json` must bind the Auth
+  emulator `host` to `0.0.0.0`, with exposure controlled via Compose.
