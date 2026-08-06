@@ -72,39 +72,53 @@ accepts emulator-issued tokens (signature skipped; `iss` =
 `exp` still enforced). `option.WithoutAuthentication()` is already in place, so
 no service account is involved.
 
-**Safety guard (new code, small).** Add a startup invariant that ties emulator
-acceptance to a demo project: if `FIREBASE_AUTH_EMULATOR_HOST` is set, the
-process **must fail closed** unless `FIREBASE_PROJECT_ID` begins with `demo-`
-(and/or the deploy environment is the local/dev one). This makes "impossible in
-prod" a code-enforced invariant rather than deploy-config discipline — the
-durable constraint from #524. Production sets neither var, so it is unaffected.
+**Safety guard (new code, small).** Add a startup invariant: if
+`FIREBASE_AUTH_EMULATOR_HOST` is set, the process **must fail closed** unless
+**both** `Config.Env == "local"` **and** `FIREBASE_PROJECT_ID` begins with
+`demo-`. `Config.Env` already distinguishes `local | staging | production`
+(`core/config/config.go`, from `APP_ENV`). Both conditions are required, not
+"and/or": a demo project ID alone is not sufficient, because a staging/production
+deploy accidentally configured with `FIREBASE_AUTH_EMULATOR_HOST` **and** a
+`demo-*` project would otherwise start with signature verification skipped and
+accept forged unsigned tokens whose claims match the demo project. Requiring
+`Env == local` makes emulator acceptance impossible outside local development —
+a code-enforced invariant, not deploy-config discipline. Production sets neither
+var (and is not `local`), so it is unaffected.
 
 ### 2. Flutter — dev-only emulator branch + one-tap test login
 
-- **Connect to the emulator in the dev flavor only.** In `app_startup.dart`,
-  after `Firebase.initializeApp()`, gate on `config.environment ==
-  AppEnvironment.dev` and call `FirebaseAuth.instance.useAuthEmulator(host,
-  port)` with host `10.0.2.2` (Android) / `127.0.0.1` (iOS) — the existing host
-  mapping. Staging/production never call it.
-- **One-tap dev test login, no credential form.** The login screen shows a
-  dev-only section (rendered only when `environment == dev`) with one-tap
-  buttons. Each button does a **create-or-sign-in** against the emulator:
-  `signInWithEmailAndPassword`, falling back to `createUserWithEmailAndPassword`
-  if the user does not exist — with **app-fabricated credentials the user never
-  types**. The underlying Firebase provider is `password`; it is surfaced as an
-  "Emulator login." This yields a genuine emulator-issued Firebase JWT that
-  flows through the existing `firebaseIdTokenProvider` seam, so the rest of the
-  app and the backend are unchanged.
-  - Provide a few **stable named users** (e.g. `tasker@emulator.local`,
+- **Gate emulator wiring on an explicit switch, not the flavor alone.** The
+  operator opt-in real-Firebase path *also runs the dev flavor*, so gating on
+  `environment == dev` alone would keep calling `useAuthEmulator` even after the
+  operator supplies real configs — leaving auth redirected to localhost and the
+  Google/Apple buttons unable to reach real Firebase. Introduce an explicit
+  client switch (e.g. `--dart-define=USE_AUTH_EMULATOR`, or a dev-env config
+  field) that **defaults ON for zero-flag dev** and can be set OFF for the
+  operator opt-in path. In `app_startup.dart`, after `Firebase.initializeApp()`,
+  call `FirebaseAuth.instance.useAuthEmulator(host, port)` only when the switch
+  is on (host `10.0.2.2` Android / `127.0.0.1` iOS — the existing mapping).
+  Staging/production force it off. The dev login UI below uses the **same
+  switch**, so turning the emulator off restores the plain Google/Apple screen.
+- **One-tap dev test login, no credential form.** When the emulator switch is on,
+  the login screen shows a dev-only section with one-tap buttons. Each does a
+  **create-or-sign-in** against the emulator: `signInWithEmailAndPassword`,
+  falling back to `createUserWithEmailAndPassword` if the user does not exist —
+  with **app-fabricated credentials the user never types**. The underlying
+  Firebase provider is `password`; it is surfaced as an "Emulator login." This
+  yields a genuine emulator-issued Firebase JWT that flows through the existing
+  `firebaseIdTokenProvider` seam, so the rest of the app and the backend are
+  unchanged.
+  - Provide **stable named users** (e.g. `tasker@emulator.local`,
     `referee@emulator.local`) for reproducible multi-account flows (tasker ↔
     referee matching), plus an optional **fresh random user**
-    (`dev-<uuid>@emulator.local`) for new-account testing. Because sign-in is
-    create-or-sign-in and idempotent, **no Compose-side user seeding is needed**
-    — the app self-provisions on tap and survives an emulator reset. The exact
-    number/labels of buttons are an implementation detail finalized in the impl
-    issue.
-- The real Google/Apple buttons stay; against the operator opt-in real-Firebase
-  path they work as today.
+    (`dev-<uuid>@emulator.local`) for new-account testing. **Stability requires
+    fixed UIDs, which client `createUserWithEmailAndPassword` cannot set** — see
+    §4: the emulator must be seeded with fixed-UID named users (or its auth state
+    persisted), so a named button always maps to the same `(iss, sub)` and thus
+    the same backend identity across emulator restarts. The random user stays
+    ephemeral. Exact button count/labels are finalized in the impl issue.
+- The real Google/Apple buttons stay; with the emulator switch off (operator
+  opt-in real-Firebase path) they work as today.
 
 ### 3. Native dev Firebase config — commit a demo config
 
@@ -124,9 +138,25 @@ registration against the demo config will no-op/fail gracefully locally
 
 Add an auth-emulator service to the local stack: a `firebase-tools` container
 running `firebase emulators:start --only auth --project demo-peppercheck` (a
-minimal `firebase.json` enabling only the Auth emulator, port 9099). No user
-seeding step (the app self-provisions). Real Firebase is the operator opt-in:
-unset `FIREBASE_AUTH_EMULATOR_HOST`, supply real dev configs. In CI the emulator
+minimal `firebase.json` enabling only the Auth emulator, port 9099).
+
+**Seed fixed-UID named users so stable identities survive an emulator restart.**
+The API database (Compose Postgres volume) persists across restarts and keys
+internal users by `(iss, sub)` — but if the Auth emulator restarts and its users
+are gone, a client `createUserWithEmailAndPassword` for `tasker@emulator.local`
+gets a **new** Firebase UID (the client API cannot set one), so the backend
+provisions a *new* internal user and the old tasks/matches become unreachable.
+Avoid this by giving the named users **deterministic UIDs**, via either:
+(a) a bootstrap step that creates them through the emulator's **admin REST API**
+(`accounts` endpoint accepts an explicit `localId`), or (b) `--import` of a
+committed auth-export dir plus `--export-on-exit` to persist. Either keeps
+`(iss, sub)` stable so named buttons always resolve to the same backend identity.
+The random user needs no seeding (ephemeral by design). If instead the operator
+resets the Auth emulator without seeding, they must also reset the API database
+to stay consistent.
+
+Real Firebase is the operator opt-in: unset `FIREBASE_AUTH_EMULATOR_HOST`, set
+the client emulator switch off, and supply real dev configs. In CI the emulator
 runs the same way for any auth-dependent integration test.
 
 ## Alternatives considered
@@ -147,16 +177,28 @@ runs the same way for any auth-dependent integration test.
 - **Template + generation script for the native config.** Rejected in favor of
   committing the demo config, for a true zero-flag first run (chosen per the
   parent profile's zero-flag default).
-- **Seed users into the emulator via `--import`/bootstrap.** Unnecessary given
-  idempotent create-or-sign-in; avoided to keep the stack simpler and reset-safe.
+- **Rely on idempotent create-or-sign-in with no seeding.** Rejected — it is
+  *not* reset-safe: after an Auth-emulator restart, client `createUser` re-mints
+  a new UID for the same email while the API DB (persisted) still keys the old
+  `(iss, sub)`, so a "stable" named user silently becomes a different backend
+  identity. Fixed-UID seeding (or auth-state persistence) is required instead
+  (§4).
 
 ## Consequences
 
-- Backend change is minimal: env vars plus a small fail-closed startup guard;
-  the verifier is untouched.
-- Flutter change is contained: a dev-gated `useAuthEmulator` call, a dev-only
-  login section, and a small email/password create-or-sign-in path in
-  `auth_repository.dart` (the only file importing `firebase_auth`).
+- Backend change is minimal: env vars plus a small fail-closed startup guard
+  requiring **both** `Env == local` and a `demo-` project; the verifier is
+  untouched.
+- Flutter change is contained: an explicit-switch-gated `useAuthEmulator` call,
+  a dev-only login section behind the same switch, and a small email/password
+  create-or-sign-in path in `auth_repository.dart` (the only file importing
+  `firebase_auth`).
+- The client needs a `USE_AUTH_EMULATOR`-style switch (default on for dev) so
+  the operator opt-in real-Firebase path can turn the emulator off; without it,
+  dev-flavor auth would stay pinned to localhost.
+- The Compose stack seeds **fixed-UID** named emulator users (admin REST
+  `localId`, or `--import`/`--export-on-exit`) so stable identities align with
+  persisted backend rows across restarts.
 - The repo gains committed **demo dev-flavor** Firebase configs; `.gitignore` is
   narrowed to un-ignore just those.
 - Real Google/Apple sign-in is verified only against the operator opt-in
@@ -195,3 +237,14 @@ runs the same way for any auth-dependent integration test.
   config is committed; the Auth emulator runs as a zero-flag Compose default with
   real Firebase as the operator opt-in. Design-doc-only; implementation tracked
   in #529.
+- **2026-08-06** — First Codex round on PR #530, three fixes. (1, P1) The guard
+  now requires **both** `Env == local` **and** a `demo-` project (not "and/or"):
+  a demo project alone would let a misconfigured staging/prod deploy start with
+  signatures skipped and accept forged tokens. (2, P2) Client emulator wiring is
+  gated on an **explicit switch** (default on for dev), not the flavor alone —
+  otherwise the operator opt-in path still runs the dev flavor and stays pinned
+  to localhost, so real Google/Apple never work. (3, P2) Dropped the "no seeding,
+  reset-safe" claim: client `createUser` can't set a UID, so after an Auth-emulator
+  restart a named user re-mints a new UID while the persisted API DB keys the old
+  `(iss, sub)`. Named users now need **fixed-UID seeding** (admin REST `localId`)
+  or auth-state persistence.
