@@ -92,8 +92,12 @@ intent explicit rather than implicit-by-omitted-var:
   provide the worker `FIREBASE_PROJECT_ID` + `GOOGLE_APPLICATION_CREDENTIALS`
   (the worker compose block does not pass these today, so this is a new,
   documented path — not something that can happen by accident).
-- `Env == staging | production` → **real FCM** (build error stays fatal, as
-  today).
+- `Env == staging | production` → **non-local selection is unchanged**. Today
+  `buildFCMClient` treats a missing project id / `fcm.New` failure as **fatal
+  only for `production`** (`main.go:214, 222`); **`staging` warns and falls back
+  to `NewNoop`**. #525 does **not** alter this — it only changes the *local*
+  branch. (If staging should instead require real FCM, that is a separate,
+  explicit fail-closed change with its own verification, out of scope here.)
 - The `api` path keeps `fcm.NewNoop` (unchanged).
 
 Selecting by `Env` (not by whether `FIREBASE_PROJECT_ID` is empty) removes the
@@ -168,3 +172,9 @@ signed out); no message arrives locally; failures are already swallowed.
   client if `FIREBASE_PROJECT_ID` is ever added to the worker, plus a documented
   real-FCM-local opt-in (which requires giving the worker the project id + ADC —
   a path that does not exist today).
+- **2026-08-06** — Second Codex round on PR #536 (P2). Corrected another "as
+  today" overclaim: `buildFCMClient`'s fatal branch is `production`-only
+  (`main.go:214, 222`); `staging` currently warns and falls back to `NewNoop`.
+  Clarified that #525 changes only the *local* branch and leaves non-local
+  selection unchanged; making staging require real FCM would be a separate,
+  explicit fail-closed change, out of scope.
