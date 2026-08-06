@@ -15,11 +15,6 @@ _TaskCreationRequest _$TaskCreationRequestFromJson(Map<String, dynamic> json) =>
           ? null
           : DateTime.parse(json['dueDate'] as String),
       taskStatus: json['taskStatus'] as String? ?? 'draft',
-      matchingStrategies:
-          (json['matchingStrategies'] as List<dynamic>?)
-              ?.map((e) => e as String)
-              .toList() ??
-          const [],
     );
 
 Map<String, dynamic> _$TaskCreationRequestToJson(
@@ -30,5 +25,4 @@ Map<String, dynamic> _$TaskCreationRequestToJson(
   'criteria': instance.criteria,
   'dueDate': instance.dueDate?.toIso8601String(),
   'taskStatus': instance.taskStatus,
-  'matchingStrategies': instance.matchingStrategies,
 };

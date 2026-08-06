@@ -55,4 +55,4 @@ final class SignOutCoordinatorProvider
 }
 
 String _$signOutCoordinatorHash() =>
-    r'efa0b9c540473d95e7ebe0ad3c2188f8748c6e9b';
+    r'596be8bfb758c12a763561731fa19cbe972b6d94';

@@ -941,11 +941,14 @@ class TranslationsTaskCreationJa {
 	/// ja: '期限'
 	String get labelDeadline => '期限';
 
-	/// ja: 'マッチングプラン'
-	String get sectionMatching => 'マッチングプラン';
+	/// ja: 'レフリーの人数'
+	String get sectionRefereeCount => 'レフリーの人数';
 
-	/// ja: '追加'
-	String get buttonAdd => '追加';
+	/// ja: '$count人'
+	String refereeCountUnit({required Object count}) => '${count}人';
+
+	/// ja: 'レフリーは自動で選ばれます'
+	String get refereeCountNotice => 'レフリーは自動で選ばれます';
 
 	/// ja: '作成'
 	String get buttonCreate => '作成';
@@ -953,7 +956,6 @@ class TranslationsTaskCreationJa {
 	/// ja: '更新'
 	String get buttonUpdate => '更新';
 
-	late final TranslationsTaskCreationStrategyJa strategy = TranslationsTaskCreationStrategyJa.internal(_root);
 	late final TranslationsTaskCreationErrorJa error = TranslationsTaskCreationErrorJa.internal(_root);
 }
 
@@ -1356,18 +1358,6 @@ class TranslationsTaskDetailCancelAssignmentJa {
 	String error({required Object message}) => 'エラーが発生しました: ${message}';
 }
 
-// Path: task.creation.strategy
-class TranslationsTaskCreationStrategyJa {
-	TranslationsTaskCreationStrategyJa.internal(this._root);
-
-	final Translations _root; // ignore: unused_field
-
-	// Translations
-
-	/// ja: 'スタンダード'
-	String get standard => 'スタンダード';
-}
-
 // Path: task.creation.error
 class TranslationsTaskCreationErrorJa {
 	TranslationsTaskCreationErrorJa.internal(this._root);
@@ -1762,11 +1752,11 @@ extension on Translations {
 			'task.creation.labelDescription' => '詳細 (任意)',
 			'task.creation.labelCriteria' => '完了条件',
 			'task.creation.labelDeadline' => '期限',
-			'task.creation.sectionMatching' => 'マッチングプラン',
-			'task.creation.buttonAdd' => '追加',
+			'task.creation.sectionRefereeCount' => 'レフリーの人数',
+			'task.creation.refereeCountUnit' => ({required Object count}) => '${count}人',
+			'task.creation.refereeCountNotice' => 'レフリーは自動で選ばれます',
 			'task.creation.buttonCreate' => '作成',
 			'task.creation.buttonUpdate' => '更新',
-			'task.creation.strategy.standard' => 'スタンダード',
 			'task.creation.error.title' => 'エラー',
 			'task.creation.error.insufficientPoints' => 'ポイントが不足しています',
 			'task.creation.error.insufficientPointsDetail' => ({required Object balance, required Object locked, required Object required}) => '現在の残高: ${balance} pt\nロック済み: ${locked} pt\n必要なポイント: ${required} pt',

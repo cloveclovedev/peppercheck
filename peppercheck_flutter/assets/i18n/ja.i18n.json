@@ -185,13 +185,11 @@
       "labelDescription": "詳細 (任意)",
       "labelCriteria": "完了条件",
       "labelDeadline": "期限",
-      "sectionMatching": "マッチングプラン",
-      "buttonAdd": "追加",
+      "sectionRefereeCount": "レフリーの人数",
+      "refereeCountUnit": "$count人",
+      "refereeCountNotice": "レフリーは自動で選ばれます",
       "buttonCreate": "作成",
       "buttonUpdate": "更新",
-      "strategy": {
-        "standard": "スタンダード"
-      },
       "error": {
         "title": "エラー",
         "insufficientPoints": "ポイントが不足しています",

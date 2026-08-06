@@ -1,0 +1,121 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'package:go_router/go_router.dart';
+import 'package:peppercheck_flutter/features/task/domain/task.dart';
+import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
+import 'package:peppercheck_flutter/common_widgets/app_background.dart';
+import 'package:peppercheck_flutter/common_widgets/app_scaffold.dart';
+import 'package:peppercheck_flutter/common_widgets/primary_action_button.dart';
+import 'package:peppercheck_flutter/features/task/ui/task_creation_view_model.dart';
+import 'package:peppercheck_flutter/features/task/ui/widgets/task_creation/task_form_section.dart';
+import 'package:peppercheck_flutter/features/matching/application/matching_config_provider.dart';
+import 'package:peppercheck_flutter/features/task/ui/widgets/task_creation/referee_count_section.dart';
+import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
+import 'package:peppercheck_flutter/features/task/ui/widgets/task_creation/task_creation_error_dialog.dart';
+
+class TaskCreationScreen extends ConsumerStatefulWidget {
+  const TaskCreationScreen({super.key});
+
+  static const route = '/create_task';
+
+  @override
+  ConsumerState<TaskCreationScreen> createState() => _TaskCreationScreenState();
+}
+
+class _TaskCreationScreenState extends ConsumerState<TaskCreationScreen> {
+  @override
+  Widget build(BuildContext context) {
+    // Check for extra data (Task for editing)
+    final extra = GoRouterState.of(context).extra;
+    final task = extra is Task ? extra : null;
+    final isEditing = task != null;
+
+    final asyncState = ref.watch(taskCreationViewModelProvider(task));
+    final controller = ref.read(taskCreationViewModelProvider(task).notifier);
+
+    // The referee-count bound is server-owned; until it loads (or if it fails
+    // to) the selector offers a single referee, which every config allows.
+    final configAsync = ref.watch(matchingConfigProvider);
+    final maxRefereeCount = configAsync.value?.maxRefereesPerTask ?? 1;
+
+    // Listen for creation errors and show dialog
+    ref.listen(
+      taskCreationViewModelProvider(
+        task,
+      ).select((state) => state.value?.creationError),
+      (previous, next) {
+        if (next != null) {
+          showDialog(
+            context: context,
+            builder: (context) => TaskCreationErrorDialog(error: next),
+          ).then((_) {
+            // Clear error after dialog is dismissed
+            controller.clearCreationError();
+          });
+        }
+      },
+    );
+
+    // Determine texts
+    final appBarTitle = isEditing
+        ? t.task.creation.titleEdit
+        : t.task.creation.title;
+    final buttonText = isEditing
+        ? t.task.creation.buttonUpdate
+        : t.task.creation.buttonCreate;
+
+    return AppBackground(
+      child: AppScaffold.scrollable(
+        currentIndex: -1,
+        title: appBarTitle,
+        slivers: [
+          SliverToBoxAdapter(
+            child: asyncState.when(
+              data: (state) => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TaskFormSection(initialData: state.request, task: task),
+                  if (state.request.taskStatus == 'open') ...[
+                    const SizedBox(height: AppSizes.sectionGap),
+                    RefereeCountSection(
+                      selected: state.refereeCount,
+                      maxCount: maxRefereeCount,
+                      loading: configAsync.isLoading,
+                      onChanged: controller.updateRefereeCount,
+                    ),
+                  ],
+                  const SizedBox(height: AppSizes.buttonGap),
+                  PrimaryActionButton(
+                    text: buttonText,
+                    onPressed: controller.isFormValid
+                        ? () async {
+                            await controller.submit();
+                            if (context.mounted) {
+                              final currentState = ref.read(
+                                taskCreationViewModelProvider(task),
+                              );
+                              // Success check: if no creation error, close screen
+                              if (currentState.value?.creationError == null) {
+                                Navigator.of(context).pop();
+                              }
+                              // Error dialog is handled by ref.listen
+                            }
+                          }
+                        : null,
+                  ),
+                ],
+              ),
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, stack) => Center(
+                // This error case is for initialization errors only
+                // Creation errors are handled via ref.listen and stored in state.creationError
+                child: Text('初期化エラーが発生しました'),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

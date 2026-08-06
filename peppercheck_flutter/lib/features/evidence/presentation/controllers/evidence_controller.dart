@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:peppercheck_flutter/features/evidence/data/evidence_repository.dart';
 import 'package:peppercheck_flutter/features/evidence/presentation/controllers/evidence_submission_state.dart';
-import 'package:peppercheck_flutter/features/home/presentation/home_controller.dart';
-import 'package:peppercheck_flutter/features/task/presentation/providers/task_provider.dart';
+import 'package:peppercheck_flutter/features/home/ui/home_view_model.dart';
+import 'package:peppercheck_flutter/features/task/ui/providers/task_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'evidence_controller.g.dart';

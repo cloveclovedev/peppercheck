@@ -1,44 +1,33 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:peppercheck_flutter/features/evidence/domain/task_evidence.dart';
+import 'package:peppercheck_flutter/features/matching/domain/public_profile.dart';
 import 'package:peppercheck_flutter/features/matching/domain/referee_request.dart';
-import 'package:peppercheck_flutter/features/profile/domain/profile.dart';
 
 part 'task.freezed.dart';
-part 'task.g.dart';
-
-// ignore_for_file: invalid_annotation_target
 
 @freezed
 abstract class Task with _$Task {
   const factory Task({
     required String id,
-    @JsonKey(name: 'tasker_id') required String taskerId,
+    required String taskerId,
     required String title,
     String? description,
     String? criteria,
-    @JsonKey(name: 'due_date') String? dueDate,
-    @JsonKey(name: 'fee_amount') double? feeAmount,
-    @JsonKey(name: 'fee_currency') String? feeCurrency,
+    String? dueDate,
     required String status,
-    @JsonKey(name: 'created_at') String? createdAt,
-    @JsonKey(name: 'updated_at') String? updatedAt,
+    String? createdAt,
+    String? updatedAt,
 
     // Aggregated fields
-    @JsonKey(name: 'task_referee_requests')
-    @Default([])
-    List<RefereeRequest> refereeRequests,
-
+    @Default([]) List<RefereeRequest> refereeRequests,
     TaskEvidence? evidence,
-
-    @JsonKey(name: 'tasker_profile') Profile? tasker,
+    PublicProfile? tasker,
   }) = _Task;
-
-  factory Task.fromJson(Map<String, dynamic> json) => _$TaskFromJson(json);
 
   const Task._();
 
   static const _terminalStatuses = {'declined', 'cancelled'};
-  static const _matchingStatuses = {'pending', 'matched'};
+  static const _matchedStatuses = {'accepted', 'payment_processing', 'closed'};
 
   List<String> getDetailedStatuses(String currentUserId) {
     if (status == 'draft') return ['draft'];
@@ -57,26 +46,28 @@ abstract class Task with _$Task {
     return _refereeStatuses(activeRequests, currentUserId);
   }
 
+  /// Pending-first: while any request is still `pending` the task is matching,
+  /// which mirrors the detail poller's completion condition (no request is
+  /// `pending`). Only once nothing is pending does an accepted request mean
+  /// "matched", and an all-expired set mean "matching failed".
   List<String> _taskerStatuses(List<RefereeRequest> active) {
-    if (active.isEmpty || active.every((r) => r.status == 'expired')) {
-      return active.isEmpty ? ['matching'] : ['matching_failed'];
-    }
-
-    if (active.any((r) => _matchingStatuses.contains(r.status))) {
-      return ['matching'];
-    }
+    if (active.isEmpty) return ['matching'];
+    if (active.any((r) => r.status == 'pending')) return ['matching'];
 
     final accepted = active
-        .where(
-          (r) =>
-              r.status == 'accepted' ||
-              r.status == 'payment_processing' ||
-              r.status == 'closed',
-        )
+        .where((r) => _matchedStatuses.contains(r.status))
         .toList();
 
-    if (accepted.isNotEmpty &&
-        accepted.every((r) => r.judgement?.status == 'awaiting_evidence')) {
+    if (accepted.isEmpty) return ['matching_failed'];
+
+    // Phase 4a carries no judgement yet, so a matched request is simply
+    // "matching complete". The judgement/evidence/payment branches below stay
+    // for Phase 4b/4c, where judgements are populated again.
+    if (accepted.every((r) => r.judgement == null)) {
+      return ['matching_complete'];
+    }
+
+    if (accepted.every((r) => r.judgement?.status == 'awaiting_evidence')) {
       return ['matching_complete'];
     }
 
@@ -111,6 +102,9 @@ abstract class Task with _$Task {
     }
     if (myRequest.status == 'closed') return ['closed'];
 
-    return [myRequest.judgement?.status ?? 'awaiting_evidence'];
+    // Phase 4a: matched, judgement not provisioned to the client yet.
+    if (myRequest.judgement == null) return ['matching_complete'];
+
+    return [myRequest.judgement!.status];
   }
 }
