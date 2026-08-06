@@ -23,7 +23,6 @@ func NewHandler(svc *Service) *Handler { return &Handler{svc: svc} }
 
 type taskDTO struct {
 	ID          string  `json:"id"`
-	TaskerID    string  `json:"taskerId"`
 	Title       string  `json:"title"`
 	Description *string `json:"description"`
 	Criteria    *string `json:"criteria"`
@@ -36,7 +35,6 @@ type taskDTO struct {
 func toDTO(t Task) taskDTO {
 	dto := taskDTO{
 		ID:          t.ID,
-		TaskerID:    t.TaskerID,
 		Title:       t.Title,
 		Description: t.Description,
 		Criteria:    t.Criteria,
@@ -156,7 +154,7 @@ func (h *Handler) GetMyTasks(w http.ResponseWriter, r *http.Request) {
 	p := ListParams{
 		Status: q.Get("status"),
 		Limit:  clampInt(atoiOr(q.Get("limit"), 50), 1, 100),
-		Offset: maxInt(atoiOr(q.Get("offset"), 0), 0),
+		Offset: max(atoiOr(q.Get("offset"), 0), 0),
 	}
 	tasks, err := h.svc.ListOwned(r.Context(), u.ID, p)
 	if err != nil {
@@ -235,18 +233,5 @@ func atoiOr(s string, def int) int {
 }
 
 func clampInt(v, lo, hi int) int {
-	if v < lo {
-		return lo
-	}
-	if v > hi {
-		return hi
-	}
-	return v
-}
-
-func maxInt(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
+	return min(max(v, lo), hi)
 }

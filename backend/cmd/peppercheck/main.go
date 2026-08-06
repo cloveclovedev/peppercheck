@@ -163,8 +163,13 @@ func main() {
 			w.Register(matching.JobKindSweep, matchingSvc.HandleSweep)
 			w.Register(notification.JobKindSendNotification, sender.HandleSend)
 			// Seed the recurring sweep for the current interval; it self-reschedules
-			// thereafter. Idempotent across restarts and workers (bucketed key).
-			return matchingSvc.BootstrapSweep(ctx)
+			// thereafter. Idempotent across restarts and workers (bucketed key). A
+			// failure here is non-fatal: match/notification processing must keep
+			// running, and the next restart (or a later interval) reseeds the chain.
+			if err := matchingSvc.BootstrapSweep(ctx); err != nil {
+				logger.Error("bootstrap sweep failed; recurring sweep not seeded this start", "error", err)
+			}
+			return nil
 		}); err != nil {
 			logger.Error("worker exited with error", "error", err)
 			os.Exit(1)
