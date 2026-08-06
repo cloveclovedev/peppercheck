@@ -69,10 +69,13 @@ intent explicit.
 ## Non-goals
 
 - Real local push delivery (impossible — accept the fidelity gap).
-- Flutter changes: `FcmService.initialize` already degrades gracefully
-  (permission/token failures are caught), and `Firebase.initializeApp()` is
-  covered by the demo dev-flavor config from #524. Token registration to the Go
-  API still runs harmlessly; messages simply never arrive locally.
+- Flutter changes **for the default stub path**: `FcmService.initialize` already
+  degrades gracefully (permission/token failures are caught), and
+  `Firebase.initializeApp()` is covered by the demo dev-flavor config from #524.
+  Token registration to the Go API still runs harmlessly; messages simply never
+  arrive locally. (The real-FCM-local *opt-in* does need real client config —
+  see §2/§3 — but that is a documented opt-in, not part of the zero-account
+  default.)
 - The pre-existing deep-link key mismatch (backend sends `data.route`, the client
   tap handler reads `data.task_id`) — unrelated to the stub, filed as #535.
 - The worker job contract / at-least-once idempotency (#464) — unchanged; only
@@ -108,11 +111,23 @@ make the intent explicit rather than implicit-by-omitted-var, and use the new
 local-only `NewLogStub` (§1) so full-payload logging never runs in staging/prod:
 
 - `Env == "local"` → **the `NewLogStub` by default** (zero-flag). Real FCM
-  locally is an
-  **operator opt-in**: set an explicit flag (e.g. `FCM_DELIVERY=real`) **and**
-  provide the worker `FIREBASE_PROJECT_ID` + `GOOGLE_APPLICATION_CREDENTIALS`
-  (the worker compose block does not pass these today, so this is a new,
-  documented path — not something that can happen by accident).
+  locally is a **fuller operator opt-in**, not a flag flip — it needs real
+  end-to-end wiring on **both** sides, which does not exist today:
+  - **Worker (server)**: an explicit `FCM_DELIVERY=real` **and**
+    `FIREBASE_PROJECT_ID` **and** a mounted `GOOGLE_APPLICATION_CREDENTIALS`
+    service-account file. The worker compose block passes **none** of these and
+    mounts no credential, so this requires actual worker-`environment` +
+    secret/volume wiring (a documented `compose.override.yaml`), not just `.env`
+    values.
+  - **Client (Flutter)**: the app must use **real Firebase config for the same
+    project** (not the #524 demo config) so it registers a **deliverable FCM
+    token** — the same real-config prerequisite the sibling Auth-emulator design
+    requires for its real-Firebase opt-in. With the demo config the client can't
+    furnish a token the real worker can deliver to.
+
+  Because this mirrors #524's real-Firebase setup plus worker credential
+  mounting, **staging remains the simpler path to verify real delivery**; the
+  local real-FCM opt-in is documented but deliberately not a one-flag path.
 - `Env == staging | production` → **non-local selection is unchanged**. Today
   `buildFCMClient` treats a missing project id / `fcm.New` failure as **fatal
   only for `production`** (`main.go:214, 222`); **`staging` warns and falls back
@@ -128,10 +143,14 @@ that var (with a developer's ADC already in the environment) can't cause
 unintended real delivery. Update `backend/.env.example` / `compose.yaml`
 comments to describe this (local logs; explicit opt-in for real FCM).
 
-### 3. Flutter — no change
+### 3. Flutter — no change for the default (stub) path
 
-Nothing is required client-side. The token still registers (or no-ops when
-signed out); no message arrives locally; failures are already swallowed.
+For the zero-account **default**, nothing is required client-side: the token
+still registers (or no-ops when signed out); no message arrives locally; failures
+are already swallowed. The **real-FCM-local opt-in is the exception** — it
+additionally requires the client on real Firebase config for the same project so
+it registers a deliverable token (see §2). The default stub path never needs a
+real token because nothing is delivered.
 
 ## Alternatives considered
 
@@ -169,7 +188,11 @@ signed out); no message arrives locally; failures are already swallowed.
   but revoked/underprivileged/transient) is **not** absorbed by the stub path;
   it fails/retries the worker job (#464), as today.
 - `backend/.env.example` / `compose.yaml` notification comments are corrected to
-  match reality (worker log-noops locally; documented opt-in for real FCM).
+  match reality (worker log-noops locally). The real-FCM-local opt-in is a
+  documented `compose.override.yaml` that adds `FCM_DELIVERY=real` +
+  `FIREBASE_PROJECT_ID` to the worker `environment` and mounts a
+  `GOOGLE_APPLICATION_CREDENTIALS` service account — comments alone don't create
+  the path — plus the client on real Firebase config (§2/§3).
 
 ## Deferred / related work
 
@@ -225,3 +248,12 @@ signed out); no message arrives locally; failures are already swallowed.
   is also the `api` client and staging's fallback, and `LocArgs` carries the
   user-authored task title, so enriching it would leak user content into staging
   logs (PII).
+- **2026-08-06** — Fifth Codex round on PR #536 (P2 ×2). Completed the
+  underspecified real-FCM-local opt-in. (1) It needs real **worker** wiring — a
+  documented `compose.override.yaml` adding `FCM_DELIVERY=real` +
+  `FIREBASE_PROJECT_ID` to the worker `environment` and mounting a
+  `GOOGLE_APPLICATION_CREDENTIALS` file; compose passes none today, so comments
+  alone don't create the path. (2) It also needs the **client** on real Firebase
+  config for the same project (like #524's real-Firebase opt-in) to register a
+  deliverable token; "no client change" is true only for the default stub path.
+  Because this is a fuller setup, staging stays the simpler real-delivery check.
