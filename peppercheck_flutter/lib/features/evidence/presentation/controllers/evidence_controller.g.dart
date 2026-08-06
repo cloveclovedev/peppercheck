@@ -35,7 +35,7 @@ final class EvidenceControllerProvider
 }
 
 String _$evidenceControllerHash() =>
-    r'61da73cad7e66f2311ae05cee94b00e05e07779e';
+    r'47e51c542536e9817f09682ba3aef0a8190e7be2';
 
 abstract class _$EvidenceController
     extends $AsyncNotifier<EvidenceSubmissionState> {

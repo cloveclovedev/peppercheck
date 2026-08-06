@@ -3,7 +3,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:peppercheck_flutter/features/evidence/data/evidence_repository.dart';
 import 'package:peppercheck_flutter/features/evidence/presentation/controllers/evidence_submission_state.dart';
 import 'package:peppercheck_flutter/features/home/ui/home_view_model.dart';
-import 'package:peppercheck_flutter/features/task/ui/providers/task_provider.dart';
+import 'package:peppercheck_flutter/features/task/ui/task_detail_view_model.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'evidence_controller.g.dart';
@@ -96,7 +96,7 @@ class EvidenceController extends _$EvidenceController {
       await ref
           .read(evidenceRepositoryProvider)
           .confirmEvidenceTimeout(judgementId: judgementId);
-      ref.invalidate(taskProvider(taskId));
+      ref.invalidate(taskDetailProvider(taskId));
       ref.invalidate(activeUserTasksProvider);
       ref.invalidate(activeRefereeTasksProvider);
       onSuccess();
@@ -130,7 +130,7 @@ class EvidenceController extends _$EvidenceController {
       }
 
       await action(repo, onPreparing, onUploading);
-      ref.invalidate(taskProvider(taskId));
+      ref.invalidate(taskDetailProvider(taskId));
       ref.invalidate(activeUserTasksProvider);
       ref.invalidate(activeRefereeTasksProvider);
       onSuccess();

@@ -16,9 +16,9 @@ import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:peppercheck_flutter/features/report/presentation/widgets/report_menu_button.dart';
-import 'package:peppercheck_flutter/features/task/ui/providers/task_provider.dart';
+import 'package:peppercheck_flutter/features/task/ui/task_detail_view_model.dart';
 
-class TaskDetailScreen extends ConsumerWidget {
+class TaskDetailScreen extends ConsumerStatefulWidget {
   final String taskId;
   final Task? initialTask;
 
@@ -27,8 +27,32 @@ class TaskDetailScreen extends ConsumerWidget {
   static const route = '/task_detail';
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final asyncTask = ref.watch(taskProvider(taskId));
+  ConsumerState<TaskDetailScreen> createState() => _TaskDetailScreenState();
+}
+
+class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
+  /// One poll per visit: a task that is still matching when the screen opens
+  /// (typically right after publishing) is watched until the server answers.
+  bool _pollStarted = false;
+
+  void _startPollIfMatching(Task task) {
+    if (_pollStarted || !TaskDetail.isMatching(task)) return;
+    _pollStarted = true;
+    ref.read(taskDetailProvider(widget.taskId).notifier).pollUntilMatched();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final taskId = widget.taskId;
+    final initialTask = widget.initialTask;
+    final asyncTask = ref.watch(taskDetailProvider(taskId));
+
+    final loadedTask = asyncTask.value;
+    if (loadedTask != null) {
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _startPollIfMatching(loadedTask),
+      );
+    }
 
     // Use latest data if available, then initialTask, then show loading
     final displayTask = asyncTask.asData?.value ?? initialTask;
@@ -53,7 +77,7 @@ class TaskDetailScreen extends ConsumerWidget {
         currentIndex: -1,
         actions: [ReportMenuButton(task: displayTask)],
         onRefresh: () async {
-          return ref.refresh(taskProvider(taskId).future);
+          return ref.refresh(taskDetailProvider(taskId).future);
         },
         slivers: [
           SliverToBoxAdapter(
