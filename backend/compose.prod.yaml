@@ -1,0 +1,304 @@
+# Standalone production Compose file. This is deliberately NOT an overlay of
+# compose.yaml:
+# Compose merge only
+# appends/merges services, so an overlay could never DROP the local `build:`,
+# the api/worker -> migrate runtime dependency, or the backup `profiles:` --
+# any of which would be a real prod hazard (building on the VPS instead of
+# running a pinned, pre-built image; re-running migrations on every
+# `up -d`). A standalone file makes the absence of those things structural,
+# and scripts/assert-prod-config.sh enforces it in CI via
+# `docker compose config | jq`.
+#
+# Images are resolved to immutable digests at deploy time via the
+# IMAGE_* env vars below -- this file never builds anything itself.
+#
+# Secrets are Docker file-based secrets rendered into ./secrets/<name> at
+# deploy time, never committed and never passed as plain
+# `environment:` values. See each service for the exact paths its running
+# code reads (deploy/postgres/entrypoint.sh, deploy/postgres/init/00-roles.sh,
+# deploy/backup/entrypoint.sh, internal/core/config's *_FILE convention).
+#
+# Despite the filename, this file is NOT production-only: it is the single
+# standalone Compose file deploy-vps.yml runs unchanged for BOTH
+# `staging` and `production` (staging exists to be a real rehearsal of the
+# same production topology). Every per-environment value -- `PC_ENV`, the
+# Compose project `name:`, `APP_ENV`, `CADDY_SITE_ADDRESS`, all `IMAGE_*`
+# digests, and the pgBackRest/B2 vars -- is a required `${VAR:?}` with no
+# environment-specific literal baked in here; only the deploy workflow's
+# per-environment inputs/vars (GitHub Environment `staging`/`production`)
+# supply the actual values. CI re-confirms this environment neutrality,
+# including a `PC_ENV=production` /
+# `CADDY_SITE_ADDRESS=peppercheck.dev` `docker compose config` resolution --
+# before production provisioning.
+
+name: peppercheck-${PC_ENV:?PC_ENV is required (e.g. staging or production)}
+
+x-logging: &default-logging
+  # Docker's default json-file driver has no size cap by default, which on a
+  # 1 GiB VPS can eventually fill the disk.
+  # Cap total per-container log storage at 30 MiB (10 MiB x 3 rotated files).
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  postgres:
+    image: ${IMAGE_POSTGRES:?IMAGE_POSTGRES is required (digest-pinned peppercheck-postgres image)}
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      POSTGRES_DB: peppercheck
+      POSTGRES_USER: postgres
+      # Stock docker-entrypoint.sh convention (the custom image's own
+      # entrypoint.sh hands off to it) -- file wins, never a plain value here.
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_superuser_pw
+      # Read by deploy/postgres/init/00-roles.sh's read_password() (KEY_FILE
+      # convention), which fails closed if the file is set but unreadable.
+      POSTGRES_APP_PASSWORD_FILE: /run/secrets/postgres_app_pw
+      POSTGRES_MIGRATOR_PASSWORD_FILE: /run/secrets/postgres_migrator_pw
+      POSTGRES_BACKUP_PASSWORD_FILE: /run/secrets/postgres_backup_pw
+      # Non-secret pgBackRest S3 (B2) repo settings -- the key/secret and
+      # cipher pass come from the mounted /run/secrets/* files below instead
+      # (see deploy/postgres/entrypoint.sh), never as plain env.
+      PGBACKREST_REPO1_S3_ENDPOINT: ${PGBACKREST_REPO1_S3_ENDPOINT:?PGBACKREST_REPO1_S3_ENDPOINT is required}
+      PGBACKREST_REPO1_S3_BUCKET: ${PGBACKREST_REPO1_S3_BUCKET:?PGBACKREST_REPO1_S3_BUCKET is required}
+      PGBACKREST_REPO1_S3_REGION: ${PGBACKREST_REPO1_S3_REGION:?PGBACKREST_REPO1_S3_REGION is required}
+    # entrypoint.sh (baked into IMAGE_POSTGRES) hardcodes
+    # `exec docker-entrypoint.sh postgres "$@"`, so `command:` here supplies
+    # only the extra postgres args, not "postgres" itself (unlike the dev
+    # compose.yaml, which runs the stock postgres:17 image directly).
+    #
+    # Modest starting tuning for a shared 1 GiB VPS (postgres, backup, api,
+    # worker, and caddy all run on the same box) -- see design doc §7 "modest
+    # 1 GiB tuning". These are conservative defaults, not a benchmarked
+    # target; revisit once the resize-trigger monitoring (a later task) shows
+    # real headroom/pressure.
+    command:
+      - -c
+      - shared_buffers=192MB
+      - -c
+      - effective_cache_size=576MB
+      - -c
+      - maintenance_work_mem=32MB
+      - -c
+      - work_mem=4MB
+      - -c
+      - max_connections=20
+    secrets:
+      - postgres_superuser_pw
+      - postgres_app_pw
+      - postgres_migrator_pw
+      - postgres_backup_pw
+      - pgbackrest_cipher
+      - b2_key_id
+      - b2_key_secret
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - pgsocket:/var/run/postgresql
+      - pgspool:/var/spool/pgbackrest
+      - pglog:/var/log/pgbackrest
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d peppercheck"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # Never published -- api/worker/backup all reach it over the internal
+    # `pcnet` network or the shared `pgsocket` volume; port 5432 has no
+    # business being reachable from outside this Compose project.
+    networks: [pcnet]
+
+  backup:
+    image: ${IMAGE_BACKUP:?IMAGE_BACKUP is required (digest-pinned peppercheck-backup image)}
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      # Read by deploy/backup/entrypoint.sh to build a fail-closed .pgpass
+      # for backup.sh's pg_dump (socket auth; PGHOST defaults to the shared
+      # pgsocket mount at /var/run/postgresql, matching pgbackrest.conf's
+      # pg1-socket-path and the .pgpass "localhost" host-field convention --
+      # see deploy/backup/backup.sh).
+      POSTGRES_BACKUP_PASSWORD_FILE: /run/secrets/postgres_backup_pw
+      PGBACKREST_REPO1_S3_ENDPOINT: ${PGBACKREST_REPO1_S3_ENDPOINT:?PGBACKREST_REPO1_S3_ENDPOINT is required}
+      PGBACKREST_REPO1_S3_BUCKET: ${PGBACKREST_REPO1_S3_BUCKET:?PGBACKREST_REPO1_S3_BUCKET is required}
+      PGBACKREST_REPO1_S3_REGION: ${PGBACKREST_REPO1_S3_REGION:?PGBACKREST_REPO1_S3_REGION is required}
+      # The age public key (recipient) is not itself sensitive (backup.sh's
+      # own comment), so it travels as a regular deploy-time env var rather
+      # than a Docker secret.
+      AGE_RECIPIENT: ${AGE_RECIPIENT:?AGE_RECIPIENT is required (age public key for the logical backup fallback)}
+    secrets:
+      - postgres_backup_pw
+      - pgbackrest_cipher
+      - b2_key_id
+      - b2_key_secret
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      # Read-only: backup only ever reads via the pg_dump socket connection
+      # and pgBackRest's coordination files under pgspool/pglog -- it must
+      # never be able to write into postgres's own data directory.
+      - pgdata:/var/lib/postgresql/data:ro
+      - pgsocket:/var/run/postgresql
+      - pgspool:/var/spool/pgbackrest
+      - pglog:/var/log/pgbackrest
+    networks: [pcnet]
+
+  api:
+    image: ${IMAGE_BACKEND:?IMAGE_BACKEND is required (digest-pinned peppercheck backend image)}
+    restart: unless-stopped
+    logging: *default-logging
+    command: ["api"]
+    environment:
+      APP_ENV: ${PC_ENV}
+      PORT: ${API_PORT:?API_PORT is required}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:?FIREBASE_PROJECT_ID is required}
+      # internal/core/config's fail-closed KEY_FILE convention --
+      # the connection string (including the peppercheck_app password) is
+      # rendered into this file at deploy time, never passed as plain env.
+      DATABASE_URL_FILE: /run/secrets/database_url
+      # HMAC key for internal/web's account-deletion form token. config.Load()
+      # fails closed if this is missing (unlike every other secret here,
+      # which only fails closed against an unreadable _FILE) -- see
+      # internal/core/config/config.go.
+      WEB_FORM_SIGNING_KEY_FILE: /run/secrets/web_form_signing_key
+    secrets:
+      - database_url
+      - web_form_signing_key
+    depends_on:
+      postgres:
+        condition: service_healthy
+      # Deliberately NO dependency on `migrate`: migrations are an explicit,
+      # deploy-workflow-driven `docker compose run --rm --profile deploy
+      # migrate` step, never a runtime dependency of `up -d` --
+      # otherwise every restart/redeploy would re-attempt (and, once
+      # applied, no-op) a migration run outside the controlled deploy
+      # sequence. Enforced by scripts/assert-prod-config.sh.
+    healthcheck:
+      test: ["CMD", "/peppercheck", "healthcheck"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks: [pcnet]
+
+  worker:
+    image: ${IMAGE_BACKEND:?IMAGE_BACKEND is required (digest-pinned peppercheck backend image)}
+    restart: unless-stopped
+    logging: *default-logging
+    command: ["worker"]
+    environment:
+      APP_ENV: ${PC_ENV}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      DATABASE_URL_FILE: /run/secrets/database_url
+      # The worker sends FCM push (match/assignment/deadline notifications), so
+      # it -- unlike the api -- needs the Firebase project id and a service
+      # account. In production a missing/broken FCM client is fatal at startup
+      # (cmd/peppercheck buildFCMClient); other environments fall back to a
+      # no-op sender.
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:?FIREBASE_PROJECT_ID is required (worker FCM sender)}
+      GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/firebase_service_account
+      # The worker never uses this (internal/web only mounts in the api
+      # command), but config.Load() is shared by both commands and fails
+      # closed if it's missing -- see the api service's comment above.
+      WEB_FORM_SIGNING_KEY_FILE: /run/secrets/web_form_signing_key
+    secrets:
+      - database_url
+      - web_form_signing_key
+      - firebase_service_account
+    depends_on:
+      postgres:
+        condition: service_healthy
+      # Same rationale as api: no dependency on `migrate`.
+    networks: [pcnet]
+
+  caddy:
+    image: ${IMAGE_CADDY:?IMAGE_CADDY is required (digest-pinned caddy image)}
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      # Real domain in production -> Caddy provisions ACME TLS automatically
+      # (see deploy/caddy/Caddyfile). Falls back to `:80` only if explicitly
+      # left unset, matching the dev Caddyfile default -- but production
+      # deploys are expected to always set this.
+      CADDY_SITE_ADDRESS: ${CADDY_SITE_ADDRESS:?CADDY_SITE_ADDRESS is required (the real production domain)}
+      API_PORT: ${API_PORT:?API_PORT is required}
+    depends_on: [api]
+    ports:
+      # Only Caddy is public. 80 is kept for ACME HTTP-01 challenges and
+      # plain-HTTP -> HTTPS redirects; 22 (SSH) is tailnet-only and never
+      # published here; the deploy workflow reaches SSH over the tailnet.
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks: [pcnet]
+
+  # One-shot migration runner. NOT part of the default `up -d` set: only
+  # `profiles: ["deploy"]` services, so a bare `docker compose up -d` never
+  # invokes it. The deploy workflow runs it explicitly via
+  # `docker compose run --rm --profile deploy migrate` before switching
+  # traffic to the new release.
+  migrate:
+    image: ${IMAGE_ATLAS:?IMAGE_ATLAS is required (digest-pinned arigaio/atlas:1.2.0)}
+    profiles: ["deploy"]
+    restart: "no"
+    logging: *default-logging
+    # Atlas has no *_FILE convention of its own, so the migrator connection
+    # string is read directly from its mounted secret file at run time.
+    # --revisions-schema atlas matches compose.yaml's
+    # migrate service / deploy/postgres/init/00-roles.sh's dedicated `atlas`
+    # schema, kept isolated from the least-privilege app role).
+    entrypoint: ["sh", "-c"]
+    command:
+      - >-
+        atlas migrate apply --dir file:///migrations --revisions-schema atlas
+        --url "$(cat /run/secrets/migrator_database_url)"
+    secrets:
+      - migrator_database_url
+    volumes:
+      - ./migrations:/migrations:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [pcnet]
+
+secrets:
+  postgres_superuser_pw:
+    file: ./secrets/postgres_superuser_pw
+  postgres_app_pw:
+    file: ./secrets/postgres_app_pw
+  postgres_migrator_pw:
+    file: ./secrets/postgres_migrator_pw
+  postgres_backup_pw:
+    file: ./secrets/postgres_backup_pw
+  pgbackrest_cipher:
+    file: ./secrets/pgbackrest_cipher
+  b2_key_id:
+    file: ./secrets/b2_key_id
+  b2_key_secret:
+    file: ./secrets/b2_key_secret
+  database_url:
+    file: ./secrets/database_url
+  migrator_database_url:
+    file: ./secrets/migrator_database_url
+  web_form_signing_key:
+    file: ./secrets/web_form_signing_key
+  # Firebase service-account JSON for the worker's FCM sender (P4a-D18). Rendered
+  # to ./secrets/ at deploy from the deploy secret store, like every secret here.
+  # Only the worker mounts it; the api never sends FCM.
+  firebase_service_account:
+    file: ./secrets/firebase_service_account
+
+volumes:
+  pgdata:
+  pgsocket:
+  pgspool:
+  pglog:
+  caddy-data:
+  caddy-config:
+
+networks:
+  pcnet:

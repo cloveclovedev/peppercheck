@@ -1,0 +1,152 @@
+// Package fcm is the Firebase Cloud Messaging adapter. It is the only place the
+// Firebase Admin SDK's messaging types appear (platform boundary): the rest of
+// the backend passes the provider-neutral Message/SendResult defined here. All
+// notifications are localized on the device via loc-keys — the server never
+// sends human-readable copy — so message text lives in the Flutter app's i18n
+// bundle keyed by TitleLocKey/BodyLocKey.
+//
+// API shapes verified against firebase.google.com/go/v4 v4.21.0:
+// AndroidNotification.{Title,Body}Loc{Key,Args}, ApsAlert.{TitleLocKey,
+// TitleLocArgs,LocKey,LocArgs}, Client.SendEachForMulticast, and the
+// IsUnregistered/IsInvalidArgument per-message error classifiers.
+package fcm
+
+import (
+	"context"
+	"fmt"
+	"log/slog"
+
+	firebase "firebase.google.com/go/v4"
+	"firebase.google.com/go/v4/messaging"
+)
+
+// Message is a provider-neutral, loc-key push notification. LocArgs fills both
+// the title and body placeholders (they share one argument list, matching the
+// notification templates).
+type Message struct {
+	TitleLocKey string
+	BodyLocKey  string
+	LocArgs     []string
+	Data        map[string]string
+}
+
+// SendResult reports tokens the provider rejected as permanently invalid
+// (unregistered / malformed), so the caller can prune them from its token store.
+type SendResult struct {
+	InvalidTokens []string
+}
+
+// Client sends a message to a set of device tokens.
+type Client interface {
+	Send(ctx context.Context, tokens []string, msg Message) (SendResult, error)
+}
+
+// maxMulticastTokens is the FCM multicast target limit: SendEachForMulticast
+// rejects a message addressing more than 500 tokens, so Send batches into
+// chunks of at most this size.
+// https://firebase.google.com/docs/cloud-messaging/send/admin-sdk
+const maxMulticastTokens = 500
+
+type client struct{ msg *messaging.Client }
+
+// New builds an FCM client using Application Default Credentials for projectID
+// (the worker's GOOGLE_APPLICATION_CREDENTIALS service account). Unlike Phase 2
+// token verification, sending requires real credentials.
+func New(ctx context.Context, projectID string) (Client, error) {
+	app, err := firebase.NewApp(ctx, &firebase.Config{ProjectID: projectID})
+	if err != nil {
+		return nil, fmt.Errorf("firebase app: %w", err)
+	}
+	m, err := app.Messaging(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("messaging client: %w", err)
+	}
+	return &client{msg: m}, nil
+}
+
+// noopClient drops every send with a warning. It is the fail-open fallback for
+// environments without Firebase credentials (local/dev), so the worker still
+// runs end-to-end without Firebase; production wires a real fcm.New client (and
+// startup treats a missing client as fatal). A richer local stub — one that
+// records sends for inspection — is tracked separately (#525).
+type noopClient struct{ logger *slog.Logger }
+
+// NewNoop returns an FCM client that drops sends, logging each at warn level.
+func NewNoop(logger *slog.Logger) Client { return noopClient{logger: logger} }
+
+func (n noopClient) Send(_ context.Context, tokens []string, m Message) (SendResult, error) {
+	if n.logger != nil {
+		n.logger.Warn("FCM not configured; notification dropped",
+			"titleLocKey", m.TitleLocKey, "recipients", len(tokens))
+	}
+	return SendResult{}, nil
+}
+
+// buildMulticast builds a loc-key multicast message for Android and iOS. The
+// title and body share LocArgs. Android priority is "high" and iOS carries the
+// default alert sound, preserving the behavior of the legacy send-notification
+// Edge Function (time-sensitive assignment/deadline pushes must not be delayed
+// in Doze or land silently on iOS). Kept as a pure function so message
+// construction is unit-tested without Firebase.
+func buildMulticast(tokens []string, m Message) *messaging.MulticastMessage {
+	return &messaging.MulticastMessage{
+		Tokens: tokens,
+		Data:   m.Data,
+		Android: &messaging.AndroidConfig{
+			Priority: "high",
+			Notification: &messaging.AndroidNotification{
+				TitleLocKey:  m.TitleLocKey,
+				TitleLocArgs: m.LocArgs,
+				BodyLocKey:   m.BodyLocKey,
+				BodyLocArgs:  m.LocArgs,
+			},
+		},
+		APNS: &messaging.APNSConfig{
+			Payload: &messaging.APNSPayload{Aps: &messaging.Aps{
+				Alert: &messaging.ApsAlert{
+					TitleLocKey:  m.TitleLocKey,
+					TitleLocArgs: m.LocArgs,
+					LocKey:       m.BodyLocKey,
+					LocArgs:      m.LocArgs,
+				},
+				Sound: "default",
+			}},
+		},
+	}
+}
+
+// Send delivers msg to tokens and returns the tokens FCM reported as no longer
+// registered (safe to prune). A nil/empty token list is a no-op. Tokens are
+// batched to the multicast limit; a transport-level error on any batch fails the
+// whole send. Per-token failures are classified, not returned as an error, so a
+// partial success still prunes dead tokens.
+//
+// Only IsUnregistered is treated as prune-worthy. INVALID_ARGUMENT is
+// deliberately NOT pruned: it also fires for a bad message payload (Data is
+// caller-supplied and unvalidated here), and classifying that as a dead token
+// would delete every one of a user's tokens on a single malformed notification.
+func (c *client) Send(ctx context.Context, tokens []string, m Message) (SendResult, error) {
+	var invalid []string
+	for _, batch := range chunkTokens(tokens, maxMulticastTokens) {
+		resp, err := c.msg.SendEachForMulticast(ctx, buildMulticast(batch, m))
+		if err != nil {
+			return SendResult{}, fmt.Errorf("fcm send: %w", err)
+		}
+		for i, r := range resp.Responses {
+			if r.Error != nil && messaging.IsUnregistered(r.Error) {
+				invalid = append(invalid, batch[i])
+			}
+		}
+	}
+	return SendResult{InvalidTokens: invalid}, nil
+}
+
+// chunkTokens splits tokens into contiguous batches of at most size, each a
+// slice of the input (no copy). An empty input yields no batches.
+func chunkTokens(tokens []string, size int) [][]string {
+	var batches [][]string
+	for start := 0; start < len(tokens); start += size {
+		batches = append(batches, tokens[start:min(start+size, len(tokens))])
+	}
+	return batches
+}

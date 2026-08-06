@@ -1,27 +1,46 @@
 # AGENTS.md
 
-## Contribution Rules
+## Rule Authority
 
-Before producing any output related to issues, tasks, or project management:
-
-1. Use the web search/browsing tool to open and read all pages listed below.
-2. Follow the rules described in these pages.
-
-### Required pages
-
-- https://raw.githubusercontent.com/cloveclovedev/cloveclove-developer-docs/main/modules/ROOT/pages/contribution/issue.adoc
-  (Access the raw content, not the rendered HTML.)
-
-If the web tool is unavailable or the pages cannot be loaded:
-
-- **Leave all contribution-related actions to the user.**
-- Provide assistance only when explicitly instructed by the user.
+- The shared `~/.agents/AGENTS.md` is the source of truth for common agent
+  rules. This repository file adds only PepperCheck-specific guidance.
+- Do not use `developer-docs/` or the external developer-documentation
+  repository as a source of contribution, issue, task, workflow, or engineering
+  rules.
+- Treat `developer-docs/` as legacy content pending documentation cleanup.
+  Inspect it only when a task explicitly requires migrating or auditing that
+  content.
+- If another document conflicts with the shared or repository `AGENTS.md`,
+  follow the applicable `AGENTS.md` guidance.
 
 ## Tools
 
 ### Github Operations
 
 - Use `gh` command
+
+## Go/VPS Refactoring Plans
+
+Implementation plans for the Supabase-to-Go/VPS refactoring program are a
+temporary exception to the general rule that working plans are not committed.
+
+- Commit existing program plans under `docs/development/go-vps-plans/` so later phases
+  can reuse their implementation details, constraints, and verification steps.
+- GitHub Issues remain the source of truth for work status, priority,
+  dependencies, and acceptance. Plan checkboxes are implementation guidance,
+  not a second work tracker.
+- Mark a completed phase plan as `Implemented`, but retain it until the overall
+  refactoring program is complete. Remove the temporary program plans in the
+  final cleanup after durable decisions have been preserved in design documents.
+- Revalidate a plan against the current code, approved design, dependency
+  versions, and official third-party documentation before executing it.
+- Starting with Phase 4b, creating a separate implementation plan is optional.
+  An approved design document plus sufficiently scoped GitHub Issues and
+  acceptance criteria are enough when they provide clear implementation
+  guidance. Create a plan only when sequencing, migration risk, cross-component
+  coordination, or detailed verification makes one useful.
+- The existing Phase 4b plan remains a retained program plan; this policy does
+  not require equivalent plans for later phases.
 
 ## PepperCheck Flutter Best Practices
 
@@ -36,7 +55,8 @@ We provide two distinct constructors to enforcing robust layouts:
    - **Use when**: Building standard internal screens with lists or scrollable content.
    - **Features**:
      - Accepts `slivers` (standard Flutter slivers).
-     - **Automatic Padding**: Applies standard screen padding (`horizontal: 16, vertical: 8`) automatically.
+     - **Automatic Padding**: Applies `AppSizes.screenHorizontalPadding` and
+       `AppSizes.screenVerticalPadding` automatically.
      - **Bottom Padding**: Automatically adds padding for the floating navigation bar.
      - **Refresh**: Supports pull-to-refresh via standard `onRefresh` parameter.
    - **Example**:

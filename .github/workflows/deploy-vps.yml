@@ -1,0 +1,127 @@
+name: deploy-vps
+
+# Reusable deploy workflow (Phase 7-A). Called by deploy-staging (ci-backend.yml,
+# Task 9) and deploy-vps-production.yml (Task 9) -- never triggered directly.
+#
+# `workflow_call` cannot receive Environment secrets from the caller, so this
+# job references secrets.BWS_TOKEN / SSH_DEPLOY_KEY / SSH_HOST_KEY directly and
+# declares `environment: ${{ inputs.env }}` itself -- both the `staging` and
+# `production` GitHub Environments register those three secrets, and
+# `environment: production` is what gives production its required-reviewer
+# gate (the caller workflow cannot grant that on this job's behalf).
+on:
+  workflow_call:
+    inputs:
+      env:
+        description: "Target environment name (staging|production); also the Compose project suffix peppercheck-<env>"
+        type: string
+        required: true
+      host:
+        description: "Public domain to smoke-test over HTTPS (curl https://<host>/readyz)"
+        type: string
+        required: true
+      ssh_host:
+        description: "Tailnet MagicDNS name or IP for SSH -- ufw only allows 22 on the tailscale0 interface, so the public host can never be reached over SSH"
+        type: string
+        required: true
+      sha:
+        description: "Validated source commit SHA -- checked out so shipped compose/migrations/scripts match the manifest, not the dispatch ref"
+        type: string
+        required: true
+      manifest_digest:
+        description: "OCI digest (sha256:...) of the peppercheck-release manifest artifact to deploy"
+        type: string
+        required: true
+
+# Serialize deploys per environment; never cancel one mid-flight (a cancelled
+# deploy could leave the Droplet between migrate and switch-deployment).
+concurrency:
+  group: deploy-${{ inputs.env }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.env }}
+    permissions:
+      id-token: write # Tailscale OIDC (GitHub Actions <-> Tailscale federation, no long-lived oauth-secret)
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.sha }} # ship compose/migrations/scripts matching the validated SHA, not the dispatch ref
+
+      - name: Connect to tailnet
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ vars.TS_CLIENT_ID }}
+          audience: ${{ vars.TS_AUDIENCE }}
+          tags: tag:ci-deploy
+
+      - name: Set up SSH + pinned host key
+        env:
+          SSH_HOST_KEY: ${{ secrets.SSH_HOST_KEY }}
+          SSH_DEPLOY_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_HOST_KEY" >> ~/.ssh/known_hosts
+          printf '%s\n' "$SSH_DEPLOY_KEY" > ~/.ssh/id
+          chmod 600 ~/.ssh/id
+
+      - name: Install bws + oras
+        run: ./backend/scripts/install-cli.sh
+
+      - name: Pull + verify release manifest by digest
+        env:
+          MANIFEST_DIGEST: ${{ inputs.manifest_digest }}
+          DEPLOY_SHA: ${{ inputs.sha }}
+        run: |
+          set -euo pipefail
+          oras pull "ghcr.io/cloveclovedev/peppercheck-release@${MANIFEST_DIGEST}" -o m
+          jq -e --arg s "$DEPLOY_SHA" \
+            '.sha == $s and .backend and .postgres and .backup and .atlas and .caddy' \
+            m/manifest.json
+
+      - name: Render secrets + ship deployment
+        env:
+          BWS_ACCESS_TOKEN: ${{ secrets.BWS_TOKEN }}
+          DEPLOY_ENV: ${{ inputs.env }}
+          SSH_HOST: ${{ inputs.ssh_host }}
+          DEPLOY_SHA: ${{ inputs.sha }}
+          RUN_ID: ${{ github.run_id }}
+          # Non-secret compose.prod.yaml `${VAR:?}` config that ship-deployment.sh
+          # (Task 10) renders into images.env alongside the digest-pinned
+          # IMAGE_* refs -- without these, remote-deploy.sh's first
+          # `compose pull` on the Droplet would fail closed. All sourced from
+          # this job's `environment: ${{ inputs.env }}` (staging/production
+          # GitHub Environment vars), never from secrets -- CADDY_SITE_ADDRESS
+          # comes from the workflow's own `host` input instead, since it is
+          # simply the public domain already passed in for the smoke test.
+          CADDY_SITE_ADDRESS: ${{ inputs.host }}
+          API_PORT: ${{ vars.API_PORT }}
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+          PGBACKREST_REPO1_S3_ENDPOINT: ${{ vars.PGBACKREST_REPO1_S3_ENDPOINT }}
+          PGBACKREST_REPO1_S3_BUCKET: ${{ vars.PGBACKREST_REPO1_S3_BUCKET }}
+          PGBACKREST_REPO1_S3_REGION: ${{ vars.PGBACKREST_REPO1_S3_REGION }}
+          AGE_RECIPIENT: ${{ vars.AGE_RECIPIENT }}
+        run: bws run -- ./backend/scripts/ship-deployment.sh "$DEPLOY_ENV" "$SSH_HOST" "$DEPLOY_SHA" "$RUN_ID" m/manifest.json
+
+      - name: Deploy (migrate, switch, up)
+        env:
+          DEPLOY_ENV: ${{ inputs.env }}
+          SSH_HOST: ${{ inputs.ssh_host }}
+          DEPLOY_SHA: ${{ inputs.sha }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/id "deploy@${SSH_HOST}" 'bash -s' "$DEPLOY_ENV" "${DEPLOY_SHA}-${RUN_ID}" < backend/scripts/remote-deploy.sh
+
+      - name: Smoke or rollback
+        env:
+          DEPLOY_HOST: ${{ inputs.host }}
+          SSH_HOST: ${{ inputs.ssh_host }}
+          DEPLOY_ENV: ${{ inputs.env }}
+        run: ./backend/scripts/smoke-or-rollback.sh "$DEPLOY_HOST" "$SSH_HOST" "$DEPLOY_ENV"

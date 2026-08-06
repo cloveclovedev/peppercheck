@@ -5,4 +5,11 @@ APP_DISPLAY_NAME = PepperCheck Staging
 
 FIREBASE_PLIST_FLAVOR = Staging
 
+// Preprocess the shared Info.plist without the dev-only local-networking ATS.
+INFOPLIST_PREPROCESS = YES
+INFOPLIST_PREPROCESSOR_DEFINITIONS = $(inherited) PEPPERCHECK_DEV_BUILD=0
+
 #include? "Secrets/Staging.secrets.xcconfig"
+
+// Sign in with Apple capability (shared entitlements, all build configs)
+CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements

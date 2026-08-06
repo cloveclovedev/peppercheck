@@ -1,0 +1,184 @@
+name: peppercheck
+
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: peppercheck
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required (set it in .env)}
+      POSTGRES_APP_PASSWORD: ${POSTGRES_APP_PASSWORD:?POSTGRES_APP_PASSWORD is required}
+      POSTGRES_MIGRATOR_PASSWORD: ${POSTGRES_MIGRATOR_PASSWORD:?POSTGRES_MIGRATOR_PASSWORD is required}
+      POSTGRES_BACKUP_PASSWORD: ${POSTGRES_BACKUP_PASSWORD:?POSTGRES_BACKUP_PASSWORD is required}
+    # Docker creates a fresh named volume owned by root:root, but the postgres
+    # server process drops privileges to the non-root `postgres` user, so the
+    # archive_command's `cp` into /wal-archive would fail with "Permission
+    # denied". The entrypoint override chowns the mount (running as the
+    # image's default root user) before handing off to the stock
+    # docker-entrypoint.sh, which then does its normal root-setup ->
+    # gosu-to-postgres -> exec sequence.
+    entrypoint:
+      - bash
+      - -c
+      - chown postgres:postgres /wal-archive && exec docker-entrypoint.sh "$$0" "$$@"
+    command:
+      - postgres
+      - -c
+      - wal_level=replica
+      - -c
+      - archive_mode=on
+      - -c
+      - archive_command=/usr/local/bin/archive-wal.sh %p %f
+      - -c
+      # 900s (15min) matches the accepted RPO.
+      # 60s forced a 16MiB segment every minute (~22.5 GiB/day of WAL); nothing
+      # yet prunes /wal-archive or ships it off-site (B2) — retention/pruning +
+      # off-site upload is required before a VPS deployment.
+      - archive_timeout=900
+      - -c
+      - max_wal_senders=3
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - wal-archive:/wal-archive
+      - ./deploy/postgres/init:/docker-entrypoint-initdb.d:ro
+      - ./deploy/postgres/archive-wal.sh:/usr/local/bin/archive-wal.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d peppercheck"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [pcnet]
+
+  migrate:
+    # Pinned to the current stable Atlas release (NOT :latest, which is a moving
+    # canary). Keep this in lockstep with the CI setup-atlas version and the dev
+    # machine's Atlas. Uses the Standard distribution unauthenticated (free) —
+    # the table-only workflow needs no Atlas Pro features.
+    image: arigaio/atlas:1.2.0
+    command:
+      - migrate
+      - apply
+      - --dir
+      - file:///migrations
+      # peppercheck_migrator (deploy/postgres/init/00-roles.sh) owns a
+      # dedicated `atlas` schema (created in 00-roles.sh), so Atlas tracks
+      # its applied-migrations history there instead of in `public` — kept
+      # isolated from the least-privilege app role, which is never granted
+      # USAGE on `atlas`.
+      - --revisions-schema
+      - atlas
+      - --url
+      - postgres://peppercheck_migrator:${POSTGRES_MIGRATOR_PASSWORD:?POSTGRES_MIGRATOR_PASSWORD is required}@postgres:5432/peppercheck?sslmode=disable
+    volumes:
+      - ./migrations:/migrations:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    networks: [pcnet]
+
+  api:
+    build: .
+    command: ["api"]
+    environment:
+      APP_ENV: local
+      PORT: ${API_PORT:?API_PORT is required (set it in .env)}
+      LOG_LEVEL: info
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:?FIREBASE_PROJECT_ID is required (set it in .env; a dummy like peppercheck-local is fine locally)}
+      DATABASE_URL: postgres://peppercheck_app:${POSTGRES_APP_PASSWORD:?POSTGRES_APP_PASSWORD is required}@postgres:5432/peppercheck?sslmode=disable
+      # R2 (avatar uploads). R2_ACCOUNT_ID / R2_BUCKET / R2_PUBLIC_DOMAIN are
+      # non-secret (see internal/core/config/config.go) and come from .env;
+      # fill in real values there for local testing against a real bucket.
+      # R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY are real credentials: with the
+      # dummy values below the api still constructs an R2 client (r2.New only
+      # rejects empty fields, not placeholder ones — see #483) that presigns
+      # against a nonexistent account, so a real upload attempt fails at the
+      # client PUT step rather than at the api. `make up BWS_PROJECT_ID=auto`
+      # overrides these two with the real dev credential via Bitwarden Secrets
+      # Manager (see docs/development/bws-development.md) — Compose gives that
+      # injected process-environment value precedence over the .env dummy
+      # below.
+      R2_ACCOUNT_ID: ${R2_ACCOUNT_ID:-r2-local-account}
+      R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID:-r2-local-key}
+      R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY:-r2-local-secret}
+      R2_BUCKET: ${R2_BUCKET:-peppercheck-avatars-local}
+      R2_PUBLIC_DOMAIN: ${R2_PUBLIC_DOMAIN:-cdn.local.example.com}
+      # HMAC key for internal/web's anti-abuse form token (Phase 3b
+      # account-deletion request form). Fails closed in config.Load() if
+      # empty; the dummy default below is fine for local dev only.
+      WEB_FORM_SIGNING_KEY: ${WEB_FORM_SIGNING_KEY:-local-dev-form-signing-key-not-for-production}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "/peppercheck", "healthcheck"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks: [pcnet]
+
+  worker:
+    build: .
+    command: ["worker"]
+    environment:
+      APP_ENV: local
+      LOG_LEVEL: info
+      DATABASE_URL: postgres://peppercheck_app:${POSTGRES_APP_PASSWORD:?POSTGRES_APP_PASSWORD is required}@postgres:5432/peppercheck?sslmode=disable
+      # The worker never uses this (internal/web only mounts in the api
+      # command), but config.Load() is shared by both commands and fails
+      # closed if it's missing -- see the api service's comment above.
+      WEB_FORM_SIGNING_KEY: ${WEB_FORM_SIGNING_KEY:-local-dev-form-signing-key-not-for-production}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    networks: [pcnet]
+
+  caddy:
+    image: caddy:2
+    environment:
+      CADDY_SITE_ADDRESS: ${CADDY_SITE_ADDRESS:-:80}
+      API_PORT: ${API_PORT:?API_PORT is required (set it in .env)}
+    depends_on: [api]
+    ports:
+      # Host ingress port is configurable to avoid clashes with other local
+      # projects (default 80). The container always listens on 80 internally.
+      - "${CADDY_HTTP_PORT:-80}:80"
+      - "${CADDY_HTTPS_PORT:-443}:443"
+    volumes:
+      - ./deploy/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks: [pcnet]
+
+  backup:
+    build: ./deploy/backup
+    profiles: ["backup"]
+    environment:
+      PGHOST: postgres
+      PGUSER: peppercheck_backup
+      PGPASSWORD: ${POSTGRES_BACKUP_PASSWORD:?POSTGRES_BACKUP_PASSWORD is required}
+      PGDATABASE: peppercheck
+      # Empty default (not ${VAR:?}) so the core stack's `docker compose up`
+      # parses without an age key — Compose interpolates the whole file eagerly,
+      # even for services excluded by the active profile. backup.sh enforces a
+      # non-empty AGE_RECIPIENT at runtime, so an actual backup run still fails
+      # loudly if it is unset.
+      AGE_RECIPIENT: ${AGE_RECIPIENT:-}
+      BACKUP_INTERVAL_SECONDS: ${BACKUP_INTERVAL_SECONDS:-86400}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - wal-archive:/wal-archive:ro
+      - backups:/backups
+    networks: [pcnet]
+
+volumes:
+  pgdata:
+  wal-archive:
+  backups:
+  caddy-data:
+  caddy-config:
+
+networks:
+  pcnet:

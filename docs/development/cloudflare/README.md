@@ -162,5 +162,5 @@ curl -I https://file.peppercheck.com/evidence/2025/08/03/test.jpg
 ## 関連ドキュメント
 
 - [Supabase README](../supabase/README.md)
-- [generate-upload-url API](../supabase/functions/generate-upload-url/README.md)
-- [設計文書](../docs/development/design-document.md)
+- [generate-upload-url API](../../../supabase/functions/generate-upload-url/README.md)
+- [Current architecture](../../architecture/overview.md)

@@ -1,0 +1,21 @@
+# postgres user's crontab (installed at /var/spool/cron/crontabs/postgres,
+# 0600 postgres). Read by the root cron daemon started via `cron -f` in
+# entrypoint.sh; jobs run as the `postgres` user and inherit the
+# PGBACKREST_*/AWS_*/PGPASSFILE/AGE_* env entrypoint.sh wrote to
+# /etc/environment (see cron's PAM stack, /etc/pam.d/cron -> pam_env).
+#
+# Schedule (docs/superpowers/specs/2026-07-25-phase7a-infra-ops-foundation-design.md
+# §8.2): weekly full + daily differential physical backups (continuous WAL
+# archiving is driven separately by Postgres archive_command, not cron),
+# hourly `check`, plus the independent daily age-encrypted pg_dump logical
+# fallback (backup.sh). Retention/expire is handled automatically by
+# pgBackRest's `backup` command at the end of each successful run -- no
+# separate `expire` entry is needed. Differential runs Mon-Sat only so it
+# never immediately follows Sunday's full on the same day.
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+MAILTO=""
+
+0 1 * * 0   pgbackrest --stanza=main --type=full backup >>/var/log/pgbackrest/cron-backup.log 2>&1
+0 1 * * 1-6 pgbackrest --stanza=main --type=diff backup >>/var/log/pgbackrest/cron-backup.log 2>&1
+0 3 * * *   /usr/local/bin/backup.sh >>/var/log/pgbackrest/cron-backup.log 2>&1
+0 * * * *   pgbackrest --stanza=main check >>/var/log/pgbackrest/cron-check.log 2>&1

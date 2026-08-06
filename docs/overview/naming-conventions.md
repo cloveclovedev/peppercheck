@@ -2,6 +2,26 @@
 
 Project-wide naming conventions. New conventions should be added here as sections.
 
+## Database Table Names
+
+Snake_case, plural for row collections. Two suffix rules distinguish scope:
+
+- **`*_config`** — a single product-wide or operational configuration table
+  (one logical row / singleton, often the `BOOLEAN PK DEFAULT true CHECK (id = true)`
+  pattern). Examples: `matching_config`, `matching_time_config`,
+  `payout_topup_config`, `trial_point_config`. Use `_config` for values the
+  operator tunes for the whole product, not per user.
+- **`*_settings`** — per-user preferences, keyed by `user_id` (1:1 with the user).
+  Example: `notification_settings`.
+
+The `user_` prefix marks a **1:many child collection owned by a user** (a user has
+many rows), e.g. `user_identities`, `user_ratings`, `user_subscriptions`. A 1:1
+per-user extension table does not take the prefix (`profiles`,
+`notification_settings`). Prefer a **provider-neutral** table name even when the
+stored value is provider-specific — e.g. `device_push_tokens` (the value is an FCM
+registration token, but the table models the device-push concept), keeping the
+provider name at the code boundary rather than in the schema.
+
 ## Notification Template Keys
 
 ### Pattern

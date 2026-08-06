@@ -8,5 +8,12 @@ APP_DISPLAY_NAME = PepperCheck Dev
 // Firebase plist selector (consumed by the Run Script Phase)
 FIREBASE_PLIST_FLAVOR = Dev
 
+// Allow the shared Info.plist to include local-networking ATS only for dev.
+INFOPLIST_PREPROCESS = YES
+INFOPLIST_PREPROCESSOR_DEFINITIONS = $(inherited) PEPPERCHECK_DEV_BUILD=1
+
 // Google Sign-In OAuth client (sourced from gitignored secrets file)
 #include? "Secrets/Dev.secrets.xcconfig"
+
+// Sign in with Apple capability (shared entitlements, all build configs)
+CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements

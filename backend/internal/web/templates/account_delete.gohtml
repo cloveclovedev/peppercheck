@@ -1,0 +1,33 @@
+{{define "content"}}
+<article>
+<h1>{{t .Locale "AccountDelete.title"}}</h1>
+{{if .Submitted}}
+<p>{{t .Locale "AccountDelete.submitted"}}</p>
+{{else}}
+<p>{{t .Locale "AccountDelete.intro"}}</p>
+{{if .ShowForm}}
+<p>{{t .Locale "AccountDelete.formIntro"}}</p>
+<form method="post" action="/{{.Locale}}/account/delete">
+<div>
+<label for="email">{{t .Locale "AccountDelete.emailLabel"}}</label>
+<input type="email" id="email" name="email" required>
+<p>{{t .Locale "AccountDelete.emailHelp"}}</p>
+<p>{{t .Locale "AccountDelete.emailHelpHideMyEmail"}}</p>
+</div>
+<div>
+<label><input type="checkbox" name="consent" required> {{t .Locale "AccountDelete.consentLabel"}}</label>
+</div>
+{{/* Honeypot: a plain label ("leave this blank") deters honest humans
+     without needing CSS to visually hide it; Task 6 (fonts+CSS) adds a
+     hiding rule as an additional layer once the stylesheet exists. */}}
+<div>
+<label for="website">{{t .Locale "AccountDelete.honeypotLabel"}}</label>
+<input type="text" id="website" name="website" autocomplete="off" tabindex="-1">
+</div>
+<input type="hidden" name="form_token" value="{{.FormToken}}">
+<button type="submit">{{t .Locale "AccountDelete.submitButton"}}</button>
+</form>
+{{end}}
+{{end}}
+</article>
+{{end}}

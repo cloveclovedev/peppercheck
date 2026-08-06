@@ -1,0 +1,36 @@
+{{define "layout"}}<!doctype html>
+<html lang="{{.Locale}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{.Title}}</title>
+<link rel="preload" as="font" type="font/woff2" href="/static/fonts/inter-variable-latin.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="/static/fonts/noto-sans-jp-400.woff2" crossorigin>
+<link rel="stylesheet" href="/static/styles.css">
+{{range .Hreflang}}<link rel="alternate" hreflang="{{.Lang}}" href="{{.Href}}">
+{{end}}</head>
+<body>
+<header class="site-header">
+<div class="site-header-inner">
+<a href="/{{.Locale}}" class="brand">{{t .Locale "Meta.siteName"}}</a>
+<nav class="lang-switch">{{range $i, $a := .LangSwitch}}{{if $i}} | {{end}}<a href="{{$a.Href}}">{{langLabel $a.Lang}}</a>{{end}}</nav>
+</div>
+</header>
+<main>{{template "content" .}}</main>
+<footer class="site-footer">
+<div class="site-footer-inner">
+<nav class="legal-links">
+<a href="/{{.Locale}}/legal/terms">{{t .Locale "Footer.terms"}}</a>
+<a href="/{{.Locale}}/legal/privacy">{{t .Locale "Footer.privacy"}}</a>
+<a href="/{{.Locale}}/legal/tokushoho">{{t .Locale "Footer.tokushoho"}}</a>
+<a href="/{{.Locale}}/legal/refund">{{t .Locale "Footer.refund"}}</a>
+</nav>
+<div class="site-footer-right">
+<a href="https://x.com/peppercheck_app" target="_blank" rel="noopener noreferrer" class="x-link" aria-label="X">
+<svg viewBox="0 0 24 24" aria-hidden="true" class="x-icon"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+</a>
+<p class="copyright">{{t .Locale "Footer.copyright"}}</p>
+</div>
+</div>
+</footer>
+</body></html>{{end}}

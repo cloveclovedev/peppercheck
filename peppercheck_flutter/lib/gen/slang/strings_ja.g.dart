@@ -70,6 +70,8 @@ class TranslationsLoginJa {
 
 	/// ja: 'PepperCheckとは？'
 	String get aboutLink => 'PepperCheckとは？';
+
+	late final TranslationsLoginAppleLinkJa appleLink = TranslationsLoginAppleLinkJa.internal(_root);
 }
 
 // Path: home
@@ -665,6 +667,30 @@ class TranslationsAppExplanationJa {
 	String get learnMore => '詳しくは peppercheck.dev で';
 }
 
+// Path: login.appleLink
+class TranslationsLoginAppleLinkJa {
+	TranslationsLoginAppleLinkJa.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// ja: '既存アカウントとの連携'
+	String get title => '既存アカウントとの連携';
+
+	/// ja: 'このメールアドレスは別のログイン方法で登録済みです。 Appleでのログインを既存のアカウントに連携しますか？'
+	String get body => 'このメールアドレスは別のログイン方法で登録済みです。\nAppleでのログインを既存のアカウントに連携しますか？';
+
+	/// ja: '連携する'
+	String get confirm => '連携する';
+
+	/// ja: 'キャンセル'
+	String get cancel => 'キャンセル';
+
+	/// ja: '連携をキャンセルしました。 別の方法でログインしてください。'
+	String get cancelled => '連携をキャンセルしました。\n別の方法でログインしてください。';
+}
+
 // Path: billing.plans
 class TranslationsBillingPlansJa {
 	TranslationsBillingPlansJa.internal(this._root);
@@ -915,11 +941,14 @@ class TranslationsTaskCreationJa {
 	/// ja: '期限'
 	String get labelDeadline => '期限';
 
-	/// ja: 'マッチングプラン'
-	String get sectionMatching => 'マッチングプラン';
+	/// ja: 'レフリーの人数'
+	String get sectionRefereeCount => 'レフリーの人数';
 
-	/// ja: '追加'
-	String get buttonAdd => '追加';
+	/// ja: '$count人'
+	String refereeCountUnit({required Object count}) => '${count}人';
+
+	/// ja: 'レフリーは自動で選ばれます'
+	String get refereeCountNotice => 'レフリーは自動で選ばれます';
 
 	/// ja: '作成'
 	String get buttonCreate => '作成';
@@ -927,7 +956,6 @@ class TranslationsTaskCreationJa {
 	/// ja: '更新'
 	String get buttonUpdate => '更新';
 
-	late final TranslationsTaskCreationStrategyJa strategy = TranslationsTaskCreationStrategyJa.internal(_root);
 	late final TranslationsTaskCreationErrorJa error = TranslationsTaskCreationErrorJa.internal(_root);
 }
 
@@ -1238,6 +1266,9 @@ class TranslationsAccountActionsJa {
 	/// ja: 'アカウントを削除'
 	String get deleteAccount => 'アカウントを削除';
 
+	/// ja: 'ログアウト'
+	String get logout => 'ログアウト';
+
 	/// ja: '進行中のタスクまたはレフリーリクエストがあるため、アカウントを削除できません。'
 	String get deleteBlocked => '進行中のタスクまたはレフリーリクエストがあるため、アカウントを削除できません。';
 
@@ -1325,18 +1356,6 @@ class TranslationsTaskDetailCancelAssignmentJa {
 
 	/// ja: 'エラーが発生しました: $message'
 	String error({required Object message}) => 'エラーが発生しました: ${message}';
-}
-
-// Path: task.creation.strategy
-class TranslationsTaskCreationStrategyJa {
-	TranslationsTaskCreationStrategyJa.internal(this._root);
-
-	final Translations _root; // ignore: unused_field
-
-	// Translations
-
-	/// ja: 'スタンダード'
-	String get standard => 'スタンダード';
 }
 
 // Path: task.creation.error
@@ -1479,6 +1498,12 @@ class TranslationsProfileEditErrorsJa {
 	/// ja: '設定から写真へのアクセスを許可してください'
 	String get galleryPermission => '設定から写真へのアクセスを許可してください';
 
+	/// ja: '画像サイズが大きすぎます。5MB以下の画像を選んでください'
+	String get tooLarge => '画像サイズが大きすぎます。5MB以下の画像を選んでください';
+
+	/// ja: 'しばらく時間をおいてからもう一度お試しください'
+	String get rateLimited => 'しばらく時間をおいてからもう一度お試しください';
+
 	/// ja: 'エラーが発生しました。しばらくしてからお試しください'
 	String get generic => 'エラーが発生しました。しばらくしてからお試しください';
 }
@@ -1583,6 +1608,11 @@ extension on Translations {
 		return switch (path) {
 			'login.title' => 'PEPPERCHECK',
 			'login.aboutLink' => 'PepperCheckとは？',
+			'login.appleLink.title' => '既存アカウントとの連携',
+			'login.appleLink.body' => 'このメールアドレスは別のログイン方法で登録済みです。\nAppleでのログインを既存のアカウントに連携しますか？',
+			'login.appleLink.confirm' => '連携する',
+			'login.appleLink.cancel' => 'キャンセル',
+			'login.appleLink.cancelled' => '連携をキャンセルしました。\n別の方法でログインしてください。',
 			'home.title' => 'ホーム',
 			'home.myTasks' => 'タスク',
 			'home.refereeTasks' => '判定依頼',
@@ -1722,11 +1752,11 @@ extension on Translations {
 			'task.creation.labelDescription' => '詳細 (任意)',
 			'task.creation.labelCriteria' => '完了条件',
 			'task.creation.labelDeadline' => '期限',
-			'task.creation.sectionMatching' => 'マッチングプラン',
-			'task.creation.buttonAdd' => '追加',
+			'task.creation.sectionRefereeCount' => 'レフリーの人数',
+			'task.creation.refereeCountUnit' => ({required Object count}) => '${count}人',
+			'task.creation.refereeCountNotice' => 'レフリーは自動で選ばれます',
 			'task.creation.buttonCreate' => '作成',
 			'task.creation.buttonUpdate' => '更新',
-			'task.creation.strategy.standard' => 'スタンダード',
 			'task.creation.error.title' => 'エラー',
 			'task.creation.error.insufficientPoints' => 'ポイントが不足しています',
 			'task.creation.error.insufficientPointsDetail' => ({required Object balance, required Object locked, required Object required}) => '現在の残高: ${balance} pt\nロック済み: ${locked} pt\n必要なポイント: ${required} pt',
@@ -1801,6 +1831,8 @@ extension on Translations {
 			'profile.edit.errors.taken' => 'このユーザー名は既に使われています',
 			'profile.edit.errors.uploadFailed' => '画像のアップロードに失敗しました',
 			'profile.edit.errors.galleryPermission' => '設定から写真へのアクセスを許可してください',
+			'profile.edit.errors.tooLarge' => '画像サイズが大きすぎます。5MB以下の画像を選んでください',
+			'profile.edit.errors.rateLimited' => 'しばらく時間をおいてからもう一度お試しください',
 			'profile.edit.errors.generic' => 'エラーが発生しました。しばらくしてからお試しください',
 			'report.menuItem' => '問題を報告',
 			'report.menuItemReported' => '問題を報告（報告済み）',
@@ -1894,6 +1926,7 @@ extension on Translations {
 			'notification.fallback_body' => '新しい通知があります。',
 			'account.actions.title' => 'アカウント',
 			'account.actions.deleteAccount' => 'アカウントを削除',
+			'account.actions.logout' => 'ログアウト',
 			'account.actions.deleteBlocked' => '進行中のタスクまたはレフリーリクエストがあるため、アカウントを削除できません。',
 			'account.actions.deleteBlockedOpenTasks' => '進行中のタスクがあります',
 			'account.actions.deleteBlockedActiveReferee' => 'アクティブなレフリーリクエストがあります',

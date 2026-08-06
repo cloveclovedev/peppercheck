@@ -1,0 +1,15 @@
+{
+	admin off
+}
+
+# Local dev defaults to :80 (plain HTTP). Production sets CADDY_SITE_ADDRESS to
+# the real domain (e.g. peppercheck.dev) so Caddy provisions TLS automatically.
+{$CADDY_SITE_ADDRESS::80} {
+	# HSTS: tells browsers to only ever reach this host over HTTPS. Only
+	# meaningful once ACME TLS is actually provisioned (real domain), but
+	# harmless on the local :80 fallback -- browsers ignore
+	# Strict-Transport-Security received over plain HTTP.
+	header Strict-Transport-Security "max-age=31536000; includeSubDomains"
+
+	reverse_proxy api:{$API_PORT}
+}

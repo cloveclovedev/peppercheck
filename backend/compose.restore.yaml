@@ -1,0 +1,116 @@
+# Isolated restore-drill Compose project. Driven exclusively by
+# scripts/restore-drill.sh, never run by hand against a real environment.
+# Modeled on compose.prod.yaml but stripped to exactly the two services a
+# drill needs, plus the restore-only volume:
+#
+#   - NO worker: a drill only has to prove the API can read the restored
+#     data; a worker draining leased jobs against a restored-but-frozen
+#     snapshot has no role here and is one more thing that could reach out
+#     unexpectedly.
+#   - NO migrate/backup/caddy: nothing here ever runs a migration (the
+#     restored PGDATA is already fully migrated, being a physical copy of
+#     the live cluster) or takes a NEW backup, and there is no public
+#     ingress to front (see the api `ports:` note below).
+#   - NO production external credentials: the only "secret" mounted is
+#     `database_url`, and that is the SAME already-deployed connection
+#     string the live release is using -- inherent to a *physical* restore
+#     (the role password lives inside the restored bytes, not a value
+#     copied out of the restore-scoped BWS project) -- see design doc §6.3,
+#     which does not list a duplicate DB password there. No B2 key, cipher
+#     passphrase, or Firebase credential is mounted into this stack at all.
+#
+# name: is fixed (not `${PC_ENV}`-derived like compose.prod.yaml) precisely
+# so this can never accidentally collide with -- or be confused for --
+# `peppercheck-staging`/`peppercheck-production`.
+name: peppercheck-restore-drill
+
+services:
+  postgres:
+    image: ${IMAGE_POSTGRES:?IMAGE_POSTGRES is required (the SAME digest-pinned image the live deployment is running)}
+    restart: "no"
+    # The restored PGDATA (populated by restore-drill.sh's `pgbackrest
+    # --target-action=promote` step, BEFORE this stack is brought up)
+    # already has `archive_mode = on` and
+    # `archive_command = pgbackrest --stanza=main archive-push %p` baked
+    # into postgresql.auto.conf, inherited byte-for-byte from the ORIGINAL
+    # cluster's initdb (deploy/postgres/init/10-archive.sh). Once this
+    # container starts, Postgres promotes out of recovery onto a brand new
+    # timeline -- and would otherwise try to archive-push that new
+    # timeline's WAL straight back into the SAME production B2 stanza. A
+    # command-line flag always overrides the config file, so
+    # `archive_mode=off` here guarantees this drill instance can NEVER
+    # write to the shared repo, regardless of whether any B2/cipher secret
+    # happens to be reachable -- it structurally cannot try.
+    command: ["-c", "archive_mode=off"]
+    volumes:
+      - pgdata_restore:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d peppercheck"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    # Never published -- restore-drill.sh only ever reaches this via
+    # `docker compose exec` on the isolated pcnet_restore network, exactly
+    # like the sentinel/PITR assertion queries against the live source.
+    networks: [pcnet_restore]
+
+  api:
+    image: ${IMAGE_BACKEND:?IMAGE_BACKEND is required (the SAME digest-pinned image the live deployment is running)}
+    restart: "no"
+    command: ["api"]
+    environment:
+      APP_ENV: restore-drill
+      PORT: ${API_PORT:?API_PORT is required}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      # The real per-environment project id (not a secret -- see
+      # compose.prod.yaml), so the restored api verifies the SAME test
+      # account's ID token firebase-test-token.sh obtained against the
+      # real (staging) Firebase project.
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:?FIREBASE_PROJECT_ID is required}
+      DATABASE_URL_FILE: /run/secrets/database_url
+      # config.Load() fails closed without this (see compose.prod.yaml); the
+      # restored api never serves the web form, but still needs a value to
+      # boot at all -- reuses the same already-deployed secret file below.
+      WEB_FORM_SIGNING_KEY_FILE: /run/secrets/web_form_signing_key
+    secrets:
+      - database_url
+      - web_form_signing_key
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "/peppercheck", "healthcheck"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    # Loopback-only publish: restore-drill.sh curls this from the SAME host
+    # to run the authenticated /api/v1/me smoke. This stack has no Caddy in
+    # front of it (unlike compose.prod.yaml, where api is never published
+    # at all and Caddy is the sole public ingress) -- binding to 127.0.0.1
+    # rather than 0.0.0.0 is the drill's only access path while still never
+    # exposing the restored api beyond this single host.
+    ports:
+      - "127.0.0.1:${RESTORE_API_PORT:-18765}:${API_PORT}"
+    networks: [pcnet_restore]
+
+secrets:
+  database_url:
+    file: ${DATABASE_URL_SECRET_FILE:?DATABASE_URL_SECRET_FILE is required}
+  web_form_signing_key:
+    file: ${WEB_FORM_SIGNING_KEY_SECRET_FILE:?WEB_FORM_SIGNING_KEY_SECRET_FILE is required}
+
+volumes:
+  # Created + chowned (for the pgBackRest UID, 999) and then restored into
+  # by restore-drill.sh BEFORE this stack is ever brought up. Declared
+  # `external: true` so Compose can never create, and -- just as
+  # importantly -- can never delete it: `down -v` only removes volumes
+  # Compose itself created, so cleanup() in restore-drill.sh removes this
+  # one explicitly, by the same name, after `down`.
+  pgdata_restore:
+    external: true
+    name: ${RESTORE_VOLUME:?RESTORE_VOLUME is required}
+
+networks:
+  # Distinct from compose.prod.yaml's `pcnet` -- this project must never be
+  # able to reach the live postgres/backup/api/worker/caddy containers.
+  pcnet_restore:

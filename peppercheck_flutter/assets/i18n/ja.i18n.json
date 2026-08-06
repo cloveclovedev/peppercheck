@@ -1,7 +1,14 @@
 {
   "login": {
     "title": "PEPPERCHECK",
-    "aboutLink": "PepperCheckとは？"
+    "aboutLink": "PepperCheckとは？",
+    "appleLink": {
+      "title": "既存アカウントとの連携",
+      "body": "このメールアドレスは別のログイン方法で登録済みです。\nAppleでのログインを既存のアカウントに連携しますか？",
+      "confirm": "連携する",
+      "cancel": "キャンセル",
+      "cancelled": "連携をキャンセルしました。\n別の方法でログインしてください。"
+    }
   },
   "home": {
     "title": "ホーム",
@@ -178,13 +185,11 @@
       "labelDescription": "詳細 (任意)",
       "labelCriteria": "完了条件",
       "labelDeadline": "期限",
-      "sectionMatching": "マッチングプラン",
-      "buttonAdd": "追加",
+      "sectionRefereeCount": "レフリーの人数",
+      "refereeCountUnit": "$count人",
+      "refereeCountNotice": "レフリーは自動で選ばれます",
       "buttonCreate": "作成",
       "buttonUpdate": "更新",
-      "strategy": {
-        "standard": "スタンダード"
-      },
       "error": {
         "title": "エラー",
         "insufficientPoints": "ポイントが不足しています",
@@ -280,6 +285,8 @@
         "taken": "このユーザー名は既に使われています",
         "uploadFailed": "画像のアップロードに失敗しました",
         "galleryPermission": "設定から写真へのアクセスを許可してください",
+        "tooLarge": "画像サイズが大きすぎます。5MB以下の画像を選んでください",
+        "rateLimited": "しばらく時間をおいてからもう一度お試しください",
         "generic": "エラーが発生しました。しばらくしてからお試しください"
       }
     }
@@ -398,6 +405,7 @@
     "actions": {
       "title": "アカウント",
       "deleteAccount": "アカウントを削除",
+      "logout": "ログアウト",
       "deleteBlocked": "進行中のタスクまたはレフリーリクエストがあるため、アカウントを削除できません。",
       "deleteBlockedOpenTasks": "進行中のタスクがあります",
       "deleteBlockedActiveReferee": "アクティブなレフリーリクエストがあります",

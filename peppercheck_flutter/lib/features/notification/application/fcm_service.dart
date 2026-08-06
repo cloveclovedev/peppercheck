@@ -1,14 +1,16 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:peppercheck_flutter/app/app_logger.dart';
 import 'package:peppercheck_flutter/app/routing/app_router.dart';
+import 'package:peppercheck_flutter/features/auth/application/auth_state.dart';
 import 'package:peppercheck_flutter/features/notification/application/notification_text_resolver.dart';
 import 'package:peppercheck_flutter/features/notification/data/notification_repository.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 part 'fcm_service.g.dart';
 
@@ -22,12 +24,31 @@ const _androidChannel = AndroidNotificationChannel(
 
 @Riverpod(keepAlive: true)
 FcmService fcmService(Ref ref) {
-  return FcmService(ref);
+  final service = FcmService(ref);
+  // Retry the token upsert whenever Firebase auth state flips to signed-in.
+  // Registered here (during this provider's own build) because `ref.listen`
+  // is only safe within a provider's build scope, not from an async method
+  // called later.
+  ref.listen(authStateChangesProvider, (previous, next) {
+    if (next.value != null) {
+      unawaited(service.onSignedIn());
+    }
+  });
+  return service;
 }
 
 class FcmService {
-  FcmService(this.ref);
+  FcmService(this.ref, {Future<String?> Function()? getToken})
+    : _getToken = getToken;
+
   final Ref ref;
+
+  /// Injectable so tests can drive [onSignedIn] without touching the real
+  /// Firebase Messaging plugin. Resolved lazily against
+  /// `FirebaseMessaging.instance.getToken` in [_upsertCurrentToken] so
+  /// construction never touches the Firebase Messaging plugin when a fake is
+  /// supplied.
+  final Future<String?> Function()? _getToken;
 
   final _localNotifications = FlutterLocalNotificationsPlugin();
   int _notificationId = 0;
@@ -43,21 +64,19 @@ class FcmService {
     // 2. Initialize flutter_local_notifications
     await _initLocalNotifications();
 
-    // 3. Upload Token on start
-    await _upsertCurrentToken();
+    // 3. Upload token on start — fire-and-forget. A slow or unreachable API
+    // must not delay the listener registrations below (ApiClient's timeouts
+    // alone can run up to ~20s); registerToken/_upsertCurrentToken never
+    // throw, so nothing here needs a try/catch.
+    unawaited(_upsertCurrentToken());
 
-    // 4. Listen to token refresh
-    FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
-      ref.read(notificationRepositoryProvider).upsertToken(newToken);
-    });
+    // 4. Listen to token refresh. registerToken never throws (see below), so
+    // a failure here is logged internally rather than becoming an unhandled
+    // Stream-listener error.
+    FirebaseMessaging.instance.onTokenRefresh.listen(registerToken);
 
-    // 5. Listen to Auth State Changes (Retry upsert on login)
-    Supabase.instance.client.auth.onAuthStateChange.listen((data) {
-      if (data.event == AuthChangeEvent.signedIn) {
-        debugPrint('[FCM] User signed in, retrying token upsert');
-        _upsertCurrentToken();
-      }
-    });
+    // 5. Auth-state-triggered retry is registered once, at provider-build
+    // time, in `fcmServiceProvider` above — see `onSignedIn`.
 
     // 6. Foreground Message Handling
     FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
@@ -167,13 +186,63 @@ class FcmService {
     router.push('/task_detail/$taskId');
   }
 
+  /// Called when Firebase auth state flips to signed-in. Retries the token
+  /// upsert (idempotent).
+  Future<void> onSignedIn() async {
+    debugPrint('[FCM] User signed in, retrying token upsert');
+    await _upsertCurrentToken();
+  }
+
   Future<void> _upsertCurrentToken() async {
-    final token = await FirebaseMessaging.instance.getToken();
-    debugPrint('[FCM] Token retrieved: $token');
-    if (token != null) {
-      await ref.read(notificationRepositoryProvider).upsertToken(token);
-    } else {
-      debugPrint('[FCM] Token is null');
+    final String? token;
+    try {
+      final getToken = _getToken ?? FirebaseMessaging.instance.getToken;
+      token = await getToken();
+    } catch (e, st) {
+      ref
+          .read(loggerProvider)
+          .w('[FCM] Failed to retrieve token', error: e, stackTrace: st);
+      return;
     }
+    if (token == null) {
+      debugPrint('[FCM] Token is null');
+      return;
+    }
+    await registerToken(token);
+  }
+
+  /// Registers [token] with the Go API, gated on the current signed-in
+  /// state — a signed-out call is a no-op rather than an unauthenticated
+  /// request. Shared by app start, `onTokenRefresh`, and [onSignedIn]; never
+  /// throws — each of those call sites either fires this without awaiting or
+  /// runs it ahead of unrelated work, so a failure here is logged rather
+  /// than propagated.
+  Future<void> registerToken(String token) async {
+    if (!ref.read(isFirebaseAuthenticatedProvider)) {
+      debugPrint('[FCM] Skipping token registration; signed out');
+      return;
+    }
+    debugPrint('[FCM] Registering token (${_maskToken(token)})');
+    try {
+      await ref
+          .read(notificationRepositoryProvider)
+          .registerToken(token, _deviceType());
+    } catch (e, st) {
+      ref
+          .read(loggerProvider)
+          .w('[FCM] Token registration failed', error: e, stackTrace: st);
+    }
+  }
+
+  String _deviceType() {
+    if (Platform.isAndroid) return 'android';
+    if (Platform.isIOS) return 'ios';
+    return 'unknown';
+  }
+
+  /// Never log the full FCM token — only enough to correlate log lines.
+  String _maskToken(String token) {
+    if (token.length <= 8) return '*' * token.length;
+    return '${token.substring(0, 4)}…${token.substring(token.length - 4)}';
   }
 }

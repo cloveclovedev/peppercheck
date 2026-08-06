@@ -21,3 +21,10 @@ peppercheck_flutter/assets/i18n/_*.json
 # Backed up separately (1Password / private repo + symlink). Format and
 # maintenance policy live inside the SKILL.md file itself.
 .claude/skills/release-checklist/
+.agents/skills/release-checklist/
+
+# Python bytecode caches.
+__pycache__/
+
+# Backend local environment file (secrets/local config)
+backend/.env

@@ -1,0 +1,60 @@
+{{define "content"}}
+<article>
+<h1>{{t .Locale "Terms.title"}}</h1>
+<p class="effective-date">{{t .Locale "Terms.effectiveDate"}}</p>
+
+<section>
+<h2>{{t .Locale "Terms.intro.heading"}}</h2>
+<p>{{t .Locale "Terms.intro.body"}}</p>
+</section>
+
+<section>
+<h2>{{t .Locale "Terms.eligibility.heading"}}</h2>
+<p>{{t .Locale "Terms.eligibility.body"}}</p>
+</section>
+
+<section>
+<h2>{{t .Locale "Terms.service.heading"}}</h2>
+<p>{{t .Locale "Terms.service.body"}}</p>
+</section>
+
+<section>
+<h2>{{t .Locale "Terms.subscription.heading"}}</h2>
+<p>{{t .Locale "Terms.subscription.body"}}</p>
+</section>
+
+<section>
+<h2>{{t .Locale "Terms.prohibited.heading"}}</h2>
+<p>{{t .Locale "Terms.prohibited.intro"}}</p>
+<ul>{{range list "abuse" "fraud" "interference" "scraping" "impersonation" "obscene" "pii"}}<li>{{t $.Locale (printf "Terms.prohibited.items.%s" .)}}</li>{{end}}</ul>
+</section>
+
+<section>
+<h2>{{t .Locale "Terms.ip.heading"}}</h2>
+<p>{{t .Locale "Terms.ip.body"}}</p>
+</section>
+
+<section>
+<h2>{{t .Locale "Terms.disclaimer.heading"}}</h2>
+<p>{{t .Locale "Terms.disclaimer.body"}}</p>
+</section>
+
+<section>
+<h2>{{t .Locale "Terms.dispute.heading"}}</h2>
+<p>{{t .Locale "Terms.dispute.support"}}</p>
+<p>{{t .Locale "Terms.dispute.mediation"}}</p>
+<p>{{t .Locale "Terms.dispute.jurisdiction"}}</p>
+</section>
+
+<section>
+<h2>{{t .Locale "Terms.changes.heading"}}</h2>
+<p>{{t .Locale "Terms.changes.body"}}</p>
+</section>
+
+<section>
+<h2>{{t .Locale "Terms.contact.heading"}}</h2>
+<p>{{t .Locale "Terms.contact.body"}}</p>
+<p><a href="mailto:{{t .Locale "Meta.contactEmail"}}">{{t .Locale "Meta.contactEmail"}}</a></p>
+</section>
+</article>
+{{end}}

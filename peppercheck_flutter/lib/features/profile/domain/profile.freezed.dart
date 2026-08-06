@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$Profile {
 
- String get id; String? get username;@JsonKey(name: 'avatar_url') String? get avatarUrl;@JsonKey(name: 'created_at') String? get createdAt;@JsonKey(name: 'stripe_connect_account_id') String? get stripeConnectAccountId;@JsonKey(name: 'updated_at') String? get updatedAt; String? get timezone;
+ String? get username;@JsonKey(name: 'avatar_url') String? get avatarUrl;@JsonKey(name: 'created_at') String? get createdAt;@JsonKey(name: 'updated_at') String? get updatedAt; String? get timezone;
 /// Create a copy of Profile
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $ProfileCopyWith<Profile> get copyWith => _$ProfileCopyWithImpl<Profile>(this as
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Profile&&(identical(other.id, id) || other.id == id)&&(identical(other.username, username) || other.username == username)&&(identical(other.avatarUrl, avatarUrl) || other.avatarUrl == avatarUrl)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.stripeConnectAccountId, stripeConnectAccountId) || other.stripeConnectAccountId == stripeConnectAccountId)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.timezone, timezone) || other.timezone == timezone));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Profile&&(identical(other.username, username) || other.username == username)&&(identical(other.avatarUrl, avatarUrl) || other.avatarUrl == avatarUrl)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.timezone, timezone) || other.timezone == timezone));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,username,avatarUrl,createdAt,stripeConnectAccountId,updatedAt,timezone);
+int get hashCode => Object.hash(runtimeType,username,avatarUrl,createdAt,updatedAt,timezone);
 
 @override
 String toString() {
-  return 'Profile(id: $id, username: $username, avatarUrl: $avatarUrl, createdAt: $createdAt, stripeConnectAccountId: $stripeConnectAccountId, updatedAt: $updatedAt, timezone: $timezone)';
+  return 'Profile(username: $username, avatarUrl: $avatarUrl, createdAt: $createdAt, updatedAt: $updatedAt, timezone: $timezone)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $ProfileCopyWith<$Res>  {
   factory $ProfileCopyWith(Profile value, $Res Function(Profile) _then) = _$ProfileCopyWithImpl;
 @useResult
 $Res call({
- String id, String? username,@JsonKey(name: 'avatar_url') String? avatarUrl,@JsonKey(name: 'created_at') String? createdAt,@JsonKey(name: 'stripe_connect_account_id') String? stripeConnectAccountId,@JsonKey(name: 'updated_at') String? updatedAt, String? timezone
+ String? username,@JsonKey(name: 'avatar_url') String? avatarUrl,@JsonKey(name: 'created_at') String? createdAt,@JsonKey(name: 'updated_at') String? updatedAt, String? timezone
 });
 
 
@@ -65,13 +65,11 @@ class _$ProfileCopyWithImpl<$Res>
 
 /// Create a copy of Profile
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? username = freezed,Object? avatarUrl = freezed,Object? createdAt = freezed,Object? stripeConnectAccountId = freezed,Object? updatedAt = freezed,Object? timezone = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? username = freezed,Object? avatarUrl = freezed,Object? createdAt = freezed,Object? updatedAt = freezed,Object? timezone = freezed,}) {
   return _then(_self.copyWith(
-id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
-as String,username: freezed == username ? _self.username : username // ignore: cast_nullable_to_non_nullable
+username: freezed == username ? _self.username : username // ignore: cast_nullable_to_non_nullable
 as String?,avatarUrl: freezed == avatarUrl ? _self.avatarUrl : avatarUrl // ignore: cast_nullable_to_non_nullable
 as String?,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
-as String?,stripeConnectAccountId: freezed == stripeConnectAccountId ? _self.stripeConnectAccountId : stripeConnectAccountId // ignore: cast_nullable_to_non_nullable
 as String?,updatedAt: freezed == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
 as String?,timezone: freezed == timezone ? _self.timezone : timezone // ignore: cast_nullable_to_non_nullable
 as String?,
@@ -159,10 +157,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String? username, @JsonKey(name: 'avatar_url')  String? avatarUrl, @JsonKey(name: 'created_at')  String? createdAt, @JsonKey(name: 'stripe_connect_account_id')  String? stripeConnectAccountId, @JsonKey(name: 'updated_at')  String? updatedAt,  String? timezone)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String? username, @JsonKey(name: 'avatar_url')  String? avatarUrl, @JsonKey(name: 'created_at')  String? createdAt, @JsonKey(name: 'updated_at')  String? updatedAt,  String? timezone)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Profile() when $default != null:
-return $default(_that.id,_that.username,_that.avatarUrl,_that.createdAt,_that.stripeConnectAccountId,_that.updatedAt,_that.timezone);case _:
+return $default(_that.username,_that.avatarUrl,_that.createdAt,_that.updatedAt,_that.timezone);case _:
   return orElse();
 
 }
@@ -180,10 +178,10 @@ return $default(_that.id,_that.username,_that.avatarUrl,_that.createdAt,_that.st
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String? username, @JsonKey(name: 'avatar_url')  String? avatarUrl, @JsonKey(name: 'created_at')  String? createdAt, @JsonKey(name: 'stripe_connect_account_id')  String? stripeConnectAccountId, @JsonKey(name: 'updated_at')  String? updatedAt,  String? timezone)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? username, @JsonKey(name: 'avatar_url')  String? avatarUrl, @JsonKey(name: 'created_at')  String? createdAt, @JsonKey(name: 'updated_at')  String? updatedAt,  String? timezone)  $default,) {final _that = this;
 switch (_that) {
 case _Profile():
-return $default(_that.id,_that.username,_that.avatarUrl,_that.createdAt,_that.stripeConnectAccountId,_that.updatedAt,_that.timezone);case _:
+return $default(_that.username,_that.avatarUrl,_that.createdAt,_that.updatedAt,_that.timezone);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -200,10 +198,10 @@ return $default(_that.id,_that.username,_that.avatarUrl,_that.createdAt,_that.st
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String? username, @JsonKey(name: 'avatar_url')  String? avatarUrl, @JsonKey(name: 'created_at')  String? createdAt, @JsonKey(name: 'stripe_connect_account_id')  String? stripeConnectAccountId, @JsonKey(name: 'updated_at')  String? updatedAt,  String? timezone)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String? username, @JsonKey(name: 'avatar_url')  String? avatarUrl, @JsonKey(name: 'created_at')  String? createdAt, @JsonKey(name: 'updated_at')  String? updatedAt,  String? timezone)?  $default,) {final _that = this;
 switch (_that) {
 case _Profile() when $default != null:
-return $default(_that.id,_that.username,_that.avatarUrl,_that.createdAt,_that.stripeConnectAccountId,_that.updatedAt,_that.timezone);case _:
+return $default(_that.username,_that.avatarUrl,_that.createdAt,_that.updatedAt,_that.timezone);case _:
   return null;
 
 }
@@ -215,14 +213,12 @@ return $default(_that.id,_that.username,_that.avatarUrl,_that.createdAt,_that.st
 @JsonSerializable()
 
 class _Profile implements Profile {
-  const _Profile({required this.id, this.username, @JsonKey(name: 'avatar_url') this.avatarUrl, @JsonKey(name: 'created_at') this.createdAt, @JsonKey(name: 'stripe_connect_account_id') this.stripeConnectAccountId, @JsonKey(name: 'updated_at') this.updatedAt, this.timezone});
+  const _Profile({this.username, @JsonKey(name: 'avatar_url') this.avatarUrl, @JsonKey(name: 'created_at') this.createdAt, @JsonKey(name: 'updated_at') this.updatedAt, this.timezone});
   factory _Profile.fromJson(Map<String, dynamic> json) => _$ProfileFromJson(json);
 
-@override final  String id;
 @override final  String? username;
 @override@JsonKey(name: 'avatar_url') final  String? avatarUrl;
 @override@JsonKey(name: 'created_at') final  String? createdAt;
-@override@JsonKey(name: 'stripe_connect_account_id') final  String? stripeConnectAccountId;
 @override@JsonKey(name: 'updated_at') final  String? updatedAt;
 @override final  String? timezone;
 
@@ -239,16 +235,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Profile&&(identical(other.id, id) || other.id == id)&&(identical(other.username, username) || other.username == username)&&(identical(other.avatarUrl, avatarUrl) || other.avatarUrl == avatarUrl)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.stripeConnectAccountId, stripeConnectAccountId) || other.stripeConnectAccountId == stripeConnectAccountId)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.timezone, timezone) || other.timezone == timezone));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Profile&&(identical(other.username, username) || other.username == username)&&(identical(other.avatarUrl, avatarUrl) || other.avatarUrl == avatarUrl)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.timezone, timezone) || other.timezone == timezone));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,username,avatarUrl,createdAt,stripeConnectAccountId,updatedAt,timezone);
+int get hashCode => Object.hash(runtimeType,username,avatarUrl,createdAt,updatedAt,timezone);
 
 @override
 String toString() {
-  return 'Profile(id: $id, username: $username, avatarUrl: $avatarUrl, createdAt: $createdAt, stripeConnectAccountId: $stripeConnectAccountId, updatedAt: $updatedAt, timezone: $timezone)';
+  return 'Profile(username: $username, avatarUrl: $avatarUrl, createdAt: $createdAt, updatedAt: $updatedAt, timezone: $timezone)';
 }
 
 
@@ -259,7 +255,7 @@ abstract mixin class _$ProfileCopyWith<$Res> implements $ProfileCopyWith<$Res> {
   factory _$ProfileCopyWith(_Profile value, $Res Function(_Profile) _then) = __$ProfileCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String? username,@JsonKey(name: 'avatar_url') String? avatarUrl,@JsonKey(name: 'created_at') String? createdAt,@JsonKey(name: 'stripe_connect_account_id') String? stripeConnectAccountId,@JsonKey(name: 'updated_at') String? updatedAt, String? timezone
+ String? username,@JsonKey(name: 'avatar_url') String? avatarUrl,@JsonKey(name: 'created_at') String? createdAt,@JsonKey(name: 'updated_at') String? updatedAt, String? timezone
 });
 
 
@@ -276,13 +272,11 @@ class __$ProfileCopyWithImpl<$Res>
 
 /// Create a copy of Profile
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? username = freezed,Object? avatarUrl = freezed,Object? createdAt = freezed,Object? stripeConnectAccountId = freezed,Object? updatedAt = freezed,Object? timezone = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? username = freezed,Object? avatarUrl = freezed,Object? createdAt = freezed,Object? updatedAt = freezed,Object? timezone = freezed,}) {
   return _then(_Profile(
-id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
-as String,username: freezed == username ? _self.username : username // ignore: cast_nullable_to_non_nullable
+username: freezed == username ? _self.username : username // ignore: cast_nullable_to_non_nullable
 as String?,avatarUrl: freezed == avatarUrl ? _self.avatarUrl : avatarUrl // ignore: cast_nullable_to_non_nullable
 as String?,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
-as String?,stripeConnectAccountId: freezed == stripeConnectAccountId ? _self.stripeConnectAccountId : stripeConnectAccountId // ignore: cast_nullable_to_non_nullable
 as String?,updatedAt: freezed == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
 as String?,timezone: freezed == timezone ? _self.timezone : timezone // ignore: cast_nullable_to_non_nullable
 as String?,

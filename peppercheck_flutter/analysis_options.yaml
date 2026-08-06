@@ -9,6 +9,15 @@
 # packages, and plugins designed to encourage good coding practices.
 include: package:flutter_lints/flutter.yaml
 
+analyzer:
+  exclude:
+    # Mockito's generator can emit a redundant `// ignore: must_be_immutable`
+    # alongside the file-level `ignore_for_file` directive when mocking a
+    # class annotated `@immutable` (e.g. GoogleSignInAccount), which the
+    # analyzer then flags as `duplicate_ignore`. These files are generated
+    # and not hand-edited, so exclude them from analysis entirely.
+    - "**/*.mocks.dart"
+
 linter:
   # The lint rules applied to this project can be customized in the
   # section below to disable rules from the `package:flutter_lints/flutter.yaml`

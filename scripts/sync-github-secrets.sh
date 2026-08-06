@@ -9,8 +9,8 @@
 #
 # Usage: scripts/sync-github-secrets.sh
 #
-# Pre-req: ~/.config/peppercheck/github-secrets exists. If you have a legacy
-# scripts/github-secrets file from before the Phase 1 relocation, move it
+# Pre-req: ~/.config/peppercheck/github-secrets exists. If you have the legacy
+# scripts/github-secrets location, move it
 # manually:
 #   mkdir -p ~/.config/peppercheck && chmod 700 ~/.config/peppercheck
 #   mv scripts/github-secrets ~/.config/peppercheck/github-secrets

@@ -6,4 +6,11 @@ APP_DISPLAY_NAME = PepperCheck
 
 FIREBASE_PLIST_FLAVOR = Production
 
+// Preprocess the shared Info.plist without the dev-only local-networking ATS.
+INFOPLIST_PREPROCESS = YES
+INFOPLIST_PREPROCESSOR_DEFINITIONS = $(inherited) PEPPERCHECK_DEV_BUILD=0
+
 #include? "Secrets/Production.secrets.xcconfig"
+
+// Sign in with Apple capability (shared entitlements, all build configs)
+CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements
