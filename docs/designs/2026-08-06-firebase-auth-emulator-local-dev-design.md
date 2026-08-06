@@ -95,6 +95,16 @@ default emulator (zero-flag) path must set `FIREBASE_PROJECT=demo-peppercheck`
 <operator>`) must instead select the real project **and** leave the emulator host
 unset and the client switch off. `#529` updates `dev-run.sh` accordingly.
 
+**Recreate the API when the Firebase mode changes.** `dev-run.sh`'s
+`ensure_backend` is idempotent via a health check that treats the API's
+unauthenticated `401` as "already up" (`backend_healthy`), so re-running the
+launcher in a *different* Firebase mode (emulator ↔ real, or a different project)
+would leave the old container running with its old `FIREBASE_PROJECT_ID` /
+emulator host while the client switch flips — so tokens are rejected by the
+mismatched side. The launcher must **recreate/restart the API whenever the
+requested Firebase mode differs** from the running one, not take the health-only
+shortcut.
+
 ### 2. Flutter — dev-only emulator branch + one-tap test login
 
 - **Gate emulator wiring on an explicit switch, not the flavor alone.** The
@@ -326,3 +336,9 @@ assumes that prerequisite is in place; it is tracked in **#532** and linked from
   SDK-assigned UID. (3, P2) The Auth emulator **host port is worktree-allocated**
   (`AUTH_EMULATOR_HOST_PORT`, like `scripts/worktree/dev.sh`'s Caddy/Postgres
   ports) and passed to Flutter, so parallel worktrees don't collide or cross-wire.
+- **2026-08-06** — Fifth Codex round on PR #530 (P2): `dev-run.sh`'s
+  `ensure_backend` treats the API's `401` as "already up", so re-running in a
+  different Firebase mode leaves a mismatched container (old project/emulator host
+  vs the flipped client switch), rejecting tokens. The launcher must recreate the
+  API when the requested Firebase mode differs, not take the health-only shortcut.
+  (No P1 this round.)
