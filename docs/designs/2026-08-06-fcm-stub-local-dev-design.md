@@ -116,9 +116,13 @@ local-only `NewLogStub` (§1) so full-payload logging never runs in staging/prod
   - **Worker (server)**: an explicit `FCM_DELIVERY=real` **and**
     `FIREBASE_PROJECT_ID` **and** a mounted `GOOGLE_APPLICATION_CREDENTIALS`
     service-account file. The worker compose block passes **none** of these and
-    mounts no credential, so this requires actual worker-`environment` +
-    secret/volume wiring (a documented `compose.override.yaml`), not just `.env`
-    values.
+    mounts no credential, so this needs a **separately-named opt-in overlay** —
+    **not** `backend/compose.override.yaml`, which is committed and *auto-merged*
+    by the bare `docker compose up` in `Makefile:21`, so putting real-FCM wiring
+    there would enable real delivery (or fail on a missing credential) on **every**
+    `make up`, defeating the stub default. Use e.g. `backend/compose.fcm-real.yaml`
+    launched explicitly: `docker compose -f compose.yaml -f compose.fcm-real.yaml
+    up`. `compose.override.yaml` must stay stub-safe.
   - **Client (Flutter)**: the app must use **real Firebase config for the same
     project** (not the #524 demo config) so it registers a **deliverable FCM
     token** — the same real-config prerequisite the sibling Auth-emulator design
@@ -140,8 +144,20 @@ Selecting by `Env` (not by whether `FIREBASE_PROJECT_ID` is empty) removes the
 fragility: a local run **never sends real push** regardless of what project id or
 ambient credentials happen to be present, unless explicitly opted in — so adding
 that var (with a developer's ADC already in the environment) can't cause
-unintended real delivery. Update `backend/.env.example` / `compose.yaml`
-comments to describe this (local logs; explicit opt-in for real FCM).
+unintended real delivery.
+
+**Fail closed on unknown `APP_ENV`.** `config.Load()` accepts any nonempty
+`APP_ENV` without validation (`config.go:78`), so a mistyped value like `Local`
+would today fall through to the non-`local` branch and could initialize the real
+client without the opt-in flag — breaking the guarantee above. The selector must
+be safe against this: real FCM is chosen only for the explicitly-recognized real
+envs (`staging` / `production`) or the explicit local opt-in flag, and **any
+unrecognized `APP_ENV` selects the stub** (and/or `config.Load()` validates
+`APP_ENV` against the known set and fails closed). Either way, an accidental env
+value never yields real delivery.
+
+Update `backend/.env.example` / `compose.yaml` comments to describe this (local
+logs; explicit opt-in for real FCM via the separate overlay).
 
 ### 3. Flutter — no change for the default (stub) path
 
@@ -189,10 +205,13 @@ real token because nothing is delivered.
   it fails/retries the worker job (#464), as today.
 - `backend/.env.example` / `compose.yaml` notification comments are corrected to
   match reality (worker log-noops locally). The real-FCM-local opt-in is a
-  documented `compose.override.yaml` that adds `FCM_DELIVERY=real` +
+  **separate, explicitly-launched overlay** (e.g. `compose.fcm-real.yaml`, *not*
+  the auto-merged `compose.override.yaml`) that adds `FCM_DELIVERY=real` +
   `FIREBASE_PROJECT_ID` to the worker `environment` and mounts a
-  `GOOGLE_APPLICATION_CREDENTIALS` service account — comments alone don't create
-  the path — plus the client on real Firebase config (§2/§3).
+  `GOOGLE_APPLICATION_CREDENTIALS` service account, plus the client on real
+  Firebase config (§2/§3).
+- The FCM selector fails closed on an unrecognized `APP_ENV` (selects the stub /
+  validates the value), so a mistyped env can't yield real delivery.
 
 ## Deferred / related work
 
@@ -257,3 +276,12 @@ real token because nothing is delivered.
   config for the same project (like #524's real-Firebase opt-in) to register a
   deliverable token; "no client change" is true only for the default stub path.
   Because this is a fuller setup, staging stays the simpler real-delivery check.
+- **2026-08-06** — Sixth Codex round on PR #536 (P2 ×2). (1) The opt-in overlay
+  must be a **distinct, explicitly-launched** file (e.g. `compose.fcm-real.yaml`
+  via `-f compose.yaml -f compose.fcm-real.yaml`), **not** `compose.override.yaml`
+  — that file is committed and auto-merged by the bare `docker compose up` in
+  `Makefile:21`, so real-FCM wiring there would apply to every `make up` and
+  defeat the stub default. (2) `config.Load()` does not validate `APP_ENV`
+  (`config.go:78`), so a mistyped value (`Local`) could reach the non-local path
+  and init a real client without the opt-in; the selector must fail closed —
+  unrecognized `APP_ENV` selects the stub (and/or `APP_ENV` is validated).
