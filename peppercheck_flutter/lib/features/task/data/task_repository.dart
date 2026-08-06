@@ -51,16 +51,29 @@ class TaskRepository {
     return TaskDto.fromJson(json).toDomain();
   }
 
-  /// The caller's own tasks. This is a bounded active list, so every cursor
-  /// page is followed and the whole list is returned; there is no "load more".
-  Future<List<Task>> fetchMyTasks() async {
-    final pages = await fetchAllPages(
-      _api,
-      '/api/v1/me/tasks',
-      itemsKey: 'tasks',
+  /// The caller's own tasks that are still in play. `GET /me/tasks` filters by
+  /// one exact status, so the two active statuses are fetched separately and
+  /// merged — which also keeps closed history off the wire entirely, so this
+  /// stays a bounded list as the user accumulates finished tasks. Every cursor
+  /// page is followed; there is no "load more".
+  Future<List<Task>> fetchMyActiveTasks() async {
+    final pages = await Future.wait(
+      _activeStatuses.map(
+        (status) => fetchAllPages(
+          _api,
+          '/api/v1/me/tasks?status=$status',
+          itemsKey: 'tasks',
+        ),
+      ),
     );
-    return pages.map((json) => TaskDto.fromJson(json).toDomain()).toList();
+    return pages
+        .expand((page) => page)
+        .map((json) => TaskDto.fromJson(json).toDomain())
+        .toList();
   }
+
+  /// Task statuses a tasker still acts on; `closed` is history.
+  static const _activeStatuses = ['draft', 'open'];
 
   Map<String, dynamic> _draftBody(TaskCreationRequest request) => {
     'title': request.title,

@@ -2,7 +2,7 @@ import 'api_client.dart';
 
 /// Safety stop for a server that keeps handing back a cursor. The lists this
 /// helper serves are bounded active lists, so reaching this means a bug, not a
-/// big page count.
+/// big page count — hence the throw rather than a silently short list.
 const _maxPages = 100;
 
 /// Walks a cursor-paged list endpoint and returns every page's items.
@@ -32,6 +32,11 @@ Future<List<Map<String, dynamic>>> fetchAllPages(
     cursor = json['nextCursor'] as String?;
     pages++;
   } while (cursor != null && pages < _maxPages);
+
+  if (cursor != null) {
+    // Returning what we have would look like a complete list to every caller.
+    throw StateError('paging did not finish for $path after $_maxPages pages');
+  }
 
   return items;
 }

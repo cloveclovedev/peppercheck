@@ -79,6 +79,25 @@ void main() {
     verify(api.getJson('/api/v1/me/tasks?status=open&cursor=c1')).called(1);
   });
 
+  test(
+    'throws rather than returning a truncated list at the page cap',
+    () async {
+      when(api.getJson(argThat(startsWith('/api/v1/me/tasks')))).thenAnswer(
+        (_) async => {
+          'tasks': [
+            {'id': 'a'},
+          ],
+          'nextCursor': 'always-more',
+        },
+      );
+
+      expect(
+        () => fetchAllPages(api, '/api/v1/me/tasks', itemsKey: 'tasks'),
+        throwsA(isA<StateError>()),
+      );
+    },
+  );
+
   test('tolerates a missing items key', () async {
     when(
       api.getJson('/api/v1/me/tasks'),

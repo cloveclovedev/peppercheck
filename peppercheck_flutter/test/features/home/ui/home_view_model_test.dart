@@ -12,12 +12,15 @@ import 'home_view_model_test.mocks.dart';
 
 Task _task({
   String id = 't1',
+  String status = 'open',
+  String? dueDate,
   List<RefereeRequest> refereeRequests = const [],
 }) => Task(
   id: id,
   taskerId: 'u_tasker',
   title: 'Run 5km',
-  status: 'open',
+  status: status,
+  dueDate: dueDate,
   createdAt: '2026-07-25T00:00:00Z',
   refereeRequests: refereeRequests,
 );
@@ -45,13 +48,13 @@ void main() {
 
   test('activeUserTasks resolves the caller own tasks', () async {
     when(
-      taskRepository.fetchMyTasks(),
+      taskRepository.fetchMyActiveTasks(),
     ).thenAnswer((_) async => [_task(id: 'mine')]);
 
     final tasks = await makeContainer().read(activeUserTasksProvider.future);
 
     expect(tasks.map((t) => t.id), ['mine']);
-    verify(taskRepository.fetchMyTasks()).called(1);
+    verify(taskRepository.fetchMyActiveTasks()).called(1);
   });
 
   test(
@@ -86,4 +89,28 @@ void main() {
       verify(matchingRepository.fetchMyAssignments()).called(1);
     },
   );
+
+  test('activeUserTasks orders the list by deadline', () async {
+    when(taskRepository.fetchMyActiveTasks()).thenAnswer(
+      (_) async => [
+        _task(id: 'later', dueDate: '2026-08-10T00:00:00Z'),
+        _task(id: 'sooner', dueDate: '2026-08-01T00:00:00Z'),
+        _task(id: 'undated'),
+      ],
+    );
+
+    final tasks = await makeContainer().read(activeUserTasksProvider.future);
+
+    expect(tasks.map((t) => t.id), ['sooner', 'later', 'undated']);
+  });
+
+  test('activeRefereeTasks drops finished assignments', () async {
+    when(matchingRepository.fetchMyAssignments()).thenAnswer(
+      (_) async => [_task(id: 'done', status: 'closed'), _task(id: 'live')],
+    );
+
+    final tasks = await makeContainer().read(activeRefereeTasksProvider.future);
+
+    expect(tasks.map((t) => t.id), ['live']);
+  });
 }

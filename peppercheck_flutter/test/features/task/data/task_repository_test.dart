@@ -187,23 +187,52 @@ void main() {
     expect(matched.judgement, isNull);
   });
 
-  test('fetchMyTasks aggregates every cursor page', () async {
-    when(api.getJson('/api/v1/me/tasks')).thenAnswer(
-      (_) async => {
-        'tasks': [_taskJson(id: 'a')],
-        'nextCursor': 'a+b/c==',
-      },
-    );
-    when(api.getJson('/api/v1/me/tasks?cursor=a%2Bb%2Fc%3D%3D')).thenAnswer(
-      (_) async => {
-        'tasks': [_taskJson(id: 'b')],
-        'nextCursor': null,
-      },
-    );
+  group('fetchMyActiveTasks', () {
+    test('asks for the active statuses only, never closed history', () async {
+      when(api.getJson('/api/v1/me/tasks?status=draft')).thenAnswer(
+        (_) async => {
+          'tasks': [_taskJson(id: 'd')],
+          'nextCursor': null,
+        },
+      );
+      when(api.getJson('/api/v1/me/tasks?status=open')).thenAnswer(
+        (_) async => {
+          'tasks': [_taskJson(id: 'o', status: 'open')],
+          'nextCursor': null,
+        },
+      );
 
-    final tasks = await repo.fetchMyTasks();
+      final tasks = await repo.fetchMyActiveTasks();
 
-    expect(tasks.map((t) => t.id), ['a', 'b']);
-    verify(api.getJson(any)).called(2);
+      expect(tasks.map((t) => t.id), ['d', 'o']);
+      verify(api.getJson('/api/v1/me/tasks?status=draft')).called(1);
+      verify(api.getJson('/api/v1/me/tasks?status=open')).called(1);
+      verifyNever(api.getJson('/api/v1/me/tasks'));
+      verifyNever(api.getJson('/api/v1/me/tasks?status=closed'));
+    });
+
+    test('aggregates every cursor page of each status', () async {
+      when(api.getJson('/api/v1/me/tasks?status=draft')).thenAnswer(
+        (_) async => {
+          'tasks': [_taskJson(id: 'a')],
+          'nextCursor': 'a+b/c==',
+        },
+      );
+      when(
+        api.getJson('/api/v1/me/tasks?status=draft&cursor=a%2Bb%2Fc%3D%3D'),
+      ).thenAnswer(
+        (_) async => {
+          'tasks': [_taskJson(id: 'b')],
+          'nextCursor': null,
+        },
+      );
+      when(api.getJson('/api/v1/me/tasks?status=open')).thenAnswer(
+        (_) async => {'tasks': <Map<String, dynamic>>[], 'nextCursor': null},
+      );
+
+      final tasks = await repo.fetchMyActiveTasks();
+
+      expect(tasks.map((t) => t.id), ['a', 'b']);
+    });
   });
 }
