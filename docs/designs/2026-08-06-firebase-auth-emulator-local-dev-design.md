@@ -234,7 +234,7 @@ Supabase stack** (`supabase start`, no external account — the analog of Garage
 the Auth emulator), plus eventual removal of the hard Supabase requirement as the
 refactor completes. This same gap also blocks Garage avatar display from a fresh
 clone (#523), which is why it belongs to the profile, not to auth. This design
-assumes that prerequisite is in place; it is tracked separately and linked from
+assumes that prerequisite is in place; it is tracked in **#532** and linked from
 #529.
 
 ## Deferred / related work
