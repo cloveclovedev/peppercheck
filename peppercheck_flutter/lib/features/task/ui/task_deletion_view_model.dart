@@ -4,10 +4,10 @@ import 'package:peppercheck_flutter/features/home/ui/home_view_model.dart';
 import 'package:peppercheck_flutter/features/task/data/task_repository.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-part 'task_deletion_controller.g.dart';
+part 'task_deletion_view_model.g.dart';
 
 @riverpod
-class TaskDeletionController extends _$TaskDeletionController {
+class TaskDeletionViewModel extends _$TaskDeletionViewModel {
   @override
   FutureOr<void> build() async {}
 

@@ -7,8 +7,8 @@ import 'package:peppercheck_flutter/common_widgets/base_section.dart';
 import 'package:peppercheck_flutter/common_widgets/base_text_field.dart';
 import 'package:peppercheck_flutter/features/task/domain/task.dart';
 import 'package:peppercheck_flutter/features/task/domain/task_creation_request.dart';
-import 'package:peppercheck_flutter/features/task/presentation/task_creation_controller.dart';
-import 'package:peppercheck_flutter/features/task/presentation/widgets/task_creation/task_status_selector.dart';
+import 'package:peppercheck_flutter/features/task/ui/task_creation_view_model.dart';
+import 'package:peppercheck_flutter/features/task/ui/widgets/task_creation/task_status_selector.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 
 class TaskFormSection extends ConsumerStatefulWidget {
@@ -54,14 +54,14 @@ class _TaskFormSectionState extends ConsumerState<TaskFormSection> {
   Widget build(BuildContext context) {
     // Access the specific provider family using the passed task (key)
     final controller = ref.read(
-      taskCreationControllerProvider(widget.task).notifier,
+      taskCreationViewModelProvider(widget.task).notifier,
     );
     final dateFormatter = DateFormat('yyyy/MM/dd H:mm');
     // Watch current state for updates not managed by local controllers (like date/status)
     // Note: Text fields are managed by local controllers, but we might want to watch for external changes?
     // For now, simple initialization is enough as per requirements.
     // However, status and date ARE managed by provider state.
-    final asyncState = ref.watch(taskCreationControllerProvider(widget.task));
+    final asyncState = ref.watch(taskCreationViewModelProvider(widget.task));
 
     return asyncState.when(
       data: (state) => BaseSection(
@@ -118,7 +118,7 @@ class _TaskFormSectionState extends ConsumerState<TaskFormSection> {
 
   Future<void> _pickDateTime(
     BuildContext context,
-    TaskCreationController controller,
+    TaskCreationViewModel controller,
   ) async {
     final date = await showDatePicker(
       context: context,

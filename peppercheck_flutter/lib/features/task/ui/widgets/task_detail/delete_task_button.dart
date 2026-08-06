@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:peppercheck_flutter/common_widgets/destructive_action_button.dart';
 import 'package:peppercheck_flutter/features/task/domain/task.dart';
-import 'package:peppercheck_flutter/features/task/presentation/task_deletion_controller.dart';
-import 'package:peppercheck_flutter/features/task/presentation/widgets/task_detail/delete_task_confirmation_dialog.dart';
+import 'package:peppercheck_flutter/features/task/ui/task_deletion_view_model.dart';
+import 'package:peppercheck_flutter/features/task/ui/widgets/task_detail/delete_task_confirmation_dialog.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 
 class DeleteTaskButton extends ConsumerWidget {
@@ -14,7 +14,7 @@ class DeleteTaskButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(taskDeletionControllerProvider);
+    final state = ref.watch(taskDeletionViewModelProvider);
     final isLoading = state.isLoading;
 
     return DestructiveActionButton(
@@ -36,7 +36,7 @@ class DeleteTaskButton extends ConsumerWidget {
 
   Future<void> _executeDelete(BuildContext context, WidgetRef ref) async {
     await ref
-        .read(taskDeletionControllerProvider.notifier)
+        .read(taskDeletionViewModelProvider.notifier)
         .deleteTask(
           task.id,
           onSuccess: () {
@@ -48,7 +48,7 @@ class DeleteTaskButton extends ConsumerWidget {
           },
         );
 
-    final newState = ref.read(taskDeletionControllerProvider);
+    final newState = ref.read(taskDeletionViewModelProvider);
     if (newState.hasError && context.mounted) {
       ScaffoldMessenger.of(
         context,

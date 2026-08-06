@@ -8,6 +8,10 @@ part 'task_creation_state.freezed.dart';
 abstract class TaskCreationState with _$TaskCreationState {
   const factory TaskCreationState({
     required TaskCreationRequest request,
+
+    /// How many referees to request when publishing. Bounded by the server's
+    /// `maxRefereesPerTask`; the selector clamps it once the config loads.
+    @Default(1) int refereeCount,
     TaskCreationError? creationError,
   }) = _TaskCreationState;
 }

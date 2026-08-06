@@ -9,11 +9,12 @@ import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
 import 'package:peppercheck_flutter/common_widgets/app_background.dart';
 import 'package:peppercheck_flutter/common_widgets/app_scaffold.dart';
 import 'package:peppercheck_flutter/common_widgets/primary_action_button.dart';
-import 'package:peppercheck_flutter/features/task/presentation/task_creation_controller.dart';
-import 'package:peppercheck_flutter/features/task/presentation/widgets/task_creation/task_form_section.dart';
-import 'package:peppercheck_flutter/features/task/presentation/widgets/task_creation/matching_strategy_selection_section.dart';
+import 'package:peppercheck_flutter/features/task/ui/task_creation_view_model.dart';
+import 'package:peppercheck_flutter/features/task/ui/widgets/task_creation/task_form_section.dart';
+import 'package:peppercheck_flutter/features/matching/application/matching_config_provider.dart';
+import 'package:peppercheck_flutter/features/task/ui/widgets/task_creation/referee_count_section.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
-import 'package:peppercheck_flutter/features/task/presentation/widgets/task_creation/task_creation_error_dialog.dart';
+import 'package:peppercheck_flutter/features/task/ui/widgets/task_creation/task_creation_error_dialog.dart';
 
 class TaskCreationScreen extends ConsumerStatefulWidget {
   const TaskCreationScreen({super.key});
@@ -32,12 +33,17 @@ class _TaskCreationScreenState extends ConsumerState<TaskCreationScreen> {
     final task = extra is Task ? extra : null;
     final isEditing = task != null;
 
-    final asyncState = ref.watch(taskCreationControllerProvider(task));
-    final controller = ref.read(taskCreationControllerProvider(task).notifier);
+    final asyncState = ref.watch(taskCreationViewModelProvider(task));
+    final controller = ref.read(taskCreationViewModelProvider(task).notifier);
+
+    // The referee-count bound is server-owned; until it loads (or if it fails
+    // to) the selector offers a single referee, which every config allows.
+    final configAsync = ref.watch(matchingConfigProvider);
+    final maxRefereeCount = configAsync.value?.maxRefereesPerTask ?? 1;
 
     // Listen for creation errors and show dialog
     ref.listen(
-      taskCreationControllerProvider(
+      taskCreationViewModelProvider(
         task,
       ).select((state) => state.value?.creationError),
       (previous, next) {
@@ -74,9 +80,11 @@ class _TaskCreationScreenState extends ConsumerState<TaskCreationScreen> {
                   TaskFormSection(initialData: state.request, task: task),
                   if (state.request.taskStatus == 'open') ...[
                     const SizedBox(height: AppSizes.sectionGap),
-                    MatchingStrategySelectionSection(
-                      selectedStrategies: state.request.matchingStrategies,
-                      onStrategiesChange: controller.updateMatchingStrategies,
+                    RefereeCountSection(
+                      selected: state.refereeCount,
+                      maxCount: maxRefereeCount,
+                      loading: configAsync.isLoading,
+                      onChanged: controller.updateRefereeCount,
                     ),
                     if (!isEditing) const _TrialPointNotice(),
                   ],
@@ -85,10 +93,10 @@ class _TaskCreationScreenState extends ConsumerState<TaskCreationScreen> {
                     text: buttonText,
                     onPressed: controller.isFormValid
                         ? () async {
-                            await controller.createTask();
+                            await controller.submit();
                             if (context.mounted) {
                               final currentState = ref.read(
-                                taskCreationControllerProvider(task),
+                                taskCreationViewModelProvider(task),
                               );
                               // Success check: if no creation error, close screen
                               if (currentState.value?.creationError == null) {

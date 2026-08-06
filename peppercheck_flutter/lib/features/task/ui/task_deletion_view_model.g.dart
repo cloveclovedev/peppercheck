@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'task_deletion_controller.dart';
+part of 'task_deletion_view_model.dart';
 
 // **************************************************************************
 // RiverpodGenerator
@@ -9,34 +9,34 @@ part of 'task_deletion_controller.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 
-@ProviderFor(TaskDeletionController)
-const taskDeletionControllerProvider = TaskDeletionControllerProvider._();
+@ProviderFor(TaskDeletionViewModel)
+const taskDeletionViewModelProvider = TaskDeletionViewModelProvider._();
 
-final class TaskDeletionControllerProvider
-    extends $AsyncNotifierProvider<TaskDeletionController, void> {
-  const TaskDeletionControllerProvider._()
+final class TaskDeletionViewModelProvider
+    extends $AsyncNotifierProvider<TaskDeletionViewModel, void> {
+  const TaskDeletionViewModelProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
-        name: r'taskDeletionControllerProvider',
+        name: r'taskDeletionViewModelProvider',
         isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
 
   @override
-  String debugGetCreateSourceHash() => _$taskDeletionControllerHash();
+  String debugGetCreateSourceHash() => _$taskDeletionViewModelHash();
 
   @$internal
   @override
-  TaskDeletionController create() => TaskDeletionController();
+  TaskDeletionViewModel create() => TaskDeletionViewModel();
 }
 
-String _$taskDeletionControllerHash() =>
-    r'704c04b62962fc3a6732f7e61db23cc63950a1dd';
+String _$taskDeletionViewModelHash() =>
+    r'729ef67e96d0ae9abdf1cf3076bf885e48f144b7';
 
-abstract class _$TaskDeletionController extends $AsyncNotifier<void> {
+abstract class _$TaskDeletionViewModel extends $AsyncNotifier<void> {
   FutureOr<void> build();
   @$mustCallSuper
   @override

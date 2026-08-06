@@ -67,12 +67,4 @@ class BillingRepository {
     if (data == null) return null;
     return TrialPointWallet.fromJson(data);
   }
-
-  Future<int> fetchMatchingStrategyCost(String strategy) async {
-    final result = await _supabase.rpc(
-      'get_point_for_matching_strategy',
-      params: {'p_strategy': strategy},
-    );
-    return result as int;
-  }
 }

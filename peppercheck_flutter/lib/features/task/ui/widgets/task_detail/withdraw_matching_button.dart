@@ -9,7 +9,7 @@ import 'package:peppercheck_flutter/features/matching/data/matching_repository.d
 import 'package:peppercheck_flutter/features/matching/domain/referee_request.dart';
 import 'package:peppercheck_flutter/features/matching/matching_constants.dart';
 import 'package:peppercheck_flutter/features/task/domain/task.dart';
-import 'package:peppercheck_flutter/features/task/presentation/providers/task_provider.dart';
+import 'package:peppercheck_flutter/features/task/ui/providers/task_provider.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 

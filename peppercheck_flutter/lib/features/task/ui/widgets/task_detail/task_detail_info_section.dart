@@ -8,7 +8,7 @@ import 'package:peppercheck_flutter/common_widgets/base_section.dart';
 import 'package:peppercheck_flutter/features/matching/domain/referee_request.dart';
 import 'package:peppercheck_flutter/features/matching/domain/public_profile.dart';
 import 'package:peppercheck_flutter/features/task/domain/task.dart';
-import 'package:peppercheck_flutter/features/task/presentation/widgets/task_detail/delete_task_button.dart';
+import 'package:peppercheck_flutter/features/task/ui/widgets/task_detail/delete_task_button.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 

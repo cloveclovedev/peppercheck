@@ -4,8 +4,8 @@ import 'package:peppercheck_flutter/features/auth/ui/login_screen.dart';
 import 'package:peppercheck_flutter/features/home/ui/home_screen.dart';
 import 'package:peppercheck_flutter/features/payment_dashboard/presentation/payment_dashboard_screen.dart';
 import 'package:peppercheck_flutter/features/profile/ui/profile_screen.dart';
-import 'package:peppercheck_flutter/features/task/presentation/task_creation_screen.dart';
-import 'package:peppercheck_flutter/features/task/presentation/task_detail_screen.dart';
+import 'package:peppercheck_flutter/features/task/ui/task_creation_screen.dart';
+import 'package:peppercheck_flutter/features/task/ui/task_detail_screen.dart';
 import 'package:peppercheck_flutter/features/task/domain/task.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
