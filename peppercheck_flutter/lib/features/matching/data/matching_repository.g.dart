@@ -55,4 +55,4 @@ final class MatchingRepositoryProvider
 }
 
 String _$matchingRepositoryHash() =>
-    r'1aa6e2d705af87a378ed18e75185e2fb09e77b3e';
+    r'd9d7c4c15d2feaf78828621be9c3cde31baba3f7';

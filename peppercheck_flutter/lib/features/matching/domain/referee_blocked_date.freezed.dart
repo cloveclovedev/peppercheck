@@ -11,33 +11,30 @@ part of 'referee_blocked_date.dart';
 
 // dart format off
 T _$identity<T>(T value) => value;
-
 /// @nodoc
 mixin _$RefereeBlockedDate {
 
- String get id;@JsonKey(name: 'user_id') String get userId;@JsonKey(name: 'start_date') DateTime get startDate;@JsonKey(name: 'end_date') DateTime get endDate; String? get reason;@JsonKey(name: 'created_at') DateTime get createdAt;@JsonKey(name: 'updated_at') DateTime get updatedAt;
+ String get id; DateTime get startDate; DateTime get endDate; String? get reason;
 /// Create a copy of RefereeBlockedDate
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
 $RefereeBlockedDateCopyWith<RefereeBlockedDate> get copyWith => _$RefereeBlockedDateCopyWithImpl<RefereeBlockedDate>(this as RefereeBlockedDate, _$identity);
 
-  /// Serializes this RefereeBlockedDate to a JSON map.
-  Map<String, dynamic> toJson();
 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is RefereeBlockedDate&&(identical(other.id, id) || other.id == id)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.startDate, startDate) || other.startDate == startDate)&&(identical(other.endDate, endDate) || other.endDate == endDate)&&(identical(other.reason, reason) || other.reason == reason)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is RefereeBlockedDate&&(identical(other.id, id) || other.id == id)&&(identical(other.startDate, startDate) || other.startDate == startDate)&&(identical(other.endDate, endDate) || other.endDate == endDate)&&(identical(other.reason, reason) || other.reason == reason));
 }
 
-@JsonKey(includeFromJson: false, includeToJson: false)
+
 @override
-int get hashCode => Object.hash(runtimeType,id,userId,startDate,endDate,reason,createdAt,updatedAt);
+int get hashCode => Object.hash(runtimeType,id,startDate,endDate,reason);
 
 @override
 String toString() {
-  return 'RefereeBlockedDate(id: $id, userId: $userId, startDate: $startDate, endDate: $endDate, reason: $reason, createdAt: $createdAt, updatedAt: $updatedAt)';
+  return 'RefereeBlockedDate(id: $id, startDate: $startDate, endDate: $endDate, reason: $reason)';
 }
 
 
@@ -48,7 +45,7 @@ abstract mixin class $RefereeBlockedDateCopyWith<$Res>  {
   factory $RefereeBlockedDateCopyWith(RefereeBlockedDate value, $Res Function(RefereeBlockedDate) _then) = _$RefereeBlockedDateCopyWithImpl;
 @useResult
 $Res call({
- String id,@JsonKey(name: 'user_id') String userId,@JsonKey(name: 'start_date') DateTime startDate,@JsonKey(name: 'end_date') DateTime endDate, String? reason,@JsonKey(name: 'created_at') DateTime createdAt,@JsonKey(name: 'updated_at') DateTime updatedAt
+ String id, DateTime startDate, DateTime endDate, String? reason
 });
 
 
@@ -65,16 +62,13 @@ class _$RefereeBlockedDateCopyWithImpl<$Res>
 
 /// Create a copy of RefereeBlockedDate
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? userId = null,Object? startDate = null,Object? endDate = null,Object? reason = freezed,Object? createdAt = null,Object? updatedAt = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? startDate = null,Object? endDate = null,Object? reason = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
-as String,userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
 as String,startDate: null == startDate ? _self.startDate : startDate // ignore: cast_nullable_to_non_nullable
 as DateTime,endDate: null == endDate ? _self.endDate : endDate // ignore: cast_nullable_to_non_nullable
 as DateTime,reason: freezed == reason ? _self.reason : reason // ignore: cast_nullable_to_non_nullable
-as String?,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
-as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
-as DateTime,
+as String?,
   ));
 }
 
@@ -159,10 +153,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id, @JsonKey(name: 'user_id')  String userId, @JsonKey(name: 'start_date')  DateTime startDate, @JsonKey(name: 'end_date')  DateTime endDate,  String? reason, @JsonKey(name: 'created_at')  DateTime createdAt, @JsonKey(name: 'updated_at')  DateTime updatedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  DateTime startDate,  DateTime endDate,  String? reason)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _RefereeBlockedDate() when $default != null:
-return $default(_that.id,_that.userId,_that.startDate,_that.endDate,_that.reason,_that.createdAt,_that.updatedAt);case _:
+return $default(_that.id,_that.startDate,_that.endDate,_that.reason);case _:
   return orElse();
 
 }
@@ -180,10 +174,10 @@ return $default(_that.id,_that.userId,_that.startDate,_that.endDate,_that.reason
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id, @JsonKey(name: 'user_id')  String userId, @JsonKey(name: 'start_date')  DateTime startDate, @JsonKey(name: 'end_date')  DateTime endDate,  String? reason, @JsonKey(name: 'created_at')  DateTime createdAt, @JsonKey(name: 'updated_at')  DateTime updatedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  DateTime startDate,  DateTime endDate,  String? reason)  $default,) {final _that = this;
 switch (_that) {
 case _RefereeBlockedDate():
-return $default(_that.id,_that.userId,_that.startDate,_that.endDate,_that.reason,_that.createdAt,_that.updatedAt);case _:
+return $default(_that.id,_that.startDate,_that.endDate,_that.reason);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -200,10 +194,10 @@ return $default(_that.id,_that.userId,_that.startDate,_that.endDate,_that.reason
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id, @JsonKey(name: 'user_id')  String userId, @JsonKey(name: 'start_date')  DateTime startDate, @JsonKey(name: 'end_date')  DateTime endDate,  String? reason, @JsonKey(name: 'created_at')  DateTime createdAt, @JsonKey(name: 'updated_at')  DateTime updatedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  DateTime startDate,  DateTime endDate,  String? reason)?  $default,) {final _that = this;
 switch (_that) {
 case _RefereeBlockedDate() when $default != null:
-return $default(_that.id,_that.userId,_that.startDate,_that.endDate,_that.reason,_that.createdAt,_that.updatedAt);case _:
+return $default(_that.id,_that.startDate,_that.endDate,_that.reason);case _:
   return null;
 
 }
@@ -212,19 +206,16 @@ return $default(_that.id,_that.userId,_that.startDate,_that.endDate,_that.reason
 }
 
 /// @nodoc
-@JsonSerializable()
+
 
 class _RefereeBlockedDate implements RefereeBlockedDate {
-  const _RefereeBlockedDate({required this.id, @JsonKey(name: 'user_id') required this.userId, @JsonKey(name: 'start_date') required this.startDate, @JsonKey(name: 'end_date') required this.endDate, this.reason, @JsonKey(name: 'created_at') required this.createdAt, @JsonKey(name: 'updated_at') required this.updatedAt});
-  factory _RefereeBlockedDate.fromJson(Map<String, dynamic> json) => _$RefereeBlockedDateFromJson(json);
+  const _RefereeBlockedDate({required this.id, required this.startDate, required this.endDate, this.reason});
+  
 
 @override final  String id;
-@override@JsonKey(name: 'user_id') final  String userId;
-@override@JsonKey(name: 'start_date') final  DateTime startDate;
-@override@JsonKey(name: 'end_date') final  DateTime endDate;
+@override final  DateTime startDate;
+@override final  DateTime endDate;
 @override final  String? reason;
-@override@JsonKey(name: 'created_at') final  DateTime createdAt;
-@override@JsonKey(name: 'updated_at') final  DateTime updatedAt;
 
 /// Create a copy of RefereeBlockedDate
 /// with the given fields replaced by the non-null parameter values.
@@ -232,23 +223,20 @@ class _RefereeBlockedDate implements RefereeBlockedDate {
 @pragma('vm:prefer-inline')
 _$RefereeBlockedDateCopyWith<_RefereeBlockedDate> get copyWith => __$RefereeBlockedDateCopyWithImpl<_RefereeBlockedDate>(this, _$identity);
 
-@override
-Map<String, dynamic> toJson() {
-  return _$RefereeBlockedDateToJson(this, );
-}
+
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RefereeBlockedDate&&(identical(other.id, id) || other.id == id)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.startDate, startDate) || other.startDate == startDate)&&(identical(other.endDate, endDate) || other.endDate == endDate)&&(identical(other.reason, reason) || other.reason == reason)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RefereeBlockedDate&&(identical(other.id, id) || other.id == id)&&(identical(other.startDate, startDate) || other.startDate == startDate)&&(identical(other.endDate, endDate) || other.endDate == endDate)&&(identical(other.reason, reason) || other.reason == reason));
 }
 
-@JsonKey(includeFromJson: false, includeToJson: false)
+
 @override
-int get hashCode => Object.hash(runtimeType,id,userId,startDate,endDate,reason,createdAt,updatedAt);
+int get hashCode => Object.hash(runtimeType,id,startDate,endDate,reason);
 
 @override
 String toString() {
-  return 'RefereeBlockedDate(id: $id, userId: $userId, startDate: $startDate, endDate: $endDate, reason: $reason, createdAt: $createdAt, updatedAt: $updatedAt)';
+  return 'RefereeBlockedDate(id: $id, startDate: $startDate, endDate: $endDate, reason: $reason)';
 }
 
 
@@ -259,7 +247,7 @@ abstract mixin class _$RefereeBlockedDateCopyWith<$Res> implements $RefereeBlock
   factory _$RefereeBlockedDateCopyWith(_RefereeBlockedDate value, $Res Function(_RefereeBlockedDate) _then) = __$RefereeBlockedDateCopyWithImpl;
 @override @useResult
 $Res call({
- String id,@JsonKey(name: 'user_id') String userId,@JsonKey(name: 'start_date') DateTime startDate,@JsonKey(name: 'end_date') DateTime endDate, String? reason,@JsonKey(name: 'created_at') DateTime createdAt,@JsonKey(name: 'updated_at') DateTime updatedAt
+ String id, DateTime startDate, DateTime endDate, String? reason
 });
 
 
@@ -276,16 +264,13 @@ class __$RefereeBlockedDateCopyWithImpl<$Res>
 
 /// Create a copy of RefereeBlockedDate
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? userId = null,Object? startDate = null,Object? endDate = null,Object? reason = freezed,Object? createdAt = null,Object? updatedAt = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? startDate = null,Object? endDate = null,Object? reason = freezed,}) {
   return _then(_RefereeBlockedDate(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
-as String,userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
 as String,startDate: null == startDate ? _self.startDate : startDate // ignore: cast_nullable_to_non_nullable
 as DateTime,endDate: null == endDate ? _self.endDate : endDate // ignore: cast_nullable_to_non_nullable
 as DateTime,reason: freezed == reason ? _self.reason : reason // ignore: cast_nullable_to_non_nullable
-as String?,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
-as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
-as DateTime,
+as String?,
   ));
 }
 

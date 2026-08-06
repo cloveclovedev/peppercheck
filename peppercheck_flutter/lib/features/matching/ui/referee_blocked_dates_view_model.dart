@@ -1,15 +1,16 @@
-import 'package:peppercheck_flutter/features/matching/data/matching_repository.dart';
-import 'package:peppercheck_flutter/features/matching/domain/referee_blocked_date.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-part 'referee_blocked_dates_controller.g.dart';
+import '../data/matching_repository.dart';
+import '../domain/referee_blocked_date.dart';
 
+part 'referee_blocked_dates_view_model.g.dart';
+
+/// The signed-in referee's blocked calendar days.
 @riverpod
-class RefereeBlockedDatesController extends _$RefereeBlockedDatesController {
+class RefereeBlockedDatesViewModel extends _$RefereeBlockedDatesViewModel {
   @override
-  FutureOr<List<RefereeBlockedDate>> build() async {
-    return ref.read(matchingRepositoryProvider).getRefereeBlockedDates();
-  }
+  FutureOr<List<RefereeBlockedDate>> build() =>
+      ref.read(matchingRepositoryProvider).fetchBlockedDates();
 
   Future<void> addBlockedDate(
     DateTime startDate,
@@ -19,12 +20,12 @@ class RefereeBlockedDatesController extends _$RefereeBlockedDatesController {
     final repository = ref.read(matchingRepositoryProvider);
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
-      await repository.createRefereeBlockedDate(
+      await repository.createBlockedDate(
         startDate: startDate,
         endDate: endDate,
         reason: reason,
       );
-      return repository.getRefereeBlockedDates();
+      return repository.fetchBlockedDates();
     });
   }
 
@@ -37,13 +38,13 @@ class RefereeBlockedDatesController extends _$RefereeBlockedDatesController {
     final repository = ref.read(matchingRepositoryProvider);
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
-      await repository.updateRefereeBlockedDate(
+      await repository.updateBlockedDate(
         id: id,
         startDate: startDate,
         endDate: endDate,
         reason: reason,
       );
-      return repository.getRefereeBlockedDates();
+      return repository.fetchBlockedDates();
     });
   }
 
@@ -51,8 +52,8 @@ class RefereeBlockedDatesController extends _$RefereeBlockedDatesController {
     final repository = ref.read(matchingRepositoryProvider);
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
-      await repository.deleteRefereeBlockedDate(id);
-      return repository.getRefereeBlockedDates();
+      await repository.deleteBlockedDate(id);
+      return repository.fetchBlockedDates();
     });
   }
 }

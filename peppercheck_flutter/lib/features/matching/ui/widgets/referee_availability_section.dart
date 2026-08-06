@@ -5,40 +5,40 @@ import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
 import 'package:peppercheck_flutter/common_widgets/action_button.dart';
 import 'package:peppercheck_flutter/common_widgets/base_section.dart';
 import 'package:peppercheck_flutter/common_widgets/help_icon_button.dart';
-import 'package:peppercheck_flutter/features/matching/presentation/controllers/referee_blocked_dates_controller.dart';
-import 'package:peppercheck_flutter/features/matching/presentation/widgets/blocked_date_card.dart';
-import 'package:peppercheck_flutter/features/matching/presentation/widgets/blocked_date_dialog.dart';
+import 'package:peppercheck_flutter/features/matching/ui/referee_availability_view_model.dart';
+import 'package:peppercheck_flutter/features/matching/ui/widgets/time_slot_card.dart';
+import 'package:peppercheck_flutter/features/matching/ui/widgets/time_slot_dialog.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 
-class RefereeBlockedDatesSection extends ConsumerWidget {
-  const RefereeBlockedDatesSection({super.key});
+class RefereeAvailabilitySection extends ConsumerWidget {
+  const RefereeAvailabilitySection({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final blockedDatesState = ref.watch(refereeBlockedDatesControllerProvider);
+    final availabilityState = ref.watch(refereeAvailabilityViewModelProvider);
 
     return BaseSection(
-      title: t.matching.referee_blocked_dates.title,
+      title: t.matching.referee_availability.title,
       trailing: HelpIconButton(
-        title: t.matching.referee_blocked_dates.help.title,
-        body: t.matching.referee_blocked_dates.help.body,
+        title: t.matching.referee_availability.help.title,
+        body: t.matching.referee_availability.help.body,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          blockedDatesState.when(
-            data: (dates) {
-              if (dates.isEmpty) {
+          availabilityState.when(
+            data: (slots) {
+              if (slots.isEmpty) {
                 return Text(
-                  t.matching.referee_blocked_dates.no_dates,
+                  t.matching.referee_availability.no_slots,
                   style: const TextStyle(color: AppColors.textMuted),
                 );
               }
               return Column(
                 children: [
-                  for (int i = 0; i < dates.length; i++) ...[
+                  for (int i = 0; i < slots.length; i++) ...[
                     if (i > 0) const SizedBox(height: AppSizes.timeSlotCardGap),
-                    BlockedDateCard(blockedDate: dates[i]),
+                    TimeSlotCard(timeSlot: slots[i]),
                   ],
                 ],
               );
@@ -56,17 +56,17 @@ class RefereeBlockedDatesSection extends ConsumerWidget {
             onPressed: () {
               showDialog(
                 context: context,
-                builder: (context) => BlockedDateDialog(
-                  onSave: (startDate, endDate, reason) {
+                builder: (context) => TimeSlotDialog(
+                  onSave: (dow, start, end) {
                     ref
-                        .read(refereeBlockedDatesControllerProvider.notifier)
-                        .addBlockedDate(startDate, endDate, reason);
+                        .read(refereeAvailabilityViewModelProvider.notifier)
+                        .addTimeSlot(dow, start, end);
                   },
                 ),
               );
             },
             icon: Icons.add,
-            text: t.matching.referee_blocked_dates.add_date,
+            text: t.matching.referee_availability.add_slot,
           ),
         ],
       ),

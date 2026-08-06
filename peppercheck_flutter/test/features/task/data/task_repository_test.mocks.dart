@@ -83,6 +83,22 @@ class MockApiClient extends _i1.Mock implements _i2.ApiClient {
           as _i3.Future<void>);
 
   @override
+  _i3.Future<Map<String, dynamic>> putJsonObject(
+    String? path, {
+    Object? body,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#putJsonObject, [path], {#body: body}),
+            returnValue: _i3.Future<Map<String, dynamic>>.value(
+              <String, dynamic>{},
+            ),
+            returnValueForMissingStub: _i3.Future<Map<String, dynamic>>.value(
+              <String, dynamic>{},
+            ),
+          )
+          as _i3.Future<Map<String, dynamic>>);
+
+  @override
   _i3.Future<void> deleteJson(String? path, {Object? body}) =>
       (super.noSuchMethod(
             Invocation.method(#deleteJson, [path], {#body: body}),

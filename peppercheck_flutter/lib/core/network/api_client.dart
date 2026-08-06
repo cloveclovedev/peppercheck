@@ -99,6 +99,12 @@ class ApiClient {
   Future<void> putJson(String path, {Object? body}) =>
       _sendVoid('PUT', path, body: body);
 
+  /// PUT [path] with a JSON [body] and decode the JSON object response, for
+  /// endpoints that return the updated resource rather than a body-less 204.
+  /// Never auto-retries on 401.
+  Future<Map<String, dynamic>> putJsonObject(String path, {Object? body}) =>
+      _sendJson('PUT', path, body: body);
+
   /// DELETE [path] with an optional JSON [body]; succeeds on any 2xx,
   /// including a body-less 204. Never auto-retries on 401.
   Future<void> deleteJson(String path, {Object? body}) =>
