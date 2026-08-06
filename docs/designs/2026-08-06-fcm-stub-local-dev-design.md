@@ -45,10 +45,13 @@ compose block *happening to omit* `FIREBASE_PROJECT_ID`. If that var is ever
 added to the worker (a copy-paste, an env unification) **while valid ambient
 credentials are present** (a developer's `GOOGLE_APPLICATION_CREDENTIALS` or
 `gcloud` ADC), the worker would build a real client and **actually send real
-push** from a dev/local run — unintended real delivery, not merely a caught
-error. (Without credentials the init error or a `Send` failure is caught by
-`buildFCMClient` for non-production and falls back to `NewNoop`, so the danger is
-specifically the *credentials-present* case.) #525 makes the log useful and the
+push** from a dev/local run — unintended real delivery. (Without credentials,
+the `fcm.New` **construction** error is caught by `buildFCMClient` for
+non-production and falls back to `NewNoop`; note this fallback covers only
+*initialization*, not `Send` — a `Send` error after a successful init propagates
+to the worker and fails/retries the job (#464), it does not swap to `NewNoop`.
+So the danger here is specifically the *credentials-present* case, where init
+succeeds and `Send` actually delivers.) #525 makes the log useful and the
 intent explicit.
 
 ## Goals
@@ -79,23 +82,33 @@ intent explicit.
 
 ### 1. A log stub in `platform/fcm`
 
-Provide a log-only `Client` (enrich `noopClient`, or add `NewLogStub(logger)`)
-that logs the full outgoing `Message` at a clear level — `TitleLocKey`,
-`BodyLocKey`, `LocArgs`, the full `Data` **map (keys and values)**, and the
-recipient count — then returns
-an empty `SendResult` (no tokens pruned). Logging the `Data` **values** (not just
-keys) is what actually lets a developer see what would have been sent — e.g. the
-task route/id — and is what would surface the #535 route mismatch during local
-testing; the payload is task routes/ids, not secrets. This is the "records sends
-for inspection" stub the existing TODO anticipates, realized as structured logs
-(the operator's chosen shape). The SDK messaging types stay inside `platform/fcm`.
+Add a **new, local-only** log-only `Client` — `NewLogStub(logger)` — that logs
+the full outgoing `Message` at a clear level (`TitleLocKey`, `BodyLocKey`,
+`LocArgs`, the full `Data` **map — keys and values**, and the recipient count),
+then returns an empty `SendResult` (no tokens pruned). Logging the `Data` values
+(not just keys) is what actually lets a developer see what would have been sent
+— e.g. the task route/id — and is what would surface the #535 route mismatch
+during local testing. This is the "records sends for inspection" stub the
+existing TODO anticipates, realized as structured logs. The SDK messaging types
+stay inside `platform/fcm`.
+
+**Do not enrich the shared `noopClient`.** `noopClient` is also the fallback for
+non-local environments — the `api` command always uses it, and `staging` falls
+back to it when the project id is missing or `fcm.New` fails (§2). Enriching that
+shared type would print full payloads outside local dev, and `LocArgs` carries
+the **user-authored task title** (`matching/service.go`) — i.e. user content
+would land in staging logs (a PII leak). So the enriched, full-payload logging
+lives **only** in the new `NewLogStub`, selected only for local; `noopClient`
+stays sparse.
 
 ### 2. Make the worker selection explicit and add a documented opt-in
 
-Keep the log stub as the worker's local default (it already is), but make the
-intent explicit rather than implicit-by-omitted-var:
+Keep a log stub as the worker's local default (it already log-noops today), but
+make the intent explicit rather than implicit-by-omitted-var, and use the new
+local-only `NewLogStub` (§1) so full-payload logging never runs in staging/prod:
 
-- `Env == "local"` → **log stub by default** (zero-flag). Real FCM locally is an
+- `Env == "local"` → **the `NewLogStub` by default** (zero-flag). Real FCM
+  locally is an
   **operator opt-in**: set an explicit flag (e.g. `FCM_DELIVERY=real`) **and**
   provide the worker `FIREBASE_PROJECT_ID` + `GOOGLE_APPLICATION_CREDENTIALS`
   (the worker compose block does not pass these today, so this is a new,
@@ -129,8 +142,13 @@ signed out); no message arrives locally; failures are already swallowed.
   `FIREBASE_PROJECT_ID` to the worker while a developer's ambient ADC is present
   would flip local delivery to a real client that **actually sends real push** —
   the kind of implicit-config brittleness #483 warned about. Explicit `Env`-based
-  selection is preferred; enriching the log alone would be a valid smaller scope
-  if the explicit selector is deferred.
+  selection is preferred; adding the local-only `NewLogStub` alone (without the
+  explicit selector) would be a valid smaller scope if the selector is deferred.
+- **Enrich the shared `noopClient` instead of adding a new stub.** Rejected —
+  `noopClient` is also the `api` client and staging's init-failure fallback, so
+  enriching it would log full payloads (incl. the user-authored task title in
+  `LocArgs`) outside local dev — user content in staging logs. The enriched stub
+  must be local-only.
 - **A `NOTIFICATIONS_ENABLED=false` boolean.** Rejected — a delivery selector
   (`stub` vs `real`) reads better than a disable flag and mirrors the
   local-default / operator-opt-in shape of the sibling legs.
@@ -141,10 +159,15 @@ signed out); no message arrives locally; failures are already swallowed.
 ## Consequences
 
 - The local notification path already completes today (the worker log-noops);
-  #525 makes that log **informative** (loc-keys/args/data/recipient count) and
-  the selection **explicit** so it can't silently flip to a real client.
+  #525 adds a **local-only** `NewLogStub` whose log is **informative**
+  (loc-keys/args/full data map/recipient count) and makes the selection
+  **explicit** so it can't silently flip to a real client. The shared
+  `noopClient` (api + staging fallback) stays sparse, so no user content
+  (task title in `LocArgs`) is logged outside local.
 - Real delivery and tap/deep-link behavior are verified only against real FCM
-  (operator opt-in) — the accepted fidelity gap.
+  (operator opt-in) — the accepted fidelity gap. A `Send` error (creds init OK
+  but revoked/underprivileged/transient) is **not** absorbed by the stub path;
+  it fails/retries the worker job (#464), as today.
 - `backend/.env.example` / `compose.yaml` notification comments are corrected to
   match reality (worker log-noops locally; documented opt-in for real FCM).
 
@@ -190,7 +213,15 @@ signed out); no message arrives locally; failures are already swallowed.
   explicit fail-closed change, out of scope.
 - **2026-08-06** — Third Codex round on PR #536 (P2 ×2). (1) Reframed the
   explicit-selector rationale: the real risk of adding `FIREBASE_PROJECT_ID` to
-  the worker is **accidental real push when ambient credentials are present**
-  (a caught init/`Send` error is not the danger — that falls back to `NewNoop`
-  for non-production). (2) The log stub must log the `Data` **map values**, not
-  just keys, or "see what would have been sent" (and surfacing #535) is not met.
+  the worker is **accidental real push when ambient credentials are present**.
+  (2) The log stub must log the `Data` **map values**, not just keys, or "see
+  what would have been sent" (and surfacing #535) is not met.
+- **2026-08-06** — Fourth Codex round on PR #536 (P2 ×2). (1) The
+  `buildFCMClient` fallback covers only `fcm.New` **initialization** errors; a
+  `Send` error after a successful init propagates and fails/retries the worker
+  job — it does **not** swap to `NewNoop`. Corrected the earlier "Send error is
+  caught" phrasing. (2) **The enriched full-payload logging must be a distinct
+  local-only `NewLogStub`, not an enriched shared `noopClient`** — `noopClient`
+  is also the `api` client and staging's fallback, and `LocArgs` carries the
+  user-authored task title, so enriching it would leak user content into staging
+  logs (PII).
