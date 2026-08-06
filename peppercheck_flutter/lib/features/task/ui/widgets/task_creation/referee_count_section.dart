@@ -26,7 +26,10 @@ class RefereeCountSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effective = loading ? 1 : selected.clamp(1, maxCount);
+    // Never fall below one option, even if the server ever reported a maximum
+    // below 1: clamp() throws when its bounds cross.
+    final upperBound = maxCount < 1 ? 1 : maxCount;
+    final effective = loading ? 1 : selected.clamp(1, upperBound);
     if (!loading && effective != selected) {
       WidgetsBinding.instance.addPostFrameCallback((_) => onChanged(effective));
     }
@@ -38,7 +41,7 @@ class RefereeCountSection extends StatelessWidget {
         children: [
           Row(
             children: [
-              for (var count = 1; count <= maxCount; count++) ...[
+              for (var count = 1; count <= upperBound; count++) ...[
                 if (count > 1)
                   const SizedBox(width: AppSizes.gapTaskStatusSelectorButton),
                 Expanded(

@@ -11,21 +11,17 @@ part of 'referee_request.dart';
 
 // dart format off
 T _$identity<T>(T value) => value;
-
 /// @nodoc
 mixin _$RefereeRequest {
 
- String get id;@JsonKey(name: 'task_id') String get taskId; String get status;@JsonKey(name: 'matched_referee_id') String? get matchedRefereeId;@JsonKey(name: 'responded_at') String? get respondedAt;@JsonKey(name: 'created_at') String get createdAt;@JsonKey(name: 'updated_at') String? get updatedAt;@JsonKey(name: 'point_source') String? get pointSource;@JsonKey(name: 'is_obligation') bool get isObligation;// Aggregated fields
- Judgement? get judgement;// Populated by the repository from the DTO layer, never parsed here.
-@JsonKey(includeFromJson: false, includeToJson: false) PublicProfile? get referee;
+ String get id; String get taskId; String get status; String? get matchedRefereeId; String? get respondedAt; String get createdAt; String? get updatedAt; String? get pointSource; bool get isObligation;// Aggregated fields
+ Judgement? get judgement; PublicProfile? get referee;
 /// Create a copy of RefereeRequest
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
 $RefereeRequestCopyWith<RefereeRequest> get copyWith => _$RefereeRequestCopyWithImpl<RefereeRequest>(this as RefereeRequest, _$identity);
 
-  /// Serializes this RefereeRequest to a JSON map.
-  Map<String, dynamic> toJson();
 
 
 @override
@@ -33,7 +29,7 @@ bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is RefereeRequest&&(identical(other.id, id) || other.id == id)&&(identical(other.taskId, taskId) || other.taskId == taskId)&&(identical(other.status, status) || other.status == status)&&(identical(other.matchedRefereeId, matchedRefereeId) || other.matchedRefereeId == matchedRefereeId)&&(identical(other.respondedAt, respondedAt) || other.respondedAt == respondedAt)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.pointSource, pointSource) || other.pointSource == pointSource)&&(identical(other.isObligation, isObligation) || other.isObligation == isObligation)&&(identical(other.judgement, judgement) || other.judgement == judgement)&&(identical(other.referee, referee) || other.referee == referee));
 }
 
-@JsonKey(includeFromJson: false, includeToJson: false)
+
 @override
 int get hashCode => Object.hash(runtimeType,id,taskId,status,matchedRefereeId,respondedAt,createdAt,updatedAt,pointSource,isObligation,judgement,referee);
 
@@ -50,7 +46,7 @@ abstract mixin class $RefereeRequestCopyWith<$Res>  {
   factory $RefereeRequestCopyWith(RefereeRequest value, $Res Function(RefereeRequest) _then) = _$RefereeRequestCopyWithImpl;
 @useResult
 $Res call({
- String id,@JsonKey(name: 'task_id') String taskId, String status,@JsonKey(name: 'matched_referee_id') String? matchedRefereeId,@JsonKey(name: 'responded_at') String? respondedAt,@JsonKey(name: 'created_at') String createdAt,@JsonKey(name: 'updated_at') String? updatedAt,@JsonKey(name: 'point_source') String? pointSource,@JsonKey(name: 'is_obligation') bool isObligation, Judgement? judgement,@JsonKey(includeFromJson: false, includeToJson: false) PublicProfile? referee
+ String id, String taskId, String status, String? matchedRefereeId, String? respondedAt, String createdAt, String? updatedAt, String? pointSource, bool isObligation, Judgement? judgement, PublicProfile? referee
 });
 
 
@@ -189,7 +185,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id, @JsonKey(name: 'task_id')  String taskId,  String status, @JsonKey(name: 'matched_referee_id')  String? matchedRefereeId, @JsonKey(name: 'responded_at')  String? respondedAt, @JsonKey(name: 'created_at')  String createdAt, @JsonKey(name: 'updated_at')  String? updatedAt, @JsonKey(name: 'point_source')  String? pointSource, @JsonKey(name: 'is_obligation')  bool isObligation,  Judgement? judgement, @JsonKey(includeFromJson: false, includeToJson: false)  PublicProfile? referee)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String taskId,  String status,  String? matchedRefereeId,  String? respondedAt,  String createdAt,  String? updatedAt,  String? pointSource,  bool isObligation,  Judgement? judgement,  PublicProfile? referee)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _RefereeRequest() when $default != null:
 return $default(_that.id,_that.taskId,_that.status,_that.matchedRefereeId,_that.respondedAt,_that.createdAt,_that.updatedAt,_that.pointSource,_that.isObligation,_that.judgement,_that.referee);case _:
@@ -210,7 +206,7 @@ return $default(_that.id,_that.taskId,_that.status,_that.matchedRefereeId,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id, @JsonKey(name: 'task_id')  String taskId,  String status, @JsonKey(name: 'matched_referee_id')  String? matchedRefereeId, @JsonKey(name: 'responded_at')  String? respondedAt, @JsonKey(name: 'created_at')  String createdAt, @JsonKey(name: 'updated_at')  String? updatedAt, @JsonKey(name: 'point_source')  String? pointSource, @JsonKey(name: 'is_obligation')  bool isObligation,  Judgement? judgement, @JsonKey(includeFromJson: false, includeToJson: false)  PublicProfile? referee)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String taskId,  String status,  String? matchedRefereeId,  String? respondedAt,  String createdAt,  String? updatedAt,  String? pointSource,  bool isObligation,  Judgement? judgement,  PublicProfile? referee)  $default,) {final _that = this;
 switch (_that) {
 case _RefereeRequest():
 return $default(_that.id,_that.taskId,_that.status,_that.matchedRefereeId,_that.respondedAt,_that.createdAt,_that.updatedAt,_that.pointSource,_that.isObligation,_that.judgement,_that.referee);case _:
@@ -230,7 +226,7 @@ return $default(_that.id,_that.taskId,_that.status,_that.matchedRefereeId,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id, @JsonKey(name: 'task_id')  String taskId,  String status, @JsonKey(name: 'matched_referee_id')  String? matchedRefereeId, @JsonKey(name: 'responded_at')  String? respondedAt, @JsonKey(name: 'created_at')  String createdAt, @JsonKey(name: 'updated_at')  String? updatedAt, @JsonKey(name: 'point_source')  String? pointSource, @JsonKey(name: 'is_obligation')  bool isObligation,  Judgement? judgement, @JsonKey(includeFromJson: false, includeToJson: false)  PublicProfile? referee)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String taskId,  String status,  String? matchedRefereeId,  String? respondedAt,  String createdAt,  String? updatedAt,  String? pointSource,  bool isObligation,  Judgement? judgement,  PublicProfile? referee)?  $default,) {final _that = this;
 switch (_that) {
 case _RefereeRequest() when $default != null:
 return $default(_that.id,_that.taskId,_that.status,_that.matchedRefereeId,_that.respondedAt,_that.createdAt,_that.updatedAt,_that.pointSource,_that.isObligation,_that.judgement,_that.referee);case _:
@@ -242,25 +238,24 @@ return $default(_that.id,_that.taskId,_that.status,_that.matchedRefereeId,_that.
 }
 
 /// @nodoc
-@JsonSerializable()
+
 
 class _RefereeRequest implements RefereeRequest {
-  const _RefereeRequest({required this.id, @JsonKey(name: 'task_id') required this.taskId, required this.status, @JsonKey(name: 'matched_referee_id') this.matchedRefereeId, @JsonKey(name: 'responded_at') this.respondedAt, @JsonKey(name: 'created_at') required this.createdAt, @JsonKey(name: 'updated_at') this.updatedAt, @JsonKey(name: 'point_source') this.pointSource, @JsonKey(name: 'is_obligation') this.isObligation = false, this.judgement, @JsonKey(includeFromJson: false, includeToJson: false) this.referee});
-  factory _RefereeRequest.fromJson(Map<String, dynamic> json) => _$RefereeRequestFromJson(json);
+  const _RefereeRequest({required this.id, required this.taskId, required this.status, this.matchedRefereeId, this.respondedAt, required this.createdAt, this.updatedAt, this.pointSource, this.isObligation = false, this.judgement, this.referee});
+  
 
 @override final  String id;
-@override@JsonKey(name: 'task_id') final  String taskId;
+@override final  String taskId;
 @override final  String status;
-@override@JsonKey(name: 'matched_referee_id') final  String? matchedRefereeId;
-@override@JsonKey(name: 'responded_at') final  String? respondedAt;
-@override@JsonKey(name: 'created_at') final  String createdAt;
-@override@JsonKey(name: 'updated_at') final  String? updatedAt;
-@override@JsonKey(name: 'point_source') final  String? pointSource;
-@override@JsonKey(name: 'is_obligation') final  bool isObligation;
+@override final  String? matchedRefereeId;
+@override final  String? respondedAt;
+@override final  String createdAt;
+@override final  String? updatedAt;
+@override final  String? pointSource;
+@override@JsonKey() final  bool isObligation;
 // Aggregated fields
 @override final  Judgement? judgement;
-// Populated by the repository from the DTO layer, never parsed here.
-@override@JsonKey(includeFromJson: false, includeToJson: false) final  PublicProfile? referee;
+@override final  PublicProfile? referee;
 
 /// Create a copy of RefereeRequest
 /// with the given fields replaced by the non-null parameter values.
@@ -268,17 +263,14 @@ class _RefereeRequest implements RefereeRequest {
 @pragma('vm:prefer-inline')
 _$RefereeRequestCopyWith<_RefereeRequest> get copyWith => __$RefereeRequestCopyWithImpl<_RefereeRequest>(this, _$identity);
 
-@override
-Map<String, dynamic> toJson() {
-  return _$RefereeRequestToJson(this, );
-}
+
 
 @override
 bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is _RefereeRequest&&(identical(other.id, id) || other.id == id)&&(identical(other.taskId, taskId) || other.taskId == taskId)&&(identical(other.status, status) || other.status == status)&&(identical(other.matchedRefereeId, matchedRefereeId) || other.matchedRefereeId == matchedRefereeId)&&(identical(other.respondedAt, respondedAt) || other.respondedAt == respondedAt)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.pointSource, pointSource) || other.pointSource == pointSource)&&(identical(other.isObligation, isObligation) || other.isObligation == isObligation)&&(identical(other.judgement, judgement) || other.judgement == judgement)&&(identical(other.referee, referee) || other.referee == referee));
 }
 
-@JsonKey(includeFromJson: false, includeToJson: false)
+
 @override
 int get hashCode => Object.hash(runtimeType,id,taskId,status,matchedRefereeId,respondedAt,createdAt,updatedAt,pointSource,isObligation,judgement,referee);
 
@@ -295,7 +287,7 @@ abstract mixin class _$RefereeRequestCopyWith<$Res> implements $RefereeRequestCo
   factory _$RefereeRequestCopyWith(_RefereeRequest value, $Res Function(_RefereeRequest) _then) = __$RefereeRequestCopyWithImpl;
 @override @useResult
 $Res call({
- String id,@JsonKey(name: 'task_id') String taskId, String status,@JsonKey(name: 'matched_referee_id') String? matchedRefereeId,@JsonKey(name: 'responded_at') String? respondedAt,@JsonKey(name: 'created_at') String createdAt,@JsonKey(name: 'updated_at') String? updatedAt,@JsonKey(name: 'point_source') String? pointSource,@JsonKey(name: 'is_obligation') bool isObligation, Judgement? judgement,@JsonKey(includeFromJson: false, includeToJson: false) PublicProfile? referee
+ String id, String taskId, String status, String? matchedRefereeId, String? respondedAt, String createdAt, String? updatedAt, String? pointSource, bool isObligation, Judgement? judgement, PublicProfile? referee
 });
 
 

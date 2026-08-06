@@ -4,36 +4,25 @@ import 'package:peppercheck_flutter/features/matching/domain/public_profile.dart
 import 'package:peppercheck_flutter/features/matching/domain/referee_request.dart';
 
 part 'task.freezed.dart';
-part 'task.g.dart';
-
-// ignore_for_file: invalid_annotation_target
 
 @freezed
 abstract class Task with _$Task {
   const factory Task({
     required String id,
-    @JsonKey(name: 'tasker_id') required String taskerId,
+    required String taskerId,
     required String title,
     String? description,
     String? criteria,
-    @JsonKey(name: 'due_date') String? dueDate,
+    String? dueDate,
     required String status,
-    @JsonKey(name: 'created_at') String? createdAt,
-    @JsonKey(name: 'updated_at') String? updatedAt,
+    String? createdAt,
+    String? updatedAt,
 
     // Aggregated fields
-    @JsonKey(name: 'task_referee_requests')
-    @Default([])
-    List<RefereeRequest> refereeRequests,
-
+    @Default([]) List<RefereeRequest> refereeRequests,
     TaskEvidence? evidence,
-
-    // Populated by the repository from the DTO layer, never parsed here.
-    @JsonKey(includeFromJson: false, includeToJson: false)
     PublicProfile? tasker,
   }) = _Task;
-
-  factory Task.fromJson(Map<String, dynamic> json) => _$TaskFromJson(json);
 
   const Task._();
 
