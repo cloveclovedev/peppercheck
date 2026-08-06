@@ -103,26 +103,3 @@ func TestBlockedDateCRUD(t *testing.T) {
 		t.Fatalf("delete: %v", err)
 	}
 }
-
-func TestActiveAssignments(t *testing.T) {
-	db := testsupport.DB(t)
-	s := matching.NewStore(db)
-	ctx := context.Background()
-
-	reqID, _, referee := seedAccepted(t, db, "10 days", "regular")
-	got, err := s.ActiveAssignments(ctx, referee)
-	if err != nil {
-		t.Fatalf("assignments: %v", err)
-	}
-	if len(got) != 1 || got[0].RequestID != reqID || got[0].JudgementStatus != "awaiting_evidence" {
-		t.Fatalf("want [reqID awaiting_evidence], got %+v", got)
-	}
-
-	// A completed (approved) judgement is no longer an active assignment.
-	if _, err := db.Exec(`UPDATE public.judgements SET status='approved' WHERE id=$1`, reqID); err != nil {
-		t.Fatalf("complete judgement: %v", err)
-	}
-	if got, _ := s.ActiveAssignments(ctx, referee); len(got) != 0 {
-		t.Fatalf("want no active assignments after completion, got %+v", got)
-	}
-}

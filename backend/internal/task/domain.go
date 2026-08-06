@@ -20,18 +20,46 @@ var (
 	ErrValidation = errors.New("task: validation failed")
 )
 
+// PublicProfile is the minimal display projection of a user (username + avatar),
+// embedded in Task responses for the tasker and each matched referee. It is the
+// Phase-3a-deferred shared projection, not the owner's editable profile.
+type PublicProfile struct {
+	UserID    string
+	Username  string
+	AvatarURL *string
+}
+
+// RefereeRequest is one seat on a task, as carried in the Task wire object. The
+// embedded Referee profile is set only once the seat is matched.
+type RefereeRequest struct {
+	ID               string
+	TaskID           string
+	Status           string
+	MatchedRefereeID *string
+	RespondedAt      *time.Time
+	PointSource      *string
+	IsObligation     bool
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
+	Referee          *PublicProfile
+}
+
 // Task is a tasker-authored task. Description/Criteria/DueDate are nil until the
-// tasker fills them in; publishing requires Criteria and DueDate.
+// tasker fills them in; publishing requires Criteria and DueDate. Tasker is the
+// embedded public profile of the author (nil if the author was deleted);
+// RefereeRequests are the task's seats (empty for a draft).
 type Task struct {
-	ID          string
-	TaskerID    string
-	Title       string
-	Description *string
-	Criteria    *string
-	DueDate     *time.Time
-	Status      string
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	ID              string
+	TaskerID        string
+	Title           string
+	Description     *string
+	Criteria        *string
+	DueDate         *time.Time
+	Status          string
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+	Tasker          *PublicProfile
+	RefereeRequests []RefereeRequest
 }
 
 // ValidateOpenRequirements enforces the rules for the draft->open transition

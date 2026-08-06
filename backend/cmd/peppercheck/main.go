@@ -109,7 +109,8 @@ func main() {
 			notification.NewSender(notifStore, fcm.NewNoop(logger)),
 			jobs.NewStore(db),
 		)
-		taskSvc := task.NewService(db, task.NewStore(db), matchingSvc)
+		taskStore := task.NewStore(db)
+		taskSvc := task.NewService(db, taskStore, matchingSvc)
 
 		// identity.Store's FindUserByEmail satisfies accountdeletion's
 		// userLookup; a separate identity.NewStore(db) here is cheap (no
@@ -126,7 +127,7 @@ func main() {
 			Profile:      profile.NewHandler(profileSvc),
 			Notification: notification.NewHandler(notifSvc),
 			Task:         task.NewHandler(taskSvc),
-			Referee:      matching.NewHandler(matchingSvc, matchingStore),
+			Referee:      matching.NewHandler(matchingSvc, matchingStore, taskStore),
 			ResolveUser:  identity.NewMiddleware(idSvc, logger),
 			Web: web.NewHandler(web.Deps{
 				Logger:    logger,

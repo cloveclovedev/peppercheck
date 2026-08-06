@@ -90,7 +90,9 @@ func TestUpdateDraft(t *testing.T) {
 	owner := newUser(t, db)
 	created, _ := svc.CreateDraft(ctx, owner, task.DraftInput{Title: "draft"})
 
-	updated, err := svc.UpdateDraft(ctx, owner, created.ID, task.DraftInput{Title: "edited", Criteria: ptr("done")})
+	updated, err := svc.UpdateDraft(ctx, owner, created.ID, task.PatchInput{
+		SetTitle: true, Title: ptr("edited"), SetCriteria: true, Criteria: ptr("done"),
+	})
 	if err != nil {
 		t.Fatalf("update: %v", err)
 	}
@@ -98,9 +100,18 @@ func TestUpdateDraft(t *testing.T) {
 		t.Fatalf("unexpected update %+v", updated)
 	}
 
+	// A patch that omits title leaves it unchanged (presence-aware).
+	patched, err := svc.UpdateDraft(ctx, owner, created.ID, task.PatchInput{SetDesc: true, Description: ptr("note")})
+	if err != nil {
+		t.Fatalf("partial update: %v", err)
+	}
+	if patched.Title != "edited" || patched.Description == nil || *patched.Description != "note" {
+		t.Fatalf("partial update did not preserve title / set description: %+v", patched)
+	}
+
 	// Non-owner update is not found.
 	other := newUser(t, db)
-	if _, err := svc.UpdateDraft(ctx, other, created.ID, task.DraftInput{Title: "x"}); !errors.Is(err, task.ErrNotFound) {
+	if _, err := svc.UpdateDraft(ctx, other, created.ID, task.PatchInput{SetTitle: true, Title: ptr("x")}); !errors.Is(err, task.ErrNotFound) {
 		t.Fatalf("cross-user update: want ErrNotFound, got %v", err)
 	}
 
@@ -108,7 +119,7 @@ func TestUpdateDraft(t *testing.T) {
 	if _, err := db.Exec(`UPDATE public.tasks SET status='open' WHERE id=$1`, created.ID); err != nil {
 		t.Fatalf("open task: %v", err)
 	}
-	if _, err := svc.UpdateDraft(ctx, owner, created.ID, task.DraftInput{Title: "x"}); !errors.Is(err, task.ErrConflict) {
+	if _, err := svc.UpdateDraft(ctx, owner, created.ID, task.PatchInput{SetTitle: true, Title: ptr("x")}); !errors.Is(err, task.ErrConflict) {
 		t.Fatalf("update opened: want ErrConflict, got %v", err)
 	}
 }
@@ -148,13 +159,13 @@ func TestListOwnedFiltersByStatus(t *testing.T) {
 		t.Fatalf("open: %v", err)
 	}
 
-	all, err := svc.ListOwned(ctx, owner, task.ListParams{Limit: 50})
-	if err != nil || len(all) != 2 {
-		t.Fatalf("list all: %v len=%d", err, len(all))
+	all, err := svc.ListOwned(ctx, owner, "", "", 50)
+	if err != nil || len(all.Tasks) != 2 {
+		t.Fatalf("list all: %v len=%d", err, len(all.Tasks))
 	}
-	drafts, err := svc.ListOwned(ctx, owner, task.ListParams{Status: "draft", Limit: 50})
-	if err != nil || len(drafts) != 1 || drafts[0].Status != "draft" {
-		t.Fatalf("list drafts: %v %+v", err, drafts)
+	drafts, err := svc.ListOwned(ctx, owner, "draft", "", 50)
+	if err != nil || len(drafts.Tasks) != 1 || drafts.Tasks[0].Status != "draft" {
+		t.Fatalf("list drafts: %v %+v", err, drafts.Tasks)
 	}
 }
 

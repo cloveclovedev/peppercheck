@@ -46,8 +46,12 @@ func TestCancelByRefereeReMatches(t *testing.T) {
 	svc, _ := newTestMatchingService(t, db)
 	reqID, taskID, ref := seedAccepted(t, db, "30 days", "regular")
 
-	if err := svc.Cancel(context.Background(), reqID, ref); err != nil {
+	gotTaskID, err := svc.Cancel(context.Background(), reqID, ref)
+	if err != nil {
 		t.Fatalf("cancel: %v", err)
+	}
+	if gotTaskID != taskID {
+		t.Fatalf("cancel returned task %s, want %s", gotTaskID, taskID)
 	}
 	assertStatus(t, db, reqID, "cancelled")
 	if n := judgementCount(t, db, reqID); n != 0 {
@@ -65,7 +69,7 @@ func TestCancelRejectsNonAssignedReferee(t *testing.T) {
 	reqID, _, _ := seedAccepted(t, db, "30 days", "regular")
 	other := newUser(t, db)
 
-	if err := svc.Cancel(context.Background(), reqID, other); !errors.Is(err, matching.ErrForbidden) {
+	if _, err := svc.Cancel(context.Background(), reqID, other); !errors.Is(err, matching.ErrForbidden) {
 		t.Fatalf("want ErrForbidden, got %v", err)
 	}
 	assertStatus(t, db, reqID, "accepted") // unchanged
@@ -76,7 +80,7 @@ func TestCancelPreservesPointSource(t *testing.T) {
 	svc, _ := newTestMatchingService(t, db)
 	reqID, taskID, ref := seedAccepted(t, db, "30 days", "trial")
 
-	if err := svc.Cancel(context.Background(), reqID, ref); err != nil {
+	if _, err := svc.Cancel(context.Background(), reqID, ref); err != nil {
 		t.Fatalf("cancel: %v", err)
 	}
 	if _, src := replacementPending(t, db, taskID, reqID); src != "trial" {
@@ -90,7 +94,7 @@ func TestCancelPastDeadline(t *testing.T) {
 	// Due in 5h is inside the 12h cancel deadline.
 	reqID, _, ref := seedAccepted(t, db, "5 hours", "regular")
 
-	if err := svc.Cancel(context.Background(), reqID, ref); !errors.Is(err, matching.ErrCancelDeadlinePassed) {
+	if _, err := svc.Cancel(context.Background(), reqID, ref); !errors.Is(err, matching.ErrCancelDeadlinePassed) {
 		t.Fatalf("want ErrCancelDeadlinePassed, got %v", err)
 	}
 	assertStatus(t, db, reqID, "accepted") // unchanged

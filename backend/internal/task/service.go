@@ -33,8 +33,9 @@ func NewService(db *database.Handle, store *Store, requests RefereeRequestCreato
 	return &Service{db: db, store: store, requests: requests}
 }
 
-// DraftInput is the editable field set of a draft. Description/Criteria/DueDate
-// are optional at the draft stage; publishing enforces criteria + due date.
+// DraftInput is the full editable field set for creating a draft.
+// Description/Criteria/DueDate are optional at the draft stage; publishing
+// enforces criteria + due date.
 type DraftInput struct {
 	Title       string
 	Description *string
@@ -42,56 +43,104 @@ type DraftInput struct {
 	DueDate     *time.Time
 }
 
-// ListParams is the owner task listing filter + paging.
-type ListParams struct {
-	Status string // "" = any
-	Limit  int
-	Offset int
+// PatchInput is a presence-aware partial update: each Set* flag records whether
+// the field appeared in the request body, so an omitted field is left unchanged
+// while an explicit null clears a nullable field.
+type PatchInput struct {
+	SetTitle    bool
+	Title       *string
+	SetDesc     bool
+	Description *string
+	SetCriteria bool
+	Criteria    *string
+	SetDueDate  bool
+	DueDate     *time.Time
 }
 
-// CreateDraft creates a draft owned by taskerID.
+// Page is a cursor page of tasks with the next opaque cursor ("" when exhausted).
+type Page struct {
+	Tasks      []Task
+	NextCursor string
+}
+
+// CreateDraft creates a draft owned by taskerID and returns the full Task.
 func (s *Service) CreateDraft(ctx context.Context, taskerID string, in DraftInput) (Task, error) {
 	if err := validateTitle(in.Title); err != nil {
 		return Task{}, err
 	}
-	return s.store.InsertDraft(ctx, taskerID, strings.TrimSpace(in.Title), in.Description, in.Criteria, in.DueDate)
+	created, err := s.store.InsertDraft(ctx, taskerID, strings.TrimSpace(in.Title), in.Description, in.Criteria, in.DueDate)
+	if err != nil {
+		return Task{}, err
+	}
+	return s.store.LoadAggregate(ctx, created.ID)
 }
 
-// GetOwned returns a task the caller owns.
+// GetOwned returns the bare row of a task the caller owns (ownership probe).
 func (s *Service) GetOwned(ctx context.Context, taskerID, taskID string) (Task, error) {
 	return s.store.GetOwned(ctx, taskID, taskerID)
 }
 
-// GetReadable returns a task the caller may read (owner or assigned referee).
+// GetReadable returns the full Task a caller may read (owner or assigned referee).
 func (s *Service) GetReadable(ctx context.Context, userID, taskID string) (Task, error) {
-	return s.store.GetReadable(ctx, taskID, userID)
+	return s.store.GetReadableAggregate(ctx, taskID, userID)
 }
 
-// ListOwned returns the caller's tasks.
-func (s *Service) ListOwned(ctx context.Context, taskerID string, p ListParams) ([]Task, error) {
-	return s.store.ListOwned(ctx, taskerID, p.Status, p.Limit, p.Offset)
-}
-
-// UpdateDraft replaces the editable fields of a draft the caller owns. A
-// non-draft task is ErrConflict; a missing/foreign id is ErrNotFound.
-func (s *Service) UpdateDraft(ctx context.Context, taskerID, taskID string, in DraftInput) (Task, error) {
-	if err := validateTitle(in.Title); err != nil {
-		return Task{}, err
+// ListOwned returns a cursor page of the caller's tasks.
+func (s *Service) ListOwned(ctx context.Context, taskerID, status, cursor string, limit int) (Page, error) {
+	tasks, next, err := s.store.ListOwnedPage(ctx, taskerID, status, cursor, limit)
+	if err != nil {
+		return Page{}, err
 	}
-	var out Task
+	return Page{Tasks: tasks, NextCursor: next}, nil
+}
+
+// Assignments returns a cursor page of the tasks the caller currently referees.
+func (s *Service) Assignments(ctx context.Context, refereeID, cursor string, limit int) (Page, error) {
+	tasks, next, err := s.store.ListAssignmentsPage(ctx, refereeID, cursor, limit)
+	if err != nil {
+		return Page{}, err
+	}
+	return Page{Tasks: tasks, NextCursor: next}, nil
+}
+
+// UpdateDraft applies a presence-aware partial update to a draft the caller owns
+// (omitted fields unchanged; explicit null clears nullable fields) and returns
+// the full Task. A non-draft task is ErrConflict; a missing/foreign id is
+// ErrNotFound.
+func (s *Service) UpdateDraft(ctx context.Context, taskerID, taskID string, patch PatchInput) (Task, error) {
 	err := database.WithTx(ctx, s.db, func(tx database.Querier) error {
-		t, err := s.store.GetOwnedForUpdateInTx(ctx, tx, taskID, taskerID)
+		draft, err := s.store.GetOwnedForUpdateInTx(ctx, tx, taskID, taskerID)
 		if err != nil {
 			return err
 		}
-		if t.Status != "draft" {
+		if draft.Status != "draft" {
 			return ErrConflict
 		}
-		out, err = s.store.UpdateDraftFieldsInTx(ctx, tx, taskID,
-			strings.TrimSpace(in.Title), in.Description, in.Criteria, in.DueDate)
-		return err
+		title := draft.Title
+		if patch.SetTitle {
+			if patch.Title == nil || strings.TrimSpace(*patch.Title) == "" {
+				return fmt.Errorf("%w: title cannot be empty", ErrValidation)
+			}
+			title = strings.TrimSpace(*patch.Title)
+		}
+		description := draft.Description
+		if patch.SetDesc {
+			description = patch.Description
+		}
+		criteria := draft.Criteria
+		if patch.SetCriteria {
+			criteria = patch.Criteria
+		}
+		due := draft.DueDate
+		if patch.SetDueDate {
+			due = patch.DueDate
+		}
+		return s.store.UpdateDraftFieldsInTx(ctx, tx, taskID, title, description, criteria, due)
 	})
-	return out, err
+	if err != nil {
+		return Task{}, err
+	}
+	return s.store.LoadAggregate(ctx, taskID)
 }
 
 // DeleteDraft removes a draft the caller owns. A non-draft task is ErrConflict;
@@ -120,7 +169,6 @@ func (s *Service) Publish(ctx context.Context, callerID, taskID string, refereeC
 	if refereeCount < 1 || refereeCount > maxReferees {
 		return Task{}, fmt.Errorf("%w: refereeCount must be 1..%d", ErrValidation, maxReferees)
 	}
-	var out Task
 	err = database.WithTx(ctx, s.db, func(tx database.Querier) error {
 		t, err := s.store.GetOwnedForUpdateInTx(ctx, tx, taskID, callerID)
 		if err != nil {
@@ -132,17 +180,15 @@ func (s *Service) Publish(ctx context.Context, callerID, taskID string, refereeC
 		if err := ValidateOpenRequirements(t, minLead); err != nil {
 			return err
 		}
-		opened, err := s.store.SetStatusInTx(ctx, tx, taskID, "open")
-		if err != nil {
+		if err := s.store.SetStatusInTx(ctx, tx, taskID, "open"); err != nil {
 			return err
 		}
-		if err := s.requests.CreateInTx(ctx, tx, taskID, callerID, refereeCount); err != nil {
-			return err
-		}
-		out = opened
-		return nil
+		return s.requests.CreateInTx(ctx, tx, taskID, callerID, refereeCount)
 	})
-	return out, err
+	if err != nil {
+		return Task{}, err
+	}
+	return s.store.LoadAggregate(ctx, taskID)
 }
 
 func validateTitle(title string) error {

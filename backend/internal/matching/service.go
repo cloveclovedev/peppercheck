@@ -209,12 +209,13 @@ func (s *Service) CreateInTx(ctx context.Context, tx database.Querier, taskID, t
 // source (P4a-D17), and enqueues a match — all atomically. Only the matched
 // referee may cancel, only while the request is still accepted with its
 // judgement un-progressed, and only before due minus cancel_deadline_hours.
-func (s *Service) Cancel(ctx context.Context, requestID, callerID string) error {
+// It returns the affected task's id so the handler can render the updated Task.
+func (s *Service) Cancel(ctx context.Context, requestID, callerID string) (taskID string, err error) {
 	cfg, err := s.store.LoadConfig(ctx)
 	if err != nil {
-		return err
+		return "", err
 	}
-	return database.WithTx(ctx, s.db, func(tx database.Querier) error {
+	err = database.WithTx(ctx, s.db, func(tx database.Querier) error {
 		req, err := s.store.GetRequestForCancelInTx(ctx, tx, requestID)
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrNotFound
@@ -251,8 +252,16 @@ func (s *Service) Cancel(ctx context.Context, requestID, callerID string) error 
 		if err := s.store.SetPointSourceInTx(ctx, tx, newID, req.PointSource); err != nil {
 			return err
 		}
-		return s.EnqueueMatchInTx(ctx, tx, newID)
+		if err := s.EnqueueMatchInTx(ctx, tx, newID); err != nil {
+			return err
+		}
+		taskID = req.TaskID
+		return nil
 	})
+	if err != nil {
+		return "", err
+	}
+	return taskID, nil
 }
 
 // HandleSweep is the recurring worker pass. It first reschedules itself (so a

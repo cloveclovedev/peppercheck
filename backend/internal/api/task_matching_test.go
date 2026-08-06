@@ -41,12 +41,13 @@ func taskStack(t *testing.T, v auth.TokenVerifier) (http.Handler, *database.Hand
 		notification.NewSender(notifStore, fcm.NewNoop(discard)),
 		jobs.NewStore(db),
 	)
-	taskSvc := task.NewService(db, task.NewStore(db), matchingSvc)
+	taskStore := task.NewStore(db)
+	taskSvc := task.NewService(db, taskStore, matchingSvc)
 	h := rootHandler(Deps{
 		Verifier:    v,
 		Identity:    identity.NewHandler(idSvc, nil),
 		Task:        task.NewHandler(taskSvc),
-		Referee:     matching.NewHandler(matchingSvc, matchingStore),
+		Referee:     matching.NewHandler(matchingSvc, matchingStore, taskStore),
 		ResolveUser: identity.NewMiddleware(idSvc, nil),
 	}, discard)
 	return h, db
@@ -63,8 +64,9 @@ func TestTaskCreatePublishFlow(t *testing.T) {
 		t.Fatalf("create: status %d; body=%s", rec.Code, rec.Body.String())
 	}
 	var created struct {
-		ID     string `json:"id"`
-		Status string `json:"status"`
+		ID              string           `json:"id"`
+		Status          string           `json:"status"`
+		RefereeRequests []map[string]any `json:"refereeRequests"`
 	}
 	if err := json.Unmarshal(rec.Body.Bytes(), &created); err != nil {
 		t.Fatalf("unmarshal created: %v", err)
@@ -72,17 +74,39 @@ func TestTaskCreatePublishFlow(t *testing.T) {
 	if created.Status != "draft" {
 		t.Fatalf("want draft, got %s", created.Status)
 	}
+	if created.RefereeRequests == nil || len(created.RefereeRequests) != 0 {
+		t.Fatalf("draft must carry refereeRequests: [] (not null), got %v", created.RefereeRequests)
+	}
 
 	rec = do(t, h, "POST", "/api/v1/tasks/"+created.ID+"/publish", "sub-A", map[string]int{"refereeCount": 2})
 	if rec.Code != http.StatusOK {
 		t.Fatalf("publish: status %d; body=%s", rec.Code, rec.Body.String())
 	}
 	var published struct {
-		Status string `json:"status"`
+		Status   string `json:"status"`
+		TaskerID string `json:"taskerId"`
+		Tasker   *struct {
+			UserID   string `json:"userId"`
+			Username string `json:"username"`
+		} `json:"tasker"`
+		RefereeRequests []struct {
+			Status string `json:"status"`
+		} `json:"refereeRequests"`
 	}
 	_ = json.Unmarshal(rec.Body.Bytes(), &published)
 	if published.Status != "open" {
 		t.Fatalf("want open, got %s", published.Status)
+	}
+	if published.TaskerID == "" || published.Tasker == nil || published.Tasker.UserID != published.TaskerID {
+		t.Fatalf("publish response must embed taskerId + tasker profile, got %+v", published)
+	}
+	if len(published.RefereeRequests) != 2 {
+		t.Fatalf("publish response must carry 2 refereeRequests, got %d", len(published.RefereeRequests))
+	}
+	for _, rr := range published.RefereeRequests {
+		if rr.Status != "pending" {
+			t.Fatalf("want pending requests, got %s", rr.Status)
+		}
 	}
 
 	var requests, pending int
@@ -145,10 +169,44 @@ func TestRefereeTimeSlotCreateValidatesAndLists(t *testing.T) {
 		t.Fatalf("valid slot: status %d, want 201; body=%s", rec.Code, rec.Body.String())
 	}
 	rec = do(t, h, "GET", "/api/v1/me/availability/time-slots", "sub-A", nil)
-	var slots []map[string]any
-	_ = json.Unmarshal(rec.Body.Bytes(), &slots)
-	if len(slots) != 1 {
-		t.Fatalf("want 1 slot listed, got %d; body=%s", len(slots), rec.Body.String())
+	var slotsEnv struct {
+		TimeSlots []map[string]any `json:"timeSlots"`
+	}
+	_ = json.Unmarshal(rec.Body.Bytes(), &slotsEnv)
+	if len(slotsEnv.TimeSlots) != 1 {
+		t.Fatalf("want 1 slot under timeSlots, got %d; body=%s", len(slotsEnv.TimeSlots), rec.Body.String())
+	}
+}
+
+func TestMyTasksEnvelopeAndConfig(t *testing.T) {
+	h, _ := taskStack(t, fakeVerifier("sub-A"))
+	// Create a draft so the list is non-empty.
+	do(t, h, "POST", "/api/v1/tasks", "sub-A", map[string]any{"title": "t"})
+
+	rec := do(t, h, "GET", "/api/v1/me/tasks", "sub-A", nil)
+	var page struct {
+		Tasks      []map[string]any `json:"tasks"`
+		NextCursor *string          `json:"nextCursor"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &page); err != nil {
+		t.Fatalf("decode tasks envelope: %v; body=%s", err, rec.Body.String())
+	}
+	if len(page.Tasks) != 1 {
+		t.Fatalf("want 1 task in the envelope, got %d", len(page.Tasks))
+	}
+
+	// GET /matching/config is public and exposes the seeded limits.
+	rec = do(t, h, "GET", "/api/v1/matching/config", "sub-A", nil)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("config: status %d; body=%s", rec.Code, rec.Body.String())
+	}
+	var cfg struct {
+		MaxRefereesPerTask  int `json:"maxRefereesPerTask"`
+		CancelDeadlineHours int `json:"cancelDeadlineHours"`
+	}
+	_ = json.Unmarshal(rec.Body.Bytes(), &cfg)
+	if cfg.MaxRefereesPerTask != 2 || cfg.CancelDeadlineHours != 12 {
+		t.Fatalf("unexpected config %+v", cfg)
 	}
 }
 

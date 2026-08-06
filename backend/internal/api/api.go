@@ -78,6 +78,8 @@ func buildHandler(deps Deps) http.Handler {
 			mux.Handle("DELETE /api/v1/tasks/{id}", chain(deps.Task.DeleteTask))
 			mux.Handle("POST /api/v1/tasks/{id}/publish", chain(deps.Task.PostPublish))
 			mux.Handle("GET /api/v1/me/tasks", chain(deps.Task.GetMyTasks))
+			// Assignments return Task envelopes, so the task handler owns them.
+			mux.Handle("GET /api/v1/me/assignments", chain(deps.Task.GetAssignments))
 		}
 		if deps.Referee != nil {
 			mux.Handle("GET /api/v1/me/availability/time-slots", chain(deps.Referee.GetTimeSlots))
@@ -88,9 +90,14 @@ func buildHandler(deps Deps) http.Handler {
 			mux.Handle("POST /api/v1/me/availability/blocked-dates", chain(deps.Referee.PostBlockedDate))
 			mux.Handle("PUT /api/v1/me/availability/blocked-dates/{id}", chain(deps.Referee.PutBlockedDate))
 			mux.Handle("DELETE /api/v1/me/availability/blocked-dates/{id}", chain(deps.Referee.DeleteBlockedDate))
-			mux.Handle("GET /api/v1/me/assignments", chain(deps.Referee.GetAssignments))
 			mux.Handle("POST /api/v1/referee-requests/{id}/cancel", chain(deps.Referee.PostCancel))
 		}
+	}
+
+	// Public (no auth): the matching configuration the client needs before
+	// authenticating a publish/withdraw flow.
+	if deps.Referee != nil {
+		mux.Handle("GET /api/v1/matching/config", http.HandlerFunc(deps.Referee.GetConfig))
 	}
 
 	// Methodless /api/ fallback: without this, a request that hits a

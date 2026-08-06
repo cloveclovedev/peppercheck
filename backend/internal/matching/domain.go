@@ -104,13 +104,3 @@ func (b BlockedDate) Validate() error {
 	}
 	return nil
 }
-
-// Assignment is one active seat a referee currently holds: the accepted request,
-// its task, and the judgement's status.
-type Assignment struct {
-	RequestID       string
-	TaskID          string
-	Title           string
-	DueDate         *time.Time
-	JudgementStatus string
-}

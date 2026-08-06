@@ -335,36 +335,6 @@ func (s *Store) DeleteBlockedDate(ctx context.Context, userID, id string) error 
 	return rowsAffectedOrNotFound(res)
 }
 
-// ActiveAssignments lists the referee's accepted requests whose judgement is
-// still active, with the task facts the app shows.
-func (s *Store) ActiveAssignments(ctx context.Context, refereeID string) ([]Assignment, error) {
-	rows, err := s.db.QueryContext(ctx, `
-		SELECT r.id, r.task_id, t.title, t.due_date, j.status
-		FROM public.referee_requests r
-		JOIN public.tasks t ON t.id = r.task_id
-		JOIN public.judgements j ON j.id = r.id
-		WHERE r.matched_referee_id = $1 AND r.status = 'accepted'
-		  AND j.status IN ('awaiting_evidence','in_review','rejected','review_timeout')
-		ORDER BY t.due_date NULLS LAST`, refereeID)
-	if err != nil {
-		return nil, fmt.Errorf("list assignments: %w", err)
-	}
-	defer rows.Close()
-	var out []Assignment
-	for rows.Next() {
-		var a Assignment
-		var due sql.NullTime
-		if err := rows.Scan(&a.RequestID, &a.TaskID, &a.Title, &due, &a.JudgementStatus); err != nil {
-			return nil, err
-		}
-		if due.Valid {
-			a.DueDate = &due.Time
-		}
-		out = append(out, a)
-	}
-	return out, rows.Err()
-}
-
 // rowsAffectedOrNotFound turns a zero-row write into ErrNotFound so a
 // missing-or-foreign id reads as 404 without leaking whether it exists.
 func rowsAffectedOrNotFound(res sql.Result) error {

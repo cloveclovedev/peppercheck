@@ -1,6 +1,7 @@
 package matching
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -10,21 +11,34 @@ import (
 
 	"github.com/cloveclovedev/peppercheck/backend/internal/core/httpserver"
 	"github.com/cloveclovedev/peppercheck/backend/internal/identity"
+	"github.com/cloveclovedev/peppercheck/backend/internal/task"
 )
 
 const dateLayout = "2006-01-02"
 
-// Handler serves the referee HTTP surface: availability CRUD, active
-// assignments, and request cancellation, all scoped to the authenticated
-// caller. Availability reads/writes go straight to the store (plain CRUD);
-// cancel goes through the service (cross-store orchestration).
+// taskLoader renders the Task read-model for the cancel response. Declared here
+// so the referee handler can return the §7.1 Task envelope after a cancel;
+// task.Store satisfies it.
+type taskLoader interface {
+	LoadAggregate(ctx context.Context, taskID string) (task.Task, error)
+}
+
+// Handler serves the referee HTTP surface: availability CRUD and request
+// cancellation, scoped to the authenticated caller. Availability reads/writes go
+// straight to the store (plain CRUD); cancel goes through the service and
+// renders the updated Task via the task loader. GET /matching/config exposes the
+// public matching configuration.
 type Handler struct {
 	svc   *Service
 	store *Store
+	tasks taskLoader
 }
 
-// NewHandler builds a Handler over the matching service and store.
-func NewHandler(svc *Service, store *Store) *Handler { return &Handler{svc: svc, store: store} }
+// NewHandler builds a Handler over the matching service, store, and the task
+// loader used to render the cancel response.
+func NewHandler(svc *Service, store *Store, tasks taskLoader) *Handler {
+	return &Handler{svc: svc, store: store, tasks: tasks}
+}
 
 // --- DTOs -----------------------------------------------------------------
 
@@ -77,12 +91,28 @@ func toBlockedDateDTO(b BlockedDate) blockedDateDTO {
 	}
 }
 
-type assignmentDTO struct {
-	RequestID       string  `json:"requestId"`
-	TaskID          string  `json:"taskId"`
-	Title           string  `json:"title"`
-	DueDate         *string `json:"dueDate"`
-	JudgementStatus string  `json:"judgementStatus"`
+type matchingConfigDTO struct {
+	OpenDeadlineHours   int `json:"openDeadlineHours"`
+	CancelDeadlineHours int `json:"cancelDeadlineHours"`
+	RematchCutoffHours  int `json:"rematchCutoffHours"`
+	MaxRefereesPerTask  int `json:"maxRefereesPerTask"`
+	MatchingPointCost   int `json:"matchingPointCost"`
+}
+
+// GetConfig returns the public matching configuration (deadlines + limits).
+func (h *Handler) GetConfig(w http.ResponseWriter, r *http.Request) {
+	cfg, err := h.store.LoadConfig(r.Context())
+	if err != nil {
+		httpserver.WriteError(w, r, http.StatusInternalServerError, httpserver.CodeInternal, "internal error")
+		return
+	}
+	writeJSON(w, http.StatusOK, matchingConfigDTO{
+		OpenDeadlineHours:   cfg.OpenDeadlineHours,
+		CancelDeadlineHours: cfg.CancelDeadlineHours,
+		RematchCutoffHours:  cfg.RematchCutoffHours,
+		MaxRefereesPerTask:  cfg.MaxRefereesPerTask,
+		MatchingPointCost:   cfg.PointCostPerRequest,
+	})
 }
 
 // --- time slots -----------------------------------------------------------
@@ -102,7 +132,7 @@ func (h *Handler) GetTimeSlots(w http.ResponseWriter, r *http.Request) {
 	for _, s := range slots {
 		out = append(out, toTimeSlotDTO(s))
 	}
-	writeJSON(w, http.StatusOK, out)
+	writeJSON(w, http.StatusOK, map[string]any{"timeSlots": out})
 }
 
 // PostTimeSlot creates a slot for the caller.
@@ -188,7 +218,7 @@ func (h *Handler) GetBlockedDates(w http.ResponseWriter, r *http.Request) {
 	for _, b := range dates {
 		out = append(out, toBlockedDateDTO(b))
 	}
-	writeJSON(w, http.StatusOK, out)
+	writeJSON(w, http.StatusOK, map[string]any{"blockedDates": out})
 }
 
 // PostBlockedDate creates a blocked range for the caller.
@@ -273,32 +303,10 @@ func parseBlockedDate(req blockedDateRequest) (BlockedDate, error) {
 	return b, nil
 }
 
-// --- assignments + cancel -------------------------------------------------
+// --- cancel ---------------------------------------------------------------
 
-// GetAssignments lists the caller's active referee assignments.
-func (h *Handler) GetAssignments(w http.ResponseWriter, r *http.Request) {
-	u, ok := currentUser(w, r)
-	if !ok {
-		return
-	}
-	items, err := h.store.ActiveAssignments(r.Context(), u.ID)
-	if err != nil {
-		h.writeError(w, r, err)
-		return
-	}
-	out := make([]assignmentDTO, 0, len(items))
-	for _, a := range items {
-		dto := assignmentDTO{RequestID: a.RequestID, TaskID: a.TaskID, Title: a.Title, JudgementStatus: a.JudgementStatus}
-		if a.DueDate != nil {
-			s := a.DueDate.UTC().Format(time.RFC3339)
-			dto.DueDate = &s
-		}
-		out = append(out, dto)
-	}
-	writeJSON(w, http.StatusOK, out)
-}
-
-// PostCancel cancels the caller's accepted request and triggers a re-match.
+// PostCancel cancels the caller's accepted request, triggers a re-match, and
+// returns the updated Task (§7.1).
 func (h *Handler) PostCancel(w http.ResponseWriter, r *http.Request) {
 	u, ok := currentUser(w, r)
 	if !ok {
@@ -308,11 +316,17 @@ func (h *Handler) PostCancel(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	if err := h.svc.Cancel(r.Context(), id, u.ID); err != nil {
+	taskID, err := h.svc.Cancel(r.Context(), id, u.ID)
+	if err != nil {
 		h.writeError(w, r, err)
 		return
 	}
-	w.WriteHeader(http.StatusNoContent)
+	t, err := h.tasks.LoadAggregate(r.Context(), taskID)
+	if err != nil {
+		h.writeError(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, task.TaskResponse(t))
 }
 
 // --- helpers --------------------------------------------------------------
