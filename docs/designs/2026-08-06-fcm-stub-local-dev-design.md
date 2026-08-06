@@ -41,10 +41,15 @@ The gap is therefore not a broken default but a **weak one**: (1) the existing
 `NewNoop` log is sparse — `Warn("FCM not configured; notification dropped",
 titleLocKey, recipients)` — omitting body/args/data, so a developer can't see
 *what* would have been sent; and (2) selection depends implicitly on the worker
-compose block *happening to omit* `FIREBASE_PROJECT_ID`; if that var is ever
-added to the worker (a copy-paste, an env unification), the worker would silently
-build a real client that errors at `Send` with no credentials. #525 makes the log
-useful and the intent explicit.
+compose block *happening to omit* `FIREBASE_PROJECT_ID`. If that var is ever
+added to the worker (a copy-paste, an env unification) **while valid ambient
+credentials are present** (a developer's `GOOGLE_APPLICATION_CREDENTIALS` or
+`gcloud` ADC), the worker would build a real client and **actually send real
+push** from a dev/local run — unintended real delivery, not merely a caught
+error. (Without credentials the init error or a `Send` failure is caught by
+`buildFCMClient` for non-production and falls back to `NewNoop`, so the danger is
+specifically the *credentials-present* case.) #525 makes the log useful and the
+intent explicit.
 
 ## Goals
 
@@ -76,11 +81,14 @@ useful and the intent explicit.
 
 Provide a log-only `Client` (enrich `noopClient`, or add `NewLogStub(logger)`)
 that logs the full outgoing `Message` at a clear level — `TitleLocKey`,
-`BodyLocKey`, `LocArgs`, the `Data` keys, and the recipient count — then returns
-an empty `SendResult` (no tokens pruned). This is the "records sends for
-inspection" stub the existing TODO anticipates, realized as structured logs
-(the operator's chosen shape). The SDK messaging types stay inside
-`platform/fcm`.
+`BodyLocKey`, `LocArgs`, the full `Data` **map (keys and values)**, and the
+recipient count — then returns
+an empty `SendResult` (no tokens pruned). Logging the `Data` **values** (not just
+keys) is what actually lets a developer see what would have been sent — e.g. the
+task route/id — and is what would surface the #535 route mismatch during local
+testing; the payload is task routes/ids, not secrets. This is the "records sends
+for inspection" stub the existing TODO anticipates, realized as structured logs
+(the operator's chosen shape). The SDK messaging types stay inside `platform/fcm`.
 
 ### 2. Make the worker selection explicit and add a documented opt-in
 
@@ -101,10 +109,11 @@ intent explicit rather than implicit-by-omitted-var:
 - The `api` path keeps `fcm.NewNoop` (unchanged).
 
 Selecting by `Env` (not by whether `FIREBASE_PROJECT_ID` is empty) removes the
-fragility: adding that var to the worker for any reason no longer silently flips
-local delivery to a real client that errors at `Send`. Update
-`backend/.env.example` / `compose.yaml` comments to describe this (local logs;
-explicit opt-in for real FCM).
+fragility: a local run **never sends real push** regardless of what project id or
+ambient credentials happen to be present, unless explicitly opted in — so adding
+that var (with a developer's ADC already in the environment) can't cause
+unintended real delivery. Update `backend/.env.example` / `compose.yaml`
+comments to describe this (local logs; explicit opt-in for real FCM).
 
 ### 3. Flutter — no change
 
@@ -117,10 +126,11 @@ signed out); no message arrives locally; failures are already swallowed.
   but enrich the log). This already yields the local noop today because the
   worker compose block omits the var. Acceptable, but fragile: stub-ness is
   inferred from an *absent* env var rather than declared, so adding
-  `FIREBASE_PROJECT_ID` to the worker would silently flip to a real client that
-  errors at `Send` — the kind of implicit-config brittleness #483 warned about.
-  Explicit `Env`-based selection is preferred; enriching the log alone would be a
-  valid smaller scope if the explicit selector is deferred.
+  `FIREBASE_PROJECT_ID` to the worker while a developer's ambient ADC is present
+  would flip local delivery to a real client that **actually sends real push** —
+  the kind of implicit-config brittleness #483 warned about. Explicit `Env`-based
+  selection is preferred; enriching the log alone would be a valid smaller scope
+  if the explicit selector is deferred.
 - **A `NOTIFICATIONS_ENABLED=false` boolean.** Rejected — a delivery selector
   (`stub` vs `real`) reads better than a disable flag and mirrors the
   local-default / operator-opt-in shape of the sibling legs.
@@ -178,3 +188,9 @@ signed out); no message arrives locally; failures are already swallowed.
   Clarified that #525 changes only the *local* branch and leaves non-local
   selection unchanged; making staging require real FCM would be a separate,
   explicit fail-closed change, out of scope.
+- **2026-08-06** — Third Codex round on PR #536 (P2 ×2). (1) Reframed the
+  explicit-selector rationale: the real risk of adding `FIREBASE_PROJECT_ID` to
+  the worker is **accidental real push when ambient credentials are present**
+  (a caught init/`Send` error is not the danger — that falls back to `NewNoop`
+  for non-production). (2) The log stub must log the `Data` **map values**, not
+  just keys, or "see what would have been sent" (and surfacing #535) is not met.
