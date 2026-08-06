@@ -93,9 +93,7 @@ class _WithdrawMatchingButtonState
     try {
       final myRequest = _myRequest();
       if (myRequest == null) return;
-      await ref
-          .read(matchingRepositoryProvider)
-          .cancelRefereeAssignment(myRequest.id);
+      await ref.read(matchingRepositoryProvider).cancelAssignment(myRequest.id);
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
