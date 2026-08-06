@@ -10,8 +10,8 @@ import 'package:peppercheck_flutter/features/matching/domain/referee_request.dar
 import 'package:peppercheck_flutter/features/matching/matching_constants.dart';
 import 'package:peppercheck_flutter/features/task/domain/task.dart';
 import 'package:peppercheck_flutter/features/task/ui/task_detail_view_model.dart';
+import 'package:peppercheck_flutter/features/task/ui/task_role_provider.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class WithdrawMatchingButton extends ConsumerStatefulWidget {
   final Task task;
@@ -27,14 +27,10 @@ class _WithdrawMatchingButtonState
     extends ConsumerState<WithdrawMatchingButton> {
   bool _isLoading = false;
 
-  RefereeRequest? _myRequest() {
-    final userId = Supabase.instance.client.auth.currentUser?.id;
-    if (userId == null) return null;
-    for (final r in widget.task.refereeRequests) {
-      if (r.matchedRefereeId == userId) return r;
-    }
-    return null;
-  }
+  /// The caller's own referee request, or null when the viewer is the tasker
+  /// or a stranger.
+  RefereeRequest? _myRequest() =>
+      ref.watch(taskRoleProvider(widget.task.id)).value?.myRequest;
 
   // Judgement states from which the referee's involvement cannot be undone:
   // approved is awaiting tasker confirmation, the timeouts and confirmed are

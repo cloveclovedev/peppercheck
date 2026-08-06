@@ -9,14 +9,13 @@ import 'package:peppercheck_flutter/features/task/domain/task.dart';
 import 'package:peppercheck_flutter/features/task/ui/widgets/task_detail/task_detail_info_section.dart';
 import 'package:peppercheck_flutter/features/task/ui/widgets/task_detail/tasker_referees_section.dart';
 import 'package:peppercheck_flutter/features/task/ui/widgets/task_detail/withdraw_matching_button.dart';
-import 'package:peppercheck_flutter/features/evidence/presentation/widgets/evidence_submission_section.dart';
-import 'package:peppercheck_flutter/features/evidence/presentation/widgets/evidence_timeout_referee_section.dart';
-import 'package:peppercheck_flutter/features/judgement/presentation/widgets/judgement_section.dart';
-import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-
-import 'package:peppercheck_flutter/features/report/presentation/widgets/report_menu_button.dart';
 import 'package:peppercheck_flutter/features/task/ui/task_detail_view_model.dart';
+import 'package:peppercheck_flutter/features/task/ui/task_role_provider.dart';
+import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
+// Phase 4b: evidence_submission_section, evidence_timeout_referee_section
+// Phase 4c: judgement_section, report_menu_button
+// Those features still read Supabase auth even on their empty branch, so they
+// stay unmounted until their own phase migrates them.
 
 class TaskDetailScreen extends ConsumerStatefulWidget {
   final String taskId;
@@ -46,6 +45,7 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
     final taskId = widget.taskId;
     final initialTask = widget.initialTask;
     final asyncTask = ref.watch(taskDetailProvider(taskId));
+    final role = ref.watch(taskRoleProvider(taskId));
 
     final loadedTask = asyncTask.value;
     if (loadedTask != null) {
@@ -75,7 +75,7 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
       child: AppScaffold.scrollable(
         title: t.task.detail.title,
         currentIndex: -1,
-        actions: [ReportMenuButton(task: displayTask)],
+        // Phase 4c: actions: [ReportMenuButton(task: displayTask)],
         onRefresh: () async {
           return ref.refresh(taskDetailProvider(taskId).future);
         },
@@ -86,57 +86,19 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
               children: [
                 TaskDetailInfoSection(task: displayTask),
                 const SizedBox(height: AppSizes.sectionGap),
-                if (Supabase.instance.client.auth.currentUser?.id ==
-                    displayTask.taskerId) ...[
+                if (role.value?.isTasker ?? false) ...[
                   TaskerRefereesSection(task: displayTask),
                   const SizedBox(height: AppSizes.sectionGap),
                 ],
-                if (_shouldShowEvidenceSection(displayTask)) ...[
-                  EvidenceSubmissionSection(task: displayTask),
-                  const SizedBox(height: AppSizes.sectionGap),
-                ],
-                if (_shouldShowEvidenceTimeoutRefereeSection(displayTask)) ...[
-                  const EvidenceTimeoutRefereeSection(),
-                  const SizedBox(height: AppSizes.sectionGap),
-                ],
-                JudgementSection(task: displayTask),
-                const SizedBox(height: AppSizes.sectionGap),
+                // Phase 4b: EvidenceSubmissionSection,
+                // EvidenceTimeoutRefereeSection
+                // Phase 4c: JudgementSection
                 WithdrawMatchingButton(task: displayTask),
               ],
             ),
           ),
         ],
       ),
-    );
-  }
-
-  bool _shouldShowEvidenceSection(Task task) {
-    final userId = Supabase.instance.client.auth.currentUser?.id;
-    if (userId == null || task.taskerId != userId) {
-      if (task.evidence != null) return true;
-      return false;
-    }
-
-    if (task.evidence != null) return true;
-
-    final hasEvidenceTimeout = task.refereeRequests.any(
-      (req) => req.judgement?.status == 'evidence_timeout',
-    );
-    if (hasEvidenceTimeout) return true;
-
-    final hasAcceptedRequest = task.refereeRequests.any(
-      (req) => req.status == 'accepted',
-    );
-    return hasAcceptedRequest;
-  }
-
-  bool _shouldShowEvidenceTimeoutRefereeSection(Task task) {
-    final userId = Supabase.instance.client.auth.currentUser?.id;
-    if (userId == null) return false;
-    // Only for non-tasker (referee)
-    if (task.taskerId == userId) return false;
-    return task.refereeRequests.any(
-      (req) => req.judgement?.status == 'evidence_timeout',
     );
   }
 }
