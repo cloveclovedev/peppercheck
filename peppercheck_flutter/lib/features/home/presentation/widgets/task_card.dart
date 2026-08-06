@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:peppercheck_flutter/app/theme/app_colors.dart';
 import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
 import 'package:peppercheck_flutter/features/auth/application/auth_state.dart';
-import 'package:peppercheck_flutter/features/profile/domain/profile.dart';
+import 'package:peppercheck_flutter/features/matching/domain/public_profile.dart';
 import 'package:peppercheck_flutter/features/task/domain/task.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 
@@ -202,7 +202,7 @@ class _AvatarPlaceholder extends StatelessWidget {
 }
 
 class _RefereeAvatarStack extends StatelessWidget {
-  final List<Profile> referees;
+  final List<PublicProfile> referees;
 
   const _RefereeAvatarStack({required this.referees});
 
@@ -235,7 +235,7 @@ class _RefereeAvatarStack extends StatelessWidget {
 }
 
 class _RefereeAvatarBubble extends StatelessWidget {
-  final Profile profile;
+  final PublicProfile profile;
   final bool showRing;
 
   const _RefereeAvatarBubble({required this.profile, this.showRing = false});

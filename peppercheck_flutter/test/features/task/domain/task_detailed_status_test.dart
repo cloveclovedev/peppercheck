@@ -30,7 +30,6 @@ RefereeRequest _makeRequest({
   return RefereeRequest(
     id: id,
     taskId: 'task-001',
-    matchingStrategy: 'standard',
     status: status,
     matchedRefereeId: matchedRefereeId,
     createdAt: _now,
@@ -76,19 +75,6 @@ void main() {
             judgement: _makeJudgement(id: 'r1'),
           ),
           _makeRequest(id: 'r2', status: 'pending'),
-        ],
-      );
-      expect(task.getDetailedStatuses(_taskerId), ['matching']);
-    });
-
-    test('any request matched returns [matching]', () {
-      final task = _makeTask(
-        refereeRequests: [
-          _makeRequest(
-            id: 'r1',
-            status: 'matched',
-            matchedRefereeId: _refereeId1,
-          ),
         ],
       );
       expect(task.getDetailedStatuses(_taskerId), ['matching']);
@@ -376,6 +362,93 @@ void main() {
           ),
         ],
       );
+      expect(task.getDetailedStatuses(_refereeId1), ['matching']);
+    });
+  });
+
+  // Phase 4a ships no judgements to the client, so a matched request must read
+  // as "matching complete" from a null judgement, and pending must win over an
+  // already-accepted sibling (the detail poller stops only when nothing is
+  // pending).
+  group('Task.getDetailedStatuses - Phase 4a shape (no judgement)', () {
+    test('all pending returns [matching]', () {
+      final task = _makeTask(refereeRequests: [_makeRequest(id: 'r1')]);
+      expect(task.getDetailedStatuses(_taskerId), ['matching']);
+    });
+
+    test('accepted + pending returns [matching] (pending wins)', () {
+      final task = _makeTask(
+        refereeRequests: [
+          _makeRequest(
+            id: 'r1',
+            status: 'accepted',
+            matchedRefereeId: _refereeId1,
+          ),
+          _makeRequest(id: 'r2', status: 'pending'),
+        ],
+      );
+      expect(task.getDetailedStatuses(_taskerId), ['matching']);
+    });
+
+    test('accepted without judgement returns [matching_complete]', () {
+      final task = _makeTask(
+        refereeRequests: [
+          _makeRequest(
+            id: 'r1',
+            status: 'accepted',
+            matchedRefereeId: _refereeId1,
+          ),
+        ],
+      );
+      expect(task.getDetailedStatuses(_taskerId), ['matching_complete']);
+    });
+
+    test(
+      'accepted + expired without judgement returns [matching_complete]',
+      () {
+        final task = _makeTask(
+          refereeRequests: [
+            _makeRequest(
+              id: 'r1',
+              status: 'accepted',
+              matchedRefereeId: _refereeId1,
+            ),
+            _makeRequest(id: 'r2', status: 'expired'),
+          ],
+        );
+        expect(task.getDetailedStatuses(_taskerId), ['matching_complete']);
+      },
+    );
+
+    test('cancelled + pending returns [matching] (re-match in flight)', () {
+      final task = _makeTask(
+        refereeRequests: [
+          _makeRequest(
+            id: 'r1',
+            status: 'cancelled',
+            matchedRefereeId: _refereeId1,
+          ),
+          _makeRequest(id: 'r2', status: 'pending'),
+        ],
+      );
+      expect(task.getDetailedStatuses(_taskerId), ['matching']);
+    });
+
+    test('referee: my accepted request returns [matching_complete]', () {
+      final task = _makeTask(
+        refereeRequests: [
+          _makeRequest(
+            id: 'r1',
+            status: 'accepted',
+            matchedRefereeId: _refereeId1,
+          ),
+        ],
+      );
+      expect(task.getDetailedStatuses(_refereeId1), ['matching_complete']);
+    });
+
+    test('referee: no request of mine returns [matching]', () {
+      final task = _makeTask(refereeRequests: [_makeRequest(id: 'r1')]);
       expect(task.getDetailedStatuses(_refereeId1), ['matching']);
     });
   });

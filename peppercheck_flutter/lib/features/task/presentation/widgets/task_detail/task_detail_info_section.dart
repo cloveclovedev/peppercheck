@@ -6,7 +6,7 @@ import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
 import 'package:peppercheck_flutter/common_widgets/action_button.dart';
 import 'package:peppercheck_flutter/common_widgets/base_section.dart';
 import 'package:peppercheck_flutter/features/matching/domain/referee_request.dart';
-import 'package:peppercheck_flutter/features/profile/domain/profile.dart';
+import 'package:peppercheck_flutter/features/matching/domain/public_profile.dart';
 import 'package:peppercheck_flutter/features/task/domain/task.dart';
 import 'package:peppercheck_flutter/features/task/presentation/widgets/task_detail/delete_task_button.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
@@ -99,7 +99,7 @@ class TaskDetailInfoSection extends StatelessWidget {
     );
   }
 
-  Widget _buildTaskerRow(BuildContext context, Profile? tasker) {
+  Widget _buildTaskerRow(BuildContext context, PublicProfile? tasker) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

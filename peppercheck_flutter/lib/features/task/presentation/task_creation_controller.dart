@@ -28,9 +28,13 @@ class TaskCreationController extends _$TaskCreationController {
               ? DateTime.tryParse(initialTask.dueDate!)
               : null,
           taskStatus: initialTask.status,
-          matchingStrategies: initialTask.refereeRequests
-              .map((r) => r.matchingStrategy)
-              .toList(),
+          // Strategies left the domain in Phase 4a; only the number of referee
+          // requests still matters here, and the publish UI replaces this with
+          // an explicit referee count.
+          matchingStrategies: List<String>.filled(
+            initialTask.refereeRequests.length,
+            'standard',
+          ),
         ),
         creationError: null,
       );
