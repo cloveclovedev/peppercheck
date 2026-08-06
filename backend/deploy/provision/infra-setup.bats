@@ -1,0 +1,1904 @@
+setup() {
+  ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")" && pwd)"
+  # shellcheck disable=SC1091
+  source "$ROOT/lib.sh"
+}
+
+@test "need_manual returns the sentinel and prints the key" {
+  run need_manual GHCR_TOKEN "Create a read-only PAT"
+  [ "$status" -eq 75 ]
+  [[ "$output" == *"GHCR_TOKEN"* ]]
+  [[ "$output" == *"Create a read-only PAT"* ]]
+}
+
+@test "require_tools exits 1 and names a missing tool" {
+  run require_tools definitely_not_a_real_tool_xyz
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"definitely_not_a_real_tool_xyz"* ]]
+}
+
+@test "cfg reads a value from the environment" {
+  export CFG_TEST_KEY=hello
+  run cfg CFG_TEST_KEY
+  [ "$status" -eq 0 ]
+  [ "$output" = "hello" ]
+}
+
+@test "run_mutation echoes in dry-run and does not execute" {
+  DRY_RUN=1
+  run run_mutation "would create bucket" touch "$BATS_TEST_TMPDIR/sentinel"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"[dry-run] would create bucket"* ]]
+  [ ! -e "$BATS_TEST_TMPDIR/sentinel" ]
+}
+
+@test "run_mutation executes when not dry-run" {
+  DRY_RUN=0
+  run run_mutation "create file" touch "$BATS_TEST_TMPDIR/sentinel"
+  [ "$status" -eq 0 ]
+  [ -e "$BATS_TEST_TMPDIR/sentinel" ]
+}
+
+@test "_json_escape emits tab/newline/CR as escape sequences, not raw control chars" {
+  run _json_escape "$(printf 'a\tb\nc\rd')"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *'\t'* ]]
+  [[ "$output" == *'\n'* ]]
+  [[ "$output" == *'\r'* ]]
+  # No raw control chars survived: printf %q renders any literal control char
+  # as a $'…' sequence, so its %q rendering must contain no $' at all. This
+  # assertion FAILS (glob !=) if a raw control char leaked through.
+  q="$(printf '%q' "$output")"
+  [[ "$q" != *"\$'"* ]]
+}
+
+@test "require_known_step rejects an unknown step and names it and the valid list" {
+  run require_known_step only bogus_step secrets bws tailscale
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"bogus_step"* ]]
+  [[ "$output" == *"secrets"* ]]
+}
+
+@test "require_known_step accepts a known step" {
+  run require_known_step from bws secrets bws tailscale
+  [ "$status" -eq 0 ]
+}
+
+# --- shared wrappers: order-independent GitHub Environment creation --------
+# ensure_gh_environment lives in lib.sh so it can fire from gh_secret_set/
+# gh_var_set regardless of which step runs first under --only/--from (env
+# secrets are set by steps 20/60, vars by step 50). Only gh_api is stubbed
+# below; `command gh secret/variable set` itself is NOT stubbed (there is no
+# way to intercept a `command`-invoked external binary from a bash
+# function), so it runs for real and fails in this jq/gh-less bats image --
+# harmless here since the assertion only needs ensure_gh_environment's PUT to
+# have already landed in the log before that failure.
+@test "gh_secret_set ensures the GitHub Environment before setting the secret" {
+  export ENV_NAME=staging
+  calls_log="$BATS_TEST_TMPDIR/gh_api.log"
+  : > "$calls_log"
+  gh_api() { printf '%s\n' "$*" >> "$calls_log"; }
+  run gh_secret_set SOME_SECRET some-value
+  grep -q -- "--method PUT repos/{owner}/{repo}/environments/staging" "$calls_log"
+}
+
+@test "gh_var_set ensures the GitHub Environment before setting the variable" {
+  export ENV_NAME=staging
+  calls_log="$BATS_TEST_TMPDIR/gh_api.log"
+  : > "$calls_log"
+  gh_api() { printf '%s\n' "$*" >> "$calls_log"; }
+  run gh_var_set SOME_VAR some-value
+  grep -q -- "--method PUT repos/{owner}/{repo}/environments/staging" "$calls_log"
+}
+
+@test "ensure_gh_environment sends a plain (no-body) PUT" {
+  export ENV_NAME=production
+  calls_log="$BATS_TEST_TMPDIR/gh_api.log"
+  : > "$calls_log"
+  gh_api() { printf '%s\n' "$*" >> "$calls_log"; }
+  run ensure_gh_environment
+  [ "$status" -eq 0 ]
+  grep -q -- "--method PUT repos/{owner}/{repo}/environments/production" "$calls_log"
+}
+
+@test "gen_password yields a 32+ char token with no shell-unsafe chars" {
+  source "$ROOT/steps/10-secrets.sh"
+  run gen_password
+  [ "$status" -eq 0 ]
+  [ "${#output}" -ge 32 ]
+  [[ ! "$output" =~ [\'\"\`\$\\] ]]
+}
+
+@test "reconcile_secrets is a no-op when all secrets already exist in BWS" {
+  source "$ROOT/steps/10-secrets.sh"
+  bws_cli() { echo '[{"key":"database_url"},{"key":"postgres_app_pw"}]'; }  # list returns everything
+  bws_secret_exists() { return 0; }  # stub: all present
+  # Present even though generation is skipped: the age-key re-run-safety
+  # path always derives AGE_RECIPIENT from the (here: stubbed) stored
+  # private key, regardless of whether anything else was regenerated.
+  bws_get_secret_value() { echo "AGE-SECRET-KEY-STUB"; }
+  age_keygen() { echo "age1stubpublickey"; }
+  # `run` executes reconcile_secrets in a subshell, so a plain variable set
+  # inside this stub would not survive back here — log any put to a file and
+  # assert the file stays empty (real no-op verification).
+  puts_log="$BATS_TEST_TMPDIR/puts.log"
+  : > "$puts_log"
+  bws_put_secret() { printf '%s\n' "$1" >> "$puts_log"; }
+  export BWS_WRITE_TOKEN=x BWS_PROJECT_ID=p BWS_RESTORE_PROJECT_ID=r
+  run reconcile_secrets
+  [ "$status" -eq 0 ]
+  [ ! -s "$puts_log" ]  # nothing regenerated
+}
+
+@test "reconcile_secrets stops with NEEDS_MANUAL when the BWS write token is absent" {
+  source "$ROOT/steps/10-secrets.sh"
+  unset BWS_WRITE_TOKEN || true
+  run reconcile_secrets
+  [ "$status" -eq 75 ]
+  [[ "$output" == *"BWS_WRITE_TOKEN"* ]]
+}
+
+@test "reconcile_secrets stops with NEEDS_MANUAL when the BWS project IDs are absent" {
+  source "$ROOT/steps/10-secrets.sh"
+  export BWS_WRITE_TOKEN=x
+  unset BWS_PROJECT_ID BWS_RESTORE_PROJECT_ID || true
+  run reconcile_secrets
+  [ "$status" -eq 75 ]
+  [[ "$output" == *"BWS_PROJECT_ID"* ]]
+  [[ "$output" == *"BWS_RESTORE_PROJECT_ID"* ]]
+}
+
+@test "reconcile_secrets composes database_url with the exact freshly-generated postgres_app_pw" {
+  source "$ROOT/steps/10-secrets.sh"
+  bws_secret_exists() { return 1; }  # nothing exists yet
+  puts_log="$BATS_TEST_TMPDIR/puts.log"
+  : > "$puts_log"
+  bws_put_secret() { printf '%s=%s\n' "$1" "$2" >> "$puts_log"; }
+  age_keygen() {
+    if [ "${1:-}" = "-y" ]; then echo "age1stubpublickey"; else echo "AGE-SECRET-KEY-STUB"; fi
+  }
+  export BWS_WRITE_TOKEN=x BWS_PROJECT_ID=p BWS_RESTORE_PROJECT_ID=r
+  run reconcile_secrets
+  [ "$status" -eq 0 ]
+  app_pw="$(grep '^postgres_app_pw=' "$puts_log" | cut -d= -f2)"
+  [ -n "$app_pw" ]
+  grep -q "^database_url=postgres://peppercheck_app:${app_pw}@postgres:5432/peppercheck?sslmode=disable$" "$puts_log"
+}
+
+@test "reconcile_secrets writes pgbackrest_cipher into both the env and restore projects with the same value" {
+  source "$ROOT/steps/10-secrets.sh"
+  bws_secret_exists() { return 1; }  # nothing exists yet
+  puts_log="$BATS_TEST_TMPDIR/puts.log"
+  : > "$puts_log"
+  # Log which project id each put targeted alongside the name and value.
+  bws_put_secret() { printf '%s\t%s\t%s\n' "$1" "$2" "$3" >> "$puts_log"; }
+  age_keygen() {
+    if [ "${1:-}" = "-y" ]; then echo "age1stubpublickey"; else echo "AGE-SECRET-KEY-STUB"; fi
+  }
+  export BWS_WRITE_TOKEN=x BWS_PROJECT_ID=envproj BWS_RESTORE_PROJECT_ID=restoreproj
+  run reconcile_secrets
+  [ "$status" -eq 0 ]
+  # Fields are name<TAB>value<TAB>project; select cipher rows by name (f1) and
+  # project (f3), read the value (f2).
+  env_val="$(awk -F'\t' '$1=="pgbackrest_cipher" && $3=="envproj" {print $2}' "$puts_log")"
+  restore_val="$(awk -F'\t' '$1=="pgbackrest_cipher" && $3=="restoreproj" {print $2}' "$puts_log")"
+  [ -n "$env_val" ]
+  [ -n "$restore_val" ]
+  [ "$env_val" = "$restore_val" ]
+}
+
+# --- write-failure paths (fail-closed under the orchestrator's `set +e`) ---
+# infra-foundation-setup.sh runs every reconcile_* under `set +e`, so a bare
+# failed bws_put_secret would otherwise be silently swallowed. These tests
+# stub bws_put_secret to fail and assert the failure actually propagates,
+# instead of the step reporting 0 (SATISFIED) or 75 (NEEDS_MANUAL) over a
+# partial write.
+@test "ensure_password emits no password when the BWS write fails" {
+  source "$ROOT/steps/10-secrets.sh"
+  bws_secret_exists() { return 1; }  # not present yet
+  bws_put_secret() { return 1; }     # write fails
+  run ensure_password some_pw p
+  [ "$status" -ne 0 ]
+  [ -z "$output" ]  # no password emitted onward on a failed write
+}
+
+@test "reconcile_secrets returns non-zero (not 0, not 75) when a BWS write fails" {
+  source "$ROOT/steps/10-secrets.sh"
+  bws_secret_exists() { return 1; }  # nothing exists yet
+  bws_put_secret() { return 1; }     # every write fails
+  age_keygen() {
+    if [ "${1:-}" = "-y" ]; then echo "age1stubpublickey"; else echo "AGE-SECRET-KEY-STUB"; fi
+  }
+  export BWS_WRITE_TOKEN=x BWS_PROJECT_ID=p BWS_RESTORE_PROJECT_ID=r
+  run reconcile_secrets
+  [ "$status" -ne 0 ]
+  [ "$status" -ne 75 ]
+}
+
+# --- step 20: reconcile_bws -------------------------------------------------
+# Common env for the "past the first gate" tests below: a write token +
+# project ids, the project-reachability wrapper stubbed ok, and GHCR_TOKEN
+# present (its gate sits between reachability and the runtime-token gate, so
+# every test that must reach a later gate has to clear it first).
+_bws_setup_reachable_project() {
+  export BWS_WRITE_TOKEN=wt BWS_PROJECT_ID=p BWS_RESTORE_PROJECT_ID=r GHCR_TOKEN=ghcr-pat
+  bws_project_exists() { return 0; }
+  # Benign defaults so a test that only cares about a later gate still clears
+  # the ghcr_token put (real bws_secret_exists/bws_put_secret call bws+jq,
+  # absent from the bats image). Tests that assert on puts override these.
+  bws_secret_exists() { return 1; }
+  bws_put_secret() { :; }
+  gh_secret_set() { :; }
+}
+
+@test "reconcile_bws stops with NEEDS_MANUAL when BWS_WRITE_TOKEN is absent" {
+  source "$ROOT/steps/20-bws.sh"
+  unset BWS_WRITE_TOKEN BWS_PROJECT_ID BWS_RESTORE_PROJECT_ID || true
+  run reconcile_bws
+  [ "$status" -eq 75 ]
+  [[ "$output" == *"BWS_WRITE_TOKEN"* ]]
+}
+
+@test "reconcile_bws returns 1 when the configured BWS project is not reachable" {
+  source "$ROOT/steps/20-bws.sh"
+  export BWS_WRITE_TOKEN=wt BWS_PROJECT_ID=p BWS_RESTORE_PROJECT_ID=r
+  bws_project_exists() { return 1; }
+  run reconcile_bws
+  [ "$status" -eq 1 ]
+}
+
+@test "reconcile_bws stops with NEEDS_MANUAL naming GHCR_TOKEN when it is absent" {
+  source "$ROOT/steps/20-bws.sh"
+  _bws_setup_reachable_project
+  unset GHCR_TOKEN || true
+  run reconcile_bws
+  [ "$status" -eq 75 ]
+  [[ "$output" == *"GHCR_TOKEN"* ]]
+}
+
+@test "reconcile_bws puts ghcr_token into the env project, not the restore project" {
+  source "$ROOT/steps/20-bws.sh"
+  _bws_setup_reachable_project
+  export GHCR_TOKEN=ghcr-pat-xyz
+  export BWS_RUNTIME_TOKEN=ro-token-123
+  export FIREBASE_TEST_API_KEY=k FIREBASE_TEST_EMAIL=e@example.com FIREBASE_TEST_PASSWORD=pw
+  bws_secret_exists() { return 1; }  # nothing exists yet
+  puts_log="$BATS_TEST_TMPDIR/puts.log"
+  : > "$puts_log"
+  bws_put_secret() { printf '%s\t%s\t%s\n' "$1" "$2" "$3" >> "$puts_log"; }
+  run reconcile_bws
+  [ "$status" -eq 0 ]
+  # ghcr_token landed in the env project (p) with the exact value, never in
+  # the restore project (r).
+  grep -q "^ghcr_token	ghcr-pat-xyz	p$" "$puts_log"
+  ! grep -q "^ghcr_token	.*	r$" "$puts_log"
+}
+
+@test "reconcile_bws stops with NEEDS_MANUAL naming BWS_RUNTIME_TOKEN when it is absent" {
+  source "$ROOT/steps/20-bws.sh"
+  _bws_setup_reachable_project
+  unset BWS_RUNTIME_TOKEN || true
+  run reconcile_bws
+  [ "$status" -eq 75 ]
+  [[ "$output" == *"BWS_RUNTIME_TOKEN"* ]]
+}
+
+@test "reconcile_bws pushes the runtime token to GH secret BWS_TOKEN exactly once" {
+  source "$ROOT/steps/20-bws.sh"
+  _bws_setup_reachable_project
+  export BWS_RUNTIME_TOKEN=ro-token-123
+  export FIREBASE_TEST_API_KEY=k FIREBASE_TEST_EMAIL=e@example.com FIREBASE_TEST_PASSWORD=pw
+  bws_secret_exists() { return 1; }  # nothing exists yet in the restore project
+  bws_put_secret() { :; }
+  # `run` captures this in a subshell, so a plain variable counter incremented
+  # inside gh_secret_set would not survive back to this test — log calls to a
+  # file instead (same pattern the step-10 puts_log tests use).
+  calls_log="$BATS_TEST_TMPDIR/gh_secret_set.log"
+  : > "$calls_log"
+  gh_secret_set() { printf '%s\t%s\n' "$1" "$2" >> "$calls_log"; }
+  run reconcile_bws
+  [ "$status" -eq 0 ]
+  [ "$(wc -l < "$calls_log")" -eq 1 ]
+  grep -q "^BWS_TOKEN	ro-token-123$" "$calls_log"
+}
+
+@test "reconcile_bws stops with NEEDS_MANUAL when a Firebase test credential is absent" {
+  source "$ROOT/steps/20-bws.sh"
+  _bws_setup_reachable_project
+  export BWS_RUNTIME_TOKEN=ro-token-123
+  gh_secret_set() { :; }
+  export FIREBASE_TEST_API_KEY=k FIREBASE_TEST_EMAIL=e@example.com
+  unset FIREBASE_TEST_PASSWORD || true
+  run reconcile_bws
+  [ "$status" -eq 75 ]
+  [[ "$output" == *"FIREBASE_TEST_PASSWORD"* ]]
+}
+
+@test "reconcile_bws puts the 3 Firebase test credentials into the restore project under the exact secret names" {
+  source "$ROOT/steps/20-bws.sh"
+  _bws_setup_reachable_project
+  export BWS_RUNTIME_TOKEN=ro-token-123
+  gh_secret_set() { :; }
+  export FIREBASE_TEST_API_KEY=test-api-key FIREBASE_TEST_EMAIL=drill@example.com FIREBASE_TEST_PASSWORD=hunter2
+  bws_secret_exists() { return 1; }  # nothing exists yet
+  puts_log="$BATS_TEST_TMPDIR/puts.log"
+  : > "$puts_log"
+  bws_put_secret() { printf '%s\t%s\t%s\n' "$1" "$2" "$3" >> "$puts_log"; }
+  run reconcile_bws
+  [ "$status" -eq 0 ]
+  grep -q "^firebase_test_api_key	test-api-key	r$" "$puts_log"
+  grep -q "^firebase_test_email	drill@example.com	r$" "$puts_log"
+  grep -q "^firebase_test_password	hunter2	r$" "$puts_log"
+}
+
+@test "reconcile_bws skips a Firebase test credential that already exists in the restore project" {
+  source "$ROOT/steps/20-bws.sh"
+  _bws_setup_reachable_project
+  export BWS_RUNTIME_TOKEN=ro-token-123
+  gh_secret_set() { :; }
+  export FIREBASE_TEST_API_KEY=k FIREBASE_TEST_EMAIL=e@example.com FIREBASE_TEST_PASSWORD=pw
+  bws_secret_exists() { return 0; }  # already present
+  # See the gh_secret_set test above for why this is a file, not a variable.
+  puts_log="$BATS_TEST_TMPDIR/puts.log"
+  : > "$puts_log"
+  bws_put_secret() { echo "$1" >> "$puts_log"; }
+  run reconcile_bws
+  [ "$status" -eq 0 ]
+  [ ! -s "$puts_log" ]
+}
+
+@test "reconcile_bws returns non-zero (not 0, not 75) when the ghcr_token write fails" {
+  source "$ROOT/steps/20-bws.sh"
+  _bws_setup_reachable_project
+  export GHCR_TOKEN=ghcr-pat-xyz
+  bws_secret_exists() { return 1; }  # not present yet
+  bws_put_secret() { return 1; }     # write fails
+  run reconcile_bws
+  [ "$status" -ne 0 ]
+  [ "$status" -ne 75 ]
+}
+
+@test "reconcile_bws returns non-zero (not 0, not 75) when setting GH secret BWS_TOKEN fails" {
+  source "$ROOT/steps/20-bws.sh"
+  _bws_setup_reachable_project
+  export BWS_RUNTIME_TOKEN=ro-token-123
+  bws_secret_exists() { return 1; }
+  bws_put_secret() { :; }        # ghcr_token write succeeds
+  gh_secret_set() { return 1; }  # GH secret set fails
+  run reconcile_bws
+  [ "$status" -ne 0 ]
+  [ "$status" -ne 75 ]
+}
+
+@test "reconcile_bws returns non-zero (not 0, not 75) when a Firebase test credential write fails" {
+  source "$ROOT/steps/20-bws.sh"
+  _bws_setup_reachable_project
+  export BWS_RUNTIME_TOKEN=ro-token-123
+  export FIREBASE_TEST_API_KEY=k FIREBASE_TEST_EMAIL=e@example.com FIREBASE_TEST_PASSWORD=pw
+  gh_secret_set() { :; }
+  bws_secret_exists() { return 1; }
+  # ghcr_token/BWS_TOKEN succeed; only the Firebase writes fail, so the
+  # failure is attributable to reconcile_bws's own Firebase ensure_* guards,
+  # not an earlier gate.
+  bws_put_secret() {
+    case "$1" in
+      firebase_test_*) return 1 ;;
+      *) return 0 ;;
+    esac
+  }
+  run reconcile_bws
+  [ "$status" -ne 0 ]
+  [ "$status" -ne 75 ]
+}
+
+# --- step 30: reconcile_tailscale -------------------------------------------
+# acl_satisfied itself calls real jq (verified separately against fixtures
+# with a local jq — the bats/bats:latest image has no jq binary, matching
+# steps 10/20's convention of never invoking real jq inside a bats test; see
+# bws_secret_exists/bws_project_exists, always stubbed rather than exercised
+# for real). So reconcile_tailscale tests below stub acl_satisfied directly,
+# the same way reconcile_bws tests stub bws_project_exists rather than
+# feeding bws_cli real listing output through real jq.
+
+@test "reconcile_tailscale stops with NEEDS_MANUAL when TS_API_KEY is absent" {
+  source "$ROOT/steps/30-tailscale.sh"
+  unset TS_API_KEY TS_CLIENT_ID TS_AUDIENCE TS_TAG || true
+  run reconcile_tailscale
+  [ "$status" -eq 75 ]
+  [[ "$output" == *"TS_API_KEY"* ]]
+}
+
+@test "reconcile_tailscale stops with NEEDS_MANUAL naming TS_CLIENT_ID and TS_AUDIENCE when absent" {
+  source "$ROOT/steps/30-tailscale.sh"
+  export TS_API_KEY=ts-api-key-x
+  unset TS_CLIENT_ID TS_AUDIENCE || true
+  run reconcile_tailscale
+  [ "$status" -eq 75 ]
+  [[ "$output" == *"TS_CLIENT_ID"* ]]
+  [[ "$output" == *"TS_AUDIENCE"* ]]
+}
+
+@test "reconcile_tailscale proceeds past a satisfied ACL and mints an auth key" {
+  source "$ROOT/steps/30-tailscale.sh"
+  export TS_API_KEY=ts-api-key-x TS_CLIENT_ID=c TS_AUDIENCE=a TS_TAG=tag:pc-staging
+  calls_log="$BATS_TEST_TMPDIR/ts_api.log"
+  : > "$calls_log"
+  ts_api() {
+    printf '%s %s\n' "$1" "$2" >> "$calls_log"
+    case "$1 $2" in
+      "GET /tailnet/-/acl") echo '{"tagOwners":{"tag:ci-deploy":["autogroup:admin"]}}' ;;
+      "POST /tailnet/-/keys") echo '{"key":"tskey-xyz"}' ;;
+    esac
+  }
+  acl_satisfied() { return 0; }  # stub: ACL already has the required tags+grant
+  run reconcile_tailscale
+  [ "$status" -eq 0 ]
+  grep -q "^GET /tailnet/-/acl$" "$calls_log"
+  grep -q "^POST /tailnet/-/keys$" "$calls_log"
+}
+
+@test "reconcile_tailscale stops with NEEDS_MANUAL naming TAILSCALE_ACL when the grant is missing, without minting a key" {
+  source "$ROOT/steps/30-tailscale.sh"
+  export TS_API_KEY=ts-api-key-x TS_CLIENT_ID=c TS_AUDIENCE=a TS_TAG=tag:pc-staging
+  calls_log="$BATS_TEST_TMPDIR/ts_api.log"
+  : > "$calls_log"
+  ts_api() {
+    printf '%s %s\n' "$1" "$2" >> "$calls_log"
+    case "$1 $2" in
+      "GET /tailnet/-/acl") echo '{"tagOwners":{}}' ;;
+      "POST /tailnet/-/keys") echo '{"key":"tskey-xyz"}' ;;
+    esac
+  }
+  acl_satisfied() { return 1; }  # stub: ACL is missing required tags/grant
+  run reconcile_tailscale
+  [ "$status" -eq 75 ]
+  [[ "$output" == *"TAILSCALE_ACL"* ]]
+  ! grep -q "^POST /tailnet/-/keys$" "$calls_log"
+}
+
+@test "mint_tailscale_auth_key exports TS_AUTH_KEY (not the request body) after a successful mint" {
+  source "$ROOT/steps/30-tailscale.sh"
+  DRY_RUN=0
+  ts_api() { echo '{"key":"tskey-abc123"}'; }
+  mint_tailscale_auth_key tag:pc-staging
+  [ -n "${TS_AUTH_KEY:-}" ]
+  [ "$TS_AUTH_KEY" = "tskey-abc123" ]
+}
+
+@test "mint_tailscale_auth_key fails closed when the API response has no key" {
+  source "$ROOT/steps/30-tailscale.sh"
+  DRY_RUN=0
+  ts_api() { echo '{}'; }
+  run mint_tailscale_auth_key tag:pc-staging
+  [ "$status" -ne 0 ]
+}
+
+@test "mint_tailscale_auth_key does not call ts_api in dry-run" {
+  source "$ROOT/steps/30-tailscale.sh"
+  DRY_RUN=1
+  calls_log="$BATS_TEST_TMPDIR/ts_api.log"
+  : > "$calls_log"
+  ts_api() { echo "called" >> "$calls_log"; echo '{"key":"tskey-abc123"}'; }
+  run mint_tailscale_auth_key tag:pc-staging
+  [ "$status" -eq 0 ]
+  [ ! -s "$calls_log" ]
+}
+
+# --- step 40: reconcile_b2 ---------------------------------------------------
+# Common env for the "past the gate" tests below: all 6 gate vars present,
+# `b2 account authorize` stubbed ok, and both BWS projects reporting the key
+# as already present (real key-create/put-secret path opted into per-test).
+_b2_setup_gated() {
+  export B2_APPLICATION_KEY_ID=master-key-id B2_APPLICATION_KEY=master-key \
+    B2_BUCKET=pc-staging-backups BWS_WRITE_TOKEN=wt BWS_PROJECT_ID=envproj \
+    BWS_RESTORE_PROJECT_ID=restoreproj ENV_NAME=staging
+  b2_cli() { :; }
+  bws_secret_exists() { return 0; }  # default: nothing left to create
+  bws_put_secret() { :; }
+}
+
+@test "reconcile_b2 stops with NEEDS_MANUAL when a gate var is absent" {
+  source "$ROOT/steps/40-b2.sh"
+  unset B2_APPLICATION_KEY_ID B2_APPLICATION_KEY B2_BUCKET BWS_WRITE_TOKEN \
+    BWS_PROJECT_ID BWS_RESTORE_PROJECT_ID || true
+  run reconcile_b2
+  [ "$status" -eq 75 ]
+  [[ "$output" == *"B2_APPLICATION_KEY_ID"* ]]
+  [[ "$output" == *"B2_BUCKET"* ]]
+  [[ "$output" == *"BWS_RESTORE_PROJECT_ID"* ]]
+}
+
+# The bucket-update assertions below lock the backup-immutability config: the
+# `bucket update` call MUST keep governance retention and MUST NOT gain an
+# age-based `daysFromUploadingToHiding` (which would delete LIVE backups
+# pgBackRest still needs). A regression that weakens either would otherwise
+# pass a bare `grep "^bucket update"`.
+_assert_bucket_update_safety() {
+  local log="$1"
+  grep -q "^bucket update ${B2_BUCKET} " "$log"
+  grep -q -- "--default-retention-mode governance" "$log"
+  grep -q -- "--default-retention-period 7 days" "$log"
+  grep -q -- 'daysFromHidingToDeleting' "$log"
+  # Never an age-based delete of live versions.
+  ! grep -q -- 'daysFromUploadingToHiding' "$log"
+}
+
+@test "reconcile_b2 does not create the bucket when it already exists" {
+  source "$ROOT/steps/40-b2.sh"
+  _b2_setup_gated
+  calls_log="$BATS_TEST_TMPDIR/b2_cli.log"
+  : > "$calls_log"
+  b2_cli() {
+    printf '%s\n' "$*" >> "$calls_log"
+    case "$1 $2" in
+      "bucket get") return 0 ;;      # bucket already exists
+    esac
+    return 0
+  }
+  run reconcile_b2
+  [ "$status" -eq 0 ]
+  ! grep -q "^bucket create" "$calls_log"
+  _assert_bucket_update_safety "$calls_log"
+}
+
+@test "reconcile_b2 creates the bucket with --file-lock-enabled when absent" {
+  source "$ROOT/steps/40-b2.sh"
+  _b2_setup_gated
+  calls_log="$BATS_TEST_TMPDIR/b2_cli.log"
+  : > "$calls_log"
+  b2_cli() {
+    printf '%s\n' "$*" >> "$calls_log"
+    case "$1 $2" in
+      "bucket get") return 1 ;;      # bucket absent
+    esac
+    return 0
+  }
+  run reconcile_b2
+  [ "$status" -eq 0 ]
+  grep -q "^bucket create ${B2_BUCKET} allPrivate --file-lock-enabled$" "$calls_log"
+  _assert_bucket_update_safety "$calls_log"
+}
+
+@test "reconcile_b2 mints both keys with distinct, non-bypassGovernance capability lists, into the correct BWS projects" {
+  source "$ROOT/steps/40-b2.sh"
+  _b2_setup_gated
+  bws_secret_exists() { return 1; }  # neither project has a key yet
+  key_calls_log="$BATS_TEST_TMPDIR/key_create.log"
+  : > "$key_calls_log"
+  puts_log="$BATS_TEST_TMPDIR/puts.log"
+  : > "$puts_log"
+  b2_cli() {
+    case "$1 $2" in
+      "bucket get") return 0 ;;
+      "key create")
+        shift 2
+        printf '%s\n' "$*" >> "$key_calls_log"
+        # args: --bucket BUCKET keyName capabilities
+        case "$3" in
+          *-backup) echo "backupKeyId123"; echo "backupKeySecretXYZ" ;;
+          *-restore) echo "restoreKeyId456"; echo "restoreKeySecretABC" ;;
+        esac
+        ;;
+    esac
+    return 0
+  }
+  bws_put_secret() { printf '%s\t%s\t%s\n' "$1" "$2" "$3" >> "$puts_log"; }
+  run reconcile_b2
+  [ "$status" -eq 0 ]
+
+  # Capability lists never include bypassGovernance.
+  ! grep -q "bypassGovernance" "$key_calls_log"
+  # Runtime key: read/write, into the env project.
+  grep -q "pc-staging-backup listBuckets,listFiles,readFiles,writeFiles,deleteFiles$" "$key_calls_log"
+  # Restore key: read-only, into the restore project.
+  grep -q "pc-staging-restore listBuckets,listFiles,readFiles$" "$key_calls_log"
+
+  grep -q "^b2_key_id	backupKeyId123	envproj$" "$puts_log"
+  grep -q "^b2_key_secret	backupKeySecretXYZ	envproj$" "$puts_log"
+  grep -q "^b2_key_id	restoreKeyId456	restoreproj$" "$puts_log"
+  grep -q "^b2_key_secret	restoreKeySecretABC	restoreproj$" "$puts_log"
+}
+
+@test "reconcile_b2 warns that Object Lock cannot be enabled retroactively on a pre-existing bucket" {
+  source "$ROOT/steps/40-b2.sh"
+  _b2_setup_gated
+  b2_cli() { case "$1 $2" in "bucket get") return 0 ;; esac; return 0; }  # exists
+  run reconcile_b2
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"CANNOT be enabled retroactively"* ]]
+}
+
+@test "reconcile_b2 does not warn about retroactive Object Lock when it creates the bucket" {
+  source "$ROOT/steps/40-b2.sh"
+  _b2_setup_gated
+  b2_cli() { case "$1 $2" in "bucket get") return 1 ;; esac; return 0; }  # absent
+  run reconcile_b2
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"CANNOT be enabled retroactively"* ]]
+}
+
+@test "reconcile_b2 hard-fails (does not mint a pc-unknown key) when ENV_NAME is empty" {
+  source "$ROOT/steps/40-b2.sh"
+  _b2_setup_gated
+  unset ENV_NAME || true
+  key_calls_log="$BATS_TEST_TMPDIR/key_create.log"
+  : > "$key_calls_log"
+  b2_cli() {
+    case "$1 $2" in
+      "bucket get") return 0 ;;
+      "key create") shift 2; printf '%s\n' "$*" >> "$key_calls_log" ;;
+    esac
+    return 0
+  }
+  bws_secret_exists() { return 1; }
+  run reconcile_b2
+  [ "$status" -eq 1 ]
+  [ ! -s "$key_calls_log" ]  # never reached key creation
+}
+
+@test "reconcile_b2 is a no-op for key creation when both BWS projects already have b2_key_id" {
+  source "$ROOT/steps/40-b2.sh"
+  _b2_setup_gated
+  bws_secret_exists() { return 0; }  # both projects already have a key
+  calls_log="$BATS_TEST_TMPDIR/b2_cli.log"
+  : > "$calls_log"
+  b2_cli() {
+    printf '%s\n' "$*" >> "$calls_log"
+    case "$1 $2" in
+      "bucket get") return 0 ;;
+    esac
+    return 0
+  }
+  run reconcile_b2
+  [ "$status" -eq 0 ]
+  ! grep -q "^key create" "$calls_log"
+}
+
+@test "reconcile_b2 never persists b2_key_id when the b2_key_secret write fails (no unrecoverable half-written key)" {
+  source "$ROOT/steps/40-b2.sh"
+  _b2_setup_gated
+  bws_secret_exists() { return 1; }  # neither project has a key yet
+  puts_log="$BATS_TEST_TMPDIR/puts.log"
+  : > "$puts_log"
+  b2_cli() {
+    case "$1 $2" in
+      "bucket get") return 0 ;;
+      "key create")
+        shift 2
+        case "$3" in
+          *-backup) echo "backupKeyId123"; echo "backupKeySecretXYZ" ;;
+          *-restore) echo "restoreKeyId456"; echo "restoreKeySecretABC" ;;
+        esac
+        ;;
+    esac
+    return 0
+  }
+  bws_put_secret() {
+    printf '%s\t%s\t%s\n' "$1" "$2" "$3" >> "$puts_log"
+    [ "$1" = "b2_key_secret" ] && return 1  # the secret write always fails
+    return 0
+  }
+  run reconcile_b2
+  [ "$status" -ne 0 ]
+  [ "$status" -ne 75 ]
+  # The secret write was attempted (and failed) ...
+  grep -q "^b2_key_secret" "$puts_log"
+  # ... but b2_key_id — the field this function's own idempotency probe keys
+  # on — was NEVER written. Had the write order not been reversed, a failed
+  # SECOND write (b2_key_secret, in the old id-then-secret order) would leave
+  # b2_key_id stored, making a re-run's probe report "already present" and
+  # permanently skip minting the missing secret.
+  ! grep -q "^b2_key_id" "$puts_log"
+}
+
+@test "reconcile_b2 propagates failure when the b2_key_id write fails after the secret write succeeded" {
+  source "$ROOT/steps/40-b2.sh"
+  _b2_setup_gated
+  bws_secret_exists() { return 1; }
+  b2_cli() {
+    case "$1 $2" in
+      "bucket get") return 0 ;;
+      "key create")
+        shift 2
+        case "$3" in
+          *-backup) echo "backupKeyId123"; echo "backupKeySecretXYZ" ;;
+          *-restore) echo "restoreKeyId456"; echo "restoreKeySecretABC" ;;
+        esac
+        ;;
+    esac
+    return 0
+  }
+  bws_put_secret() {
+    [ "$1" = "b2_key_id" ] && return 1  # the id write fails
+    return 0
+  }
+  run reconcile_b2
+  [ "$status" -ne 0 ]
+  [ "$status" -ne 75 ]
+}
+
+# --- step 50: reconcile_github_env -------------------------------------------
+# gh_api/gh_env_var_exists/gh_var_set are stubbed directly in every test
+# below (no real gh CLI or jq call inside a bats test), the same convention
+# steps 10/20/40 use for bws_secret_exists/bws_project_exists.
+_github_env_setup_satisfied() {
+  export ENV_NAME=staging API_PORT=8765 FIREBASE_PROJECT_ID=fb-proj \
+    PGBACKREST_REPO1_S3_ENDPOINT=https://s3.us-west-002.backblazeb2.com \
+    B2_BUCKET=pc-staging-backups B2_REGION=us-west-002 \
+    TS_CLIENT_ID=ts-client-id TS_AUDIENCE=ts-audience \
+    AGE_RECIPIENT=age1existingrecipient
+  unset GH_PRODUCTION_REVIEWER_ID || true
+  gh_api() { :; }
+  gh_env_var_exists() { return 0; }  # default: everything already present
+  gh_var_set() { :; }
+}
+
+@test "reconcile_github_env (staging, all 8 vars present) sets no vars and never PUTs a reviewer" {
+  source "$ROOT/steps/50-github-env.sh"
+  _github_env_setup_satisfied
+  put_calls_log="$BATS_TEST_TMPDIR/gh_api_put.log"
+  : > "$put_calls_log"
+  gh_api() { printf '%s\n' "$*" >> "$put_calls_log"; }
+  var_calls_log="$BATS_TEST_TMPDIR/gh_var_set.log"
+  : > "$var_calls_log"
+  gh_var_set() { printf '%s\t%s\n' "$1" "$2" >> "$var_calls_log"; }
+  run reconcile_github_env
+  [ "$status" -eq 0 ]
+  [ ! -s "$var_calls_log" ]
+  ! grep -q "reviewers" "$put_calls_log"
+  ! grep -q "environments/production" "$put_calls_log"
+}
+
+@test "reconcile_github_env (staging) sets exactly the absent vars, skipping present ones" {
+  source "$ROOT/steps/50-github-env.sh"
+  _github_env_setup_satisfied
+  # Only API_PORT and AGE_RECIPIENT are absent; the rest already exist.
+  gh_env_var_exists() {
+    case "$1" in
+      API_PORT | AGE_RECIPIENT) return 1 ;;
+      *) return 0 ;;
+    esac
+  }
+  var_calls_log="$BATS_TEST_TMPDIR/gh_var_set.log"
+  : > "$var_calls_log"
+  gh_var_set() { printf '%s\t%s\n' "$1" "$2" >> "$var_calls_log"; }
+  run reconcile_github_env
+  [ "$status" -eq 0 ]
+  [ "$(wc -l < "$var_calls_log")" -eq 2 ]
+  grep -q "^API_PORT	8765$" "$var_calls_log"
+  grep -q "^AGE_RECIPIENT	age1existingrecipient$" "$var_calls_log"
+}
+
+@test "reconcile_github_env stops with NEEDS_MANUAL naming a missing non-secret config value" {
+  source "$ROOT/steps/50-github-env.sh"
+  _github_env_setup_satisfied
+  unset FIREBASE_PROJECT_ID || true
+  run reconcile_github_env
+  [ "$status" -eq 75 ]
+  [[ "$output" == *"FIREBASE_PROJECT_ID"* ]]
+}
+
+@test "reconcile_github_env (production) stops with NEEDS_MANUAL naming GH_PRODUCTION_REVIEWER_ID when absent" {
+  source "$ROOT/steps/50-github-env.sh"
+  _github_env_setup_satisfied
+  export ENV_NAME=production
+  run reconcile_github_env
+  [ "$status" -eq 75 ]
+  [[ "$output" == *"GH_PRODUCTION_REVIEWER_ID"* ]]
+}
+
+@test "reconcile_github_env (production) PUTs the required-reviewer body with the configured user id" {
+  source "$ROOT/steps/50-github-env.sh"
+  _github_env_setup_satisfied
+  export ENV_NAME=production GH_PRODUCTION_REVIEWER_ID=123456
+  put_calls_log="$BATS_TEST_TMPDIR/gh_api_put.log"
+  : > "$put_calls_log"
+  gh_api() {
+    printf '%s\n' "$*" >> "$put_calls_log"
+    if [[ "$*" == *"--input -"* ]]; then
+      cat >> "$put_calls_log"
+      printf '\n' >> "$put_calls_log"
+    fi
+  }
+  run reconcile_github_env
+  [ "$status" -eq 0 ]
+  grep -q "environments/production" "$put_calls_log"
+  grep -q '"reviewers"' "$put_calls_log"
+  grep -q '"id":123456' "$put_calls_log"
+}
+
+@test "reconcile_github_env (production, all 8 vars ABSENT) re-asserts the reviewer on EVERY env PUT so the last PUT never leaves it wiped" {
+  source "$ROOT/steps/50-github-env.sh"
+  _github_env_setup_satisfied
+  export ENV_NAME=production GH_PRODUCTION_REVIEWER_ID=123456
+  # All 8 vars absent → each ensure_gh_var fires a post-reviewer gh_var_set,
+  # and the REAL lib.sh wiring has gh_var_set call ensure_gh_environment
+  # again. This test proves those later PUTs still carry the reviewer (the
+  # security hazard: a no-body PUT after the reviewer was set could wipe it).
+  gh_env_var_exists() { return 1; }  # every var absent → every var gets set
+  put_calls_log="$BATS_TEST_TMPDIR/gh_api_put.log"
+  : > "$put_calls_log"
+  # Log each gh_api call's args + (if a body was piped) the body, one line
+  # per PUT, so we can assert every production PUT line carries "reviewers".
+  gh_api() {
+    local body=""
+    [[ "$*" == *"--input -"* ]] && body="$(cat)"
+    printf '%s %s\n' "$*" "$body" >> "$put_calls_log"
+  }
+  # Mirror the real lib.sh gh_var_set wiring (ensure_gh_environment first),
+  # minus the real `command gh variable set` (no gh binary in the bats image).
+  gh_var_set() { ensure_gh_environment; :; }
+  run reconcile_github_env
+  [ "$status" -eq 0 ]
+  # More than one production env PUT happened (top-of-fn ensure + the
+  # post-reviewer var-set PUTs) ...
+  [ "$(grep -c 'environments/production' "$put_calls_log")" -ge 2 ]
+  # ... and NOT ONE of them omitted the reviewer (no production PUT line
+  # without "reviewers" — this is the assertion that would fail if a later
+  # no-body PUT wiped the gate).
+  ! grep 'environments/production' "$put_calls_log" | grep -qv 'reviewers'
+  grep -q '"id":123456' "$put_calls_log"
+}
+
+@test "reconcile_github_env derives AGE_RECIPIENT from the restore project's age_private_key when the env var is unset" {
+  source "$ROOT/steps/50-github-env.sh"
+  _github_env_setup_satisfied
+  unset AGE_RECIPIENT || true
+  export BWS_RESTORE_PROJECT_ID=restoreproj BWS_WRITE_TOKEN=wt
+  gh_env_var_exists() {
+    case "$1" in
+      AGE_RECIPIENT) return 1 ;;
+      *) return 0 ;;
+    esac
+  }
+  bws_get_secret_value() {
+    if [ "$1" = "age_private_key" ] && [ "$2" = "restoreproj" ]; then
+      echo "AGE-SECRET-KEY-STUB"
+    fi
+  }
+  age_keygen() {
+    [ "${1:-}" = "-y" ] && echo "age1derivedrecipient"
+  }
+  var_calls_log="$BATS_TEST_TMPDIR/gh_var_set.log"
+  : > "$var_calls_log"
+  gh_var_set() { printf '%s\t%s\n' "$1" "$2" >> "$var_calls_log"; }
+  run reconcile_github_env
+  [ "$status" -eq 0 ]
+  grep -q "^AGE_RECIPIENT	age1derivedrecipient$" "$var_calls_log"
+}
+
+@test "reconcile_github_env fails (does not set an empty var) when age-keygen -y yields no recipient" {
+  source "$ROOT/steps/50-github-env.sh"
+  _github_env_setup_satisfied
+  unset AGE_RECIPIENT || true
+  export BWS_RESTORE_PROJECT_ID=restoreproj BWS_WRITE_TOKEN=wt
+  gh_env_var_exists() {
+    case "$1" in
+      AGE_RECIPIENT) return 1 ;;
+      *) return 0 ;;
+    esac
+  }
+  bws_get_secret_value() { echo "AGE-SECRET-KEY-STUB"; }  # private key present
+  age_keygen() { :; }  # -y derivation produces nothing (failure path)
+  var_calls_log="$BATS_TEST_TMPDIR/gh_var_set.log"
+  : > "$var_calls_log"
+  gh_var_set() { printf '%s\t%s\n' "$1" "$2" >> "$var_calls_log"; }
+  run reconcile_github_env
+  [ "$status" -ne 0 ]
+  [ "$status" -ne 75 ]  # a hard error, not a manual gate
+  [[ "$output" == *"AGE_RECIPIENT"* ]]
+  [[ "$output" == *"invalid"* ]]
+  # Never set AGE_RECIPIENT (or any var) to an empty/invalid value.
+  ! grep -q "^AGE_RECIPIENT" "$var_calls_log"
+}
+
+@test "reconcile_github_env stops with NEEDS_MANUAL naming BWS_RESTORE_PROJECT_ID when AGE_RECIPIENT must be derived but the restore project id is absent" {
+  source "$ROOT/steps/50-github-env.sh"
+  _github_env_setup_satisfied
+  unset AGE_RECIPIENT BWS_RESTORE_PROJECT_ID || true
+  export BWS_WRITE_TOKEN=wt
+  run reconcile_github_env
+  [ "$status" -eq 75 ]
+  [[ "$output" == *"BWS_RESTORE_PROJECT_ID"* ]]
+}
+
+@test "reconcile_github_env stops with NEEDS_MANUAL naming BWS_WRITE_TOKEN when AGE_RECIPIENT must be derived but no write token is available (--only github-env, no earlier step this session)" {
+  source "$ROOT/steps/50-github-env.sh"
+  _github_env_setup_satisfied
+  unset AGE_RECIPIENT BWS_WRITE_TOKEN || true
+  export BWS_RESTORE_PROJECT_ID=restoreproj
+  run reconcile_github_env
+  [ "$status" -eq 75 ]
+  [[ "$output" == *"BWS_WRITE_TOKEN"* ]]
+}
+
+# --- step 60: reconcile_droplet ---------------------------------------------
+# doctl_cli/ssh_keygen/ssh_keyscan/gh_secret_set are stubbed directly (same
+# convention as every other step's provider wrapper). The bats Docker image
+# mounts ONLY backend/deploy/provision/, not the wider repo, so the real
+# backend/scripts/ helper scripts bootstrap.sh installs do not exist inside
+# it — BACKEND_SCRIPTS_DIR (read at 60-droplet.sh source time) is pointed at
+# fixture scripts under $BATS_TEST_TMPDIR instead. bootstrap.sh itself IS
+# reachable for real (it lives directly under the mounted provision/ dir).
+_droplet_setup_absent_gated() {
+  export ENV_NAME=staging DO_TOKEN=do-token-x TS_AUTH_KEY=tskey-ephemeral \
+    DO_REGION=sgp1 DO_SIZE=s-1vcpu-1gb SSH_HOST=pc-staging TS_TAG=tag:pc-staging
+  export BACKEND_SCRIPTS_DIR="$BATS_TEST_TMPDIR/backend-scripts"
+  mkdir -p "$BACKEND_SCRIPTS_DIR"
+  for f in switch-deployment.sh write-secret.sh rollback.sh; do
+    printf '#!/usr/bin/env bash\necho fixture-%s\n' "$f" >"$BACKEND_SCRIPTS_DIR/$f"
+  done
+  : >"$BATS_TEST_TMPDIR/doctl.log"
+  : >"$BATS_TEST_TMPDIR/gh_secret_set.log"
+  doctl_cli() {
+    printf '%s\n' "$*" >>"$BATS_TEST_TMPDIR/doctl.log"
+    case "$1 $2 $3" in
+      "compute droplet list") return 0 ;; # empty list -> unambiguously absent
+      "compute droplet create")
+        # Capture the --user-data-file content while it still exists — the
+        # real step deletes its tmp file right after this call returns.
+        shift 3
+        local f=""
+        while [ "$#" -gt 0 ]; do
+          case "$1" in
+            --user-data-file)
+              f="$2"
+              shift 2
+              ;;
+            *) shift ;;
+          esac
+        done
+        [ -n "$f" ] && cp "$f" "$BATS_TEST_TMPDIR/captured-user-data.yaml"
+        return 0
+        ;;
+    esac
+    return 0
+  }
+  ssh_keygen() {
+    local out=""
+    while [ "$#" -gt 0 ]; do
+      case "$1" in
+        -f)
+          out="$2"
+          shift 2
+          ;;
+        -t | -N | -C)
+          shift 2
+          ;;
+        *) shift ;;
+      esac
+    done
+    printf 'FAKE-PRIVATE-KEY\n' >"$out"
+    printf 'ssh-ed25519 AAAAFAKEKEY deploy@peppercheck-ci\n' >"${out}.pub"
+  }
+  gh_secret_set() { printf '%s\t%s\n' "$1" "$2" >>"$BATS_TEST_TMPDIR/gh_secret_set.log"; }
+  ssh_keyscan() { printf 'pc-staging ssh-ed25519 AAAAHOSTKEY\n'; }
+}
+
+@test "reconcile_droplet stops with NEEDS_MANUAL naming DO_TOKEN when absent" {
+  source "$ROOT/steps/60-droplet.sh"
+  export ENV_NAME=staging
+  unset DO_TOKEN || true
+  run reconcile_droplet
+  [ "$status" -eq 75 ]
+  [[ "$output" == *"DO_TOKEN"* ]]
+}
+
+@test "reconcile_droplet is SATISFIED (no create, no keypair, no secret writes) when the Droplet already exists" {
+  source "$ROOT/steps/60-droplet.sh"
+  export ENV_NAME=staging DO_TOKEN=do-token-x
+  calls_log="$BATS_TEST_TMPDIR/doctl.log"
+  : >"$calls_log"
+  doctl_cli() {
+    printf '%s\n' "$*" >>"$calls_log"
+    case "$1 $2 $3" in
+      "compute droplet list")
+        printf 'some-other-droplet\npc-staging\nyet-another\n' # name present
+        return 0
+        ;;
+    esac
+    return 1
+  }
+  keygen_calls_log="$BATS_TEST_TMPDIR/keygen.log"
+  : >"$keygen_calls_log"
+  ssh_keygen() { echo "called" >>"$keygen_calls_log"; }
+  secret_calls_log="$BATS_TEST_TMPDIR/gh_secret_set.log"
+  : >"$secret_calls_log"
+  gh_secret_set() { printf '%s\n' "$1" >>"$secret_calls_log"; }
+  run reconcile_droplet
+  [ "$status" -eq 0 ]
+  grep -q "^compute droplet list --format Name --no-header$" "$calls_log"
+  ! grep -q "^compute droplet create" "$calls_log"
+  [ ! -s "$keygen_calls_log" ]
+  [ ! -s "$secret_calls_log" ]
+}
+
+@test "reconcile_droplet fails closed (aborts, no create) when the Droplet list query itself fails, rather than risking a duplicate" {
+  source "$ROOT/steps/60-droplet.sh"
+  export ENV_NAME=staging DO_TOKEN=do-token-x TS_AUTH_KEY=tskey-ephemeral \
+    DO_REGION=sgp1 DO_SIZE=s-1vcpu-1gb SSH_HOST=pc-staging TS_TAG=tag:pc-staging
+  calls_log="$BATS_TEST_TMPDIR/doctl.log"
+  : >"$calls_log"
+  doctl_cli() {
+    printf '%s\n' "$*" >>"$calls_log"
+    case "$1 $2 $3" in
+      "compute droplet list") return 1 ;; # transient failure (token/network)
+    esac
+    return 0
+  }
+  keygen_calls_log="$BATS_TEST_TMPDIR/keygen.log"
+  : >"$keygen_calls_log"
+  ssh_keygen() { echo "called" >>"$keygen_calls_log"; }
+  run reconcile_droplet
+  # A hard error, NOT a NEEDS_MANUAL gate and NOT a silent success.
+  [ "$status" -ne 0 ]
+  [ "$status" -ne 75 ]
+  # Never proceeded to create a (duplicate) Droplet, never minted a keypair.
+  ! grep -q "^compute droplet create" "$calls_log"
+  [ ! -s "$keygen_calls_log" ]
+}
+
+@test "reconcile_droplet stops with NEEDS_MANUAL naming TS_AUTH_KEY when the Droplet is absent and no auth key was minted this run" {
+  source "$ROOT/steps/60-droplet.sh"
+  export ENV_NAME=staging DO_TOKEN=do-token-x
+  unset TS_AUTH_KEY || true
+  doctl_cli() { case "$1 $2 $3" in "compute droplet list") return 0 ;; esac; return 1; }
+  run reconcile_droplet
+  [ "$status" -eq 75 ]
+  [[ "$output" == *"TS_AUTH_KEY"* ]]
+}
+
+@test "reconcile_droplet stops with NEEDS_MANUAL naming missing non-secret config (DO_REGION/DO_SIZE/SSH_HOST/TS_TAG)" {
+  source "$ROOT/steps/60-droplet.sh"
+  export ENV_NAME=staging DO_TOKEN=do-token-x TS_AUTH_KEY=tskey-ephemeral
+  unset DO_REGION DO_SIZE SSH_HOST TS_TAG || true
+  doctl_cli() { case "$1 $2 $3" in "compute droplet list") return 0 ;; esac; return 1; }
+  run reconcile_droplet
+  [ "$status" -eq 75 ]
+  [[ "$output" == *"DO_REGION"* ]]
+  [[ "$output" == *"SSH_HOST"* ]]
+  [[ "$output" == *"TS_TAG"* ]]
+}
+
+@test "reconcile_droplet aborts (no create, no SSH_DEPLOY_KEY) when ssh-keygen fails" {
+  source "$ROOT/steps/60-droplet.sh"
+  _droplet_setup_absent_gated
+  # ssh-keygen fails: since the orchestrator runs steps under set +e,
+  # ensure_deploy_keypair's `return 1` only aborts the step because the call
+  # site guards it with `|| return 1`. Without that guard the step would go on
+  # to create a real Droplet with an empty DEPLOY_SSH_PUBLIC_KEY.
+  ssh_keygen() { return 1; }
+  run reconcile_droplet
+  [ "$status" -ne 0 ]
+  [ "$status" -ne 75 ]
+  ! grep -q "^compute droplet create" "$BATS_TEST_TMPDIR/doctl.log"
+  ! grep -q "^SSH_DEPLOY_KEY" "$BATS_TEST_TMPDIR/gh_secret_set.log"
+}
+
+@test "reconcile_droplet creates the Droplet with --user-data-file, generates+stores the deploy keypair, and captures+stores the host key" {
+  source "$ROOT/steps/60-droplet.sh"
+  _droplet_setup_absent_gated
+  run reconcile_droplet
+  [ "$status" -eq 0 ]
+
+  # Deploy keypair generated; ONLY the private half is stored, under the
+  # exact secret name deploy-vps.yml reads.
+  grep -q "^SSH_DEPLOY_KEY	FAKE-PRIVATE-KEY$" "$BATS_TEST_TMPDIR/gh_secret_set.log"
+  ! grep -q "AAAAFAKEKEY" "$BATS_TEST_TMPDIR/gh_secret_set.log"
+
+  # Droplet created with region/size/image/--user-data-file/--wait.
+  grep -q "^compute droplet create pc-staging --region sgp1 --size s-1vcpu-1gb --image ubuntu-24-04-x64" "$BATS_TEST_TMPDIR/doctl.log"
+  grep -q -- "--user-data-file" "$BATS_TEST_TMPDIR/doctl.log"
+  grep -q -- "--wait" "$BATS_TEST_TMPDIR/doctl.log"
+
+  # The rendered cloud-init user-data (captured by the doctl_cli stub before
+  # the real step deletes its tmp file) references bootstrap.sh and carries
+  # the 3 bootstrap env vars.
+  ud="$BATS_TEST_TMPDIR/captured-user-data.yaml"
+  [ -s "$ud" ]
+  grep -q "bootstrap.sh" "$ud"
+  grep -q "TAILSCALE_TAG=tag:pc-staging" "$ud"
+  grep -q "TAILSCALE_AUTH_KEY=tskey-ephemeral" "$ud"
+  grep -q "DEPLOY_SSH_PUBLIC_KEY=ssh-ed25519 AAAAFAKEKEY deploy@peppercheck-ci" "$ud"
+
+  # Host key captured (stubbed ssh-keyscan) and stored under the exact
+  # secret name deploy-vps.yml reads.
+  grep -q "^SSH_HOST_KEY	pc-staging ssh-ed25519 AAAAHOSTKEY$" "$BATS_TEST_TMPDIR/gh_secret_set.log"
+}
+
+@test "reconcile_droplet fails clearly (not hanging) when ssh-keyscan cannot reach the tailnet host within the poll window" {
+  source "$ROOT/steps/60-droplet.sh"
+  _droplet_setup_absent_gated
+  export SSH_HOST_KEY_POLL_TIMEOUT=2 SSH_HOST_KEY_POLL_INTERVAL=1
+  ssh_keyscan() { return 1; } # never resolves
+  run reconcile_droplet
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"tailnet"* ]]
+  # The Droplet + deploy keypair were still created/stored before the poll
+  # gave up; only the host-key secret is missing.
+  grep -q "^SSH_DEPLOY_KEY" "$BATS_TEST_TMPDIR/gh_secret_set.log"
+  ! grep -q "^SSH_HOST_KEY" "$BATS_TEST_TMPDIR/gh_secret_set.log"
+}
+
+@test "reconcile_droplet no longer defines its own doctl_cli (moved to lib.sh, shared with step 70/dns)" {
+  # lib.sh (sourced by bats setup()) already defines the real doctl_cli, so
+  # this only guards against a regression that re-adds a duplicate/shadowing
+  # definition inside 60-droplet.sh itself.
+  ! grep -q '^doctl_cli()' "$ROOT/steps/60-droplet.sh"
+}
+
+@test "reconcile_droplet in dry-run does not create the Droplet, store secrets, or attempt host-key capture" {
+  source "$ROOT/steps/60-droplet.sh"
+  _droplet_setup_absent_gated
+  DRY_RUN=1
+  ssh_keyscan() { echo "should not be called" >>"$BATS_TEST_TMPDIR/keyscan-called.log"; }
+  run reconcile_droplet
+  [ "$status" -eq 0 ]
+  ! grep -q "^compute droplet create" "$BATS_TEST_TMPDIR/doctl.log"
+  [ ! -e "$BATS_TEST_TMPDIR/keyscan-called.log" ]
+  [ ! -s "$BATS_TEST_TMPDIR/gh_secret_set.log" ]
+}
+
+@test "reconcile_droplet leaves no plaintext-auth-key cloud-init file (or private key) on disk when the create fails mid-flight" {
+  source "$ROOT/steps/60-droplet.sh"
+  _droplet_setup_absent_gated
+  # Point mktemp at a controlled root so the RETURN-trap cleanup is checkable;
+  # both the deploy-key dir and the cloud-init dir are created under here.
+  export TMPDIR="$BATS_TEST_TMPDIR/tmproot"
+  mkdir -p "$TMPDIR"
+  # Make the Droplet create fail AFTER render_cloud_init has already written
+  # the user-data file (which embeds the plaintext ephemeral auth key).
+  doctl_cli() {
+    printf '%s\n' "$*" >>"$BATS_TEST_TMPDIR/doctl.log"
+    case "$1 $2 $3" in
+      "compute droplet list") return 0 ;;   # absent
+      "compute droplet create") return 1 ;; # fails mid-flight
+    esac
+    return 0
+  }
+  run reconcile_droplet
+  [ "$status" -ne 0 ]
+  # The trap cleaned both temp dirs: no cloud-init user-data file and no
+  # private key material survive anywhere under the controlled TMPDIR.
+  ! grep -rq "tskey-ephemeral" "$TMPDIR" 2>/dev/null
+  ! grep -rq "FAKE-PRIVATE-KEY" "$TMPDIR" 2>/dev/null
+  [ -z "$(find "$TMPDIR" -type f 2>/dev/null)" ]
+}
+
+# --- step 70: reconcile_dns --------------------------------------------------
+# cf_api and doctl_cli are stubbed directly (same convention as every other
+# step's provider wrapper). _dns_a_record_fields (the jq-based list-response
+# parser) is ALSO stubbed directly in every test below, the same way step
+# 30's reconcile_tailscale tests stub acl_satisfied rather than feeding real
+# Tailscale JSON through a real jq binary — the bats/bats:latest image has no
+# jq, so the real script's jq usage is exercised only outside these tests.
+_dns_setup_gated() {
+  export ENV_NAME=staging CLOUDFLARE_API_TOKEN=cf-token-x CLOUDFLARE_ZONE_ID=zone-abc \
+    DO_TOKEN=do-token-x PUBLIC_DOMAIN=staging.peppercheck.dev
+}
+
+@test "reconcile_dns stops with NEEDS_MANUAL naming CLOUDFLARE_API_TOKEN/CLOUDFLARE_ZONE_ID when absent" {
+  source "$ROOT/steps/70-dns.sh"
+  _dns_setup_gated
+  unset CLOUDFLARE_API_TOKEN CLOUDFLARE_ZONE_ID || true
+  run reconcile_dns
+  [ "$status" -eq 75 ]
+  [[ "$output" == *"CLOUDFLARE_API_TOKEN"* ]]
+  [[ "$output" == *"CLOUDFLARE_ZONE_ID"* ]]
+}
+
+@test "reconcile_dns stops with NEEDS_MANUAL naming DO_TOKEN/PUBLIC_DOMAIN when absent" {
+  source "$ROOT/steps/70-dns.sh"
+  _dns_setup_gated
+  unset DO_TOKEN PUBLIC_DOMAIN || true
+  run reconcile_dns
+  [ "$status" -eq 75 ]
+  [[ "$output" == *"DO_TOKEN"* ]]
+  [[ "$output" == *"PUBLIC_DOMAIN"* ]]
+}
+
+@test "reconcile_dns fails closed, without calling cf_api, when the Droplet has no public IP yet" {
+  source "$ROOT/steps/70-dns.sh"
+  _dns_setup_gated
+  doctl_cli() { printf ''; }  # query succeeded but returned an empty IP
+  calls_log="$BATS_TEST_TMPDIR/cf_api.log"
+  : > "$calls_log"
+  cf_api() { printf '%s\n' "$*" >> "$calls_log"; }
+  run reconcile_dns
+  [ "$status" -ne 0 ]
+  [ "$status" -ne 75 ]  # a hard error, not a manual gate
+  [[ "$output" == *"step 60"* ]]
+  [ ! -s "$calls_log" ]
+}
+
+@test "reconcile_dns fails closed, without calling cf_api, when the doctl droplet-get query itself fails" {
+  source "$ROOT/steps/70-dns.sh"
+  _dns_setup_gated
+  doctl_cli() { return 1; }  # transient failure (expired token, network blip)
+  calls_log="$BATS_TEST_TMPDIR/cf_api.log"
+  : > "$calls_log"
+  cf_api() { printf '%s\n' "$*" >> "$calls_log"; }
+  run reconcile_dns
+  [ "$status" -ne 0 ]
+  [ "$status" -ne 75 ]
+  [ ! -s "$calls_log" ]
+}
+
+@test "reconcile_dns creates the A record with the queried IP and proxied:false when none exists" {
+  source "$ROOT/steps/70-dns.sh"
+  _dns_setup_gated
+  doctl_cli() { printf '203.0.113.10'; }
+  _dns_a_record_fields() { :; }  # empty output == no existing A record
+  calls_log="$BATS_TEST_TMPDIR/cf_api.log"
+  : > "$calls_log"
+  cf_api() {
+    printf '%s\t%s\t%s\n' "$1" "$2" "${3:-}" >> "$calls_log"
+    [ "$1" = GET ] && echo '{"result":[]}'
+    return 0
+  }
+  run reconcile_dns
+  [ "$status" -eq 0 ]
+  grep -q "^GET	/zones/zone-abc/dns_records?type=A&name=staging.peppercheck.dev	$" "$calls_log"
+  post_line="$(grep '^POST	/zones/zone-abc/dns_records	' "$calls_log")"
+  [ -n "$post_line" ]
+  [[ "$post_line" == *'"type":"A"'* ]]
+  [[ "$post_line" == *'"name":"staging.peppercheck.dev"'* ]]
+  [[ "$post_line" == *'"content":"203.0.113.10"'* ]]
+  [[ "$post_line" == *'"proxied":false'* ]]
+  ! grep -q "^PATCH" "$calls_log"
+}
+
+@test "reconcile_dns is a no-op when the existing A record already has the correct IP and proxied:false" {
+  source "$ROOT/steps/70-dns.sh"
+  _dns_setup_gated
+  doctl_cli() { printf '203.0.113.10'; }
+  _dns_a_record_fields() { printf 'rec1\t203.0.113.10\tfalse'; }
+  calls_log="$BATS_TEST_TMPDIR/cf_api.log"
+  : > "$calls_log"
+  cf_api() {
+    printf '%s\t%s\t%s\n' "$1" "$2" "${3:-}" >> "$calls_log"
+    [ "$1" = GET ] && echo '{"result":[{"id":"rec1","content":"203.0.113.10","proxied":false}]}'
+  }
+  run reconcile_dns
+  [ "$status" -eq 0 ]
+  ! grep -q "^POST" "$calls_log"
+  ! grep -q "^PATCH" "$calls_log"
+}
+
+@test "reconcile_dns PATCHes fixing content when the existing A record has the wrong IP" {
+  source "$ROOT/steps/70-dns.sh"
+  _dns_setup_gated
+  doctl_cli() { printf '203.0.113.10'; }  # current, correct IP
+  _dns_a_record_fields() { printf 'rec1\t198.51.100.5\tfalse'; }  # stale IP
+  calls_log="$BATS_TEST_TMPDIR/cf_api.log"
+  : > "$calls_log"
+  cf_api() {
+    printf '%s\t%s\t%s\n' "$1" "$2" "${3:-}" >> "$calls_log"
+    [ "$1" = GET ] && echo '{"result":[{"id":"rec1","content":"198.51.100.5","proxied":false}]}'
+    return 0
+  }
+  run reconcile_dns
+  [ "$status" -eq 0 ]
+  patch_line="$(grep '^PATCH	/zones/zone-abc/dns_records/rec1	' "$calls_log")"
+  [ -n "$patch_line" ]
+  [[ "$patch_line" == *'"content":"203.0.113.10"'* ]]
+  [[ "$patch_line" == *'"proxied":false'* ]]
+  ! grep -q "^POST" "$calls_log"
+}
+
+@test "reconcile_dns PATCHes fixing proxied:true back to false even when the IP is already correct" {
+  source "$ROOT/steps/70-dns.sh"
+  _dns_setup_gated
+  doctl_cli() { printf '203.0.113.10'; }
+  _dns_a_record_fields() { printf 'rec1\t203.0.113.10\ttrue'; }  # orange-cloud
+  calls_log="$BATS_TEST_TMPDIR/cf_api.log"
+  : > "$calls_log"
+  cf_api() {
+    printf '%s\t%s\t%s\n' "$1" "$2" "${3:-}" >> "$calls_log"
+    [ "$1" = GET ] && echo '{"result":[{"id":"rec1","content":"203.0.113.10","proxied":true}]}'
+    return 0
+  }
+  run reconcile_dns
+  [ "$status" -eq 0 ]
+  patch_line="$(grep '^PATCH	/zones/zone-abc/dns_records/rec1	' "$calls_log")"
+  [ -n "$patch_line" ]
+  [[ "$patch_line" == *'"proxied":false'* ]]
+  ! grep -q "^POST" "$calls_log"
+}
+
+@test "reconcile_dns propagates a Cloudflare GET lookup failure as a hard error, without POSTing" {
+  source "$ROOT/steps/70-dns.sh"
+  _dns_setup_gated
+  doctl_cli() { printf '203.0.113.10'; }
+  calls_log="$BATS_TEST_TMPDIR/cf_api.log"
+  : > "$calls_log"
+  cf_api() {
+    printf '%s\n' "$*" >> "$calls_log"
+    [ "$1" = GET ] && return 1  # curl -fsS failure (e.g. bad token)
+  }
+  run reconcile_dns
+  [ "$status" -ne 0 ]
+  [ "$status" -ne 75 ]
+  ! grep -q "^POST" "$calls_log"
+}
+
+# --- step 80: reconcile_verify (non-mutating assertions) --------------------
+
+_verify_setup_gated() {
+  export ENV_NAME=staging DO_TOKEN=do-token-x PUBLIC_DOMAIN=staging.peppercheck.dev SSH_HOST=pc-staging
+}
+
+@test "80-verify.sh never mutates: no run_mutation, no *_set, no create/POST/PUT/allow calls" {
+  ! grep -qE 'run_mutation|gh_secret_set|gh_var_set|bws_put_secret|droplet create|ufw (allow|delete)|-X[[:space:]]*(POST|PUT|DELETE)' \
+    "$ROOT/steps/80-verify.sh"
+}
+
+@test "reconcile_verify returns 0 and logs PASS for every check when all 4 checks pass" {
+  source "$ROOT/steps/80-verify.sh"
+  check_ssh_off_tailnet_refused() { return 0; }
+  check_ufw_tailnet_only() { return 0; }
+  check_tls_le() { return 0; }
+  check_secret_perms() { return 0; }
+  run reconcile_verify
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"PASS: check_ssh_off_tailnet_refused"* ]]
+  [[ "$output" == *"PASS: check_ufw_tailnet_only"* ]]
+  [[ "$output" == *"PASS: check_tls_le"* ]]
+  [[ "$output" == *"PASS: check_secret_perms"* ]]
+}
+
+@test "reconcile_verify returns non-zero (not 75) naming the failing check when the SSH-off-tailnet check unexpectedly succeeds" {
+  source "$ROOT/steps/80-verify.sh"
+  check_ssh_off_tailnet_refused() { return 1; }  # simulates ssh unexpectedly connecting
+  check_ufw_tailnet_only() { return 0; }
+  check_tls_le() { return 0; }
+  check_secret_perms() { return 0; }
+  run reconcile_verify
+  [ "$status" -ne 0 ]
+  [ "$status" -ne 75 ]
+  [[ "$output" == *"check_ssh_off_tailnet_refused"* ]]
+  [[ "$output" == *"FAIL: check_ssh_off_tailnet_refused"* ]]
+}
+
+@test "reconcile_verify runs and reports all 4 checks even when the first one fails (no short-circuit)" {
+  source "$ROOT/steps/80-verify.sh"
+  calls_log="$BATS_TEST_TMPDIR/checks.log"
+  : > "$calls_log"
+  check_ssh_off_tailnet_refused() { echo ssh >> "$calls_log"; return 1; }
+  check_ufw_tailnet_only() { echo ufw >> "$calls_log"; return 0; }
+  check_tls_le() { echo tls >> "$calls_log"; return 0; }
+  check_secret_perms() { echo perms >> "$calls_log"; return 1; }
+  run reconcile_verify
+  [ "$status" -ne 0 ]
+  [ "$status" -ne 75 ]
+  grep -q "^ssh$" "$calls_log"
+  grep -q "^ufw$" "$calls_log"
+  grep -q "^tls$" "$calls_log"
+  grep -q "^perms$" "$calls_log"
+  [[ "$output" == *"check_ssh_off_tailnet_refused"* ]]
+  [[ "$output" == *"check_secret_perms"* ]]
+}
+
+@test "check_ssh_off_tailnet_refused fails when DO_TOKEN is absent" {
+  source "$ROOT/steps/80-verify.sh"
+  _verify_setup_gated
+  unset DO_TOKEN
+  run check_ssh_off_tailnet_refused
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"DO_TOKEN"* ]]
+}
+
+@test "check_ssh_off_tailnet_refused fails closed when the doctl public-IP query itself fails" {
+  source "$ROOT/steps/80-verify.sh"
+  _verify_setup_gated
+  doctl_cli() { return 1; }
+  run check_ssh_off_tailnet_refused
+  [ "$status" -ne 0 ]
+}
+
+@test "check_ssh_off_tailnet_refused fails closed when the Droplet has no public IP yet" {
+  source "$ROOT/steps/80-verify.sh"
+  _verify_setup_gated
+  doctl_cli() { printf ''; }
+  run check_ssh_off_tailnet_refused
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"step 60"* ]]
+}
+
+@test "check_ssh_off_tailnet_refused FAILS (returns non-zero) when ssh unexpectedly logs in" {
+  source "$ROOT/steps/80-verify.sh"
+  _verify_setup_gated
+  doctl_cli() { printf '203.0.113.10'; }
+  ssh_cli() { return 0; }  # login succeeded — the bad case
+  run check_ssh_off_tailnet_refused
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"SUCCEEDED"* ]]
+}
+
+@test "check_ssh_off_tailnet_refused FAILS when ssh reaches the authentication stage (Permission denied)" {
+  source "$ROOT/steps/80-verify.sh"
+  _verify_setup_gated
+  doctl_cli() { printf '203.0.113.10'; }
+  ssh_cli() { echo "deploy@203.0.113.10: Permission denied (publickey)."; return 255; }
+  run check_ssh_off_tailnet_refused
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"reached the authentication stage"* ]]
+}
+
+@test "check_ssh_off_tailnet_refused PASSES when ssh times out at the network level" {
+  source "$ROOT/steps/80-verify.sh"
+  _verify_setup_gated
+  doctl_cli() { printf '203.0.113.10'; }
+  ssh_cli() { echo "ssh: connect to host 203.0.113.10 port 22: Operation timed out"; return 255; }
+  run check_ssh_off_tailnet_refused
+  [ "$status" -eq 0 ]
+}
+
+@test "check_ufw_tailnet_only fails when SSH_HOST is absent" {
+  source "$ROOT/steps/80-verify.sh"
+  _verify_setup_gated
+  unset SSH_HOST
+  run check_ufw_tailnet_only
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"SSH_HOST"* ]]
+}
+
+@test "check_ufw_tailnet_only fails closed when the tailnet host is unreachable" {
+  source "$ROOT/steps/80-verify.sh"
+  _verify_setup_gated
+  ssh_cli() { return 255; }
+  run check_ufw_tailnet_only
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"pc-staging"* ]]
+}
+
+@test "check_ufw_tailnet_only PASSES on the expected ufw shape (:22 on tailscale0 only, :80/:443 open)" {
+  source "$ROOT/steps/80-verify.sh"
+  _verify_setup_gated
+  ssh_cli() {
+    cat <<'UFW'
+Status: active
+
+To                         Action      From
+--                         ------      ----
+22 on tailscale0           ALLOW       Anywhere
+80                         ALLOW       Anywhere
+443                        ALLOW       Anywhere
+22 (v6) on tailscale0      ALLOW       Anywhere (v6)
+80 (v6)                    ALLOW       Anywhere (v6)
+443 (v6)                   ALLOW       Anywhere (v6)
+UFW
+  }
+  run check_ufw_tailnet_only
+  [ "$status" -eq 0 ]
+}
+
+@test "check_ufw_tailnet_only FAILS when :22 is allowed unrestricted (not just on tailscale0)" {
+  source "$ROOT/steps/80-verify.sh"
+  _verify_setup_gated
+  ssh_cli() {
+    cat <<'UFW'
+Status: active
+
+To                         Action      From
+--                         ------      ----
+22                         ALLOW       Anywhere
+80                         ALLOW       Anywhere
+443                        ALLOW       Anywhere
+UFW
+  }
+  run check_ufw_tailnet_only
+  [ "$status" -ne 0 ]
+}
+
+@test "check_tls_le fails when PUBLIC_DOMAIN is absent" {
+  source "$ROOT/steps/80-verify.sh"
+  _verify_setup_gated
+  unset PUBLIC_DOMAIN
+  run check_tls_le
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"PUBLIC_DOMAIN"* ]]
+}
+
+@test "check_tls_le fails when /readyz does not respond healthy" {
+  source "$ROOT/steps/80-verify.sh"
+  _verify_setup_gated
+  curl_cli() { return 22; }  # curl -f's non-2xx exit code
+  run check_tls_le
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"first deploy"* ]]
+}
+
+@test "check_tls_le fails when the served cert is not a Let's Encrypt cert" {
+  source "$ROOT/steps/80-verify.sh"
+  _verify_setup_gated
+  curl_cli() { return 0; }
+  _tls_cert_issuer() { printf 'issuer=O = peppercheck-caddy-internal-ca'; }
+  run check_tls_le
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"NOT serving a Let's Encrypt certificate"* ]]
+}
+
+@test "check_tls_le PASSES when /readyz is healthy and the cert issuer is Let's Encrypt" {
+  source "$ROOT/steps/80-verify.sh"
+  _verify_setup_gated
+  curl_cli() { return 0; }
+  _tls_cert_issuer() { printf "issuer=C = US, O = Let's Encrypt, CN = R3"; }
+  run check_tls_le
+  [ "$status" -eq 0 ]
+}
+
+@test "check_secret_perms fails when SSH_HOST is absent" {
+  source "$ROOT/steps/80-verify.sh"
+  _verify_setup_gated
+  unset SSH_HOST
+  run check_secret_perms
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"SSH_HOST"* ]]
+}
+
+@test "check_secret_perms fails closed when the tailnet host is unreachable" {
+  source "$ROOT/steps/80-verify.sh"
+  _verify_setup_gated
+  ssh_cli() { return 255; }
+  run check_secret_perms
+  [ "$status" -ne 0 ]
+}
+
+@test "check_secret_perms fails when stat returns no output" {
+  source "$ROOT/steps/80-verify.sh"
+  _verify_setup_gated
+  ssh_cli() { printf ''; }
+  run check_secret_perms
+  [ "$status" -ne 0 ]
+}
+
+@test "check_secret_perms PASSES when every secret file is mode 0400" {
+  source "$ROOT/steps/80-verify.sh"
+  _verify_setup_gated
+  ssh_cli() { printf '400\n400\n400\n'; }
+  run check_secret_perms
+  [ "$status" -eq 0 ]
+}
+
+@test "check_secret_perms FAILS when one secret file is not mode 0400" {
+  source "$ROOT/steps/80-verify.sh"
+  _verify_setup_gated
+  ssh_cli() { printf '400\n644\n400\n'; }
+  run check_secret_perms
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"644"* ]]
+}
+
+# --- step 90: reconcile_monitoring -------------------------------------------
+# bs_api and doctl_cli are stubbed directly (same convention as every other
+# step's provider wrapper). _bs_monitor_url_exists / _bs_heartbeat_name_exists
+# / _do_alert_exists (the jq-based list-response parsers) are ALSO stubbed
+# directly in most tests below, the same way step 70's reconcile_dns tests
+# stub _dns_a_record_fields rather than feeding real JSON through a real jq
+# binary — the bats/bats:latest image this suite runs in has no jq.
+_monitoring_setup_gated() {
+  export ENV_NAME=staging BETTERSTACK_API_TOKEN=bs-token-x DO_TOKEN=do-token-x \
+    PUBLIC_DOMAIN=staging.peppercheck.dev ALERT_EMAIL=ops-staging@example.com
+}
+
+@test "90-monitoring.sh never edits/installs/copies the already-merged monitoring scripts" {
+  # The file header legitimately DOCUMENTS these filenames (what it must not
+  # touch) — this asserts no command that would actually mutate one of them
+  # (install/cp/mv/sed -i/tee/> redirect targeting the script) is present.
+  ! grep -qE '(install |cp |mv |sed -i|tee |> ?)[^\n]*(wal-freshness\.sh|host-checks\.sh|backup\.sh|worker\.go)' \
+    "$ROOT/steps/90-monitoring.sh"
+}
+
+@test "reconcile_monitoring stops with NEEDS_MANUAL naming all missing gate vars" {
+  source "$ROOT/steps/90-monitoring.sh"
+  _monitoring_setup_gated
+  unset BETTERSTACK_API_TOKEN DO_TOKEN PUBLIC_DOMAIN ALERT_EMAIL
+  run reconcile_monitoring
+  [ "$status" -eq 75 ]
+  [[ "$output" == *"BETTERSTACK_API_TOKEN"* ]]
+  [[ "$output" == *"DO_TOKEN"* ]]
+  [[ "$output" == *"PUBLIC_DOMAIN"* ]]
+  [[ "$output" == *"ALERT_EMAIL"* ]]
+}
+
+@test "reconcile_monitoring hard-fails (does not call bs_api) when ENV_NAME is empty" {
+  source "$ROOT/steps/90-monitoring.sh"
+  _monitoring_setup_gated
+  export ENV_NAME=""
+  calls_log="$BATS_TEST_TMPDIR/bs_api.log"
+  : > "$calls_log"
+  bs_api() { printf '%s\n' "$*" >> "$calls_log"; }
+  run reconcile_monitoring
+  [ "$status" -ne 0 ]
+  [ "$status" -ne 75 ]
+  [ ! -s "$calls_log" ]
+}
+
+@test "reconcile_monitoring is a no-op when both uptime monitors, all 4 heartbeats, and all 3 DO alerts already exist" {
+  source "$ROOT/steps/90-monitoring.sh"
+  _monitoring_setup_gated
+  post_calls_log="$BATS_TEST_TMPDIR/bs_post.log"
+  : > "$post_calls_log"
+  create_calls_log="$BATS_TEST_TMPDIR/do_create.log"
+  : > "$create_calls_log"
+  bs_api() {
+    if [ "$1" = GET ]; then echo '{"data":[]}'; return 0; fi
+    printf '%s\n' "$*" >> "$post_calls_log"
+  }
+  doctl_cli() {
+    [ "$1" = compute ] && { printf '12345'; return 0; }
+    if [ "$3" = list ]; then printf '[]'; else printf '%s\n' "$*" >> "$create_calls_log"; fi
+  }
+  _bs_monitor_url_exists() { return 0; }
+  _bs_heartbeat_name_exists() { return 0; }
+  _do_alert_exists() { return 0; }
+  run reconcile_monitoring
+  [ "$status" -eq 0 ]
+  [ ! -s "$post_calls_log" ]
+  [ ! -s "$create_calls_log" ]
+}
+
+@test "reconcile_monitoring creates the /livez and /readyz uptime monitors when absent" {
+  source "$ROOT/steps/90-monitoring.sh"
+  _monitoring_setup_gated
+  doctl_cli() {
+    [ "$1" = compute ] && { printf '12345'; return 0; }
+    [ "$3" = list ] && { printf '[]'; return 0; }
+    return 0
+  }
+  _do_alert_exists() { return 0; }
+  _bs_heartbeat_name_exists() { return 0; }
+  post_calls_log="$BATS_TEST_TMPDIR/bs_post.log"
+  : > "$post_calls_log"
+  bs_api() {
+    if [ "$1" = GET ]; then echo '{"data":[]}'; return 0; fi
+    printf '%s\t%s\t%s\n' "$1" "$2" "$3" >> "$post_calls_log"
+  }
+  run reconcile_monitoring
+  [ "$status" -eq 0 ]
+  livez_line="$(grep '^POST	/monitors	' "$post_calls_log" | grep livez)"
+  readyz_line="$(grep '^POST	/monitors	' "$post_calls_log" | grep readyz)"
+  [ -n "$livez_line" ]
+  [ -n "$readyz_line" ]
+  [[ "$livez_line" == *'"monitor_type":"status"'* ]]
+  [[ "$livez_line" == *'"url":"https://staging.peppercheck.dev/livez"'* ]]
+  [[ "$livez_line" == *'"ssl_expiration":14'* ]]
+  [[ "$readyz_line" == *'"url":"https://staging.peppercheck.dev/readyz"'* ]]
+}
+
+@test "reconcile_monitoring (staging) creates monitors with every notification channel disabled" {
+  source "$ROOT/steps/90-monitoring.sh"
+  _monitoring_setup_gated
+  doctl_cli() {
+    [ "$1" = compute ] && { printf '12345'; return 0; }
+    [ "$3" = list ] && { printf '[]'; return 0; }
+    return 0
+  }
+  _do_alert_exists() { return 0; }
+  _bs_heartbeat_name_exists() { return 0; }
+  post_calls_log="$BATS_TEST_TMPDIR/bs_post.log"
+  : > "$post_calls_log"
+  bs_api() {
+    if [ "$1" = GET ]; then echo '{"data":[]}'; return 0; fi
+    printf '%s\t%s\t%s\n' "$1" "$2" "$3" >> "$post_calls_log"
+  }
+  run reconcile_monitoring
+  [ "$status" -eq 0 ]
+  livez_line="$(grep '^POST	/monitors	' "$post_calls_log" | grep livez)"
+  [[ "$livez_line" == *'"call":false'* ]]
+  [[ "$livez_line" == *'"sms":false'* ]]
+  [[ "$livez_line" == *'"email":false'* ]]
+  [[ "$livez_line" == *'"push":false'* ]]
+  [[ "$livez_line" == *'"critical_alert":false'* ]]
+}
+
+@test "reconcile_monitoring (production) creates monitors with no notification-channel fields at all" {
+  source "$ROOT/steps/90-monitoring.sh"
+  _monitoring_setup_gated
+  export ENV_NAME=production
+  doctl_cli() {
+    [ "$1" = compute ] && { printf '12345'; return 0; }
+    [ "$3" = list ] && { printf '[]'; return 0; }
+    return 0
+  }
+  _do_alert_exists() { return 0; }
+  _bs_heartbeat_name_exists() { return 0; }
+  post_calls_log="$BATS_TEST_TMPDIR/bs_post.log"
+  : > "$post_calls_log"
+  bs_api() {
+    if [ "$1" = GET ]; then echo '{"data":[]}'; return 0; fi
+    printf '%s\t%s\t%s\n' "$1" "$2" "$3" >> "$post_calls_log"
+  }
+  run reconcile_monitoring
+  [ "$status" -eq 0 ]
+  livez_line="$(grep '^POST	/monitors	' "$post_calls_log" | grep livez)"
+  [[ "$livez_line" != *'"call"'* ]]
+  [[ "$livez_line" != *'"email"'* ]]
+}
+
+@test "reconcile_monitoring does not create a monitor whose url already exists" {
+  source "$ROOT/steps/90-monitoring.sh"
+  _monitoring_setup_gated
+  doctl_cli() {
+    [ "$1" = compute ] && { printf '12345'; return 0; }
+    [ "$3" = list ] && { printf '[]'; return 0; }
+    return 0
+  }
+  _do_alert_exists() { return 0; }
+  _bs_heartbeat_name_exists() { return 0; }
+  _bs_monitor_url_exists() { return 0; }
+  post_calls_log="$BATS_TEST_TMPDIR/bs_post.log"
+  : > "$post_calls_log"
+  bs_api() {
+    if [ "$1" = GET ]; then echo '{"data":[]}'; return 0; fi
+    printf '%s\n' "$*" >> "$post_calls_log"
+  }
+  run reconcile_monitoring
+  [ "$status" -eq 0 ]
+  ! grep -q "/monitors" "$post_calls_log"
+}
+
+@test "reconcile_monitoring creates all 4 heartbeats when absent, with the documented period/grace" {
+  source "$ROOT/steps/90-monitoring.sh"
+  _monitoring_setup_gated
+  doctl_cli() {
+    [ "$1" = compute ] && { printf '12345'; return 0; }
+    [ "$3" = list ] && { printf '[]'; return 0; }
+    return 0
+  }
+  _do_alert_exists() { return 0; }
+  _bs_monitor_url_exists() { return 0; }
+  post_calls_log="$BATS_TEST_TMPDIR/bs_post.log"
+  : > "$post_calls_log"
+  bs_api() {
+    if [ "$1" = GET ]; then echo '{"data":[]}'; return 0; fi
+    printf '%s\t%s\t%s\n' "$1" "$2" "$3" >> "$post_calls_log"
+  }
+  run reconcile_monitoring
+  [ "$status" -eq 0 ]
+  [ "$(grep -c '^POST	/heartbeats	' "$post_calls_log")" -eq 4 ]
+  worker_line="$(grep '^POST	/heartbeats	' "$post_calls_log" | grep 'worker')"
+  backup_line="$(grep '^POST	/heartbeats	' "$post_calls_log" | grep 'backup')"
+  wal_line="$(grep '^POST	/heartbeats	' "$post_calls_log" | grep 'wal-freshness')"
+  host_line="$(grep '^POST	/heartbeats	' "$post_calls_log" | grep 'host-checks')"
+  [[ "$worker_line" == *'"name":"pc-staging worker"'* ]]
+  [[ "$worker_line" == *'"period":300'* ]]
+  [[ "$worker_line" == *'"grace":120'* ]]
+  [[ "$backup_line" == *'"period":86400'* ]]
+  [[ "$backup_line" == *'"grace":43200'* ]]
+  [[ "$wal_line" == *'"period":120'* ]]
+  [[ "$wal_line" == *'"grace":240'* ]]
+  [[ "$host_line" == *'"period":300'* ]]
+  [[ "$host_line" == *'"grace":600'* ]]
+  # staging: every heartbeat body also carries the disabled-channel fields
+  [[ "$worker_line" == *'"call":false'* ]]
+}
+
+@test "bs_api prints the body for GET but DISCARDS it for POST (no secret ping URL to stdout)" {
+  source "$ROOT/steps/90-monitoring.sh"
+  export BETTERSTACK_API_TOKEN=bs-token-x
+  # Stub the real curl bs_api shells out to; it echoes a body containing a
+  # secret-looking ping URL regardless of method.
+  curl() { printf '{"data":{"attributes":{"url":"https://uptime.betterstack.com/api/v1/heartbeat/SECRET-PING-abc123"}}}'; }
+  get_out="$(bs_api GET /heartbeats)"
+  [[ "$get_out" == *"SECRET-PING-abc123"* ]]  # GET must expose the body (list parsing needs it)
+  post_out="$(bs_api POST /heartbeats '{"name":"x"}')"
+  [ -z "$post_out" ]                          # POST must emit nothing
+  [[ "$post_out" != *"SECRET-PING"* ]]
+}
+
+@test "reconcile_monitoring never leaks a heartbeat create-response ping URL to stdout" {
+  source "$ROOT/steps/90-monitoring.sh"
+  _monitoring_setup_gated
+  doctl_cli() {
+    [ "$1" = compute ] && { printf '12345'; return 0; }
+    [ "$3" = list ] && { printf '[]'; return 0; }
+    return 0
+  }
+  _do_alert_exists() { return 0; }
+  _bs_monitor_url_exists() { return 0; }
+  # A realistic stub: GET returns an empty list (so all 4 heartbeats are
+  # created); every POST "succeeds" and, like the real API, its response body
+  # embeds a secret ping URL — which bs_api must swallow, not print.
+  bs_api() {
+    if [ "$1" = GET ]; then echo '{"data":[]}'; return 0; fi
+    # mimic the fixed wrapper: validate + DISCARD the body for non-GET
+    local _body='{"data":{"attributes":{"url":"https://uptime.betterstack.com/api/v1/heartbeat/SECRET-PING-xyz789"}}}'
+    : "$_body"
+    return 0
+  }
+  run reconcile_monitoring
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"SECRET-PING-xyz789"* ]]
+  [[ "$output" != *"api/v1/heartbeat/"* ]]
+}
+
+@test "reconcile_monitoring does not create a heartbeat whose name already exists" {
+  source "$ROOT/steps/90-monitoring.sh"
+  _monitoring_setup_gated
+  doctl_cli() {
+    [ "$1" = compute ] && { printf '12345'; return 0; }
+    [ "$3" = list ] && { printf '[]'; return 0; }
+    return 0
+  }
+  _do_alert_exists() { return 0; }
+  _bs_monitor_url_exists() { return 0; }
+  _bs_heartbeat_name_exists() { return 0; }
+  post_calls_log="$BATS_TEST_TMPDIR/bs_post.log"
+  : > "$post_calls_log"
+  bs_api() {
+    if [ "$1" = GET ]; then echo '{"data":[]}'; return 0; fi
+    printf '%s\n' "$*" >> "$post_calls_log"
+  }
+  run reconcile_monitoring
+  [ "$status" -eq 0 ]
+  ! grep -q "/heartbeats" "$post_calls_log"
+}
+
+@test "reconcile_monitoring propagates a Better Stack monitor-list failure as a hard error, without POSTing" {
+  source "$ROOT/steps/90-monitoring.sh"
+  _monitoring_setup_gated
+  bs_api() { [ "$1" = GET ] && return 1; printf '%s\n' "$*"; }
+  run reconcile_monitoring
+  [ "$status" -ne 0 ]
+  [ "$status" -ne 75 ]
+}
+
+@test "reconcile_monitoring fails closed, without creating a DO alert, when the doctl droplet-id query fails" {
+  source "$ROOT/steps/90-monitoring.sh"
+  _monitoring_setup_gated
+  bs_api() { echo '{"data":[]}'; }
+  _bs_monitor_url_exists() { return 0; }
+  _bs_heartbeat_name_exists() { return 0; }
+  create_calls_log="$BATS_TEST_TMPDIR/do_create.log"
+  : > "$create_calls_log"
+  doctl_cli() {
+    [ "$1" = compute ] && return 1
+    printf '%s\n' "$*" >> "$create_calls_log"
+  }
+  run reconcile_monitoring
+  [ "$status" -ne 0 ]
+  [ "$status" -ne 75 ]
+  [ ! -s "$create_calls_log" ]
+}
+
+@test "reconcile_monitoring does not create a DO alert policy that already exists" {
+  source "$ROOT/steps/90-monitoring.sh"
+  _monitoring_setup_gated
+  bs_api() { echo '{"data":[]}'; }
+  _bs_monitor_url_exists() { return 0; }
+  _bs_heartbeat_name_exists() { return 0; }
+  create_calls_log="$BATS_TEST_TMPDIR/do_create.log"
+  : > "$create_calls_log"
+  doctl_cli() {
+    [ "$1" = compute ] && { printf '12345'; return 0; }
+    if [ "$3" = list ]; then printf '[]'; else printf '%s\n' "$*" >> "$create_calls_log"; fi
+  }
+  _do_alert_exists() { return 0; }
+  run reconcile_monitoring
+  [ "$status" -eq 0 ]
+  [ ! -s "$create_calls_log" ]
+}
+
+@test "reconcile_monitoring creates all 3 DO host alert policies (cpu/memory/disk) when absent" {
+  source "$ROOT/steps/90-monitoring.sh"
+  _monitoring_setup_gated
+  bs_api() { echo '{"data":[]}'; }
+  _bs_monitor_url_exists() { return 0; }
+  _bs_heartbeat_name_exists() { return 0; }
+  create_calls_log="$BATS_TEST_TMPDIR/do_create.log"
+  : > "$create_calls_log"
+  doctl_cli() {
+    [ "$1" = compute ] && { printf '12345'; return 0; }
+    if [ "$3" = list ]; then printf '[]'; else printf '%s\n' "$*" >> "$create_calls_log"; fi
+  }
+  run reconcile_monitoring
+  [ "$status" -eq 0 ]
+  [ "$(wc -l < "$create_calls_log")" -eq 3 ]
+  grep -q "v1/insights/droplet/cpu" "$create_calls_log"
+  grep -q "v1/insights/droplet/memory_utilization_percent" "$create_calls_log"
+  grep -q "v1/insights/droplet/disk_utilization_percent" "$create_calls_log"
+  grep -q -- "--entities 12345" "$create_calls_log"
+  grep -q -- "--emails ops-staging@example.com" "$create_calls_log"
+}
