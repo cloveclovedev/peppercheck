@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"io"
 	"log/slog"
@@ -207,6 +208,17 @@ func TestMyTasksEnvelopeAndConfig(t *testing.T) {
 	_ = json.Unmarshal(rec.Body.Bytes(), &cfg)
 	if cfg.MaxRefereesPerTask != 2 || cfg.CancelDeadlineHours != 12 {
 		t.Fatalf("unexpected config %+v", cfg)
+	}
+}
+
+func TestMalformedCursorIs400(t *testing.T) {
+	h, _ := taskStack(t, fakeVerifier("sub-A"))
+	// A well-formed-timestamp cursor with a non-uuid id must be rejected as 400,
+	// not reach the uuid keyset comparison and surface as a 500.
+	bad := base64.RawURLEncoding.EncodeToString([]byte("2026-08-06T00:00:00Z|not-a-uuid"))
+	rec := do(t, h, "GET", "/api/v1/me/tasks?cursor="+bad, "sub-A", nil)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("malformed cursor: status %d, want 400; body=%s", rec.Code, rec.Body.String())
 	}
 }
 

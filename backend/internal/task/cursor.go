@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 // cursor is an opaque keyset position over the (created_at DESC, id DESC) sort
@@ -36,6 +38,11 @@ func decodeCursor(token string) (cursor, bool, error) {
 	}
 	ts, err := time.Parse(time.RFC3339Nano, parts[0])
 	if err != nil {
+		return cursor{}, false, fmt.Errorf("%w: malformed cursor", ErrValidation)
+	}
+	// The id is bound to a uuid comparison in the keyset query; validate it here
+	// so a crafted cursor is a 400, not a 500 from a Postgres uuid-syntax error.
+	if uuid.Validate(parts[1]) != nil {
 		return cursor{}, false, fmt.Errorf("%w: malformed cursor", ErrValidation)
 	}
 	return cursor{CreatedAt: ts, ID: parts[1]}, true, nil
