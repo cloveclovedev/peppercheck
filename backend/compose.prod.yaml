@@ -191,6 +191,13 @@ services:
       APP_ENV: ${PC_ENV}
       LOG_LEVEL: ${LOG_LEVEL:-info}
       DATABASE_URL_FILE: /run/secrets/database_url
+      # The worker sends FCM push (match/assignment/deadline notifications), so
+      # it -- unlike the api -- needs the Firebase project id and a service
+      # account. In production a missing/broken FCM client is fatal at startup
+      # (cmd/peppercheck buildFCMClient); other environments fall back to a
+      # no-op sender.
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:?FIREBASE_PROJECT_ID is required (worker FCM sender)}
+      GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/firebase_service_account
       # The worker never uses this (internal/web only mounts in the api
       # command), but config.Load() is shared by both commands and fails
       # closed if it's missing -- see the api service's comment above.
@@ -198,6 +205,7 @@ services:
     secrets:
       - database_url
       - web_form_signing_key
+      - firebase_service_account
     depends_on:
       postgres:
         condition: service_healthy
@@ -278,6 +286,11 @@ secrets:
     file: ./secrets/migrator_database_url
   web_form_signing_key:
     file: ./secrets/web_form_signing_key
+  # Firebase service-account JSON for the worker's FCM sender (P4a-D18). Rendered
+  # to ./secrets/ at deploy from the deploy secret store, like every secret here.
+  # Only the worker mounts it; the api never sends FCM.
+  firebase_service_account:
+    file: ./secrets/firebase_service_account
 
 volumes:
   pgdata:

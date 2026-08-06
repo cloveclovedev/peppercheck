@@ -33,6 +33,7 @@ case "$name" in
   b2_key_id | \
   b2_key_secret | \
   web_form_signing_key | \
+  firebase_service_account | \
   ghcr_token)
     ;;
   *)

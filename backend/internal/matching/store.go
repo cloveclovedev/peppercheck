@@ -21,10 +21,22 @@ type Store struct {
 // NewStore builds a Store over an open database handle.
 func NewStore(db *database.Handle) *Store { return &Store{db: db} }
 
-// LoadConfig reads the singleton matching configuration.
+// LoadConfig reads the singleton matching configuration on the pool.
 func (s *Store) LoadConfig(ctx context.Context) (Config, error) {
+	return s.loadConfig(ctx, s.db)
+}
+
+// LoadConfigInTx reads the config through the caller's transaction. Callers
+// already inside a WithTx MUST use this, not LoadConfig: reading through the
+// pool while holding a transaction's connection needs a second pooled
+// connection, so enough concurrent in-transaction reads would deadlock the pool.
+func (s *Store) LoadConfigInTx(ctx context.Context, q database.Querier) (Config, error) {
+	return s.loadConfig(ctx, q)
+}
+
+func (s *Store) loadConfig(ctx context.Context, q database.Querier) (Config, error) {
 	var c Config
-	err := s.db.QueryRowContext(ctx, `
+	err := q.QueryRowContext(ctx, `
 		SELECT open_deadline_hours, cancel_deadline_hours, rematch_cutoff_hours,
 		       max_referees_per_task, point_cost_per_request
 		FROM public.matching_config WHERE id = true`).
@@ -141,6 +153,196 @@ func (s *Store) RequestContext(ctx context.Context, q database.Querier, requestI
 	}
 	rc.TaskerID = tasker.String
 	return rc, nil
+}
+
+// cancelRow is the request state the cancel use case guards on.
+type cancelRow struct {
+	Status           string
+	MatchedRefereeID sql.NullString
+	TaskID           string
+	DueDate          sql.NullTime
+	PointSource      string
+}
+
+// GetRequestForCancelInTx loads and row-locks a request (with its task's due
+// date) so the cancel use case can validate the caller/status/deadline without a
+// concurrent match or sweep changing it mid-transaction.
+func (s *Store) GetRequestForCancelInTx(ctx context.Context, q database.Querier, requestID string) (cancelRow, error) {
+	var c cancelRow
+	err := q.QueryRowContext(ctx, `
+		SELECT r.status, r.matched_referee_id, r.task_id, t.due_date, r.point_source
+		FROM public.referee_requests r
+		JOIN public.tasks t ON t.id = r.task_id
+		WHERE r.id = $1
+		FOR UPDATE OF r`, requestID).
+		Scan(&c.Status, &c.MatchedRefereeID, &c.TaskID, &c.DueDate, &c.PointSource)
+	if err != nil {
+		return cancelRow{}, err // caller distinguishes sql.ErrNoRows
+	}
+	return c, nil
+}
+
+// SetStatusInTx sets a request's status unconditionally (the caller has already
+// validated the transition under a row lock).
+func (s *Store) SetStatusInTx(ctx context.Context, q database.Querier, requestID, status string) error {
+	if _, err := q.ExecContext(ctx,
+		`UPDATE public.referee_requests SET status = $2, updated_at = now() WHERE id = $1`,
+		requestID, status); err != nil {
+		return fmt.Errorf("set request status: %w", err)
+	}
+	return nil
+}
+
+// SetPointSourceInTx stamps the request's funding source (P4a-D17: a cancel's
+// replacement inherits it, and publish records the locker's source). The no-op
+// locker returns 'regular', so this is a no-op stamp in 4a.
+func (s *Store) SetPointSourceInTx(ctx context.Context, q database.Querier, requestID, source string) error {
+	if _, err := q.ExecContext(ctx,
+		`UPDATE public.referee_requests SET point_source = $2::public.point_source_type, updated_at = now() WHERE id = $1`,
+		requestID, source); err != nil {
+		return fmt.Errorf("set point source: %w", err)
+	}
+	return nil
+}
+
+// --- referee availability CRUD (all user-scoped) --------------------------
+
+// ListTimeSlots returns the referee's weekly availability slots.
+func (s *Store) ListTimeSlots(ctx context.Context, userID string) ([]TimeSlot, error) {
+	rows, err := s.db.QueryContext(ctx,
+		`SELECT id, dow, start_min, end_min, is_active
+		 FROM public.referee_available_time_slots WHERE user_id = $1
+		 ORDER BY dow, start_min`, userID)
+	if err != nil {
+		return nil, fmt.Errorf("list time slots: %w", err)
+	}
+	defer rows.Close()
+	var out []TimeSlot
+	for rows.Next() {
+		var t TimeSlot
+		if err := rows.Scan(&t.ID, &t.DOW, &t.StartMin, &t.EndMin, &t.IsActive); err != nil {
+			return nil, err
+		}
+		out = append(out, t)
+	}
+	return out, rows.Err()
+}
+
+// CreateTimeSlot inserts a slot for the referee. A duplicate (user, dow, start)
+// maps to ErrConflict.
+func (s *Store) CreateTimeSlot(ctx context.Context, userID string, in TimeSlot) (TimeSlot, error) {
+	out := in
+	err := s.db.QueryRowContext(ctx,
+		`INSERT INTO public.referee_available_time_slots (user_id, dow, start_min, end_min, is_active)
+		 VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+		userID, in.DOW, in.StartMin, in.EndMin, in.IsActive).Scan(&out.ID)
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			return TimeSlot{}, ErrConflict
+		}
+		return TimeSlot{}, fmt.Errorf("create time slot: %w", err)
+	}
+	return out, nil
+}
+
+// UpdateTimeSlot updates a slot the referee owns; a missing/foreign id is
+// ErrNotFound. A collision with another of the referee's slots is ErrConflict.
+func (s *Store) UpdateTimeSlot(ctx context.Context, userID, id string, in TimeSlot) error {
+	res, err := s.db.ExecContext(ctx,
+		`UPDATE public.referee_available_time_slots
+		 SET dow = $3, start_min = $4, end_min = $5, is_active = $6, updated_at = now()
+		 WHERE id = $1 AND user_id = $2`,
+		id, userID, in.DOW, in.StartMin, in.EndMin, in.IsActive)
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			return ErrConflict
+		}
+		return fmt.Errorf("update time slot: %w", err)
+	}
+	return rowsAffectedOrNotFound(res)
+}
+
+// DeleteTimeSlot removes a slot the referee owns; a missing/foreign id is ErrNotFound.
+func (s *Store) DeleteTimeSlot(ctx context.Context, userID, id string) error {
+	res, err := s.db.ExecContext(ctx,
+		`DELETE FROM public.referee_available_time_slots WHERE id = $1 AND user_id = $2`, id, userID)
+	if err != nil {
+		return fmt.Errorf("delete time slot: %w", err)
+	}
+	return rowsAffectedOrNotFound(res)
+}
+
+// ListBlockedDates returns the referee's blocked date ranges.
+func (s *Store) ListBlockedDates(ctx context.Context, userID string) ([]BlockedDate, error) {
+	rows, err := s.db.QueryContext(ctx,
+		`SELECT id, start_date, end_date, reason
+		 FROM public.referee_blocked_dates WHERE user_id = $1
+		 ORDER BY start_date`, userID)
+	if err != nil {
+		return nil, fmt.Errorf("list blocked dates: %w", err)
+	}
+	defer rows.Close()
+	var out []BlockedDate
+	for rows.Next() {
+		var b BlockedDate
+		var reason sql.NullString
+		if err := rows.Scan(&b.ID, &b.StartDate, &b.EndDate, &reason); err != nil {
+			return nil, err
+		}
+		if reason.Valid {
+			b.Reason = &reason.String
+		}
+		out = append(out, b)
+	}
+	return out, rows.Err()
+}
+
+// CreateBlockedDate inserts a blocked range for the referee.
+func (s *Store) CreateBlockedDate(ctx context.Context, userID string, in BlockedDate) (BlockedDate, error) {
+	out := in
+	err := s.db.QueryRowContext(ctx,
+		`INSERT INTO public.referee_blocked_dates (user_id, start_date, end_date, reason)
+		 VALUES ($1, $2, $3, $4) RETURNING id`,
+		userID, in.StartDate, in.EndDate, in.Reason).Scan(&out.ID)
+	if err != nil {
+		return BlockedDate{}, fmt.Errorf("create blocked date: %w", err)
+	}
+	return out, nil
+}
+
+// UpdateBlockedDate updates a range the referee owns; a missing/foreign id is ErrNotFound.
+func (s *Store) UpdateBlockedDate(ctx context.Context, userID, id string, in BlockedDate) error {
+	res, err := s.db.ExecContext(ctx,
+		`UPDATE public.referee_blocked_dates
+		 SET start_date = $3, end_date = $4, reason = $5, updated_at = now()
+		 WHERE id = $1 AND user_id = $2`,
+		id, userID, in.StartDate, in.EndDate, in.Reason)
+	if err != nil {
+		return fmt.Errorf("update blocked date: %w", err)
+	}
+	return rowsAffectedOrNotFound(res)
+}
+
+// DeleteBlockedDate removes a range the referee owns; a missing/foreign id is ErrNotFound.
+func (s *Store) DeleteBlockedDate(ctx context.Context, userID, id string) error {
+	res, err := s.db.ExecContext(ctx,
+		`DELETE FROM public.referee_blocked_dates WHERE id = $1 AND user_id = $2`, id, userID)
+	if err != nil {
+		return fmt.Errorf("delete blocked date: %w", err)
+	}
+	return rowsAffectedOrNotFound(res)
+}
+
+// rowsAffectedOrNotFound turns a zero-row write into ErrNotFound so a
+// missing-or-foreign id reads as 404 without leaking whether it exists.
+func rowsAffectedOrNotFound(res sql.Result) error {
+	n, _ := res.RowsAffected()
+	if n == 0 {
+		return ErrNotFound
+	}
+	return nil
 }
 
 // PastCutoffPendingIDs lists pending requests whose task is within

@@ -14,6 +14,7 @@ package fcm
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	firebase "firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/messaging"
@@ -61,6 +62,24 @@ func New(ctx context.Context, projectID string) (Client, error) {
 		return nil, fmt.Errorf("messaging client: %w", err)
 	}
 	return &client{msg: m}, nil
+}
+
+// noopClient drops every send with a warning. It is the fail-open fallback for
+// environments without Firebase credentials (local/dev), so the worker still
+// runs end-to-end without Firebase; production wires a real fcm.New client (and
+// startup treats a missing client as fatal). A richer local stub — one that
+// records sends for inspection — is tracked separately (#525).
+type noopClient struct{ logger *slog.Logger }
+
+// NewNoop returns an FCM client that drops sends, logging each at warn level.
+func NewNoop(logger *slog.Logger) Client { return noopClient{logger: logger} }
+
+func (n noopClient) Send(_ context.Context, tokens []string, m Message) (SendResult, error) {
+	if n.logger != nil {
+		n.logger.Warn("FCM not configured; notification dropped",
+			"titleLocKey", m.TitleLocKey, "recipients", len(tokens))
+	}
+	return SendResult{}, nil
 }
 
 // buildMulticast builds a loc-key multicast message for Android and iOS. The

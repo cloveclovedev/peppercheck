@@ -17,18 +17,32 @@ const JobKindMatch = "match_referee_request"
 const JobKindSweep = "sweep_pending_requests"
 
 // SweepInterval is the cadence of the self-rescheduling sweep.
-const SweepInterval = time.Minute
+const SweepInterval = time.Hour
 
-// scheduleNextSweep enqueues the next sweep occurrence, keyed by the target
-// bucket so repeated calls within one interval (a retried run) collapse to a
-// single job. HandleSweep calls this first, before any processing, so a run that
-// fails partway cannot break the recurring chain.
+// sweepKey is a per-bucket idempotency key so at most one sweep is scheduled per
+// interval, no matter how many workers (or retries) try to enqueue it.
+func sweepKey(runAt time.Time) string {
+	return JobKindSweep + ":" + runAt.UTC().Truncate(SweepInterval).Format(time.RFC3339)
+}
+
+// scheduleNextSweep enqueues the sweep at the next interval boundary. The
+// bucketed key + ON CONFLICT DO NOTHING makes concurrent/duplicate schedules a
+// no-op, so the chain never forks or dies. HandleSweep calls this first, before
+// any processing, so a run that fails partway cannot break the recurring chain.
 func (s *Service) scheduleNextSweep(ctx context.Context) error {
-	next := time.Now().Add(SweepInterval).Truncate(SweepInterval).UTC()
-	_, err := s.jobs.Enqueue(ctx, JobKindSweep, map[string]string{}, jobs.EnqueueOpts{
-		RunAt:          next,
-		IdempotencyKey: "sweep:" + next.Format(time.RFC3339),
-	})
+	next := time.Now().Truncate(SweepInterval).Add(SweepInterval)
+	_, err := s.jobs.Enqueue(ctx, JobKindSweep, struct{}{},
+		jobs.EnqueueOpts{RunAt: next, IdempotencyKey: sweepKey(next)})
+	return err
+}
+
+// BootstrapSweep seeds the current interval's sweep on startup. It is idempotent
+// across restarts and multiple workers (the bucketed key), so a worker that
+// comes up mid-interval re-seeds the chain without duplicating it.
+func (s *Service) BootstrapSweep(ctx context.Context) error {
+	now := time.Now().Truncate(SweepInterval)
+	_, err := s.jobs.Enqueue(ctx, JobKindSweep, struct{}{},
+		jobs.EnqueueOpts{RunAt: now, IdempotencyKey: sweepKey(now)})
 	return err
 }
 

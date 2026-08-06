@@ -11,9 +11,11 @@ import (
 	"github.com/cloveclovedev/peppercheck/backend/internal/core/config"
 	"github.com/cloveclovedev/peppercheck/backend/internal/core/httpserver"
 	"github.com/cloveclovedev/peppercheck/backend/internal/identity"
+	"github.com/cloveclovedev/peppercheck/backend/internal/matching"
 	"github.com/cloveclovedev/peppercheck/backend/internal/notification"
 	"github.com/cloveclovedev/peppercheck/backend/internal/platform/auth"
 	"github.com/cloveclovedev/peppercheck/backend/internal/profile"
+	"github.com/cloveclovedev/peppercheck/backend/internal/task"
 )
 
 // Deps are the runtime dependencies the api handler wires into routes.
@@ -23,6 +25,8 @@ type Deps struct {
 	Identity     *identity.Handler
 	Profile      *profile.Handler
 	Notification *notification.Handler
+	Task         *task.Handler                   // task authoring (draft CRUD + publish)
+	Referee      *matching.Handler               // referee availability, assignments, cancel
 	ResolveUser  func(http.Handler) http.Handler // identity.NewMiddleware: verified Identity -> internal User in ctx
 	Logger       *slog.Logger                    // used by the auth middleware; Run injects the run logger when nil
 	Web          http.Handler                    // server-rendered public web (internal/web); mounted as the catch-all
@@ -67,6 +71,33 @@ func buildHandler(deps Deps) http.Handler {
 			mux.Handle("PUT /api/v1/me/device-push-tokens", chain(deps.Notification.PutToken))
 			mux.Handle("DELETE /api/v1/me/device-push-tokens", chain(deps.Notification.DeleteToken))
 		}
+		if deps.Task != nil {
+			mux.Handle("POST /api/v1/tasks", chain(deps.Task.PostTask))
+			mux.Handle("GET /api/v1/tasks/{id}", chain(deps.Task.GetTask))
+			mux.Handle("PATCH /api/v1/tasks/{id}", chain(deps.Task.PatchTask))
+			mux.Handle("DELETE /api/v1/tasks/{id}", chain(deps.Task.DeleteTask))
+			mux.Handle("POST /api/v1/tasks/{id}/publish", chain(deps.Task.PostPublish))
+			mux.Handle("GET /api/v1/me/tasks", chain(deps.Task.GetMyTasks))
+			// Assignments return Task envelopes, so the task handler owns them.
+			mux.Handle("GET /api/v1/me/assignments", chain(deps.Task.GetAssignments))
+		}
+		if deps.Referee != nil {
+			mux.Handle("GET /api/v1/me/availability/time-slots", chain(deps.Referee.GetTimeSlots))
+			mux.Handle("POST /api/v1/me/availability/time-slots", chain(deps.Referee.PostTimeSlot))
+			mux.Handle("PUT /api/v1/me/availability/time-slots/{id}", chain(deps.Referee.PutTimeSlot))
+			mux.Handle("DELETE /api/v1/me/availability/time-slots/{id}", chain(deps.Referee.DeleteTimeSlot))
+			mux.Handle("GET /api/v1/me/availability/blocked-dates", chain(deps.Referee.GetBlockedDates))
+			mux.Handle("POST /api/v1/me/availability/blocked-dates", chain(deps.Referee.PostBlockedDate))
+			mux.Handle("PUT /api/v1/me/availability/blocked-dates/{id}", chain(deps.Referee.PutBlockedDate))
+			mux.Handle("DELETE /api/v1/me/availability/blocked-dates/{id}", chain(deps.Referee.DeleteBlockedDate))
+			mux.Handle("POST /api/v1/referee-requests/{id}/cancel", chain(deps.Referee.PostCancel))
+		}
+	}
+
+	// Public (no auth): the matching configuration the client needs before
+	// authenticating a publish/withdraw flow.
+	if deps.Referee != nil {
+		mux.Handle("GET /api/v1/matching/config", http.HandlerFunc(deps.Referee.GetConfig))
 	}
 
 	// Methodless /api/ fallback: without this, a request that hits a

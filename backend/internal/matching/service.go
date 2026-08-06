@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"hash/fnv"
+	"time"
 
 	"github.com/cloveclovedev/peppercheck/backend/internal/core/database"
 	"github.com/cloveclovedev/peppercheck/backend/internal/core/jobs"
@@ -155,6 +156,112 @@ func (s *Service) maybeNotifyCancelledPending(ctx context.Context, tx database.Q
 		"notification_matching_cancelled_pending_tasker", []string{rc.Title},
 		map[string]string{"route": "/tasks/" + rc.TaskID},
 		"cancelled_pending:"+requestID)
+}
+
+// PublishBounds reports the two matching-config values the task publish path
+// needs: the minimum publish lead time (open_deadline_hours) and the maximum
+// referee count per task.
+func (s *Service) PublishBounds(ctx context.Context) (minLeadHours, maxReferees int, err error) {
+	cfg, err := s.store.LoadConfig(ctx)
+	if err != nil {
+		return 0, 0, err
+	}
+	return cfg.OpenDeadlineHours, cfg.MaxRefereesPerTask, nil
+}
+
+// CreateInTx creates count pending referee requests for a task and enqueues a
+// match job per request, all in the caller's transaction (the publish outbox).
+// Each request locks its cost points via the seam and records the returned
+// funding source (P4a-D17); a failed lock rolls back the whole publish.
+func (s *Service) CreateInTx(ctx context.Context, tx database.Querier, taskID, taskerID string, count int) error {
+	// Read config through the caller's tx, not the pool: this runs while the
+	// publish transaction already holds a connection, and a pool read here would
+	// need a second one (pool-exhaustion deadlock under concurrent publishes).
+	cfg, err := s.store.LoadConfigInTx(ctx, tx)
+	if err != nil {
+		return err
+	}
+	if count < 1 || count > cfg.MaxRefereesPerTask {
+		return fmt.Errorf("%w: refereeCount must be 1..%d", ErrValidation, cfg.MaxRefereesPerTask)
+	}
+	for i := 0; i < count; i++ {
+		reqID, err := s.store.InsertRequestInTx(ctx, tx, taskID)
+		if err != nil {
+			return err
+		}
+		source, err := s.points.LockForRequestInTx(ctx, tx, taskerID, reqID, cfg.PointCostPerRequest)
+		if err != nil {
+			return err
+		}
+		if err := s.store.SetPointSourceInTx(ctx, tx, reqID, source); err != nil {
+			return err
+		}
+		if err := s.EnqueueMatchInTx(ctx, tx, reqID); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// Cancel lets the assigned referee drop an accepted request before the cancel
+// deadline: it marks the request cancelled, removes the awaiting_evidence
+// judgement, inserts a fresh pending replacement carrying the original funding
+// source (P4a-D17), and enqueues a match — all atomically. Only the matched
+// referee may cancel, only while the request is still accepted with its
+// judgement un-progressed, and only before due minus cancel_deadline_hours.
+// It returns the affected task's id so the handler can render the updated Task.
+func (s *Service) Cancel(ctx context.Context, requestID, callerID string) (taskID string, err error) {
+	cfg, err := s.store.LoadConfig(ctx)
+	if err != nil {
+		return "", err
+	}
+	err = database.WithTx(ctx, s.db, func(tx database.Querier) error {
+		req, err := s.store.GetRequestForCancelInTx(ctx, tx, requestID)
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrNotFound
+		}
+		if err != nil {
+			return err
+		}
+		if !req.MatchedRefereeID.Valid || req.MatchedRefereeID.String != callerID {
+			return ErrForbidden
+		}
+		if req.Status != "accepted" {
+			return ErrConflict
+		}
+		if !req.DueDate.Valid {
+			return ErrConflict
+		}
+		if req.DueDate.Time.Add(-time.Duration(cfg.CancelDeadlineHours) * time.Hour).Before(time.Now()) {
+			return ErrCancelDeadlinePassed
+		}
+		if err := s.store.SetStatusInTx(ctx, tx, requestID, "cancelled"); err != nil {
+			return err
+		}
+		deleted, err := s.judgements.DeleteIfAwaitingEvidenceInTx(ctx, tx, requestID)
+		if err != nil {
+			return err
+		}
+		if !deleted {
+			return ErrConflict // evidence review has progressed; cannot cancel
+		}
+		newID, err := s.store.InsertRequestInTx(ctx, tx, req.TaskID)
+		if err != nil {
+			return err
+		}
+		if err := s.store.SetPointSourceInTx(ctx, tx, newID, req.PointSource); err != nil {
+			return err
+		}
+		if err := s.EnqueueMatchInTx(ctx, tx, newID); err != nil {
+			return err
+		}
+		taskID = req.TaskID
+		return nil
+	})
+	if err != nil {
+		return "", err
+	}
+	return taskID, nil
 }
 
 // HandleSweep is the recurring worker pass. It first reschedules itself (so a

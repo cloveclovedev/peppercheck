@@ -86,7 +86,8 @@ teardown() {
 @test "write-secret: accepts every allowlisted name" {
   export DEPLOY_SECRET_DIR="$WORKDIR/secrets"
   for name in database_url postgres_superuser_pw postgres_app_pw postgres_migrator_pw \
-    postgres_backup_pw migrator_database_url pgbackrest_cipher b2_key_id b2_key_secret ghcr_token; do
+    postgres_backup_pw migrator_database_url pgbackrest_cipher b2_key_id b2_key_secret \
+    web_form_signing_key firebase_service_account ghcr_token; do
     run bash -c "printf %s 'x' | '$SCRIPT_DIR/write-secret.sh' '$name'"
     [ "$status" -eq 0 ]
     [ -f "$DEPLOY_SECRET_DIR/$name" ]
