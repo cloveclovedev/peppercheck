@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
+import 'package:peppercheck_flutter/features/auth/application/auth_state.dart';
+import 'package:peppercheck_flutter/features/auth/domain/app_user.dart';
 import 'package:peppercheck_flutter/features/home/ui/home_view_model.dart';
 import 'package:peppercheck_flutter/features/matching/data/matching_repository.dart';
 import 'package:peppercheck_flutter/features/matching/domain/referee_request.dart';
@@ -25,6 +27,18 @@ Task _task({
   refereeRequests: refereeRequests,
 );
 
+RefereeRequest _request({
+  String id = 'r_me',
+  required String status,
+  required String refereeId,
+}) => RefereeRequest(
+  id: id,
+  taskId: 't1',
+  status: status,
+  matchedRefereeId: refereeId,
+  createdAt: '2026-07-25T00:00:00Z',
+);
+
 @GenerateNiceMocks([MockSpec<TaskRepository>(), MockSpec<MatchingRepository>()])
 void main() {
   late MockTaskRepository taskRepository;
@@ -40,6 +54,14 @@ void main() {
       overrides: [
         taskRepositoryProvider.overrideWithValue(taskRepository),
         matchingRepositoryProvider.overrideWithValue(matchingRepository),
+        currentAppUserProvider.overrideWith(
+          (ref) async => AppUser(
+            internalUserId: 'u_me',
+            issuer: 'iss',
+            status: 'active',
+            createdAt: DateTime.utc(2026),
+          ),
+        ),
       ],
     );
     addTearDown(container.dispose);
@@ -104,13 +126,27 @@ void main() {
     expect(tasks.map((t) => t.id), ['sooner', 'later', 'undated']);
   });
 
-  test('activeRefereeTasks drops finished assignments', () async {
+  test('activeRefereeTasks keeps only my still-accepted assignments', () async {
     when(matchingRepository.fetchMyAssignments()).thenAnswer(
-      (_) async => [_task(id: 'done', status: 'closed'), _task(id: 'live')],
+      (_) async => [
+        // My work here is done, even though the task stays open for a sibling
+        // referee.
+        _task(
+          id: 'mine_done',
+          refereeRequests: [
+            _request(status: 'closed', refereeId: 'u_me'),
+            _request(id: 'r_other', status: 'accepted', refereeId: 'u_other'),
+          ],
+        ),
+        _task(
+          id: 'mine_live',
+          refereeRequests: [_request(status: 'accepted', refereeId: 'u_me')],
+        ),
+      ],
     );
 
     final tasks = await makeContainer().read(activeRefereeTasksProvider.future);
 
-    expect(tasks.map((t) => t.id), ['live']);
+    expect(tasks.map((t) => t.id), ['mine_live']);
   });
 }

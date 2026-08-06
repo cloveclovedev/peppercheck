@@ -57,18 +57,18 @@ final class ActiveUserTasksProvider
 
 String _$activeUserTasksHash() => r'294983aba245df0e741fdb0e4a4361730a2a0124';
 
-/// Tasks the signed-in user referees. Each row carries the caller's real
-/// referee request as served by `GET /me/assignments`. That endpoint takes no
-/// status filter and also reports finished assignments, so closed tasks are
-/// dropped here to keep the home list to what the referee still acts on.
+/// Tasks the signed-in user referees. `GET /me/assignments` reports every task
+/// the caller has an accepted *or* closed request on, and a task stays open
+/// while a sibling referee is still working, so the caller's own request — not
+/// the task's status — decides whether the assignment is still live.
 
 @ProviderFor(activeRefereeTasks)
 const activeRefereeTasksProvider = ActiveRefereeTasksProvider._();
 
-/// Tasks the signed-in user referees. Each row carries the caller's real
-/// referee request as served by `GET /me/assignments`. That endpoint takes no
-/// status filter and also reports finished assignments, so closed tasks are
-/// dropped here to keep the home list to what the referee still acts on.
+/// Tasks the signed-in user referees. `GET /me/assignments` reports every task
+/// the caller has an accepted *or* closed request on, and a task stays open
+/// while a sibling referee is still working, so the caller's own request — not
+/// the task's status — decides whether the assignment is still live.
 
 final class ActiveRefereeTasksProvider
     extends
@@ -78,10 +78,10 @@ final class ActiveRefereeTasksProvider
           FutureOr<List<Task>>
         >
     with $FutureModifier<List<Task>>, $FutureProvider<List<Task>> {
-  /// Tasks the signed-in user referees. Each row carries the caller's real
-  /// referee request as served by `GET /me/assignments`. That endpoint takes no
-  /// status filter and also reports finished assignments, so closed tasks are
-  /// dropped here to keep the home list to what the referee still acts on.
+  /// Tasks the signed-in user referees. `GET /me/assignments` reports every task
+  /// the caller has an accepted *or* closed request on, and a task stays open
+  /// while a sibling referee is still working, so the caller's own request — not
+  /// the task's status — decides whether the assignment is still live.
   const ActiveRefereeTasksProvider._()
     : super(
         from: null,
@@ -108,4 +108,4 @@ final class ActiveRefereeTasksProvider
 }
 
 String _$activeRefereeTasksHash() =>
-    r'6c479d77d14fe9f24f204988290d23fa85ca0f7d';
+    r'1a918ef1cefc2e38e5a6f0656b2b3327f2f07026';
