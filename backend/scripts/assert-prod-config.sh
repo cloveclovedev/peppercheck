@@ -64,6 +64,7 @@ readonly SECRET_NAMES=(
   database_url
   migrator_database_url
   web_form_signing_key
+  firebase_service_account
 )
 mkdir -p "$SECRETS_DIR"
 for name in "${SECRET_NAMES[@]}"; do
@@ -81,6 +82,19 @@ echo "$config_json" | jq -e '(.services.api.depends_on // {}) | has("migrate") |
 
 echo "==> asserting postgres publishes no host ports"
 echo "$config_json" | jq -e '(.services.postgres.ports // []) | length == 0' >/dev/null
+
+# The worker sends FCM (P4a-D18): it must mount the firebase_service_account
+# secret and point GOOGLE_APPLICATION_CREDENTIALS at it, with FIREBASE_PROJECT_ID
+# set. The api must NOT mount that secret -- it never sends FCM.
+echo "==> asserting worker mounts firebase_service_account + FCM env"
+echo "$config_json" | jq -e '
+  (.services.worker.secrets | map(if type=="object" then .source else . end) | index("firebase_service_account")) != null
+  and (.services.worker.environment.GOOGLE_APPLICATION_CREDENTIALS == "/run/secrets/firebase_service_account")
+  and (.services.worker.environment | has("FIREBASE_PROJECT_ID"))' >/dev/null
+
+echo "==> asserting api does NOT mount firebase_service_account"
+echo "$config_json" | jq -e '
+  (.services.api.secrets // [] | map(if type=="object" then .source else . end) | index("firebase_service_account")) == null' >/dev/null
 
 # `migrate` is `profiles: ["deploy"]`-only, so the default `config` resolution
 # above never includes it -- a `build:` added to that service later would

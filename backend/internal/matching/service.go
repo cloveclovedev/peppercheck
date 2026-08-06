@@ -158,6 +158,48 @@ func (s *Service) maybeNotifyCancelledPending(ctx context.Context, tx database.Q
 		"cancelled_pending:"+requestID)
 }
 
+// PublishBounds reports the two matching-config values the task publish path
+// needs: the minimum publish lead time (open_deadline_hours) and the maximum
+// referee count per task.
+func (s *Service) PublishBounds(ctx context.Context) (minLeadHours, maxReferees int, err error) {
+	cfg, err := s.store.LoadConfig(ctx)
+	if err != nil {
+		return 0, 0, err
+	}
+	return cfg.OpenDeadlineHours, cfg.MaxRefereesPerTask, nil
+}
+
+// CreateInTx creates count pending referee requests for a task and enqueues a
+// match job per request, all in the caller's transaction (the publish outbox).
+// Each request locks its cost points via the seam and records the returned
+// funding source (P4a-D17); a failed lock rolls back the whole publish.
+func (s *Service) CreateInTx(ctx context.Context, tx database.Querier, taskID, taskerID string, count int) error {
+	cfg, err := s.store.LoadConfig(ctx)
+	if err != nil {
+		return err
+	}
+	if count < 1 || count > cfg.MaxRefereesPerTask {
+		return fmt.Errorf("%w: refereeCount must be 1..%d", ErrValidation, cfg.MaxRefereesPerTask)
+	}
+	for i := 0; i < count; i++ {
+		reqID, err := s.store.InsertRequestInTx(ctx, tx, taskID)
+		if err != nil {
+			return err
+		}
+		source, err := s.points.LockForRequestInTx(ctx, tx, taskerID, reqID, cfg.PointCostPerRequest)
+		if err != nil {
+			return err
+		}
+		if err := s.store.SetPointSourceInTx(ctx, tx, reqID, source); err != nil {
+			return err
+		}
+		if err := s.EnqueueMatchInTx(ctx, tx, reqID); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // Cancel lets the assigned referee drop an accepted request before the cancel
 // deadline: it marks the request cancelled, removes the awaiting_evidence
 // judgement, inserts a fresh pending replacement carrying the original funding

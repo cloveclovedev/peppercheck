@@ -5,6 +5,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -17,13 +18,18 @@ import (
 	"github.com/cloveclovedev/peppercheck/backend/internal/api"
 	"github.com/cloveclovedev/peppercheck/backend/internal/core/config"
 	"github.com/cloveclovedev/peppercheck/backend/internal/core/database"
+	"github.com/cloveclovedev/peppercheck/backend/internal/core/jobs"
 	"github.com/cloveclovedev/peppercheck/backend/internal/core/logging"
 	"github.com/cloveclovedev/peppercheck/backend/internal/core/ratelimit"
 	"github.com/cloveclovedev/peppercheck/backend/internal/identity"
+	"github.com/cloveclovedev/peppercheck/backend/internal/judgement"
+	"github.com/cloveclovedev/peppercheck/backend/internal/matching"
 	"github.com/cloveclovedev/peppercheck/backend/internal/notification"
 	"github.com/cloveclovedev/peppercheck/backend/internal/platform/auth"
+	"github.com/cloveclovedev/peppercheck/backend/internal/platform/fcm"
 	"github.com/cloveclovedev/peppercheck/backend/internal/platform/r2"
 	"github.com/cloveclovedev/peppercheck/backend/internal/profile"
+	"github.com/cloveclovedev/peppercheck/backend/internal/task"
 	"github.com/cloveclovedev/peppercheck/backend/internal/web"
 	"github.com/cloveclovedev/peppercheck/backend/internal/worker"
 )
@@ -91,6 +97,20 @@ func main() {
 		profileSvc := profile.NewService(profileStore, avatarUploader, cfg.R2PublicDomain, avatarLimiter, logger)
 		notifSvc := notification.NewService(notifStore)
 
+		// Task authoring + referee matching. The api never sends FCM (that is the
+		// worker's job), so its matching service takes a no-op-FCM notifier: the
+		// referee/task HTTP paths only enqueue match jobs, never push. Points and
+		// obligations are the Phase 5 seams (no-ops in 4a).
+		matchingStore := matching.NewStore(db)
+		matchingSvc := matching.NewService(
+			db, matchingStore,
+			matching.NewNoopPointLocker(), matching.NewNoObligations(),
+			judgement.NewProvisioner(),
+			notification.NewSender(notifStore, fcm.NewNoop(logger)),
+			jobs.NewStore(db),
+		)
+		taskSvc := task.NewService(db, task.NewStore(db), matchingSvc)
+
 		// identity.Store's FindUserByEmail satisfies accountdeletion's
 		// userLookup; a separate identity.NewStore(db) here is cheap (no
 		// state beyond the *sql.DB handle already shared elsewhere).
@@ -105,6 +125,8 @@ func main() {
 			Identity:     idHandler,
 			Profile:      profile.NewHandler(profileSvc),
 			Notification: notification.NewHandler(notifSvc),
+			Task:         task.NewHandler(taskSvc),
+			Referee:      matching.NewHandler(matchingSvc, matchingStore),
 			ResolveUser:  identity.NewMiddleware(idSvc, logger),
 			Web: web.NewHandler(web.Deps{
 				Logger:    logger,
@@ -123,7 +145,27 @@ func main() {
 			os.Exit(1)
 		}
 		defer db.Close()
-		if err := worker.Run(ctx, cfg, logger, db); err != nil {
+
+		fcmClient, err := buildFCMClient(ctx, cfg, logger)
+		if err != nil {
+			logger.Error("fcm init failed", "error", err)
+			os.Exit(1)
+		}
+		sender := notification.NewSender(notification.NewStore(db), fcmClient)
+		matchingSvc := matching.NewService(
+			db, matching.NewStore(db),
+			matching.NewNoopPointLocker(), matching.NewNoObligations(),
+			judgement.NewProvisioner(), sender, jobs.NewStore(db),
+		)
+
+		if err := worker.Run(ctx, cfg, logger, db, func(ctx context.Context, w *worker.Worker) error {
+			w.Register(matching.JobKindMatch, matchingSvc.HandleMatch)
+			w.Register(matching.JobKindSweep, matchingSvc.HandleSweep)
+			w.Register(notification.JobKindSendNotification, sender.HandleSend)
+			// Seed the recurring sweep for the current interval; it self-reschedules
+			// thereafter. Idempotent across restarts and workers (bucketed key).
+			return matchingSvc.BootstrapSweep(ctx)
+		}); err != nil {
 			logger.Error("worker exited with error", "error", err)
 			os.Exit(1)
 		}
@@ -131,6 +173,29 @@ func main() {
 		fmt.Fprintf(os.Stderr, "unknown command: %s\n", os.Args[1])
 		os.Exit(2)
 	}
+}
+
+// buildFCMClient builds the worker's FCM sender. Production requires real
+// Firebase credentials (a missing/broken client is fatal); other environments
+// fall back to a no-op client that drops sends with a warning, so a local worker
+// runs end-to-end without Firebase.
+func buildFCMClient(ctx context.Context, cfg config.Config, logger *slog.Logger) (fcm.Client, error) {
+	if cfg.FirebaseProjectID == "" {
+		if cfg.Env == "production" {
+			return nil, fmt.Errorf("FIREBASE_PROJECT_ID is required in production")
+		}
+		logger.Warn("FIREBASE_PROJECT_ID unset; worker uses no-op FCM (notifications dropped)")
+		return fcm.NewNoop(logger), nil
+	}
+	client, err := fcm.New(ctx, cfg.FirebaseProjectID)
+	if err != nil {
+		if cfg.Env == "production" {
+			return nil, fmt.Errorf("fcm init (required in production): %w", err)
+		}
+		logger.Warn("FCM init failed; worker uses no-op FCM (notifications dropped)", "error", err)
+		return fcm.NewNoop(logger), nil
+	}
+	return client, nil
 }
 
 // runHealthcheck is used by the container HEALTHCHECK; it returns 0 when the

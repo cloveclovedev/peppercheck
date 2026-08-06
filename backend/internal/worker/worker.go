@@ -171,10 +171,19 @@ func (w *Worker) Loop(ctx context.Context) error {
 	}
 }
 
-// Run wires the built-in handlers and loops until ctx is cancelled.
-func Run(ctx context.Context, cfg config.Config, logger *slog.Logger, db *sql.DB) error {
+// Run builds the worker, registers the always-present noop handler, lets the
+// caller register feature handlers and run any one-time startup (via configure),
+// then loops until ctx is cancelled. Keeping feature wiring in the caller's
+// configure callback leaves this package free of feature imports (the
+// composition root owns which handlers exist).
+func Run(ctx context.Context, cfg config.Config, logger *slog.Logger, db *sql.DB, configure func(context.Context, *Worker) error) error {
 	w := New(db, logger)
 	w.SetHeartbeatURL(cfg.HeartbeatURLWorker)
 	w.Register("noop", func(context.Context, *jobs.Job) error { return nil })
+	if configure != nil {
+		if err := configure(ctx, w); err != nil {
+			return err
+		}
+	}
 	return w.Loop(ctx)
 }

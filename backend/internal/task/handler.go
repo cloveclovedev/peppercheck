@@ -170,6 +170,28 @@ func (h *Handler) GetMyTasks(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, out)
 }
 
+type publishRequest struct {
+	RefereeCount int `json:"refereeCount"`
+}
+
+// PostPublish opens a draft the caller owns and creates its referee requests.
+func (h *Handler) PostPublish(w http.ResponseWriter, r *http.Request) {
+	u, ok := currentUser(w, r)
+	if !ok {
+		return
+	}
+	var req publishRequest
+	if !httpserver.DecodeJSON(w, r, &req) {
+		return
+	}
+	t, err := h.svc.Publish(r.Context(), u.ID, r.PathValue("id"), req.RefereeCount)
+	if err != nil {
+		h.writeError(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, toDTO(t))
+}
+
 // --- helpers --------------------------------------------------------------
 
 func currentUser(w http.ResponseWriter, r *http.Request) (identity.User, bool) {

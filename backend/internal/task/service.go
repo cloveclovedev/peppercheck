@@ -10,12 +10,13 @@ import (
 )
 
 // RefereeRequestCreator creates a task's referee requests (and their match
-// jobs) inside the publish transaction, and reports the minimum publish lead
-// time. It is declared here (consumer-side) so the task feature stays
-// independent of the matching feature; matching.Service implements it.
+// jobs) inside the publish transaction, and reports the publish bounds
+// (minimum lead hours, maximum referee count). It is declared here
+// (consumer-side) so the task feature stays independent of the matching
+// feature; matching.Service implements it.
 type RefereeRequestCreator interface {
 	CreateInTx(ctx context.Context, tx database.Querier, taskID, taskerID string, count int) error
-	OpenDeadlineHours(ctx context.Context) (int, error)
+	PublishBounds(ctx context.Context) (minLeadHours, maxReferees int, err error)
 }
 
 // Service is the task use case: draft CRUD (owner-scoped) and the publish
@@ -106,6 +107,42 @@ func (s *Service) DeleteDraft(ctx context.Context, taskerID, taskID string) erro
 		}
 		return s.store.DeleteInTx(ctx, tx, taskID)
 	})
+}
+
+// Publish validates the open requirements, flips the draft to open, and creates
+// its referee requests + match jobs in one transaction. Only the owner, only
+// from draft, with a referee count within the matching-config bounds.
+func (s *Service) Publish(ctx context.Context, callerID, taskID string, refereeCount int) (Task, error) {
+	minLead, maxReferees, err := s.requests.PublishBounds(ctx)
+	if err != nil {
+		return Task{}, err
+	}
+	if refereeCount < 1 || refereeCount > maxReferees {
+		return Task{}, fmt.Errorf("%w: refereeCount must be 1..%d", ErrValidation, maxReferees)
+	}
+	var out Task
+	err = database.WithTx(ctx, s.db, func(tx database.Querier) error {
+		t, err := s.store.GetOwnedForUpdateInTx(ctx, tx, taskID, callerID)
+		if err != nil {
+			return err
+		}
+		if t.Status != "draft" {
+			return ErrConflict
+		}
+		if err := ValidateOpenRequirements(t, minLead); err != nil {
+			return err
+		}
+		if err := s.store.SetStatusInTx(ctx, tx, taskID, "open"); err != nil {
+			return err
+		}
+		if err := s.requests.CreateInTx(ctx, tx, taskID, callerID, refereeCount); err != nil {
+			return err
+		}
+		t.Status = "open"
+		out = t
+		return nil
+	})
+	return out, err
 }
 
 func validateTitle(title string) error {
