@@ -17,7 +17,7 @@ class TaskDeletionController extends _$TaskDeletionController {
   }) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
-      await ref.read(taskRepositoryProvider).deleteTask(taskId);
+      await ref.read(taskRepositoryProvider).deleteDraft(taskId);
       // Refresh the home screen lists so the deleted task disappears immediately
       // when the user lands back on home (no pull-to-refresh needed).
       ref.invalidate(activeUserTasksProvider);

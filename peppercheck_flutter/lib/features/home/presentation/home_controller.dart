@@ -6,7 +6,7 @@ part 'home_controller.g.dart';
 
 @riverpod
 Future<List<Task>> activeUserTasks(Ref ref) {
-  return ref.watch(taskRepositoryProvider).fetchActiveUserTasks();
+  return ref.watch(taskRepositoryProvider).fetchMyTasks();
 }
 
 @riverpod

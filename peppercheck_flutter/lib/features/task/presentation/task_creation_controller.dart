@@ -122,11 +122,22 @@ class TaskCreationController extends _$TaskCreationController {
       final taskRepository = ref.read(taskRepositoryProvider);
       final request = currentState.request;
 
+      // The Go API separates authoring a draft from publishing it; the publish
+      // UI (with its explicit referee-count selector) replaces the strategy
+      // list in the next step of this migration.
+      final Task saved;
       if (_taskId != null) {
-        await taskRepository.updateTask(_taskId!, request);
+        saved = await taskRepository.updateDraft(_taskId!, request);
         ref.invalidate(taskProvider(_taskId!));
       } else {
-        await taskRepository.createTask(request);
+        saved = await taskRepository.createDraft(request);
+      }
+      if (request.taskStatus == 'open') {
+        await taskRepository.publish(
+          saved.id,
+          refereeCount: request.matchingStrategies.length,
+        );
+        ref.invalidate(taskProvider(saved.id));
       }
 
       // Refresh the home screen lists

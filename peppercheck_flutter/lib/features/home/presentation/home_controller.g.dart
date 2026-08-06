@@ -45,7 +45,7 @@ final class ActiveUserTasksProvider
   }
 }
 
-String _$activeUserTasksHash() => r'ccb79a2846592c2b704d7ba3f609efd105d7990b';
+String _$activeUserTasksHash() => r'ba1e2bac67b026cc99eecdb48455433b793f2e5f';
 
 @ProviderFor(activeRefereeTasks)
 const activeRefereeTasksProvider = ActiveRefereeTasksProvider._();
