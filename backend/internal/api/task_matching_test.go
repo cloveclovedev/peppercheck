@@ -152,6 +152,34 @@ func TestRefereeTimeSlotCreateValidatesAndLists(t *testing.T) {
 	}
 }
 
+func TestMalformedIDPathParamsAre400(t *testing.T) {
+	h, _ := taskStack(t, fakeVerifier("sub-A"))
+	// Malformed (non-uuid) ids must be rejected at the boundary as 400, not reach
+	// the uuid-typed query and surface as a 500.
+	cases := []struct{ method, path string }{
+		{"GET", "/api/v1/tasks/not-a-uuid"},
+		{"PATCH", "/api/v1/tasks/not-a-uuid"},
+		{"DELETE", "/api/v1/tasks/not-a-uuid"},
+		{"POST", "/api/v1/tasks/not-a-uuid/publish"},
+		{"POST", "/api/v1/referee-requests/not-a-uuid/cancel"},
+		{"PUT", "/api/v1/me/availability/time-slots/not-a-uuid"},
+		{"DELETE", "/api/v1/me/availability/blocked-dates/not-a-uuid"},
+	}
+	for _, c := range cases {
+		var body any
+		if c.method == "PATCH" || (c.method == "POST" && c.path != "/api/v1/referee-requests/not-a-uuid/cancel") {
+			body = map[string]any{"title": "x", "refereeCount": 1}
+		}
+		if c.method == "PUT" {
+			body = map[string]any{"dow": 1, "startMin": 0, "endMin": 1}
+		}
+		rec := do(t, h, c.method, c.path, "sub-A", body)
+		if rec.Code != http.StatusBadRequest {
+			t.Fatalf("%s %s: status %d, want 400; body=%s", c.method, c.path, rec.Code, rec.Body.String())
+		}
+	}
+}
+
 func TestCancelForbiddenAndNotFound(t *testing.T) {
 	h, db := taskStack(t, fakeVerifier("sub-A"))
 	_ = meID(t, h, "sub-A") // provision A

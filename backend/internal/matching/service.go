@@ -174,7 +174,10 @@ func (s *Service) PublishBounds(ctx context.Context) (minLeadHours, maxReferees 
 // Each request locks its cost points via the seam and records the returned
 // funding source (P4a-D17); a failed lock rolls back the whole publish.
 func (s *Service) CreateInTx(ctx context.Context, tx database.Querier, taskID, taskerID string, count int) error {
-	cfg, err := s.store.LoadConfig(ctx)
+	// Read config through the caller's tx, not the pool: this runs while the
+	// publish transaction already holds a connection, and a pool read here would
+	// need a second one (pool-exhaustion deadlock under concurrent publishes).
+	cfg, err := s.store.LoadConfigInTx(ctx, tx)
 	if err != nil {
 		return err
 	}

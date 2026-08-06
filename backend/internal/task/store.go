@@ -151,11 +151,15 @@ func (s *Store) DeleteInTx(ctx context.Context, q database.Querier, taskID strin
 }
 
 // SetStatusInTx sets a task's status (the caller has validated the transition
-// under the row lock).
-func (s *Store) SetStatusInTx(ctx context.Context, q database.Querier, taskID, status string) error {
-	if _, err := q.ExecContext(ctx,
-		`UPDATE public.tasks SET status = $2, updated_at = now() WHERE id = $1`, taskID, status); err != nil {
-		return fmt.Errorf("set task status: %w", err)
+// under the row lock) and returns the updated row, so the caller reports the
+// persisted status AND the refreshed updated_at rather than a stale copy.
+func (s *Store) SetStatusInTx(ctx context.Context, q database.Querier, taskID, status string) (Task, error) {
+	row := q.QueryRowContext(ctx,
+		`UPDATE public.tasks SET status = $2, updated_at = now() WHERE id = $1
+		 RETURNING `+taskColumns, taskID, status)
+	t, err := scanTask(row)
+	if err != nil {
+		return Task{}, fmt.Errorf("set task status: %w", err)
 	}
-	return nil
+	return t, nil
 }

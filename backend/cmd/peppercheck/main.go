@@ -162,13 +162,13 @@ func main() {
 			w.Register(matching.JobKindMatch, matchingSvc.HandleMatch)
 			w.Register(matching.JobKindSweep, matchingSvc.HandleSweep)
 			w.Register(notification.JobKindSendNotification, sender.HandleSend)
-			// Seed the recurring sweep for the current interval; it self-reschedules
-			// thereafter. Idempotent across restarts and workers (bucketed key). A
-			// failure here is non-fatal: match/notification processing must keep
-			// running, and the next restart (or a later interval) reseeds the chain.
-			if err := matchingSvc.BootstrapSweep(ctx); err != nil {
-				logger.Error("bootstrap sweep failed; recurring sweep not seeded this start", "error", err)
-			}
+			// Seed the recurring sweep in the background, retrying until it
+			// succeeds. Non-blocking so match/notification processing starts
+			// immediately; retrying (BootstrapSweep is idempotent via its bucketed
+			// key) so a transient DB error at startup can't leave the sweep chain
+			// permanently unseeded — which would strand pending requests with no
+			// retry or expiry until the process happened to restart.
+			go bootstrapSweep(ctx, matchingSvc, logger)
 			return nil
 		}); err != nil {
 			logger.Error("worker exited with error", "error", err)
@@ -177,6 +177,30 @@ func main() {
 	default:
 		fmt.Fprintf(os.Stderr, "unknown command: %s\n", os.Args[1])
 		os.Exit(2)
+	}
+}
+
+// bootstrapSweep seeds the recurring sweep, retrying with capped exponential
+// backoff until it succeeds or ctx is cancelled. BootstrapSweep is idempotent
+// (a per-interval bucketed key), so retrying after a partial or transient
+// failure never double-schedules.
+func bootstrapSweep(ctx context.Context, svc *matching.Service, logger *slog.Logger) {
+	const maxBackoff = time.Minute
+	backoff := time.Second
+	for {
+		if err := svc.BootstrapSweep(ctx); err == nil {
+			return
+		} else {
+			logger.Warn("bootstrap sweep failed; retrying", "error", err, "retryIn", backoff.String())
+		}
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(backoff):
+		}
+		if backoff *= 2; backoff > maxBackoff {
+			backoff = maxBackoff
+		}
 	}
 }
 

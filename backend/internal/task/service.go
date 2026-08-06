@@ -132,14 +132,14 @@ func (s *Service) Publish(ctx context.Context, callerID, taskID string, refereeC
 		if err := ValidateOpenRequirements(t, minLead); err != nil {
 			return err
 		}
-		if err := s.store.SetStatusInTx(ctx, tx, taskID, "open"); err != nil {
+		opened, err := s.store.SetStatusInTx(ctx, tx, taskID, "open")
+		if err != nil {
 			return err
 		}
 		if err := s.requests.CreateInTx(ctx, tx, taskID, callerID, refereeCount); err != nil {
 			return err
 		}
-		t.Status = "open"
-		out = t
+		out = opened
 		return nil
 	})
 	return out, err

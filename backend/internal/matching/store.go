@@ -21,10 +21,22 @@ type Store struct {
 // NewStore builds a Store over an open database handle.
 func NewStore(db *database.Handle) *Store { return &Store{db: db} }
 
-// LoadConfig reads the singleton matching configuration.
+// LoadConfig reads the singleton matching configuration on the pool.
 func (s *Store) LoadConfig(ctx context.Context) (Config, error) {
+	return s.loadConfig(ctx, s.db)
+}
+
+// LoadConfigInTx reads the config through the caller's transaction. Callers
+// already inside a WithTx MUST use this, not LoadConfig: reading through the
+// pool while holding a transaction's connection needs a second pooled
+// connection, so enough concurrent in-transaction reads would deadlock the pool.
+func (s *Store) LoadConfigInTx(ctx context.Context, q database.Querier) (Config, error) {
+	return s.loadConfig(ctx, q)
+}
+
+func (s *Store) loadConfig(ctx context.Context, q database.Querier) (Config, error) {
 	var c Config
-	err := s.db.QueryRowContext(ctx, `
+	err := q.QueryRowContext(ctx, `
 		SELECT open_deadline_hours, cancel_deadline_hours, rematch_cutoff_hours,
 		       max_referees_per_task, point_cost_per_request
 		FROM public.matching_config WHERE id = true`).

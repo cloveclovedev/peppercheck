@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/cloveclovedev/peppercheck/backend/internal/core/httpserver"
 	"github.com/cloveclovedev/peppercheck/backend/internal/identity"
 )
@@ -132,6 +134,10 @@ func (h *Handler) PutTimeSlot(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	id, ok := pathID(w, r)
+	if !ok {
+		return
+	}
 	var req timeSlotRequest
 	if !httpserver.DecodeJSON(w, r, &req) {
 		return
@@ -141,7 +147,7 @@ func (h *Handler) PutTimeSlot(w http.ResponseWriter, r *http.Request) {
 		h.writeError(w, r, err)
 		return
 	}
-	if err := h.store.UpdateTimeSlot(r.Context(), u.ID, r.PathValue("id"), slot); err != nil {
+	if err := h.store.UpdateTimeSlot(r.Context(), u.ID, id, slot); err != nil {
 		h.writeError(w, r, err)
 		return
 	}
@@ -154,7 +160,11 @@ func (h *Handler) DeleteTimeSlot(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	if err := h.store.DeleteTimeSlot(r.Context(), u.ID, r.PathValue("id")); err != nil {
+	id, ok := pathID(w, r)
+	if !ok {
+		return
+	}
+	if err := h.store.DeleteTimeSlot(r.Context(), u.ID, id); err != nil {
 		h.writeError(w, r, err)
 		return
 	}
@@ -210,6 +220,10 @@ func (h *Handler) PutBlockedDate(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	id, ok := pathID(w, r)
+	if !ok {
+		return
+	}
 	var req blockedDateRequest
 	if !httpserver.DecodeJSON(w, r, &req) {
 		return
@@ -219,7 +233,7 @@ func (h *Handler) PutBlockedDate(w http.ResponseWriter, r *http.Request) {
 		h.writeError(w, r, err)
 		return
 	}
-	if err := h.store.UpdateBlockedDate(r.Context(), u.ID, r.PathValue("id"), b); err != nil {
+	if err := h.store.UpdateBlockedDate(r.Context(), u.ID, id, b); err != nil {
 		h.writeError(w, r, err)
 		return
 	}
@@ -232,7 +246,11 @@ func (h *Handler) DeleteBlockedDate(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	if err := h.store.DeleteBlockedDate(r.Context(), u.ID, r.PathValue("id")); err != nil {
+	id, ok := pathID(w, r)
+	if !ok {
+		return
+	}
+	if err := h.store.DeleteBlockedDate(r.Context(), u.ID, id); err != nil {
 		h.writeError(w, r, err)
 		return
 	}
@@ -286,7 +304,11 @@ func (h *Handler) PostCancel(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	if err := h.svc.Cancel(r.Context(), r.PathValue("id"), u.ID); err != nil {
+	id, ok := pathID(w, r)
+	if !ok {
+		return
+	}
+	if err := h.svc.Cancel(r.Context(), id, u.ID); err != nil {
 		h.writeError(w, r, err)
 		return
 	}
@@ -301,6 +323,18 @@ func currentUser(w http.ResponseWriter, r *http.Request) (identity.User, bool) {
 		httpserver.WriteError(w, r, http.StatusUnauthorized, httpserver.CodeUnauthenticated, "missing user")
 	}
 	return u, ok
+}
+
+// pathID reads and validates the {id} path parameter as a UUID, rejecting a
+// malformed id as a 400 before it reaches a uuid-typed query (which would
+// otherwise surface as a 500 invalid-text-representation error).
+func pathID(w http.ResponseWriter, r *http.Request) (string, bool) {
+	id := r.PathValue("id")
+	if uuid.Validate(id) != nil {
+		httpserver.WriteError(w, r, http.StatusBadRequest, httpserver.CodeInvalidArgument, "invalid id")
+		return "", false
+	}
+	return id, true
 }
 
 func (h *Handler) writeError(w http.ResponseWriter, r *http.Request, err error) {

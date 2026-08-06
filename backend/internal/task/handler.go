@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/cloveclovedev/peppercheck/backend/internal/core/httpserver"
 	"github.com/cloveclovedev/peppercheck/backend/internal/identity"
 )
@@ -99,7 +101,11 @@ func (h *Handler) GetTask(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	t, err := h.svc.GetReadable(r.Context(), u.ID, r.PathValue("id"))
+	id, ok := pathID(w, r)
+	if !ok {
+		return
+	}
+	t, err := h.svc.GetReadable(r.Context(), u.ID, id)
 	if err != nil {
 		h.writeError(w, r, err)
 		return
@@ -113,6 +119,10 @@ func (h *Handler) PatchTask(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	id, ok := pathID(w, r)
+	if !ok {
+		return
+	}
 	var req taskRequest
 	if !httpserver.DecodeJSON(w, r, &req) {
 		return
@@ -122,7 +132,7 @@ func (h *Handler) PatchTask(w http.ResponseWriter, r *http.Request) {
 		h.writeError(w, r, err)
 		return
 	}
-	t, err := h.svc.UpdateDraft(r.Context(), u.ID, r.PathValue("id"), in)
+	t, err := h.svc.UpdateDraft(r.Context(), u.ID, id, in)
 	if err != nil {
 		h.writeError(w, r, err)
 		return
@@ -136,7 +146,11 @@ func (h *Handler) DeleteTask(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	if err := h.svc.DeleteDraft(r.Context(), u.ID, r.PathValue("id")); err != nil {
+	id, ok := pathID(w, r)
+	if !ok {
+		return
+	}
+	if err := h.svc.DeleteDraft(r.Context(), u.ID, id); err != nil {
 		h.writeError(w, r, err)
 		return
 	}
@@ -178,11 +192,15 @@ func (h *Handler) PostPublish(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	id, ok := pathID(w, r)
+	if !ok {
+		return
+	}
 	var req publishRequest
 	if !httpserver.DecodeJSON(w, r, &req) {
 		return
 	}
-	t, err := h.svc.Publish(r.Context(), u.ID, r.PathValue("id"), req.RefereeCount)
+	t, err := h.svc.Publish(r.Context(), u.ID, id, req.RefereeCount)
 	if err != nil {
 		h.writeError(w, r, err)
 		return
@@ -198,6 +216,18 @@ func currentUser(w http.ResponseWriter, r *http.Request) (identity.User, bool) {
 		httpserver.WriteError(w, r, http.StatusUnauthorized, httpserver.CodeUnauthenticated, "missing user")
 	}
 	return u, ok
+}
+
+// pathID reads and validates the {id} path parameter as a UUID, rejecting a
+// malformed id as a 400 before it reaches a uuid-typed query (which would
+// otherwise surface as a 500 invalid-text-representation error).
+func pathID(w http.ResponseWriter, r *http.Request) (string, bool) {
+	id := r.PathValue("id")
+	if uuid.Validate(id) != nil {
+		httpserver.WriteError(w, r, http.StatusBadRequest, httpserver.CodeInvalidArgument, "invalid id")
+		return "", false
+	}
+	return id, true
 }
 
 func (h *Handler) writeError(w http.ResponseWriter, r *http.Request, err error) {

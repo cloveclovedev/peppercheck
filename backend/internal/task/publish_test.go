@@ -92,6 +92,24 @@ func TestPublishOpensTaskAndCreatesRequestsAtomically(t *testing.T) {
 	}
 }
 
+func TestPublishRefreshesUpdatedAt(t *testing.T) {
+	db := testsupport.DB(t)
+	svc := task.NewService(db, task.NewStore(db), realMatchingCreator(db))
+	taskID, taskerID := seedDraftReady(t, db, svc)
+
+	var draftUpdated time.Time
+	if err := db.QueryRow(`SELECT updated_at FROM public.tasks WHERE id=$1`, taskID).Scan(&draftUpdated); err != nil {
+		t.Fatalf("read draft updated_at: %v", err)
+	}
+	out, err := svc.Publish(context.Background(), taskerID, taskID, 1)
+	if err != nil {
+		t.Fatalf("publish: %v", err)
+	}
+	if !out.UpdatedAt.After(draftUpdated) {
+		t.Fatalf("publish response updatedAt %v not refreshed past draft's %v", out.UpdatedAt, draftUpdated)
+	}
+}
+
 func TestPublishRollsBackWhenCreatorFails(t *testing.T) {
 	db := testsupport.DB(t)
 	// The service used to seed a ready draft uses the real creator; the service
