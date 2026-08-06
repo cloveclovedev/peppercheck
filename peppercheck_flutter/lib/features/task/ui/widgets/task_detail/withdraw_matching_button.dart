@@ -4,10 +4,11 @@ import 'package:peppercheck_flutter/app/theme/app_colors.dart';
 import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
 import 'package:peppercheck_flutter/common_widgets/base_dialog.dart';
 import 'package:peppercheck_flutter/common_widgets/destructive_action_button.dart';
+import 'package:peppercheck_flutter/core/network/api_exception.dart';
 import 'package:peppercheck_flutter/features/home/ui/home_view_model.dart';
+import 'package:peppercheck_flutter/features/matching/application/matching_config_provider.dart';
 import 'package:peppercheck_flutter/features/matching/data/matching_repository.dart';
 import 'package:peppercheck_flutter/features/matching/domain/referee_request.dart';
-import 'package:peppercheck_flutter/features/matching/matching_constants.dart';
 import 'package:peppercheck_flutter/features/task/domain/task.dart';
 import 'package:peppercheck_flutter/features/task/ui/task_detail_view_model.dart';
 import 'package:peppercheck_flutter/features/task/ui/task_role_provider.dart';
@@ -28,9 +29,12 @@ class _WithdrawMatchingButtonState
   bool _isLoading = false;
 
   /// The caller's own referee request, or null when the viewer is the tasker
-  /// or a stranger.
-  RefereeRequest? _myRequest() =>
+  /// or a stranger. Watched from build, read from callbacks.
+  RefereeRequest? _watchMyRequest() =>
       ref.watch(taskRoleProvider(widget.task.id)).value?.myRequest;
+
+  RefereeRequest? _readMyRequest() =>
+      ref.read(taskRoleProvider(widget.task.id)).value?.myRequest;
 
   // Judgement states from which the referee's involvement cannot be undone:
   // approved is awaiting tasker confirmation, the timeouts and confirmed are
@@ -43,8 +47,12 @@ class _WithdrawMatchingButtonState
     'confirmed',
   };
 
-  bool _canWithdraw(RefereeRequest myRequest) {
+  /// The server owns the cutoff and enforces it; this only decides whether
+  /// offering the button would be a dead end. Until the config loads the
+  /// button stays hidden rather than promising an action the server may reject.
+  bool _canWithdraw(RefereeRequest myRequest, int? cancelDeadlineHours) {
     if (myRequest.status != 'accepted') return false;
+    if (cancelDeadlineHours == null) return false;
 
     final judgementStatus = myRequest.judgement?.status;
     if (judgementStatus != null &&
@@ -54,9 +62,7 @@ class _WithdrawMatchingButtonState
 
     if (widget.task.dueDate == null) return true;
     final due = DateTime.parse(widget.task.dueDate!);
-    final cutoff = DateTime.now().add(
-      const Duration(hours: kRefereeCancelDeadlineHours),
-    );
+    final cutoff = DateTime.now().add(Duration(hours: cancelDeadlineHours));
     return due.isAfter(cutoff);
   }
 
@@ -87,7 +93,7 @@ class _WithdrawMatchingButtonState
 
     setState(() => _isLoading = true);
     try {
-      final myRequest = _myRequest();
+      final myRequest = _readMyRequest();
       if (myRequest == null) return;
       await ref.read(matchingRepositoryProvider).cancelAssignment(myRequest.id);
       if (!mounted) return;
@@ -104,7 +110,11 @@ class _WithdrawMatchingButtonState
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            t.task.detail.cancelAssignment.error(message: e.toString()),
+            t.task.detail.cancelAssignment.error(
+              // Prefer the API envelope's message over the exception's own
+              // toString, which would leak the request id into the snackbar.
+              message: e is ApiException ? e.message : e.toString(),
+            ),
           ),
         ),
       );
@@ -115,8 +125,12 @@ class _WithdrawMatchingButtonState
 
   @override
   Widget build(BuildContext context) {
-    final myRequest = _myRequest();
-    if (myRequest == null || !_canWithdraw(myRequest)) {
+    final myRequest = _watchMyRequest();
+    final cancelDeadlineHours = ref
+        .watch(matchingConfigProvider)
+        .value
+        ?.cancelDeadlineHours;
+    if (myRequest == null || !_canWithdraw(myRequest, cancelDeadlineHours)) {
       return const SizedBox.shrink();
     }
 
