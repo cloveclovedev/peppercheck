@@ -85,6 +85,16 @@ accept forged unsigned tokens whose claims match the demo project. Requiring
 a code-enforced invariant, not deploy-config discipline. Production sets neither
 var (and is not `local`), so it is unaffected.
 
+**Launcher must select the demo project in emulator mode.** The canonical
+launcher `scripts/dev-run.sh` currently defaults `FIREBASE_PROJECT="peppercheck-dev"`
+and `start_backend` exports it as `FIREBASE_PROJECT_ID`. If it also sets
+`FIREBASE_AUTH_EMULATOR_HOST` while keeping that default, the new guard would
+**abort API startup** (`peppercheck-dev` is not `demo-`). So the launcher's
+default emulator (zero-flag) path must set `FIREBASE_PROJECT=demo-peppercheck`
+**and** `FIREBASE_AUTH_EMULATOR_HOST`; the operator opt-in path (`--firebase-project
+<operator>`) must instead select the real project **and** leave the emulator host
+unset and the client switch off. `#529` updates `dev-run.sh` accordingly.
+
 ### 2. Flutter — dev-only emulator branch + one-tap test login
 
 - **Gate emulator wiring on an explicit switch, not the flavor alone.** The
@@ -100,23 +110,26 @@ var (and is not `local`), so it is unaffected.
   Staging/production force it off. The dev login UI below uses the **same
   switch**, so turning the emulator off restores the plain Google/Apple screen.
 - **One-tap dev test login, no credential form.** When the emulator switch is on,
-  the login screen shows a dev-only section with one-tap buttons. Each does a
-  **create-or-sign-in** against the emulator: `signInWithEmailAndPassword`,
-  falling back to `createUserWithEmailAndPassword` if the user does not exist —
-  with **app-fabricated credentials the user never types**. The underlying
-  Firebase provider is `password`; it is surfaced as an "Emulator login." This
-  yields a genuine emulator-issued Firebase JWT that flows through the existing
-  `firebaseIdTokenProvider` seam, so the rest of the app and the backend are
-  unchanged.
-  - Provide **stable named users** (e.g. `tasker@emulator.local`,
-    `referee@emulator.local`) for reproducible multi-account flows (tasker ↔
-    referee matching), plus an optional **fresh random user**
-    (`dev-<uuid>@emulator.local`) for new-account testing. **Stability requires
-    fixed UIDs, which client `createUserWithEmailAndPassword` cannot set** — see
-    §4: the emulator must be seeded with fixed-UID named users (or its auth state
-    persisted), so a named button always maps to the same `(iss, sub)` and thus
-    the same backend identity across emulator restarts. The random user stays
-    ephemeral. Exact button count/labels are finalized in the impl issue.
+  the login screen shows a dev-only section with one-tap buttons (app-fabricated
+  credentials the user never types; the underlying Firebase provider is
+  `password`, surfaced as an "Emulator login"). The resulting emulator-issued
+  Firebase JWT flows through the existing `firebaseIdTokenProvider` seam, so the
+  rest of the app and the backend are unchanged. Two distinct button behaviors:
+  - **Named users are sign-in-only** (e.g. `tasker@emulator.local`,
+    `referee@emulator.local`): `signInWithEmailAndPassword` with **no create
+    fallback**. If the fixed-UID seed is missing (bootstrap/import not done, or
+    Auth state cleared while the API DB persists), the button **fails visibly**
+    rather than creating the email with an SDK-assigned UID — a client-created
+    user would take a random UID that the later fixed-UID seed cannot repair,
+    silently mapping the button to a *new* backend identity. Creation is reserved
+    for the random action below.
+  - **The random user** (`dev-<uuid>@emulator.local`) is the only button that
+    `createUserWithEmailAndPassword`; it is ephemeral by design (no stable
+    identity needed).
+  - Stable named identities therefore depend on **fixed-UID seeding** (§4): the
+    emulator is seeded with fixed-UID named users (or its auth state persisted),
+    so a named button always maps to the same `(iss, sub)` and backend identity
+    across restarts. Exact button count/labels are finalized in the impl issue.
 - The real Google/Apple buttons stay; with the emulator switch off (operator
   opt-in real-Firebase path) they work as today.
 
@@ -147,6 +160,16 @@ control exposure through Compose port mapping.
 ```json
 { "emulators": { "auth": { "host": "0.0.0.0", "port": 9099 } } }
 ```
+
+**Allocate the host port per worktree.** `9099` above is the container-internal
+port; the **host** port must be worktree-allocated, not fixed. The parallel-worktree
+launcher `scripts/worktree/dev.sh` already allocates and persists unique host
+ports per worktree (`CADDY_HTTP_PORT`, `CADDY_HTTPS_PORT`, `POSTGRES_HOST_PORT`)
+and passes the app one via `--dart-define=DEV_API_PORT`. Add an allocated
+`AUTH_EMULATOR_HOST_PORT` to the same worktree state / Compose mapping, and pass
+the matching port to Flutter (alongside the emulator switch) — otherwise a second
+worktree either fails the port bind or connects its app to the first worktree's
+Auth emulator. The single-stack `dev-run.sh` path can keep a fixed default.
 
 **Seed fixed-UID named users so stable identities survive an emulator restart.**
 The API database (Compose Postgres volume) persists across restarts and keys
@@ -199,8 +222,13 @@ runs the same way for any auth-dependent integration test.
   untouched.
 - Flutter change is contained: an explicit-switch-gated `useAuthEmulator` call,
   a dev-only login section behind the same switch, and a small email/password
-  create-or-sign-in path in `auth_repository.dart` (the only file importing
-  `firebase_auth`).
+  path in `auth_repository.dart` (the only file importing `firebase_auth`) —
+  sign-in-only for named users, create only for the random user.
+- The launchers change: `dev-run.sh`'s emulator (default) path selects
+  `FIREBASE_PROJECT=demo-peppercheck` and sets the emulator host (else the guard
+  aborts startup); `--firebase-project <operator>` selects real Firebase with the
+  host unset. `scripts/worktree/dev.sh` allocates an `AUTH_EMULATOR_HOST_PORT`
+  per worktree and passes it to Flutter, like its existing Caddy/Postgres ports.
 - The client needs a `USE_AUTH_EMULATOR`-style switch (default on for dev) so
   the operator opt-in real-Firebase path can turn the emulator off; without it,
   dev-flavor auth would stay pinned to localhost.
@@ -287,4 +315,14 @@ assumes that prerequisite is in place; it is tracked in **#532** and linked from
   `SUPABASE_ANON_KEY`. Added a Dependencies section: the zero-account goal has a
   shared prerequisite (account-free dev env pointing at the local Supabase stack)
   owned by the parent profile #522, also blocking Garage (#523). This design is
-  necessary but not sufficient on its own.
+  necessary but not sufficient on its own. Filed as #532.
+- **2026-08-06** — Fourth Codex round on PR #530, all grounded in the real
+  launchers. (1, P1) `scripts/dev-run.sh` defaults `FIREBASE_PROJECT=peppercheck-dev`;
+  once the emulator host is set, the guard would abort startup, so the launcher's
+  emulator path must select `demo-peppercheck` and the real path selects the
+  operator project with the host unset. (2, P2) Named-user buttons are now
+  **sign-in-only** and fail visibly when their fixed-UID seed is missing (only the
+  random button creates), so a mistimed tap can't mint an unrepairable
+  SDK-assigned UID. (3, P2) The Auth emulator **host port is worktree-allocated**
+  (`AUTH_EMULATOR_HOST_PORT`, like `scripts/worktree/dev.sh`'s Caddy/Postgres
+  ports) and passed to Flutter, so parallel worktrees don't collide or cross-wire.
