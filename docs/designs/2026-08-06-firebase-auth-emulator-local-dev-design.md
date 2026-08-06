@@ -216,6 +216,27 @@ runs the same way for any auth-dependent integration test.
   actual Google/Apple federated sign-in, token-revocation/disabled-user
   behavior, and real project claims.
 
+## Dependencies / prerequisites
+
+This feature is **necessary but not sufficient** for a fully account-free clone.
+On the current `refactor/go-api-vps` branch, the app fails to start **before**
+Firebase Auth initializes: `pubspec.yaml` declares `assets/env/.env.dev` as a
+required asset (and `.env.*` is gitignored, so it is absent on a fresh clone),
+and `app_startup.dart`'s `_initSdk` **throws unless `SUPABASE_URL` /
+`SUPABASE_ANON_KEY` are set** and then calls `Supabase.initialize`. Supabase is
+still the backend for many not-yet-migrated features (matching, task, evidence,
+judgement, payment, report, account), so it cannot simply be dropped mid-refactor.
+
+Therefore the zero-account goal has a **shared prerequisite**, owned by the
+parent profile (#522), not by this issue: a committed or generated **account-free
+dev env** (`assets/env/.env.dev`) whose `SUPABASE_*` values point at the **local
+Supabase stack** (`supabase start`, no external account — the analog of Garage /
+the Auth emulator), plus eventual removal of the hard Supabase requirement as the
+refactor completes. This same gap also blocks Garage avatar display from a fresh
+clone (#523), which is why it belongs to the profile, not to auth. This design
+assumes that prerequisite is in place; it is tracked separately and linked from
+#529.
+
 ## Deferred / related work
 
 - #523 Garage (storage) and #525 FCM stub — the other legs of the zero-account
@@ -260,3 +281,10 @@ runs the same way for any auth-dependent integration test.
   emulator to `127.0.0.1` by default, unreachable from the api container / Flutter
   emulator inside a dedicated container. The `firebase.json` must bind the Auth
   emulator `host` to `0.0.0.0`, with exposure controlled via Compose.
+- **2026-08-06** — Third Codex round on PR #530 (P1): the clean-clone path fails
+  *before* Firebase Auth initializes — `pubspec.yaml` requires the gitignored
+  `assets/env/.env.dev`, and `_initSdk` throws without `SUPABASE_URL` /
+  `SUPABASE_ANON_KEY`. Added a Dependencies section: the zero-account goal has a
+  shared prerequisite (account-free dev env pointing at the local Supabase stack)
+  owned by the parent profile #522, also blocking Garage (#523). This design is
+  necessary but not sufficient on its own.
