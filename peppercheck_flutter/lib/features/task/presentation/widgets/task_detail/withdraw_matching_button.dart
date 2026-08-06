@@ -4,7 +4,7 @@ import 'package:peppercheck_flutter/app/theme/app_colors.dart';
 import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
 import 'package:peppercheck_flutter/common_widgets/base_dialog.dart';
 import 'package:peppercheck_flutter/common_widgets/destructive_action_button.dart';
-import 'package:peppercheck_flutter/features/home/presentation/home_controller.dart';
+import 'package:peppercheck_flutter/features/home/ui/home_view_model.dart';
 import 'package:peppercheck_flutter/features/matching/data/matching_repository.dart';
 import 'package:peppercheck_flutter/features/matching/domain/referee_request.dart';
 import 'package:peppercheck_flutter/features/matching/matching_constants.dart';

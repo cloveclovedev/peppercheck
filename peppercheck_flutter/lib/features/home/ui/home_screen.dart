@@ -5,8 +5,8 @@ import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
 import 'package:peppercheck_flutter/common_widgets/app_background.dart';
 import 'package:peppercheck_flutter/common_widgets/app_scaffold.dart';
 import 'package:peppercheck_flutter/common_widgets/base_section.dart';
-import 'package:peppercheck_flutter/features/home/presentation/home_controller.dart';
-import 'package:peppercheck_flutter/features/home/presentation/widgets/task_card.dart';
+import 'package:peppercheck_flutter/features/home/ui/home_view_model.dart';
+import 'package:peppercheck_flutter/features/home/ui/widgets/task_card.dart';
 import 'package:peppercheck_flutter/features/task/domain/task.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 

@@ -5,7 +5,6 @@ import 'package:peppercheck_flutter/core/network/api_client.dart';
 import 'package:peppercheck_flutter/core/network/api_exception.dart';
 import 'package:peppercheck_flutter/features/task/data/task_repository.dart';
 import 'package:peppercheck_flutter/features/task/domain/task_creation_request.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'task_repository_test.mocks.dart';
 
@@ -49,14 +48,14 @@ Map<String, dynamic> _requestJson({
   'referee': referee,
 };
 
-@GenerateNiceMocks([MockSpec<ApiClient>(), MockSpec<SupabaseClient>()])
+@GenerateNiceMocks([MockSpec<ApiClient>()])
 void main() {
   late MockApiClient api;
   late TaskRepository repo;
 
   setUp(() {
     api = MockApiClient();
-    repo = TaskRepository(api, MockSupabaseClient());
+    repo = TaskRepository(api);
   });
 
   const request = TaskCreationRequest(

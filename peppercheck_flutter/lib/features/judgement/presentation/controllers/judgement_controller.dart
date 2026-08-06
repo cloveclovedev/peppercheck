@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:peppercheck_flutter/features/judgement/data/judgement_repository.dart';
-import 'package:peppercheck_flutter/features/home/presentation/home_controller.dart';
+import 'package:peppercheck_flutter/features/home/ui/home_view_model.dart';
 import 'package:peppercheck_flutter/features/task/presentation/providers/task_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 

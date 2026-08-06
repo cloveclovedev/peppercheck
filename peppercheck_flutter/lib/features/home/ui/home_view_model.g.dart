@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'home_controller.dart';
+part of 'home_view_model.dart';
 
 // **************************************************************************
 // RiverpodGenerator
@@ -8,9 +8,14 @@ part of 'home_controller.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// Tasks the signed-in user owns. Refreshed by pull-to-refresh and on resume;
+/// the matching result is polled on the task detail screen, not here.
 
 @ProviderFor(activeUserTasks)
 const activeUserTasksProvider = ActiveUserTasksProvider._();
+
+/// Tasks the signed-in user owns. Refreshed by pull-to-refresh and on resume;
+/// the matching result is polled on the task detail screen, not here.
 
 final class ActiveUserTasksProvider
     extends
@@ -20,6 +25,8 @@ final class ActiveUserTasksProvider
           FutureOr<List<Task>>
         >
     with $FutureModifier<List<Task>>, $FutureProvider<List<Task>> {
+  /// Tasks the signed-in user owns. Refreshed by pull-to-refresh and on resume;
+  /// the matching result is polled on the task detail screen, not here.
   const ActiveUserTasksProvider._()
     : super(
         from: null,
@@ -47,8 +54,14 @@ final class ActiveUserTasksProvider
 
 String _$activeUserTasksHash() => r'ba1e2bac67b026cc99eecdb48455433b793f2e5f';
 
+/// Tasks the signed-in user referees. Each row carries the caller's real
+/// referee request as served by `GET /me/assignments`.
+
 @ProviderFor(activeRefereeTasks)
 const activeRefereeTasksProvider = ActiveRefereeTasksProvider._();
+
+/// Tasks the signed-in user referees. Each row carries the caller's real
+/// referee request as served by `GET /me/assignments`.
 
 final class ActiveRefereeTasksProvider
     extends
@@ -58,6 +71,8 @@ final class ActiveRefereeTasksProvider
           FutureOr<List<Task>>
         >
     with $FutureModifier<List<Task>>, $FutureProvider<List<Task>> {
+  /// Tasks the signed-in user referees. Each row carries the caller's real
+  /// referee request as served by `GET /me/assignments`.
   const ActiveRefereeTasksProvider._()
     : super(
         from: null,
@@ -84,4 +99,4 @@ final class ActiveRefereeTasksProvider
 }
 
 String _$activeRefereeTasksHash() =>
-    r'a2f3b2f82c82cd2ef81d0e7fe6fef1c761e5ed45';
+    r'43d837f0d18cecbfa02d1b20e25da3a71d704916';

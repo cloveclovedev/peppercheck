@@ -1,7 +1,7 @@
 import 'package:go_router/go_router.dart';
 import 'package:peppercheck_flutter/features/auth/application/auth_state.dart';
 import 'package:peppercheck_flutter/features/auth/ui/login_screen.dart';
-import 'package:peppercheck_flutter/features/home/presentation/home_screen.dart';
+import 'package:peppercheck_flutter/features/home/ui/home_screen.dart';
 import 'package:peppercheck_flutter/features/payment_dashboard/presentation/payment_dashboard_screen.dart';
 import 'package:peppercheck_flutter/features/profile/ui/profile_screen.dart';
 import 'package:peppercheck_flutter/features/task/presentation/task_creation_screen.dart';
