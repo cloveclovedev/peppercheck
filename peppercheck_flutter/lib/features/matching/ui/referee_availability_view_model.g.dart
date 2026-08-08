@@ -11,6 +11,11 @@ part of 'referee_availability_view_model.dart';
 /// The signed-in referee's weekly availability. Every call is scoped to the
 /// bearer, so the list reloads from the server after each edit rather than
 /// being patched locally.
+///
+/// Only active slots are exposed: the API returns disabled slots too, but the
+/// cards render no enabled/disabled state, so showing one would read as normal
+/// availability that matching silently skips. They come back with the toggle
+/// UI.
 
 @ProviderFor(RefereeAvailabilityViewModel)
 const refereeAvailabilityViewModelProvider =
@@ -19,6 +24,11 @@ const refereeAvailabilityViewModelProvider =
 /// The signed-in referee's weekly availability. Every call is scoped to the
 /// bearer, so the list reloads from the server after each edit rather than
 /// being patched locally.
+///
+/// Only active slots are exposed: the API returns disabled slots too, but the
+/// cards render no enabled/disabled state, so showing one would read as normal
+/// availability that matching silently skips. They come back with the toggle
+/// UI.
 final class RefereeAvailabilityViewModelProvider
     extends
         $AsyncNotifierProvider<
@@ -28,6 +38,11 @@ final class RefereeAvailabilityViewModelProvider
   /// The signed-in referee's weekly availability. Every call is scoped to the
   /// bearer, so the list reloads from the server after each edit rather than
   /// being patched locally.
+  ///
+  /// Only active slots are exposed: the API returns disabled slots too, but the
+  /// cards render no enabled/disabled state, so showing one would read as normal
+  /// availability that matching silently skips. They come back with the toggle
+  /// UI.
   const RefereeAvailabilityViewModelProvider._()
     : super(
         from: null,
@@ -48,11 +63,16 @@ final class RefereeAvailabilityViewModelProvider
 }
 
 String _$refereeAvailabilityViewModelHash() =>
-    r'01ef336d1904c47664fd481fdc97c02545feaf46';
+    r'510cd0f5d6b3a8cefdb604949c67e169a5747ac9';
 
 /// The signed-in referee's weekly availability. Every call is scoped to the
 /// bearer, so the list reloads from the server after each edit rather than
 /// being patched locally.
+///
+/// Only active slots are exposed: the API returns disabled slots too, but the
+/// cards render no enabled/disabled state, so showing one would read as normal
+/// availability that matching silently skips. They come back with the toggle
+/// UI.
 
 abstract class _$RefereeAvailabilityViewModel
     extends $AsyncNotifier<List<RefereeAvailableTimeSlot>> {

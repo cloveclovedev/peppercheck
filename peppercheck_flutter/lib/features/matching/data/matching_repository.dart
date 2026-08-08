@@ -80,24 +80,24 @@ class MatchingRepository {
     return RefereeTimeSlotDto.fromJson(json).toDomain();
   }
 
-  Future<RefereeAvailableTimeSlot> updateTimeSlot({
+  /// Replaces a slot. The endpoint answers `204` (§7.1), so the caller reloads
+  /// the list rather than reading back the updated row. [isActive] is required
+  /// because sending a default would silently reactivate a disabled slot.
+  Future<void> updateTimeSlot({
     required String id,
     required int dow,
     required int startMin,
     required int endMin,
-    bool isActive = true,
-  }) async {
-    final json = await _api.putJsonObject(
-      '$_timeSlotsPath/$id',
-      body: _slotBody(
-        dow: dow,
-        startMin: startMin,
-        endMin: endMin,
-        isActive: isActive,
-      ),
-    );
-    return RefereeTimeSlotDto.fromJson(json).toDomain();
-  }
+    required bool isActive,
+  }) => _api.putJson(
+    '$_timeSlotsPath/$id',
+    body: _slotBody(
+      dow: dow,
+      startMin: startMin,
+      endMin: endMin,
+      isActive: isActive,
+    ),
+  );
 
   Future<void> deleteTimeSlot(String id) =>
       _api.deleteJson('$_timeSlotsPath/$id');
@@ -123,22 +123,20 @@ class MatchingRepository {
     return RefereeBlockedDateDto.fromJson(json).toDomain();
   }
 
-  Future<RefereeBlockedDate> updateBlockedDate({
+  /// Replaces a blocked range. Answers `204` (§7.1), so the caller reloads.
+  Future<void> updateBlockedDate({
     required String id,
     required DateTime startDate,
     required DateTime endDate,
     String? reason,
-  }) async {
-    final json = await _api.putJsonObject(
-      '$_blockedDatesPath/$id',
-      body: _blockedDateBody(
-        startDate: startDate,
-        endDate: endDate,
-        reason: reason,
-      ),
-    );
-    return RefereeBlockedDateDto.fromJson(json).toDomain();
-  }
+  }) => _api.putJson(
+    '$_blockedDatesPath/$id',
+    body: _blockedDateBody(
+      startDate: startDate,
+      endDate: endDate,
+      reason: reason,
+    ),
+  );
 
   Future<void> deleteBlockedDate(String id) =>
       _api.deleteJson('$_blockedDatesPath/$id');

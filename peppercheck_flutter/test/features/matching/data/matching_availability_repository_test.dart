@@ -77,22 +77,38 @@ void main() {
       expect(slot.id, 's1');
     });
 
-    test('updateTimeSlot puts to the slot path and returns it', () async {
-      when(
-        api.putJsonObject(
-          '$_slotsPath/s1',
-          body: {'dow': 2, 'startMin': 600, 'endMin': 660, 'isActive': true},
-        ),
-      ).thenAnswer((_) async => _slotJson());
-
-      final slot = await repo.updateTimeSlot(
+    test('updateTimeSlot puts to the slot path, body-less response', () async {
+      await repo.updateTimeSlot(
         id: 's1',
         dow: 2,
         startMin: 600,
         endMin: 660,
+        isActive: true,
       );
 
-      expect(slot.id, 's1');
+      verify(
+        api.putJson(
+          '$_slotsPath/s1',
+          body: {'dow': 2, 'startMin': 600, 'endMin': 660, 'isActive': true},
+        ),
+      ).called(1);
+    });
+
+    test('updateTimeSlot carries a disabled slot through unchanged', () async {
+      await repo.updateTimeSlot(
+        id: 's1',
+        dow: 2,
+        startMin: 600,
+        endMin: 660,
+        isActive: false,
+      );
+
+      verify(
+        api.putJson(
+          '$_slotsPath/s1',
+          body: {'dow': 2, 'startMin': 600, 'endMin': 660, 'isActive': false},
+        ),
+      ).called(1);
     });
 
     test('deleteTimeSlot deletes the slot path', () async {
@@ -138,8 +154,15 @@ void main() {
     });
 
     test('updateBlockedDate puts to the blocked date path', () async {
-      when(
-        api.putJsonObject(
+      await repo.updateBlockedDate(
+        id: 'b1',
+        startDate: DateTime(2026, 8, 1),
+        endDate: DateTime(2026, 8, 3),
+        reason: 'trip',
+      );
+
+      verify(
+        api.putJson(
           '$_blockedPath/b1',
           body: {
             'startDate': '2026-08-01',
@@ -147,16 +170,7 @@ void main() {
             'reason': 'trip',
           },
         ),
-      ).thenAnswer((_) async => _blockedJson(reason: 'trip'));
-
-      final blocked = await repo.updateBlockedDate(
-        id: 'b1',
-        startDate: DateTime(2026, 8, 1),
-        endDate: DateTime(2026, 8, 3),
-        reason: 'trip',
-      );
-
-      expect(blocked.reason, 'trip');
+      ).called(1);
     });
 
     test('deleteBlockedDate deletes the blocked date path', () async {

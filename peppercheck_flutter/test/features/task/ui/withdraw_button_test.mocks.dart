@@ -157,12 +157,12 @@ class MockMatchingRepository extends _i1.Mock
           as _i7.Future<_i4.RefereeAvailableTimeSlot>);
 
   @override
-  _i7.Future<_i4.RefereeAvailableTimeSlot> updateTimeSlot({
+  _i7.Future<void> updateTimeSlot({
     required String? id,
     required int? dow,
     required int? startMin,
     required int? endMin,
-    bool? isActive = true,
+    required bool? isActive,
   }) =>
       (super.noSuchMethod(
             Invocation.method(#updateTimeSlot, [], {
@@ -172,33 +172,10 @@ class MockMatchingRepository extends _i1.Mock
               #endMin: endMin,
               #isActive: isActive,
             }),
-            returnValue: _i7.Future<_i4.RefereeAvailableTimeSlot>.value(
-              _FakeRefereeAvailableTimeSlot_2(
-                this,
-                Invocation.method(#updateTimeSlot, [], {
-                  #id: id,
-                  #dow: dow,
-                  #startMin: startMin,
-                  #endMin: endMin,
-                  #isActive: isActive,
-                }),
-              ),
-            ),
-            returnValueForMissingStub:
-                _i7.Future<_i4.RefereeAvailableTimeSlot>.value(
-                  _FakeRefereeAvailableTimeSlot_2(
-                    this,
-                    Invocation.method(#updateTimeSlot, [], {
-                      #id: id,
-                      #dow: dow,
-                      #startMin: startMin,
-                      #endMin: endMin,
-                      #isActive: isActive,
-                    }),
-                  ),
-                ),
+            returnValue: _i7.Future<void>.value(),
+            returnValueForMissingStub: _i7.Future<void>.value(),
           )
-          as _i7.Future<_i4.RefereeAvailableTimeSlot>);
+          as _i7.Future<void>);
 
   @override
   _i7.Future<void> deleteTimeSlot(String? id) =>
@@ -259,7 +236,7 @@ class MockMatchingRepository extends _i1.Mock
           as _i7.Future<_i5.RefereeBlockedDate>);
 
   @override
-  _i7.Future<_i5.RefereeBlockedDate> updateBlockedDate({
+  _i7.Future<void> updateBlockedDate({
     required String? id,
     required DateTime? startDate,
     required DateTime? endDate,
@@ -272,30 +249,10 @@ class MockMatchingRepository extends _i1.Mock
               #endDate: endDate,
               #reason: reason,
             }),
-            returnValue: _i7.Future<_i5.RefereeBlockedDate>.value(
-              _FakeRefereeBlockedDate_3(
-                this,
-                Invocation.method(#updateBlockedDate, [], {
-                  #id: id,
-                  #startDate: startDate,
-                  #endDate: endDate,
-                  #reason: reason,
-                }),
-              ),
-            ),
-            returnValueForMissingStub: _i7.Future<_i5.RefereeBlockedDate>.value(
-              _FakeRefereeBlockedDate_3(
-                this,
-                Invocation.method(#updateBlockedDate, [], {
-                  #id: id,
-                  #startDate: startDate,
-                  #endDate: endDate,
-                  #reason: reason,
-                }),
-              ),
-            ),
+            returnValue: _i7.Future<void>.value(),
+            returnValueForMissingStub: _i7.Future<void>.value(),
           )
-          as _i7.Future<_i5.RefereeBlockedDate>);
+          as _i7.Future<void>);
 
   @override
   _i7.Future<void> deleteBlockedDate(String? id) =>
