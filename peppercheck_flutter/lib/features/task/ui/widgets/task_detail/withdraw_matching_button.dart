@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:peppercheck_flutter/app/theme/app_colors.dart';
 import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
 import 'package:peppercheck_flutter/common_widgets/base_dialog.dart';
@@ -10,7 +11,6 @@ import 'package:peppercheck_flutter/features/matching/application/matching_confi
 import 'package:peppercheck_flutter/features/matching/data/matching_repository.dart';
 import 'package:peppercheck_flutter/features/matching/domain/referee_request.dart';
 import 'package:peppercheck_flutter/features/task/domain/task.dart';
-import 'package:peppercheck_flutter/features/task/ui/task_detail_view_model.dart';
 import 'package:peppercheck_flutter/features/task/ui/task_role_provider.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 
@@ -92,22 +92,26 @@ class _WithdrawMatchingButtonState
     if (!mounted) return;
 
     setState(() => _isLoading = true);
+    // Captured before the pop below, which takes this widget's context with it.
+    final messenger = ScaffoldMessenger.of(context);
     try {
       final myRequest = _readMyRequest();
       if (myRequest == null) return;
       await ref.read(matchingRepositoryProvider).cancelAssignment(myRequest.id);
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(t.task.detail.cancelAssignment.success)),
-      );
-
-      ref.invalidate(taskDetailProvider(widget.task.id));
       ref.invalidate(activeUserTasksProvider);
       ref.invalidate(activeRefereeTasksProvider);
+
+      // Withdrawing ends this referee's access to the task, so re-reading the
+      // detail would 404. Leave the screen instead of refetching it.
+      context.pop();
+      messenger.showSnackBar(
+        SnackBar(content: Text(t.task.detail.cancelAssignment.success)),
+      );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         SnackBar(
           content: Text(
             t.task.detail.cancelAssignment.error(

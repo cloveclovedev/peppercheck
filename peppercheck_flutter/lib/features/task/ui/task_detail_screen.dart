@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -37,7 +39,10 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
   void _startPollIfMatching(Task task) {
     if (_pollStarted || !TaskDetail.isMatching(task)) return;
     _pollStarted = true;
-    ref.read(taskDetailProvider(widget.taskId).notifier).pollUntilMatched();
+    // The notifier owns the poll's failures; nothing here can act on them.
+    unawaited(
+      ref.read(taskDetailProvider(widget.taskId).notifier).pollUntilMatched(),
+    );
   }
 
   @override
@@ -77,6 +82,8 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
         currentIndex: -1,
         // Phase 4c: actions: [ReportMenuButton(task: displayTask)],
         onRefresh: () async {
+          // A manual refresh may also restart a poll that stopped early.
+          _pollStarted = false;
           return ref.refresh(taskDetailProvider(taskId).future);
         },
         slivers: [

@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:peppercheck_flutter/core/async/poll_sleep_provider.dart';
+import 'package:peppercheck_flutter/core/network/api_exception.dart';
 import 'package:peppercheck_flutter/features/matching/domain/referee_request.dart';
 import 'package:peppercheck_flutter/features/task/data/task_repository.dart';
 import 'package:peppercheck_flutter/features/task/domain/task.dart';
@@ -160,5 +161,33 @@ void main() {
     // The cancellation token stops the loop rather than throwing on a
     // disposed notifier.
     expect(calls, lessThan(7));
+  });
+
+  test('a failed poll read stops the poll instead of throwing', () async {
+    var calls = 0;
+    when(repository.getTask('t1')).thenAnswer((_) async {
+      calls++;
+      if (calls == 1) return _task(requestStatuses: ['pending']);
+      throw const ApiException(code: 'network', message: 'offline');
+    });
+
+    final container = makeContainer();
+    await container.read(taskDetailProvider('t1').future);
+
+    // Completes normally: the notifier owns the failure.
+    await container.read(taskDetailProvider('t1').notifier).pollUntilMatched();
+
+    // The build fetch plus the one failed poll read, then it gives up.
+    expect(calls, 2);
+    // The last good task is still on screen for pull-to-refresh to replace.
+    expect(
+      container
+          .read(taskDetailProvider('t1'))
+          .value!
+          .refereeRequests
+          .single
+          .status,
+      'pending',
+    );
   });
 }

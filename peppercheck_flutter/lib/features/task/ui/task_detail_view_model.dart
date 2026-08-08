@@ -1,5 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../app/app_logger.dart';
 import '../../../core/async/poll_sleep_provider.dart';
 import '../../../core/async/progressive_poller.dart';
 import '../data/task_repository.dart';
@@ -36,18 +37,36 @@ class TaskDetail extends _$TaskDetail {
   /// Re-reads the task on the progressive schedule until nothing is pending,
   /// publishing every intermediate result so the screen updates itself without
   /// a manual refresh. Safe to call again; the poll simply runs once more.
+  ///
+  /// Never throws: this is started as a side effect from the screen, so a
+  /// transient failure has nowhere to be caught. A failed read ends the poll
+  /// and leaves the last good task on screen, where pull-to-refresh still
+  /// works, rather than escaping as an unhandled asynchronous error.
   Future<void> pollUntilMatched() async {
     final repository = ref.read(taskRepositoryProvider);
     final sleep = ref.read(pollSleepProvider);
 
-    await pollUntil<Task>(
+    await pollUntil<Task?>(
       fetch: () async {
-        final task = await repository.getTask(_taskId);
-        // Riverpod v3: the notifier may have been disposed during the await.
-        if (ref.mounted) state = AsyncData(task);
-        return task;
+        try {
+          final task = await repository.getTask(_taskId);
+          // Riverpod v3: the notifier may have been disposed during the await.
+          if (ref.mounted) state = AsyncData(task);
+          return task;
+        } catch (error, stackTrace) {
+          if (ref.mounted) {
+            ref
+                .read(loggerProvider)
+                .w(
+                  'Matching poll stopped early',
+                  error: error,
+                  stackTrace: stackTrace,
+                );
+          }
+          return null;
+        }
       },
-      isDone: (task) => !isMatching(task),
+      isDone: (task) => task == null || !isMatching(task),
       cancel: _token,
       sleep: sleep,
     );

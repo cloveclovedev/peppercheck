@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
@@ -54,6 +55,29 @@ void main() {
 
   setUp(() => repository = MockMatchingRepository());
 
+  /// `Override` is not exported by flutter_riverpod, so the scope is built
+  /// here rather than the override list being passed around.
+  Widget scope({
+    required RefereeRequest? myRequest,
+    required MatchingConfig? config,
+    required Widget child,
+  }) => ProviderScope(
+    overrides: [
+      matchingRepositoryProvider.overrideWithValue(repository),
+      taskRoleProvider('t1').overrideWith(
+        (ref) async => TaskViewerRole(isTasker: false, myRequest: myRequest),
+      ),
+      matchingConfigProvider.overrideWith((ref) async {
+        if (config == null) {
+          // Never resolves: the config is still loading.
+          return Completer<MatchingConfig>().future;
+        }
+        return config;
+      }),
+    ],
+    child: child,
+  );
+
   Future<void> pump(
     WidgetTester tester, {
     required Task task,
@@ -61,21 +85,9 @@ void main() {
     MatchingConfig? config = _config,
   }) async {
     await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          matchingRepositoryProvider.overrideWithValue(repository),
-          taskRoleProvider('t1').overrideWith(
-            (ref) async =>
-                TaskViewerRole(isTasker: false, myRequest: myRequest),
-          ),
-          matchingConfigProvider.overrideWith((ref) async {
-            if (config == null) {
-              // Never resolves: the config is still loading.
-              return Completer<MatchingConfig>().future;
-            }
-            return config;
-          }),
-        ],
+      scope(
+        myRequest: myRequest,
+        config: config,
         child: MaterialApp(
           home: Scaffold(body: WithdrawMatchingButton(task: task)),
         ),
@@ -83,6 +95,40 @@ void main() {
     );
     await tester.pump();
     await tester.pump();
+  }
+
+  /// Mounts the button on a pushed route, so the cancel flow has somewhere to
+  /// pop back to.
+  Future<void> pumpRouted(
+    WidgetTester tester, {
+    required Task task,
+    required RefereeRequest? myRequest,
+    MatchingConfig? config = _config,
+  }) async {
+    final router = GoRouter(
+      initialLocation: '/',
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (_, _) => const Scaffold(body: Text('previous screen')),
+        ),
+        GoRoute(
+          path: '/detail',
+          builder: (_, _) => Scaffold(body: WithdrawMatchingButton(task: task)),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+
+    await tester.pumpWidget(
+      scope(
+        myRequest: myRequest,
+        config: config,
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    router.push('/detail');
+    await tester.pumpAndSettle();
   }
 
   final button = find.text(t.task.detail.cancelAssignment.button);
@@ -147,12 +193,14 @@ void main() {
     expect(button, findsNothing);
   });
 
-  testWidgets('cancels the caller own request on confirm', (tester) async {
+  testWidgets('cancels the caller own request and leaves the screen', (
+    tester,
+  ) async {
     when(
       repository.cancelAssignment('r1'),
     ).thenAnswer((_) async => _task(untilDue: const Duration(days: 2)));
 
-    await pump(
+    await pumpRouted(
       tester,
       task: _task(untilDue: const Duration(days: 2)),
       myRequest: _request(),
@@ -164,5 +212,9 @@ void main() {
     await tester.pumpAndSettle();
 
     verify(repository.cancelAssignment('r1')).called(1);
+    // Withdrawing ends the referee's access to the task, so the detail screen
+    // is popped rather than refetched.
+    expect(find.text('previous screen'), findsOneWidget);
+    expect(button, findsNothing);
   });
 }
