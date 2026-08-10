@@ -42,6 +42,8 @@
 #   scripts/dev-run.sh --backend --bws       # restart backend with real bws dev secrets
 #   scripts/dev-run.sh --build               # Android debug APK compile check
 #   scripts/dev-run.sh --avd NAME            # Android AVD (default below; see: flutter emulators)
+#   scripts/dev-run.sh --android --device ID # target one of several booted devices
+#                                            # (see: adb devices / xcrun simctl list devices booted)
 #   scripts/dev-run.sh --caddy-port N        # host ingress port (default 80) when 80 is taken
 #   scripts/dev-run.sh --postgres-port N     # host Postgres port (default 5432) when 5432 is taken
 #   scripts/dev-run.sh --firebase-project ID # api token audience (default peppercheck-dev)
@@ -50,6 +52,11 @@
 # it execs `flutter run` in the foreground. An agent invoking it as a captured
 # command cannot relay keystrokes — let a human drive the app, or use
 # `scripts/dev-run.sh --build` for a compile check.
+#
+# Without --device the first booted emulator/simulator is used. To drive two
+# accounts at once (e.g. a tasker and a referee), boot both devices, then run
+# this once per device in its own terminal with --device; the backend check is
+# idempotent, so the second run leaves the first one's backend alone.
 #
 # --caddy-port is the single source of truth for the ingress: it publishes the
 # backend Caddy on that host port AND tells the app (via --dart-define) to use
@@ -63,6 +70,7 @@ FLUTTER_RUN_BASE="flutter run --flavor dev -t lib/main_dev.dart"
 
 RUN_IOS=0 RUN_ANDROID=0 FORCE_BACKEND=0 DO_BUILD=0 USE_BWS=0
 AVD="Medium_Phone_API_36.1"
+DEVICE=""            # explicit target when several devices are booted
 FIREBASE_PROJECT="peppercheck-dev"
 CADDY_PORT=80       # host ingress port (backend CADDY_HTTP_PORT + app DEV_API_PORT)
 PG_PORT=5432        # host Postgres port (backend POSTGRES_HOST_PORT), host tools only
@@ -75,10 +83,11 @@ while [ $# -gt 0 ]; do
     --bws)      USE_BWS=1 ;;
     --build)    DO_BUILD=1 ;;
     --avd)      AVD="${2:?}"; shift ;;
+    --device|-d) DEVICE="${2:?}"; shift ;;
     --caddy-port)    CADDY_PORT="${2:?}"; shift ;;
     --postgres-port) PG_PORT="${2:?}"; shift ;;
     --firebase-project) FIREBASE_PROJECT="${2:?}"; shift ;;
-    -h|--help)  sed -n '2,56p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h|--help)  sed -n '2,63p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "unknown arg: $1" >&2; exit 2 ;;
   esac
   shift
@@ -92,6 +101,10 @@ if [ "$DO_BUILD" -eq 1 ] && { [ "$RUN_IOS" -eq 1 ] || [ "$RUN_ANDROID" -eq 1 ] |
 fi
 if [ "$RUN_IOS" -eq 1 ] && [ "$RUN_ANDROID" -eq 1 ]; then
   echo "run one platform at a time (--ios or --android): flutter run holds the terminal for hot reload" >&2
+  exit 2
+fi
+if [ -n "$DEVICE" ] && [ "$RUN_IOS" -eq 0 ] && [ "$RUN_ANDROID" -eq 0 ]; then
+  echo "--device selects which booted device to run on; pass it with --ios or --android" >&2
   exit 2
 fi
 
@@ -207,6 +220,16 @@ EOF
 }
 
 boot_ios() {
+  if [ -n "$DEVICE" ]; then
+    xcrun simctl list devices booted 2>/dev/null | grep -qF "$DEVICE" || {
+      echo "device '$DEVICE' is not a booted simulator:" >&2
+      xcrun simctl list devices booted >&2
+      exit 1
+    }
+    IOS_DEVICE="$DEVICE"
+    echo "==> iOS device: $IOS_DEVICE"
+    return 0
+  fi
   echo "==> Booting iOS Simulator"
   open -a Simulator || true
   for i in $(seq 1 20); do
@@ -218,21 +241,39 @@ boot_ios() {
   echo "    No booted iOS simulator. Open one in Simulator.app, then retry." >&2; exit 1
 }
 
+# adb scoped to the selected device. Unscoped adb fails outright ("more than
+# one device") once a second emulator is booted, which is exactly the
+# two-account case --device exists for.
+adb_dev() {
+  if [ -n "$ANDROID_DEVICE" ]; then adb -s "$ANDROID_DEVICE" "$@"; else adb "$@"; fi
+}
+
 boot_android() {
   command -v adb >/dev/null || { echo "adb not found (Android SDK platform-tools not on PATH)"; exit 1; }
-  ANDROID_DEVICE="$(adb devices | awk '$2=="device" && $1 ~ /^emulator-/ {print $1; exit}')"
-  if [ -z "$ANDROID_DEVICE" ]; then
-    echo "==> Launching Android emulator ($AVD)"
-    flutter emulators --launch "$AVD" >/dev/null 2>&1 \
-      || { echo "could not launch AVD '$AVD' (see: flutter emulators)"; exit 1; }
+  if [ -n "$DEVICE" ]; then
+    adb devices | awk -v d="$DEVICE" '$1==d && $2=="device" {found=1} END {exit !found}' || {
+      echo "device '$DEVICE' is not an attached, booted device:" >&2
+      adb devices >&2
+      exit 1
+    }
+    ANDROID_DEVICE="$DEVICE"
+  else
+    ANDROID_DEVICE="$(adb devices | awk '$2=="device" && $1 ~ /^emulator-/ {print $1; exit}')"
+    if [ -z "$ANDROID_DEVICE" ]; then
+      echo "==> Launching Android emulator ($AVD)"
+      flutter emulators --launch "$AVD" >/dev/null 2>&1 \
+        || { echo "could not launch AVD '$AVD' (see: flutter emulators)"; exit 1; }
+    fi
   fi
   printf '==> Waiting for Android boot '
-  adb wait-for-device
+  adb_dev wait-for-device
   for i in $(seq 1 60); do
-    [ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1" ] && break
+    [ "$(adb_dev shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1" ] && break
     printf '.'; sleep 2
   done
-  ANDROID_DEVICE="$(adb devices | awk '$2=="device" && $1 ~ /^emulator-/ {print $1; exit}')"
+  if [ -z "$ANDROID_DEVICE" ]; then
+    ANDROID_DEVICE="$(adb devices | awk '$2=="device" && $1 ~ /^emulator-/ {print $1; exit}')"
+  fi
   printf ' ready (%s)\n' "$ANDROID_DEVICE"
   ensure_android_storage
 }

@@ -63,11 +63,29 @@ Other options:
 ```sh
 scripts/dev-run.sh --build                          # Android debug APK compile check (no backend/emulator)
 scripts/dev-run.sh --android --avd NAME
+scripts/dev-run.sh --android --device emulator-5556 # pick one of several booted devices
 scripts/dev-run.sh --android --caddy-port 18080 --postgres-port 15432
 ```
 
 `--build` compiles a debug APK with the JDK-21 pin and `--flavor dev` applied,
 as a quick compile check.
+
+## Two accounts side by side
+
+Some flows need two signed-in users at once — a tasker and a referee, for
+instance. Boot both emulators (or simulators), then run the app once per device
+in its own terminal:
+
+```sh
+adb devices                                          # emulator-5554, emulator-5556, …
+scripts/dev-run.sh --android --device emulator-5554  # terminal 1
+scripts/dev-run.sh --android --device emulator-5556  # terminal 2
+```
+
+Without `--device` both runs would target the first booted device. The backend
+check is idempotent, so the second run leaves the first one's backend alone.
+Each device needs its own Google account, since the two users must be
+distinct.
 
 See [local port configuration](operations/local-ports.md) when running multiple
 worktrees or products concurrently. To run several isolated backends in parallel
