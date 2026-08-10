@@ -1,5 +1,4 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../core/network/api_client_provider.dart';
@@ -10,29 +9,23 @@ import '../domain/matching_config.dart';
 import '../domain/referee_available_time_slot.dart';
 import '../domain/referee_blocked_date.dart';
 import 'matching_config_dto.dart';
+import 'referee_blocked_date_dto.dart';
+import 'referee_time_slot_dto.dart';
 
 part 'matching_repository.g.dart';
 
 @Riverpod(keepAlive: true)
 MatchingRepository matchingRepository(Ref ref) {
-  return MatchingRepository(
-    ref.watch(apiClientProvider),
-    Supabase.instance.client,
-  );
+  return MatchingRepository(ref.watch(apiClientProvider));
 }
 
 /// Matching over the Go API: the public config, the caller's referee
-/// assignments, cancelling an assignment, and (from the availability step on)
-/// the caller's availability.
-///
-/// TRANSITIONAL: availability CRUD still runs through Supabase RPCs until it
-/// moves to the Go API later in this pull request; the Supabase client goes
-/// away with it.
+/// assignments, cancelling an assignment, and the caller's own availability.
+/// Every endpoint is scoped to the bearer, so nothing here takes a user id.
 class MatchingRepository {
-  MatchingRepository(this._api, this._supabase);
+  MatchingRepository(this._api);
 
   final ApiClient _api;
-  final SupabaseClient _supabase;
 
   /// The server-owned deadlines and limits. Cached by [matchingConfigProvider].
   Future<MatchingConfig> fetchConfig() async {
@@ -61,107 +54,139 @@ class MatchingRepository {
     return TaskDto.fromJson(json).toDomain();
   }
 
-  Future<List<RefereeAvailableTimeSlot>> getRefereeAvailableTimeSlots(
-    String userId,
-  ) async {
-    final response = await _supabase
-        .from('referee_available_time_slots')
-        .select()
-        .eq('user_id', userId)
-        // TODO: Future enhancement - Fetch both active/inactive slots.
-        // Currently only fetching active slots. Ideally, we should fetch all and
-        // allow users to toggle is_active status via UI (e.g. switch/radio).
-        // Inactive slots should be displayed as grayed out.
-        .eq('is_active', true)
-        .order('dow', ascending: true)
-        .order('start_min', ascending: true);
+  static const _timeSlotsPath = '/api/v1/me/availability/time-slots';
+  static const _blockedDatesPath = '/api/v1/me/availability/blocked-dates';
 
-    return (response as List)
-        .map((e) => RefereeAvailableTimeSlot.fromJson(e))
-        .toList();
+  Future<List<RefereeAvailableTimeSlot>> fetchTimeSlots() async {
+    final json = await _api.getJson(_timeSlotsPath);
+    return _slots(json);
   }
 
-  Future<String> createRefereeAvailableTimeSlot({
+  Future<RefereeAvailableTimeSlot> createTimeSlot({
     required int dow,
     required int startMin,
     required int endMin,
+    bool isActive = true,
   }) async {
-    final response = await _supabase.rpc<String>(
-      'create_referee_available_time_slot',
-      params: {'p_dow': dow, 'p_start_min': startMin, 'p_end_min': endMin},
+    final json = await _api.postJson(
+      _timeSlotsPath,
+      body: _slotBody(
+        dow: dow,
+        startMin: startMin,
+        endMin: endMin,
+        isActive: isActive,
+      ),
     );
-    return response;
+    return RefereeTimeSlotDto.fromJson(json).toDomain();
   }
 
-  Future<void> updateRefereeAvailableTimeSlot({
+  /// Replaces a slot. The endpoint answers `204` (§7.1), so the caller reloads
+  /// the list rather than reading back the updated row. [isActive] is required
+  /// because sending a default would silently reactivate a disabled slot.
+  Future<void> updateTimeSlot({
     required String id,
     required int dow,
     required int startMin,
     required int endMin,
-  }) async {
-    await _supabase.rpc(
-      'update_referee_available_time_slot',
-      params: {
-        'p_id': id,
-        'p_dow': dow,
-        'p_start_min': startMin,
-        'p_end_min': endMin,
-      },
-    );
+    required bool isActive,
+  }) => _api.putJson(
+    '$_timeSlotsPath/$id',
+    body: _slotBody(
+      dow: dow,
+      startMin: startMin,
+      endMin: endMin,
+      isActive: isActive,
+    ),
+  );
+
+  Future<void> deleteTimeSlot(String id) =>
+      _api.deleteJson('$_timeSlotsPath/$id');
+
+  Future<List<RefereeBlockedDate>> fetchBlockedDates() async {
+    final json = await _api.getJson(_blockedDatesPath);
+    return _blockedDates(json);
   }
 
-  Future<void> deleteRefereeAvailableTimeSlot(String id) async {
-    await _supabase.rpc(
-      'delete_referee_available_time_slot',
-      params: {'p_id': id},
-    );
-  }
-
-  Future<List<RefereeBlockedDate>> getRefereeBlockedDates() async {
-    final response = await _supabase
-        .from('referee_blocked_dates')
-        .select()
-        .order('start_date', ascending: true);
-
-    return (response as List)
-        .map((e) => RefereeBlockedDate.fromJson(e))
-        .toList();
-  }
-
-  Future<String> createRefereeBlockedDate({
+  Future<RefereeBlockedDate> createBlockedDate({
     required DateTime startDate,
     required DateTime endDate,
     String? reason,
   }) async {
-    final response = await _supabase.rpc<String>(
-      'create_referee_blocked_date',
-      params: {
-        'p_start_date': startDate.toIso8601String().substring(0, 10),
-        'p_end_date': endDate.toIso8601String().substring(0, 10),
-        'p_reason': reason,
-      },
+    final json = await _api.postJson(
+      _blockedDatesPath,
+      body: _blockedDateBody(
+        startDate: startDate,
+        endDate: endDate,
+        reason: reason,
+      ),
     );
-    return response;
+    return RefereeBlockedDateDto.fromJson(json).toDomain();
   }
 
-  Future<void> updateRefereeBlockedDate({
+  /// Replaces a blocked range. Answers `204` (§7.1), so the caller reloads.
+  Future<void> updateBlockedDate({
     required String id,
     required DateTime startDate,
     required DateTime endDate,
     String? reason,
-  }) async {
-    await _supabase.rpc(
-      'update_referee_blocked_date',
-      params: {
-        'p_id': id,
-        'p_start_date': startDate.toIso8601String().substring(0, 10),
-        'p_end_date': endDate.toIso8601String().substring(0, 10),
-        'p_reason': reason,
-      },
-    );
+  }) => _api.putJson(
+    '$_blockedDatesPath/$id',
+    body: _blockedDateBody(
+      startDate: startDate,
+      endDate: endDate,
+      reason: reason,
+    ),
+  );
+
+  Future<void> deleteBlockedDate(String id) =>
+      _api.deleteJson('$_blockedDatesPath/$id');
+
+  List<RefereeAvailableTimeSlot> _slots(Map<String, dynamic> json) {
+    final items = json['timeSlots'];
+    if (items is! List) return const [];
+    return items
+        .map(
+          (item) => RefereeTimeSlotDto.fromJson(
+            Map<String, dynamic>.from(item as Map),
+          ).toDomain(),
+        )
+        .toList();
   }
 
-  Future<void> deleteRefereeBlockedDate(String id) async {
-    await _supabase.rpc('delete_referee_blocked_date', params: {'p_id': id});
+  List<RefereeBlockedDate> _blockedDates(Map<String, dynamic> json) {
+    final items = json['blockedDates'];
+    if (items is! List) return const [];
+    return items
+        .map(
+          (item) => RefereeBlockedDateDto.fromJson(
+            Map<String, dynamic>.from(item as Map),
+          ).toDomain(),
+        )
+        .toList();
   }
+
+  Map<String, dynamic> _slotBody({
+    required int dow,
+    required int startMin,
+    required int endMin,
+    required bool isActive,
+  }) => {
+    'dow': dow,
+    'startMin': startMin,
+    'endMin': endMin,
+    'isActive': isActive,
+  };
+
+  /// Blocked dates are calendar days, so only the date part goes on the wire.
+  Map<String, dynamic> _blockedDateBody({
+    required DateTime startDate,
+    required DateTime endDate,
+    String? reason,
+  }) => {
+    'startDate': _day(startDate),
+    'endDate': _day(endDate),
+    'reason': reason,
+  };
+
+  static String _day(DateTime date) => date.toIso8601String().substring(0, 10);
 }

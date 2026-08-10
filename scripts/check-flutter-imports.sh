@@ -2,8 +2,8 @@
 # Enforces import boundaries in the Flutter app:
 #   1. firebase_auth may only be imported under lib/features/auth/.
 #   2. supabase_flutter must not be imported by the features already migrated
-#      off it: features/auth, features/profile, features/notification, or by
-#      core/network.
+#      off it: features/auth, features/profile, features/notification,
+#      features/task, features/matching, features/home, or by core/network.
 #   3. Dio is only constructed in core/network — features must go through
 #      ApiClient/PresignedUploadClient, never build their own Dio instance.
 # evidence still builds Dio directly for R2 uploads until its own migration
@@ -21,11 +21,18 @@ if [ -n "$bad_fb" ]; then
   fail=1
 fi
 
-bad_sb=$(grep -rl "package:supabase_flutter/" \
-  "$lib/features/auth" "$lib/features/profile" "$lib/features/notification" \
-  "$lib/core/network" || true)
+migrated_paths=(
+  "$lib/features/auth"
+  "$lib/features/profile"
+  "$lib/features/notification"
+  "$lib/features/task"
+  "$lib/features/matching"
+  "$lib/features/home"
+  "$lib/core/network"
+)
+bad_sb=$(grep -rl "package:supabase_flutter/" "${migrated_paths[@]}" || true)
 if [ -n "$bad_sb" ]; then
-  echo "ERROR: supabase_flutter imported on a migrated path (features/auth, features/profile, features/notification, core/network):"
+  echo "ERROR: supabase_flutter imported on a migrated path (${migrated_paths[*]}):"
   echo "$bad_sb"
   fail=1
 fi

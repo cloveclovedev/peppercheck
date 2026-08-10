@@ -3,7 +3,6 @@ import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:peppercheck_flutter/core/network/api_client.dart';
 import 'package:peppercheck_flutter/features/matching/data/matching_repository.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'matching_repository_core_test.mocks.dart';
 
@@ -37,14 +36,14 @@ Map<String, dynamic> _assignmentJson({
   ],
 };
 
-@GenerateNiceMocks([MockSpec<ApiClient>(), MockSpec<SupabaseClient>()])
+@GenerateNiceMocks([MockSpec<ApiClient>()])
 void main() {
   late MockApiClient api;
   late MatchingRepository repo;
 
   setUp(() {
     api = MockApiClient();
-    repo = MatchingRepository(api, MockSupabaseClient());
+    repo = MatchingRepository(api);
   });
 
   test('fetchConfig maps GET /matching/config', () async {

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:peppercheck_flutter/features/judgement/data/judgement_repository.dart';
 import 'package:peppercheck_flutter/features/home/ui/home_view_model.dart';
-import 'package:peppercheck_flutter/features/task/ui/providers/task_provider.dart';
+import 'package:peppercheck_flutter/features/task/ui/task_detail_view_model.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'judgement_controller.g.dart';
@@ -30,7 +30,7 @@ class JudgementController extends _$JudgementController {
             status: status,
             comment: comment,
           );
-      ref.invalidate(taskProvider(taskId));
+      ref.invalidate(taskDetailProvider(taskId));
       ref.invalidate(activeUserTasksProvider);
       ref.invalidate(activeRefereeTasksProvider);
       onSuccess();
@@ -54,7 +54,7 @@ class JudgementController extends _$JudgementController {
             isPositive: isPositive,
             comment: comment,
           );
-      ref.invalidate(taskProvider(taskId));
+      ref.invalidate(taskDetailProvider(taskId));
       ref.invalidate(activeUserTasksProvider);
       ref.invalidate(activeRefereeTasksProvider);
       onSuccess();
@@ -72,7 +72,7 @@ class JudgementController extends _$JudgementController {
       await ref
           .read(judgementRepositoryProvider)
           .confirmReviewTimeout(judgementId: judgementId);
-      ref.invalidate(taskProvider(taskId));
+      ref.invalidate(taskDetailProvider(taskId));
       ref.invalidate(activeUserTasksProvider);
       ref.invalidate(activeRefereeTasksProvider);
       onSuccess();

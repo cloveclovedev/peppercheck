@@ -34,7 +34,7 @@ final class JudgementControllerProvider
 }
 
 String _$judgementControllerHash() =>
-    r'56ae197117d46f64837de579c1cf44175b06bad5';
+    r'c0a21af523831da721cd616a3dee6c10289a7cb0';
 
 abstract class _$JudgementController extends $AsyncNotifier<void> {
   FutureOr<void> build();

@@ -304,17 +304,26 @@ carries **only** display fields; it is not the owner's editable profile:
 | `GET /matching/config` | — | `200 { "openDeadlineHours":24, "cancelDeadlineHours":12, "rematchCutoffHours":14, "maxRefereesPerTask":2, "matchingPointCost":1 }` | public |
 | `GET /me/availability/time-slots` | — | `200 { "timeSlots": [Slot] }` | `Slot = { "id","dow","startMin","endMin","isActive" }` |
 | `POST /me/availability/time-slots` | `{ "dow","startMin","endMin","isActive" }` | `201` Slot | |
-| `PUT /me/availability/time-slots/{id}` | same | `200` Slot | own only |
+| `PUT /me/availability/time-slots/{id}` | same | `204` | own only |
 | `DELETE /me/availability/time-slots/{id}` | — | `204` | own only |
 | `GET /me/availability/blocked-dates` | — | `200 { "blockedDates": [Blocked] }` | `Blocked = { "id","startDate","endDate","reason"? }` (dates `YYYY-MM-DD`) |
 | `POST /me/availability/blocked-dates` | `{ "startDate","endDate","reason"? }` | `201` Blocked | |
-| `PUT /me/availability/blocked-dates/{id}` | same | `200` Blocked | own only |
+| `PUT /me/availability/blocked-dates/{id}` | same | `204` | own only |
 | `DELETE /me/availability/blocked-dates/{id}` | — | `204` | own only |
 
 The embedded `PublicProfile` is the only cross-feature read the task/matching
 handlers perform against `profiles` (Phase 3a); it is a **read of `username` +
 `avatar_url` by `user_id`**, exposed as a shared minimal projection (not the
 owner's `/me/profile` DTO).
+
+> **Amendment (2026-08-06, surfaced by the Phase 4a Flutter review of PR #539).**
+> The two availability `PUT` endpoints were pinned as returning the updated
+> resource, but shipped returning `204 No Content` (`PostTimeSlot` /
+> `PostBlockedDate` do return the created object with `201`). The contract is
+> amended to the implemented `204` rather than the handlers changed: the only
+> client refetches the whole list after every edit, so the response body has no
+> consumer, and `DELETE` on the same resources is already body-less. A client
+> that decodes a resource from these responses fails on the empty body.
 
 ## §8 Notification Foundation
 

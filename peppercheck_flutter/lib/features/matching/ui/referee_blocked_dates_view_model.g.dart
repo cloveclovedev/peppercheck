@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'referee_blocked_dates_controller.dart';
+part of 'referee_blocked_dates_view_model.dart';
 
 // **************************************************************************
 // RiverpodGenerator
@@ -8,40 +8,45 @@ part of 'referee_blocked_dates_controller.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// The signed-in referee's blocked calendar days.
 
-@ProviderFor(RefereeBlockedDatesController)
-const refereeBlockedDatesControllerProvider =
-    RefereeBlockedDatesControllerProvider._();
+@ProviderFor(RefereeBlockedDatesViewModel)
+const refereeBlockedDatesViewModelProvider =
+    RefereeBlockedDatesViewModelProvider._();
 
-final class RefereeBlockedDatesControllerProvider
+/// The signed-in referee's blocked calendar days.
+final class RefereeBlockedDatesViewModelProvider
     extends
         $AsyncNotifierProvider<
-          RefereeBlockedDatesController,
+          RefereeBlockedDatesViewModel,
           List<RefereeBlockedDate>
         > {
-  const RefereeBlockedDatesControllerProvider._()
+  /// The signed-in referee's blocked calendar days.
+  const RefereeBlockedDatesViewModelProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
-        name: r'refereeBlockedDatesControllerProvider',
+        name: r'refereeBlockedDatesViewModelProvider',
         isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
 
   @override
-  String debugGetCreateSourceHash() => _$refereeBlockedDatesControllerHash();
+  String debugGetCreateSourceHash() => _$refereeBlockedDatesViewModelHash();
 
   @$internal
   @override
-  RefereeBlockedDatesController create() => RefereeBlockedDatesController();
+  RefereeBlockedDatesViewModel create() => RefereeBlockedDatesViewModel();
 }
 
-String _$refereeBlockedDatesControllerHash() =>
-    r'791eeea4e48c93da7c3fa2317157beb8f7ac4e5c';
+String _$refereeBlockedDatesViewModelHash() =>
+    r'21def89cbdc543925434263b15e3efe281b273cd';
 
-abstract class _$RefereeBlockedDatesController
+/// The signed-in referee's blocked calendar days.
+
+abstract class _$RefereeBlockedDatesViewModel
     extends $AsyncNotifier<List<RefereeBlockedDate>> {
   FutureOr<List<RefereeBlockedDate>> build();
   @$mustCallSuper

@@ -31,6 +31,9 @@ scripts/dev-run.sh --backend            # (re)build/restart the backend only
 
 - A bare platform flag ensures the backend (starts it only if it is not already
   up on `--caddy-port`), leaving a running backend and its data untouched.
+- Two signed-in users at once (tasker + referee) → boot both devices and pass
+  `--device <id>` per terminal; without it both runs target the first booted
+  device. Each device needs its own Google account.
 - Pass `--backend` after editing backend code to force a rebuild/restart. For a
   full reset including the local DB, use `cd backend && make reset`.
 - Run one platform at a time; see `scripts/dev-run.sh --help` for port and AVD

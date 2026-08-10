@@ -51,7 +51,7 @@ final class TaskCreationViewModelProvider
 }
 
 String _$taskCreationViewModelHash() =>
-    r'17b28a9f676132ec9c1d1699df24f4926c29d620';
+    r'685abb0c533c9b574f7adc3f484efd5b0475e437';
 
 final class TaskCreationViewModelFamily extends $Family
     with

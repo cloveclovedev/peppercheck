@@ -1,30 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:peppercheck_flutter/app/theme/app_colors.dart';
 import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
 import 'package:peppercheck_flutter/common_widgets/action_button.dart';
 import 'package:peppercheck_flutter/common_widgets/base_section.dart';
-import 'package:peppercheck_flutter/features/matching/domain/referee_request.dart';
 import 'package:peppercheck_flutter/features/matching/domain/public_profile.dart';
 import 'package:peppercheck_flutter/features/task/domain/task.dart';
+import 'package:peppercheck_flutter/features/task/ui/task_role_provider.dart';
 import 'package:peppercheck_flutter/features/task/ui/widgets/task_detail/delete_task_button.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
-class TaskDetailInfoSection extends StatelessWidget {
+class TaskDetailInfoSection extends ConsumerWidget {
   final Task task;
 
   const TaskDetailInfoSection({super.key, required this.task});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final dateFormatter = DateFormat('yyyy/MM/dd H:mm');
     final formattedDate = task.dueDate != null
         ? dateFormatter.format(DateTime.parse(task.dueDate!).toLocal())
         : '-';
 
-    final myRequest = _findMyRefereeRequest(task);
+    // The tasker's own view has no "my request"; only an assigned referee does.
+    final myRequest = ref.watch(taskRoleProvider(task.id)).value?.myRequest;
 
     return BaseSection(
       title: t.task.creation.sectionInfo,
@@ -152,13 +153,4 @@ class TaskDetailInfoSection extends StatelessWidget {
       ],
     );
   }
-}
-
-RefereeRequest? _findMyRefereeRequest(Task task) {
-  final userId = Supabase.instance.client.auth.currentUser?.id;
-  if (userId == null) return null;
-  for (final r in task.refereeRequests) {
-    if (r.matchedRefereeId == userId) return r;
-  }
-  return null;
 }

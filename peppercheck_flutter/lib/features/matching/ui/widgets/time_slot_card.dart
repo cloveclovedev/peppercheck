@@ -2,37 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:peppercheck_flutter/app/theme/app_colors.dart';
 import 'package:peppercheck_flutter/app/theme/app_sizes.dart';
-import 'package:peppercheck_flutter/features/matching/domain/referee_blocked_date.dart';
-import 'package:peppercheck_flutter/features/matching/presentation/controllers/referee_blocked_dates_controller.dart';
-import 'package:peppercheck_flutter/features/matching/presentation/widgets/blocked_date_dialog.dart';
+import 'package:peppercheck_flutter/features/matching/domain/referee_available_time_slot.dart';
+import 'package:peppercheck_flutter/features/matching/ui/referee_availability_view_model.dart';
+import 'package:peppercheck_flutter/features/matching/ui/widgets/time_slot_dialog.dart';
 
-class BlockedDateCard extends ConsumerWidget {
-  final RefereeBlockedDate blockedDate;
+import 'package:peppercheck_flutter/app/utils/date_time_utils.dart';
 
-  const BlockedDateCard({super.key, required this.blockedDate});
+class TimeSlotCard extends ConsumerWidget {
+  final RefereeAvailableTimeSlot timeSlot;
 
-  String _formatDate(DateTime date) {
-    return '${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}';
-  }
-
-  String _formatDateRange() {
-    final start = _formatDate(blockedDate.startDate);
-    final end = _formatDate(blockedDate.endDate);
-    if (start == end) {
-      return start;
-    }
-    return '$start - $end';
-  }
+  const TimeSlotCard({super.key, required this.timeSlot});
 
   void _onEdit(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
-      builder: (context) => BlockedDateDialog(
-        blockedDate: blockedDate,
-        onSave: (startDate, endDate, reason) {
+      builder: (context) => TimeSlotDialog(
+        timeSlot: timeSlot,
+        onSave: (dow, start, end) {
           ref
-              .read(refereeBlockedDatesControllerProvider.notifier)
-              .editBlockedDate(blockedDate.id, startDate, endDate, reason);
+              .read(refereeAvailabilityViewModelProvider.notifier)
+              .updateTimeSlot(timeSlot.id, dow, start, end);
         },
       ),
     );
@@ -40,8 +29,8 @@ class BlockedDateCard extends ConsumerWidget {
 
   void _onDelete(WidgetRef ref) {
     ref
-        .read(refereeBlockedDatesControllerProvider.notifier)
-        .removeBlockedDate(blockedDate.id);
+        .read(refereeAvailabilityViewModelProvider.notifier)
+        .deleteTimeSlot(timeSlot.id);
   }
 
   @override
@@ -58,26 +47,22 @@ class BlockedDateCard extends ConsumerWidget {
         child: Row(
           children: [
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
                   Text(
-                    _formatDateRange(),
+                    getDayName(timeSlot.dow),
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: AppColors.textPrimary,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  if (blockedDate.reason != null &&
-                      blockedDate.reason!.isNotEmpty) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      blockedDate.reason!,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
+                  const SizedBox(width: 12),
+                  Text(
+                    '${formatMinutes(timeSlot.startMin)} - ${formatMinutes(timeSlot.endMin)}',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppColors.textPrimary,
                     ),
-                  ],
+                  ),
                 ],
               ),
             ),

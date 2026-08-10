@@ -46,4 +46,48 @@ class MockApiClient extends _i1.Mock implements _i2.ApiClient {
             ),
           )
           as _i3.Future<Map<String, dynamic>>);
+
+  @override
+  _i3.Future<Map<String, dynamic>> patchJson(String? path, {Object? body}) =>
+      (super.noSuchMethod(
+            Invocation.method(#patchJson, [path], {#body: body}),
+            returnValue: _i3.Future<Map<String, dynamic>>.value(
+              <String, dynamic>{},
+            ),
+            returnValueForMissingStub: _i3.Future<Map<String, dynamic>>.value(
+              <String, dynamic>{},
+            ),
+          )
+          as _i3.Future<Map<String, dynamic>>);
+
+  @override
+  _i3.Future<Map<String, dynamic>> postJson(String? path, {Object? body}) =>
+      (super.noSuchMethod(
+            Invocation.method(#postJson, [path], {#body: body}),
+            returnValue: _i3.Future<Map<String, dynamic>>.value(
+              <String, dynamic>{},
+            ),
+            returnValueForMissingStub: _i3.Future<Map<String, dynamic>>.value(
+              <String, dynamic>{},
+            ),
+          )
+          as _i3.Future<Map<String, dynamic>>);
+
+  @override
+  _i3.Future<void> putJson(String? path, {Object? body}) =>
+      (super.noSuchMethod(
+            Invocation.method(#putJson, [path], {#body: body}),
+            returnValue: _i3.Future<void>.value(),
+            returnValueForMissingStub: _i3.Future<void>.value(),
+          )
+          as _i3.Future<void>);
+
+  @override
+  _i3.Future<void> deleteJson(String? path, {Object? body}) =>
+      (super.noSuchMethod(
+            Invocation.method(#deleteJson, [path], {#body: body}),
+            returnValue: _i3.Future<void>.value(),
+            returnValueForMissingStub: _i3.Future<void>.value(),
+          )
+          as _i3.Future<void>);
 }

@@ -3,7 +3,7 @@
 // ignore_for_file: type=lint
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
-part of 'referee_available_time_slot.dart';
+part of 'referee_time_slot_dto.dart';
 
 // **************************************************************************
 // FreezedGenerator
@@ -11,38 +11,41 @@ part of 'referee_available_time_slot.dart';
 
 // dart format off
 T _$identity<T>(T value) => value;
+
 /// @nodoc
-mixin _$RefereeAvailableTimeSlot {
+mixin _$RefereeTimeSlotDto {
 
  String get id; int get dow; int get startMin; int get endMin; bool get isActive;
-/// Create a copy of RefereeAvailableTimeSlot
+/// Create a copy of RefereeTimeSlotDto
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
-$RefereeAvailableTimeSlotCopyWith<RefereeAvailableTimeSlot> get copyWith => _$RefereeAvailableTimeSlotCopyWithImpl<RefereeAvailableTimeSlot>(this as RefereeAvailableTimeSlot, _$identity);
+$RefereeTimeSlotDtoCopyWith<RefereeTimeSlotDto> get copyWith => _$RefereeTimeSlotDtoCopyWithImpl<RefereeTimeSlotDto>(this as RefereeTimeSlotDto, _$identity);
 
+  /// Serializes this RefereeTimeSlotDto to a JSON map.
+  Map<String, dynamic> toJson();
 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is RefereeAvailableTimeSlot&&(identical(other.id, id) || other.id == id)&&(identical(other.dow, dow) || other.dow == dow)&&(identical(other.startMin, startMin) || other.startMin == startMin)&&(identical(other.endMin, endMin) || other.endMin == endMin)&&(identical(other.isActive, isActive) || other.isActive == isActive));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is RefereeTimeSlotDto&&(identical(other.id, id) || other.id == id)&&(identical(other.dow, dow) || other.dow == dow)&&(identical(other.startMin, startMin) || other.startMin == startMin)&&(identical(other.endMin, endMin) || other.endMin == endMin)&&(identical(other.isActive, isActive) || other.isActive == isActive));
 }
 
-
+@JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode => Object.hash(runtimeType,id,dow,startMin,endMin,isActive);
 
 @override
 String toString() {
-  return 'RefereeAvailableTimeSlot(id: $id, dow: $dow, startMin: $startMin, endMin: $endMin, isActive: $isActive)';
+  return 'RefereeTimeSlotDto(id: $id, dow: $dow, startMin: $startMin, endMin: $endMin, isActive: $isActive)';
 }
 
 
 }
 
 /// @nodoc
-abstract mixin class $RefereeAvailableTimeSlotCopyWith<$Res>  {
-  factory $RefereeAvailableTimeSlotCopyWith(RefereeAvailableTimeSlot value, $Res Function(RefereeAvailableTimeSlot) _then) = _$RefereeAvailableTimeSlotCopyWithImpl;
+abstract mixin class $RefereeTimeSlotDtoCopyWith<$Res>  {
+  factory $RefereeTimeSlotDtoCopyWith(RefereeTimeSlotDto value, $Res Function(RefereeTimeSlotDto) _then) = _$RefereeTimeSlotDtoCopyWithImpl;
 @useResult
 $Res call({
  String id, int dow, int startMin, int endMin, bool isActive
@@ -53,14 +56,14 @@ $Res call({
 
 }
 /// @nodoc
-class _$RefereeAvailableTimeSlotCopyWithImpl<$Res>
-    implements $RefereeAvailableTimeSlotCopyWith<$Res> {
-  _$RefereeAvailableTimeSlotCopyWithImpl(this._self, this._then);
+class _$RefereeTimeSlotDtoCopyWithImpl<$Res>
+    implements $RefereeTimeSlotDtoCopyWith<$Res> {
+  _$RefereeTimeSlotDtoCopyWithImpl(this._self, this._then);
 
-  final RefereeAvailableTimeSlot _self;
-  final $Res Function(RefereeAvailableTimeSlot) _then;
+  final RefereeTimeSlotDto _self;
+  final $Res Function(RefereeTimeSlotDto) _then;
 
-/// Create a copy of RefereeAvailableTimeSlot
+/// Create a copy of RefereeTimeSlotDto
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? dow = null,Object? startMin = null,Object? endMin = null,Object? isActive = null,}) {
   return _then(_self.copyWith(
@@ -76,8 +79,8 @@ as bool,
 }
 
 
-/// Adds pattern-matching-related methods to [RefereeAvailableTimeSlot].
-extension RefereeAvailableTimeSlotPatterns on RefereeAvailableTimeSlot {
+/// Adds pattern-matching-related methods to [RefereeTimeSlotDto].
+extension RefereeTimeSlotDtoPatterns on RefereeTimeSlotDto {
 /// A variant of `map` that fallback to returning `orElse`.
 ///
 /// It is equivalent to doing:
@@ -90,10 +93,10 @@ extension RefereeAvailableTimeSlotPatterns on RefereeAvailableTimeSlot {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _RefereeAvailableTimeSlot value)?  $default,{required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _RefereeTimeSlotDto value)?  $default,{required TResult orElse(),}){
 final _that = this;
 switch (_that) {
-case _RefereeAvailableTimeSlot() when $default != null:
+case _RefereeTimeSlotDto() when $default != null:
 return $default(_that);case _:
   return orElse();
 
@@ -112,10 +115,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _RefereeAvailableTimeSlot value)  $default,){
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _RefereeTimeSlotDto value)  $default,){
 final _that = this;
 switch (_that) {
-case _RefereeAvailableTimeSlot():
+case _RefereeTimeSlotDto():
 return $default(_that);case _:
   throw StateError('Unexpected subclass');
 
@@ -133,10 +136,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _RefereeAvailableTimeSlot value)?  $default,){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _RefereeTimeSlotDto value)?  $default,){
 final _that = this;
 switch (_that) {
-case _RefereeAvailableTimeSlot() when $default != null:
+case _RefereeTimeSlotDto() when $default != null:
 return $default(_that);case _:
   return null;
 
@@ -156,7 +159,7 @@ return $default(_that);case _:
 
 @optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  int dow,  int startMin,  int endMin,  bool isActive)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
-case _RefereeAvailableTimeSlot() when $default != null:
+case _RefereeTimeSlotDto() when $default != null:
 return $default(_that.id,_that.dow,_that.startMin,_that.endMin,_that.isActive);case _:
   return orElse();
 
@@ -177,7 +180,7 @@ return $default(_that.id,_that.dow,_that.startMin,_that.endMin,_that.isActive);c
 
 @optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  int dow,  int startMin,  int endMin,  bool isActive)  $default,) {final _that = this;
 switch (_that) {
-case _RefereeAvailableTimeSlot():
+case _RefereeTimeSlotDto():
 return $default(_that.id,_that.dow,_that.startMin,_that.endMin,_that.isActive);case _:
   throw StateError('Unexpected subclass');
 
@@ -197,7 +200,7 @@ return $default(_that.id,_that.dow,_that.startMin,_that.endMin,_that.isActive);c
 
 @optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  int dow,  int startMin,  int endMin,  bool isActive)?  $default,) {final _that = this;
 switch (_that) {
-case _RefereeAvailableTimeSlot() when $default != null:
+case _RefereeTimeSlotDto() when $default != null:
 return $default(_that.id,_that.dow,_that.startMin,_that.endMin,_that.isActive);case _:
   return null;
 
@@ -207,11 +210,11 @@ return $default(_that.id,_that.dow,_that.startMin,_that.endMin,_that.isActive);c
 }
 
 /// @nodoc
+@JsonSerializable()
 
-
-class _RefereeAvailableTimeSlot implements RefereeAvailableTimeSlot {
-  const _RefereeAvailableTimeSlot({required this.id, required this.dow, required this.startMin, required this.endMin, required this.isActive});
-  
+class _RefereeTimeSlotDto extends RefereeTimeSlotDto {
+  const _RefereeTimeSlotDto({required this.id, required this.dow, required this.startMin, required this.endMin, required this.isActive}): super._();
+  factory _RefereeTimeSlotDto.fromJson(Map<String, dynamic> json) => _$RefereeTimeSlotDtoFromJson(json);
 
 @override final  String id;
 @override final  int dow;
@@ -219,34 +222,37 @@ class _RefereeAvailableTimeSlot implements RefereeAvailableTimeSlot {
 @override final  int endMin;
 @override final  bool isActive;
 
-/// Create a copy of RefereeAvailableTimeSlot
+/// Create a copy of RefereeTimeSlotDto
 /// with the given fields replaced by the non-null parameter values.
 @override @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
-_$RefereeAvailableTimeSlotCopyWith<_RefereeAvailableTimeSlot> get copyWith => __$RefereeAvailableTimeSlotCopyWithImpl<_RefereeAvailableTimeSlot>(this, _$identity);
+_$RefereeTimeSlotDtoCopyWith<_RefereeTimeSlotDto> get copyWith => __$RefereeTimeSlotDtoCopyWithImpl<_RefereeTimeSlotDto>(this, _$identity);
 
-
+@override
+Map<String, dynamic> toJson() {
+  return _$RefereeTimeSlotDtoToJson(this, );
+}
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RefereeAvailableTimeSlot&&(identical(other.id, id) || other.id == id)&&(identical(other.dow, dow) || other.dow == dow)&&(identical(other.startMin, startMin) || other.startMin == startMin)&&(identical(other.endMin, endMin) || other.endMin == endMin)&&(identical(other.isActive, isActive) || other.isActive == isActive));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RefereeTimeSlotDto&&(identical(other.id, id) || other.id == id)&&(identical(other.dow, dow) || other.dow == dow)&&(identical(other.startMin, startMin) || other.startMin == startMin)&&(identical(other.endMin, endMin) || other.endMin == endMin)&&(identical(other.isActive, isActive) || other.isActive == isActive));
 }
 
-
+@JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode => Object.hash(runtimeType,id,dow,startMin,endMin,isActive);
 
 @override
 String toString() {
-  return 'RefereeAvailableTimeSlot(id: $id, dow: $dow, startMin: $startMin, endMin: $endMin, isActive: $isActive)';
+  return 'RefereeTimeSlotDto(id: $id, dow: $dow, startMin: $startMin, endMin: $endMin, isActive: $isActive)';
 }
 
 
 }
 
 /// @nodoc
-abstract mixin class _$RefereeAvailableTimeSlotCopyWith<$Res> implements $RefereeAvailableTimeSlotCopyWith<$Res> {
-  factory _$RefereeAvailableTimeSlotCopyWith(_RefereeAvailableTimeSlot value, $Res Function(_RefereeAvailableTimeSlot) _then) = __$RefereeAvailableTimeSlotCopyWithImpl;
+abstract mixin class _$RefereeTimeSlotDtoCopyWith<$Res> implements $RefereeTimeSlotDtoCopyWith<$Res> {
+  factory _$RefereeTimeSlotDtoCopyWith(_RefereeTimeSlotDto value, $Res Function(_RefereeTimeSlotDto) _then) = __$RefereeTimeSlotDtoCopyWithImpl;
 @override @useResult
 $Res call({
  String id, int dow, int startMin, int endMin, bool isActive
@@ -257,17 +263,17 @@ $Res call({
 
 }
 /// @nodoc
-class __$RefereeAvailableTimeSlotCopyWithImpl<$Res>
-    implements _$RefereeAvailableTimeSlotCopyWith<$Res> {
-  __$RefereeAvailableTimeSlotCopyWithImpl(this._self, this._then);
+class __$RefereeTimeSlotDtoCopyWithImpl<$Res>
+    implements _$RefereeTimeSlotDtoCopyWith<$Res> {
+  __$RefereeTimeSlotDtoCopyWithImpl(this._self, this._then);
 
-  final _RefereeAvailableTimeSlot _self;
-  final $Res Function(_RefereeAvailableTimeSlot) _then;
+  final _RefereeTimeSlotDto _self;
+  final $Res Function(_RefereeTimeSlotDto) _then;
 
-/// Create a copy of RefereeAvailableTimeSlot
+/// Create a copy of RefereeTimeSlotDto
 /// with the given fields replaced by the non-null parameter values.
 @override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? dow = null,Object? startMin = null,Object? endMin = null,Object? isActive = null,}) {
-  return _then(_RefereeAvailableTimeSlot(
+  return _then(_RefereeTimeSlotDto(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,dow: null == dow ? _self.dow : dow // ignore: cast_nullable_to_non_nullable
 as int,startMin: null == startMin ? _self.startMin : startMin // ignore: cast_nullable_to_non_nullable

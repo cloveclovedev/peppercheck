@@ -4,8 +4,8 @@ import 'package:peppercheck_flutter/common_widgets/app_background.dart';
 import 'package:peppercheck_flutter/common_widgets/app_scaffold.dart';
 import 'package:peppercheck_flutter/features/account/presentation/widgets/account_actions_section.dart';
 import 'package:peppercheck_flutter/features/account/presentation/widgets/support_section.dart';
-import 'package:peppercheck_flutter/features/matching/presentation/widgets/referee_availability_section.dart';
-import 'package:peppercheck_flutter/features/matching/presentation/widgets/referee_blocked_dates_section.dart';
+import 'package:peppercheck_flutter/features/matching/ui/widgets/referee_availability_section.dart';
+import 'package:peppercheck_flutter/features/matching/ui/widgets/referee_blocked_dates_section.dart';
 import 'package:peppercheck_flutter/features/profile/ui/widgets/profile_header_section.dart';
 import 'package:peppercheck_flutter/gen/slang/strings.g.dart';
 

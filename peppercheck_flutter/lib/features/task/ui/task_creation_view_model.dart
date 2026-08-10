@@ -7,7 +7,7 @@ import '../data/task_repository.dart';
 import '../domain/task.dart';
 import '../domain/task_creation_error.dart';
 import '../domain/task_creation_request.dart';
-import 'providers/task_provider.dart';
+import 'task_detail_view_model.dart';
 import 'task_creation_state.dart';
 
 part 'task_creation_view_model.g.dart';
@@ -77,7 +77,7 @@ class TaskCreationViewModel extends _$TaskCreationViewModel {
       final Task saved;
       if (_taskId != null) {
         saved = await repository.updateDraft(_taskId!, currentState.request);
-        ref.invalidate(taskProvider(_taskId!));
+        ref.invalidate(taskDetailProvider(_taskId!));
       } else {
         saved = await repository.createDraft(currentState.request);
         _taskId = saved.id;
@@ -105,7 +105,7 @@ class TaskCreationViewModel extends _$TaskCreationViewModel {
       await ref
           .read(taskRepositoryProvider)
           .publish(taskId, refereeCount: refereeCount);
-      ref.invalidate(taskProvider(taskId));
+      ref.invalidate(taskDetailProvider(taskId));
       ref.invalidate(activeUserTasksProvider);
       state = AsyncData(currentState.copyWith(creationError: null));
       return true;
